@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Dipole Simulation</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #111111; } /* Changed to dark grey */
+        canvas { display: block; }
+        /* Style for dat.gui */
+        .dg.main .close-button { background-color: #ccc; }
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.163.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.163.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.9/dat.gui.min.js"></script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let scene, camera, renderer, controls;
+        let dipoles = [];
+        const maxDipoles = 400; // Increased max dipoles again
+        let clock = new THREE.Clock();
+        let backgroundTexture;
+
+        // --- Simulation Parameters ---
+        const params = {
+            dipoleLifetime: 4.0, // seconds
+            speed: 1.0, // multiplier for expansion/contraction rate
+            creationProbability: 400.0, // average creations per second (doubled again to new max)
+            maxScaleBase: 0.5, // Base max scale factor for dipoles
+            scaleVariance: 0.8, // How much max scale can vary (0 to 1)
+            spinSpeed: 0.5 // Base rotation speed multiplier
+        };
+
+        // --- Materials ---
+        const redMaterial = new THREE.MeshStandardMaterial({
+            color: 0xff6633, // Red-orange
+            roughness: 0.6,
+            metalness: 0.1,
+            transparent: true,
+            opacity: 0.9 // Slight transparency for fuzzy feel
+        });
+
+        const blueMaterial = new THREE.MeshStandardMaterial({
+            color: 0x3366ff, // Blue
+            roughness: 0.6,
+            metalness: 0.1,
+            transparent: true,
+            opacity: 0.9 // Slight transparency for fuzzy feel
+        });
+
+        // --- Initialization ---
+        function init() {
+            scene = new THREE.Scene();
+
+            // Set dark background color
+            scene.background = new THREE.Color(0x111111); // Changed to dark grey
+
+
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
+            camera.position.z = 5;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            directionalLight.position.set(5, 10, 7.5);
+            scene.add(directionalLight);
+
+            // Controls
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+
+            // GUI
+            const gui = new dat.GUI();
+            gui.add(params, 'dipoleLifetime', 1.0, 10.0).name('Lifetime (s)');
+            gui.add(params, 'speed', 0.1, 5.0).name('Speed');
+            gui.add(params, 'creationProbability', 0.5, 800.0).name('Creation Rate (/s)'); // Increased max range again
+            gui.add(params, 'maxScaleBase', 0.1, 1.5).name('Base Max Size');
+            gui.add(params, 'scaleVariance', 0.0, 1.0).name('Size Variance');
+            gui.add(params, 'spinSpeed', 0.0, 2.0).name('Spin Speed'); // Added spin control
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Start animation loop
+            animate();
+        }
+
+        // --- Dipole Creation ---
+        function createTextSprite(message, color = 'white', fontSize = 90) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const font = `bold ${fontSize}px Arial`;
+            context.font = font;
+            const metrics = context.measureText(message);
+            const textWidth = metrics.width;
+
+            // Adjust canvas size slightly larger than text for padding
+            canvas.width = textWidth + fontSize * 0.2;
+            canvas.height = fontSize + fontSize * 0.2;
+
+            // Re-apply font after canvas resize
+            context.font = font;
+            context.fillStyle = color;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(message, canvas.width / 2, canvas.height / 2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+
+            const spriteMaterial = new THREE.SpriteMaterial({
+                 map: texture,
+                 transparent: true,
+                 alphaTest: 0.1, // Prevent fully transparent pixels from rendering artifacts
+                 sizeAttenuation: false // Keep sprite size constant regardless of distance
+             });
+            const sprite = new THREE.Sprite(spriteMaterial);
+
+            // Scale sprite relative to font size (adjust factor as needed)
+            const spriteScale = fontSize * 0.0015;
+            sprite.scale.set(spriteScale * (canvas.width / canvas.height), spriteScale, 1);
+
+            return sprite;
+        }
+
+
+        function createDipole() {
+            const group = new THREE.Group();
+
+            // Use sphere geometry for lobes
+            const lobeRadius = 0.15; // Base radius
+            const geometry = new THREE.SphereGeometry(lobeRadius, 16, 12);
+
+            // Red Lobe (+)
+            const redLobe = new THREE.Mesh(geometry, redMaterial);
+            redLobe.position.y = lobeRadius * 0.6; // Position slightly offset
+            // const plusSign = createTextSprite('+', '#FFDDC1', 100); // Removed
+            // plusSign.position.y = lobeRadius * 0.6; // Removed
+            // plusSign.position.z = 0; // Removed
+
+            // Blue Lobe (-)
+            const blueLobe = new THREE.Mesh(geometry, blueMaterial);
+            blueLobe.position.y = -lobeRadius * 0.6; // Position slightly offset
+            // const minusSign = createTextSprite('−', '#D1E0FF', 100); // Removed
+            // minusSign.position.y = -lobeRadius * 0.6; // Removed
+            // minusSign.position.z = 0; // Removed
+
+            group.add(redLobe);
+            group.add(blueLobe);
+            // group.add(plusSign); // Removed
+            // group.add(minusSign); // Removed
+
+            // Random position within a volume
+            const range = 4;
+            group.position.set(
+                (Math.random() - 0.5) * range * 2,
+                (Math.random() - 0.5) * range * 2,
+                (Math.random() - 0.5) * range * 2
+            );
+
+            // Random orientation
+            group.rotation.set(
+                Math.random() * Math.PI * 2,
+                Math.random() * Math.PI * 2,
+                Math.random() * Math.PI * 2
+            );
+
+            // Assign properties for animation
+            const maxLife = params.dipoleLifetime * (0.8 + Math.random() * 0.4); // +/- 20% variation
+            const maxScale = params.maxScaleBase * (1 + (Math.random() - 0.5) * 2 * params.scaleVariance); // Apply variance
+            const rotationAxis = new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize(); // Random rotation axis
+
+            const dipole = {
+                group: group,
+                axis: rotationAxis, // Store the axis
+                life: maxLife,
+                maxLife: maxLife,
+                maxScale: maxScale
+                // plusSign: plusSign, // Removed
+                // minusSign: minusSign // Removed
+            };
+
+            dipoles.push(dipole);
+            scene.add(group);
+
+            return dipole;
+        }
+
+        // --- Animation Loop ---
+        function animate() {
+            requestAnimationFrame(animate);
+            const deltaTime = clock.getDelta();
+
+            // Probability of creating a new dipole (frame rate independent)
+            const createChance = params.creationProbability * deltaTime;
+            if (Math.random() < createChance && dipoles.length < maxDipoles) {
+                createDipole();
+            }
+
+            // Update existing dipoles
+            for (let i = dipoles.length - 1; i >= 0; i--) {
+                const dipole = dipoles[i];
+
+                // Decrease life based on time and speed parameter
+                dipole.life -= deltaTime * params.speed;
+
+                if (dipole.life <= 0) {
+                    // Remove dipole
+                    scene.remove(dipole.group);
+                    // Dispose geometry/materials if needed (for complex cases)
+                    // dipole.group.traverse(child => {
+                    //     if (child.isMesh) {
+                    //         child.geometry.dispose();
+                    //         child.material.dispose(); // Be careful if materials are shared
+                    //     } else if (child.isSprite) {
+                    //          child.material.map.dispose();
+                    //          child.material.dispose();
+                    //     }
+                    // });
+                    dipoles.splice(i, 1);
+                } else {
+                    // Update scale (expand/contract using sine wave based on life progress)
+                    const progress = (dipole.maxLife - dipole.life) / dipole.maxLife;
+                    const scale = Math.sin(progress * Math.PI) * dipole.maxScale;
+                    dipole.group.scale.set(scale, scale, scale);
+
+                    // Apply rotation
+                    const rotationAmount = deltaTime * params.spinSpeed;
+                    dipole.group.rotateOnWorldAxis(dipole.axis, rotationAmount);
+
+                    // Make sure sprites always face the camera
+                    // (OrbitControls usually handles camera matrix updates before render)
+                    // We set sizeAttenuation=false, so they stay constant size
+                    // Ensure sprite positions relative to lobes stay correct if needed
+                    // dipole.plusSign.position.z = lobeRadius * 1.1 * scale; // Example if you need relative Z adjust
+                    // dipole.minusSign.position.z = lobeRadius * 1.1 * scale;
+                }
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- Event Handlers ---
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // --- Start ---
+        init();
+
+    </script>
+</body>
+</html>
