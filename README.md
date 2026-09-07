@@ -23,7 +23,9 @@ Open <http://127.0.0.1:5174>. The simulation, fonts and controls run locally; th
 - **Save experiment** downloads a versioned state file; **Load** validates and restores it. Export recent diagnostic samples as CSV or the labelled viewport as PNG.
 - **Reduced model** explains the implemented assumptions. Mobile layouts expose the library and inspector through drawer buttons.
 
-This release implements the medium MVP from [the HTML development plan](docs/simulation-plan.html). It does not implement force laws, emergent constants, photons, stable particle shells, exchange events or cosmology. The energy reservoir is bookkeeping for the assigned fluctuation energy, not a complete physical energy/momentum model.
+Choose **Light through the zero-point field** in the library to explore the new [illustrative induction experiment](docs/light-model.md). Adjust wavelength, polarization and direction, step each handoff, pin a pair, inspect field/probe plots and save or replay the sequence. Switching laboratories keeps their separate state and pauses playback.
+
+This release implements the medium MVP and the illustrative light sequence from [the HTML development plan](docs/simulation-plan.html). It does not implement force laws, emergent constants, calculated photon coupling, stable particle shells, exchange events or cosmology. The energy reservoir is bookkeeping for the assigned fluctuation energy, not a complete physical energy/momentum model.
 
 ## Build and validate
 
@@ -42,6 +44,6 @@ Core tests exercise deterministic replay, seed zero, conservation bookkeeping, m
 
 ## Structure
 
-`src/model` contains the deterministic reference simulation; `src/simulation` owns worker scheduling and transport; `src/rendering` owns the Three.js WebGL 2 scene; `src/app` contains the React workspace; `src/persistence` validates experiment files. The initial app is archived in `docs/legacy/`. No application code depends on it.
+`src/model` contains the deterministic reference simulation; `src/simulation` owns worker scheduling and transport; `src/rendering` owns the Three.js WebGL 2 scene; `src/app` contains the React workspace; `src/persistence` validates medium experiment files. `src/light` contains the separate light model, worker, renderer and workspace. The initial app is archived in `docs/legacy/`. No application code depends on it.
 
 See [docs/README.md](docs/README.md) for the preserved blueprint, initial investigation, model specification and original plan.

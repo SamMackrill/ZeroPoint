@@ -1,6 +1,6 @@
-# Planned experiment: Light through the zero-point field
+# Experiment: Light through the zero-point field
 
-**Status: planned, not implemented.** Stage 4a expands the earlier photon-chain placeholder into an experiment showing light as an energy wave propagating through the zero-point medium by successive dipole induction.
+**Status: illustrative sequence implemented.** Stage 4a now has an interactive light laboratory with a prescribed induction sequence, controls, local pair inspection, replay, field/probe plots and file export. See the [implemented model specification](../light-model.md) for the adopted half-wavelength timing, units and limitations. Calculated coupling, emission and absorption remain future work. The sections below retain the experiment design and its later gates.
 
 Source: Ray Fleming, [Photons as Quantum Electron-Positron Composites](../Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf). The mechanisms below describe Fleming's proposed model; the visualization should identify source claims, chosen animation conventions and any subsequently calculated results.
 
@@ -37,4 +37,4 @@ Readouts: distance travelled, elapsed physical time, measured propagation speed,
 
 Section 6 distinguishes the photon sequence's full half-turns from very small rotations establishing a field response. Fleming gives `1.8 x 10^22 c` as an example based on `10^-20` degrees and states that the maximum field-propagation rate is unknown and finite. It is not a measured constant or the photon travel speed. Keep this optional later comparison separate from the light-wave controls; the blueprint's `10^20 c` likewise must not become an unexplained default. Event-based or explicitly quasistatic treatment would need its own documented approximation.
 
-The supplied paper is sufficient to plan the visual mechanism. Timing definitions and the missing quantitative coupling rules remain implementation decisions to resolve before turning this illustration into a predictive simulation.
+The supplied paper supports the visual mechanism. The illustrative implementation adopts a separate half-wavelength timing convention, documented in the model specification. Quantitative coupling rules and reconciliation into a single underlying dynamics remain necessary before turning it into a predictive simulation.

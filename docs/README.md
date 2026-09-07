@@ -17,7 +17,7 @@ The original `index.html` and `dipole-worker.js` are archived in `docs/legacy/`.
 
 Verification: the blueprint copy matches its source SHA-256; local HTML links and anchors resolve; inline plan JavaScript and the spike pass JavaScript syntax checks; the scenario descriptions respond in the browser. The plan was checked for document overflow at desktop width and in a 390-pixel iframe (no horizontal document overflow; navigation becomes static). Renderer evidence and preview limitations are recorded with the investigation. Printing is provided through the browser; exported PDF appearance has not been inspected.
 
-Planned experiments:
+Additional experiments:
 
 - [Casimir effect — adjustable parallel plates](planned-experiments/casimir-effect.md), including controls, reference physics and implementation gates.
-- [Light through the zero-point field](planned-experiments/light-through-zero-point.md): an energy wave carried by successive induced, counter-rotating pairs, with scene controls, source references and timing/coupling decisions. Based on the supplied [Photons as Quantum Electron-Positron Composites paper](Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf).
+- [Light through the zero-point field — implemented illustrative model](light-model.md), with its [experiment plan and future gates](planned-experiments/light-through-zero-point.md): an energy wave carried by successive induced, counter-rotating pairs, with scene controls, source references and timing/coupling decisions. Based on the supplied [Photons as Quantum Electron-Positron Composites paper](Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf).
