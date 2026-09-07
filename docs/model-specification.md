@@ -57,3 +57,5 @@ Implemented: workbench foundation and medium lifecycle MVP (plan stages 1–2), 
 Still undefined: the London–van der Waals force/torque law, constitutive pressure relation, derivation of ε₀/μ₀, 10²⁰c event ordering, shell spectral-energy integral, species-specific quantization, exchange event maps and tired-light observational comparison. These remain the gates for stages 3–6. No production WebGPU backend or GPU compute solver is claimed in this release.
 
 The [Casimir effect](planned-experiments/casimir-effect.md) is now a planned standalone parallel-plate experiment at stage 3. It will compare an ideal analytic baseline with any subsequently specified zepton boundary-response model; it is not implemented by the current energy slice.
+
+[Light through the zero-point field](planned-experiments/light-through-zero-point.md) is planned at stage 4a, based on Fleming’s photon paper. It will show propagation by successive induced, counter-rotating pairs at fixed centres. The paper’s half-wavelength/half-turn description requires an explicit reconciliation with this MVP’s lifetime and rotation conventions; no photon coupling or propagation is implemented here.

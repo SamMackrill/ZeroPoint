@@ -9,7 +9,8 @@ The medium lifecycle MVP is implemented as a new React + TypeScript + Vite appli
 | 2 — Medium laboratory | Implemented: four presets, births/deaths, lobe/point views, energy slice, inspection, diagnostics, checkpoints and JSON/CSV/PNG export. |
 | 3 — Polarization and mechanics | Pending explicit force, torque and constitutive pressure laws. |
 | 3a — Casimir effect | Planned: adjustable parallel plates, mode views, ideal force/energy reference and a future zepton boundary model. See [experiment plan](planned-experiments/casimir-effect.md). |
-| 4 — Photons and shells | Pending phase, spectral-energy and species rules. |
+| 4a — Light through the zero-point field | Planned: successive induced, counter-rotating pairs and a travelling energy/field pattern, based on Fleming’s photon paper. Timing and coupling rules remain open. See [experiment plan](planned-experiments/light-through-zero-point.md). |
+| 4b — Particle shells | Pending spectral-energy and species rules. |
 | 5 — Exchange events | Pending event maps and complete conservation rules. |
 | 6 — Cosmology and advanced rendering | Pending loss law, comparison data and measured need for GPU compute / volume rendering. |
 
