@@ -1,0 +1,88 @@
+{
+  "date": "2026-09-07",
+  "library": "three@0.185.1",
+  "scope": "Disposable renderer investigation; no physics solver",
+  "timedRuns": [
+    {
+      "actualBackend": "WebGL 2",
+      "adapterInfo": {
+        "architecture": "rdna-3",
+        "description": "",
+        "device": "",
+        "vendor": "amd"
+      },
+      "count": 10000,
+      "date": "2026-09-07T13:35:52.943Z",
+      "drawCalls": 2,
+      "frames": 500,
+      "glRenderer": "ANGLE (AMD, AMD Radeon RX 7900 GRE (0x0000744C) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "meanFps": 99.97600575861799,
+      "meanFrameMs": 10.002399999999994,
+      "method": "CPU animated opaque geometry; 1 second warmup then 5 seconds RAF intervals; no solver or GPU timing",
+      "mode": "mesh",
+      "p50FrameMs": 10,
+      "p95FrameMs": 10.10000000000582,
+      "pixelRatio": 1,
+      "points": 0,
+      "requestedBackend": "webgl",
+      "seed": 2026,
+      "three": "185",
+      "triangles": 1600000,
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) T3Code(Alpha)/0.0.39 Chrome/150.0.7871.224 Safari/537.36",
+      "valid": true,
+      "viewport": {
+        "height": 416,
+        "width": 1265
+      }
+    }
+  ],
+  "smokeChecks": [
+    {
+      "actualBackend": "WebGPU",
+      "count": 10000,
+      "drawCalls": 3,
+      "errors": [],
+      "mode": "mesh",
+      "points": 0,
+      "requestedBackend": "webgpu",
+      "triangles": 1600001
+    },
+    {
+      "actualBackend": "WebGL 2 fallback",
+      "count": 10000,
+      "drawCalls": 3,
+      "errors": [],
+      "mode": "mesh",
+      "points": 0,
+      "requestedBackend": "fallback",
+      "triangles": 1600001
+    },
+    {
+      "actualBackend": "WebGL 2",
+      "count": 50000,
+      "drawCalls": 1,
+      "errors": [],
+      "mode": "points",
+      "points": 50000,
+      "requestedBackend": "webgl",
+      "triangles": 0
+    },
+    {
+      "actualBackend": "WebGPU",
+      "count": 50000,
+      "drawCalls": 2,
+      "errors": [],
+      "mode": "points",
+      "points": 50000,
+      "requestedBackend": "webgpu",
+      "triangles": 1
+    }
+  ],
+  "limitations": [
+    "One valid local timed run; no cross-library performance ranking",
+    "Initial WebGL sample invalidated by preview visibility/resize and discarded",
+    "WebGPU/fallback RAF callbacks stalled in preview: explicit frames checked, no valid timing comparison",
+    "No screenshot verification: preview snapshot tool failed",
+    "No worker, force solver, volumes, transparent shells, field lines or compute in workload"
+  ]
+}
