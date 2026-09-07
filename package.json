@@ -9,7 +9,8 @@
     "preview": "vite preview --host 127.0.0.1 --port 4173",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "deploy": "npm run build && node scripts/publish-here-now.mjs"
   },
   "dependencies": {
     "@fontsource/dm-sans": "5.3.0",

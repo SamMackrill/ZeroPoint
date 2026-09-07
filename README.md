@@ -47,3 +47,7 @@ Core tests exercise deterministic replay, seed zero, conservation bookkeeping, m
 `src/model` contains the deterministic reference simulation; `src/simulation` owns worker scheduling and transport; `src/rendering` owns the Three.js WebGL 2 scene; `src/app` contains the React workspace; `src/persistence` validates medium experiment files. `src/light` contains the separate light model, worker, renderer and workspace. The initial app is archived in `docs/legacy/`. No application code depends on it.
 
 See [docs/README.md](docs/README.md) for the preserved blueprint, initial investigation, model specification and original plan.
+
+## Publish updates
+
+The reserved site is https://saffron-solace-dyj7.here.now/. Its non-secret slug and output directory are stored in [`here-now.json`](here-now.json). Run `npm run deploy` to build and update that same site. The helper uses `HERENOW_API_KEY` or `~/.herenow/credentials`; credentials are never put in the repo or browser bundle. The ignored `.herenow/` directory retains the last published version for stale-update protection. Inspect and reconcile remote changes if the publisher reports a version conflict.
