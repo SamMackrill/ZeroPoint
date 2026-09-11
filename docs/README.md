@@ -19,6 +19,8 @@ Verification: the blueprint copy matches its source SHA-256; local HTML links an
 
 Additional experiments:
 
+- [Electron video refinement](electron-video-notes.md): timestamped video interpretation, implemented charge-motion, flux and radius/rate investigations, plus proposed torque, mass-budget and positron experiments.
+
 - [Casimir effect — adjustable parallel plates](planned-experiments/casimir-effect.md), including controls, reference physics and implementation gates.
 - [Lamb shift](planned-experiments/lamb-shift.md), with reference/shifted energy-level comparisons and future zero-point-field modelling gates.
 - [Double slit](planned-experiments/double-slit.md), with one-slit, two-slit and which-path comparisons and future medium-modelling gates.

@@ -29,6 +29,40 @@ test('stationary electron begins absent in a cube with selection opt-in and reso
   await page.getByRole('button', { name: 'Reset', exact: true }).click();
   await expect(page.getByText('Unpolarized ZPF · electron not yet introduced', { exact: true })).toBeVisible();
 });
+
+test('video investigations compare flux, rate limits and linked charge currents', async ({ page }) => {
+  await openElectron(page, false);
+  await page.getByLabel('Gauss sphere radius', { exact: true }).fill('2');
+  await expect(page.getByTestId('property-field')).toHaveText('0.2500');
+  await expect(page.getByTestId('property-area')).toHaveText('4.0000');
+  await expect(page.getByTestId('property-flux')).toHaveText('-1.0000');
+  await page.getByRole('button', { name: 'Radius & rate limit', exact: true }).click();
+  await expect(page.getByTestId('property-limit-status')).toContainText('At the proposed limit');
+  await page.getByLabel('Trial shell radius', { exact: true }).fill('1.5');
+  await expect(page.getByTestId('property-speed')).toHaveText('1.500');
+  await expect(page.getByTestId('property-limit-status')).toContainText('Above the proposed limit');
+  await page.getByLabel('Effective pattern rate', { exact: true }).fill('0.5');
+  await expect(page.getByTestId('property-limit')).toHaveText('2.000');
+  await expect(page.getByTestId('property-limit-status')).toContainText('Below the proposed limit');
+  await expect(page.getByTestId('electron-tick')).toContainText('Tick 0');
+  await page.getByLabel('Electron property investigations', { exact: true }).screenshot({ path: 'test-results/electron-property-rate.png' });
+  await page.getByRole('button', { name: /Spin in the surrounding field/ }).click();
+  await page.getByRole('button', { name: 'Explore the video’s shared rotation', exact: true }).click();
+  await expect(page.getByLabel('Adjacent shell preference')).toHaveValue('shared');
+  await expect(page.getByLabel('Zepton selector', { exact: true })).toBeChecked();
+  const closeup = page.getByLabel('Local charge motion close-up', { exact: true });
+  await expect(closeup).toContainText('Sample 2231');
+  await page.getByRole('button', { name: 'Conventional current qv', exact: true }).click();
+  await expect(page.getByTestId('charge-motion-explanation')).toContainText('point together');
+  await page.getByRole('button', { name: 'Advance 1 τ' }).click();
+  await expect(closeup).toContainText('tick 120');
+  await page.getByRole('button', { name: 'Inspect section pair 2229', exact: true }).click();
+  await expect(closeup).toContainText('Sample 2229');
+  await closeup.screenshot({ path: 'test-results/electron-charge-current.png' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByLabel('Electron property investigations', { exact: true }).screenshot({ path: 'test-results/electron-property-mobile.png' });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
 test('spin shells link 2D and 3D, alternate local turns and preserve display controls', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await openElectron(page); await page.getByRole('button', { name: /Spin in the surrounding field/ }).click();
