@@ -6,9 +6,11 @@ import { CasimirModel, STEP, extent, lifeStage, phase, type ChargePair, type Zep
 import { Scene, type SceneLayers } from './Scene';
 import './casimir.css';
 
+/** Format a pressure delta with an explicit sign and fixed precision. */
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(3)}`;
 const paper = './docs/papers/Electromagnetic%20Motion%20as%20an%20Extended%20Casimir%20Effect.pdf#page=3';
 
+/** Render the lifecycle details for the currently inspected Zepton. */
 function Lifetime({ particle, expired }: { particle: Zepton | null; expired: boolean }) {
   if (!particle) return <p className="casimir-muted">Inspect a Zepton to follow its short lifetime.</p>;
   const p = expired ? { ...particle, age: particle.lifetime } : particle;
@@ -39,6 +41,7 @@ function Lifetime({ particle, expired }: { particle: Zepton | null; expired: boo
   </>;
 }
 
+/** Coordinate the interactive charge-pair experiment and its controls. */
 export function CasimirExperiment({ active, onBack }: { active: boolean; onBack: () => void }) {
   const modelRef = useRef<CasimirModel | null>(null);
   if (!modelRef.current) modelRef.current = new CasimirModel();
@@ -49,7 +52,9 @@ export function CasimirExperiment({ active, onBack }: { active: boolean; onBack:
   const [selected, setSelected] = useState<number | null>(null), [follow, setFollow] = useState(true);
   const lastSelected = useRef<Zepton | null>(null);
   const [showNotes, setShowNotes] = useState(false);
+  /** Request a render after mutating the model held in the ref. */
   const refresh = () => setRevision(r => r + 1);
+  /** Recreate the model for a charge pairing and initial separation. */
   function reset(nextPair = pair, nextSeparation = separation) {
     modelRef.current = new CasimirModel(nextPair, nextSeparation);
     setPair(nextPair); setSeparation(nextSeparation); setRunning(false); setSelected(null); lastSelected.current = null; refresh();
@@ -90,6 +95,7 @@ export function CasimirExperiment({ active, onBack }: { active: boolean; onBack:
   const like = pair === 'electron-electron';
   const tendency = Math.abs(model.delta) < .002 ? 'Building pressure' : model.delta > 0 ? 'Apart' : 'Together';
   const start = model.history[0]?.time ?? 0, end = model.history.at(-1)?.time ?? 0;
+  /** Convert one pressure history series into SVG polyline coordinates. */
   const plot = (key: 'inner' | 'outer') => model.history.map(p => `${20 + (p.time - start) / Math.max(1, end - start) * 710},${95 - (p[key] - 1) * 160}`).join(' ');
   return <div className="casimir-app" style={{ display: active ? undefined : 'none' }}>
     <header className="topbar"><div className="identity"><BrandMark/><span>ZeroPoint<span className="brand-period">.</span></span><span className="brand-divider"/><span className="lab-label">FIELD LABORATORY</span></div><RepositoryLink/></header>

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
+/** Open the Casimir laboratory and return its application container. */
 async function openExperiment(page: Page) {
   await page.goto('/');
   if (page.viewportSize()!.width < 850) await page.getByRole('button', { name: 'Open experiment library' }).click();

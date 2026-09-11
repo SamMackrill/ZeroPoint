@@ -3,6 +3,7 @@ import { CasimirModel, extent, phase, type Zepton } from './model';
 
 export type SceneLayers = { pressure: boolean; interactions: boolean; zeptons: boolean };
 const cold = [71, 177, 217], warm = [242, 144, 89], base = [18, 32, 44];
+/** Render the pressure field, charges, and Zepton interactions on a canvas. */
 export function Scene({ model, revision, layers, selected, onSelect }: {
   model: CasimirModel; revision: number; layers: SceneLayers; selected: number | null; onSelect: (p: Zepton) => void;
 }) {
@@ -16,6 +17,7 @@ export function Scene({ model, revision, layers, selected, onSelect }: {
   }, []);
   useEffect(() => {
     const el = canvas.current!;
+    /** Redraw the complete scene for the latest model and viewport state. */
     function draw() {
       const ctx = el.getContext('2d'); if (!ctx) return;
       const width = el.clientWidth, height = el.clientHeight, dpr = Math.min(devicePixelRatio || 1, 2);
@@ -25,6 +27,7 @@ export function Scene({ model, revision, layers, selected, onSelect }: {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const scale = Math.min(width / 13, (height - 90) / 5.5);
       geometry.current = { width, height, scale };
+      /** Convert model coordinates into canvas coordinates. */
       const xy = (x: number, y: number) => [width / 2 + x * scale, height / 2 + y * scale];
       ctx.fillStyle = '#0e1a25'; ctx.fillRect(0, 0, width, height);
       if (layers.pressure) {
@@ -49,6 +52,7 @@ export function Scene({ model, revision, layers, selected, onSelect }: {
       ctx.strokeStyle = '#97baca0d'; ctx.lineWidth = 1;
       for (let x = -6; x <= 6; x++) { const a = xy(x, -3), b = xy(x, 3); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
       for (let y = -2; y <= 2; y++) { const a = xy(-6, y), b = xy(6, y); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+      /** Draw a vector arrow in model coordinates. */
       const arrow = (x: number, y: number, dx: number, dy: number, colour: string, weight = 1.5) => {
         const [sx, sy] = xy(x, y), ex = sx + dx * scale, ey = sy + dy * scale, angle = Math.atan2(dy, dx);
         ctx.strokeStyle = colour; ctx.lineWidth = weight; ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey);

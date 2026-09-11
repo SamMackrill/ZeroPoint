@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CasimirModel, extent, STEP, type ChargePair } from '../src/casimir/model';
 
+/** Advance a model by a requested amount of simulation time. */
 const advance = (m: CasimirModel, seconds: number) => { for (let i = 0; i < Math.round(seconds / STEP); i++) m.step(); };
 describe('extended Casimir illustrative lifecycle', () => {
   it('replays births, interactions and pressure deterministically', () => {

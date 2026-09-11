@@ -9,9 +9,13 @@ export type Zepton = {
 };
 export type PressureSample = { time: number; inner: number; outer: number };
 export type Interaction = { id: number; time: number; text: string };
+/** Constrain a numeric value to an inclusive interval. */
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+/** Return the elapsed fraction of a Zepton's lifetime. */
 export const phase = (p: Zepton) => clamp(p.age / p.lifetime, 0, 1);
+/** Return the current half-separation of a Zepton's charge lobes. */
 export const extent = (p: Zepton) => .19 * Math.sin(Math.PI * phase(p));
+/** Describe the visible lifecycle stage of a Zepton. */
 export function lifeStage(p: Zepton) {
   const f = phase(p);
   return f >= 1 ? 'Annihilated' : f < .15 ? 'Born · random orientation' : f < .5
@@ -39,6 +43,7 @@ export class CasimirModel {
   private nextId = 1;
   private eventId = 1;
 
+  /** Initialize a seeded field around the selected charge pairing. */
   constructor(public pair: ChargePair = 'electron-electron', public separation = 5.6, seed = 2026) {
     this.randomState = seed >>> 0;
     this.left = -separation / 2;
@@ -52,16 +57,22 @@ export class CasimirModel {
     }
     this.history.push({ time: 0, inner: 1, outer: 1 });
   }
+  /** Return elapsed simulation time in expanded observation units. */
   get time() { return this.tick * STEP; }
+  /** Return the inner pressure minus the outer pressure. */
   get delta() { return this.inner - this.outer; }
+  /** Return the current midpoint between the two charges. */
   get midpoint() { return (this.left + this.right) / 2; }
+  /** Advance and sample the model's deterministic pseudorandom sequence. */
   private random() {
     this.randomState = (Math.imul(1664525, this.randomState) + 1013904223) >>> 0;
     return this.randomState / 4294967296;
   }
+  /** Add an interaction message to the bounded event history. */
   private log(text: string) {
     this.events = [{ id: this.eventId++, time: this.time, text }, ...this.events].slice(0, 5);
   }
+  /** Add a newly created Zepton at a field or gap site. */
   private birth(site: number, x: number, y: number, gap: boolean) {
     const p: Zepton = { id: this.nextId++, site, x, y, homeX: x, homeY: y,
       angle: this.random() * Math.PI * 2, age: 0, lifetime: gap ? 1.5 + this.random() : 2.4 + this.random() * 1.5,
@@ -79,6 +90,7 @@ export class CasimirModel {
     }
     return [ex, ey];
   }
+  /** Report whether a Zepton lies in the interaction region between charges. */
   bridge(p: Zepton) { return p.x > this.left + .35 && p.x < this.right - .35 && Math.abs(p.y) < 1.5; }
   /** Shared kernel for the heat map, probe, and pressure readings. */
   pressureAt(x: number, y: number, contributors = this.particles) {
@@ -90,6 +102,7 @@ export class CasimirModel {
     }
     return clamp(BASE_PRESSURE + delta, .15, 1.85);
   }
+  /** Advance particle lifecycles, pressure samples, and released charge motion. */
   step() {
     this.tick++;
     const dead: Zepton[] = [];
@@ -156,5 +169,6 @@ export class CasimirModel {
       }
     }
   }
+  /** Stop released charge motion while preserving their current positions. */
   hold() { this.released = false; this.leftVelocity = 0; this.rightVelocity = 0; }
 }
