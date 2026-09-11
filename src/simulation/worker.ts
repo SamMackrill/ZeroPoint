@@ -22,7 +22,7 @@ ctx.onmessage = ({ data }) => {
     if (data.type === 'parameters') model.updateParameters(data.value);
     if (data.type === 'speed') { if (![.25, .5, 1, 2, 4].includes(data.value)) throw new Error('Invalid playback speed.'); speed = data.value; }
     if (data.type === 'restore') { model = Medium.restore(validateCheckpoint(data.checkpoint)); running = false; accumulator = 0; }
-    if (data.type === 'save') { ctx.postMessage({ type: 'saved', checkpoint: model.serialize() }); return; }
+    if (data.type === 'save') { ctx.postMessage({ type: 'saved', id: data.id, checkpoint: model.serialize() }); return; }
     emit();
   } catch (error) { running = false; ctx.postMessage({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
 };

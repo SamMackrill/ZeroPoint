@@ -44,7 +44,8 @@ function MediumApp({ active, onOpenLight, onOpenElectron }: { active: boolean; o
   const sim = useSimulation(), { state, latest, sink, send, checkpoint } = sim;
   const host = useRef<HTMLDivElement>(null), viewport = useRef<FieldRenderer | null>(null), fileInput = useRef<HTMLInputElement>(null), dialog = useRef<HTMLDialogElement>(null);
   const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
-  const viewRef = useRef(view); viewRef.current = view;
+  const viewRef = useRef(view);
+  useEffect(() => { viewRef.current = view; }, [view]);
   const [graphicsError, setGraphicsError] = useState<string | null>(null), [renderRevision, setRenderRevision] = useState(0);
   const [picked, setPicked] = useState<PickedDipole | null>(null), [metrics, setMetrics] = useState({ fps: 0, calls: 0 });
   const [parameters, setParameters] = useState(DEFAULT_PARAMETERS), [seed, setSeed] = useState('2026'), [preset, setPreset] = useState('balanced');
@@ -78,11 +79,11 @@ function MediumApp({ active, onOpenLight, onOpenElectron }: { active: boolean; o
     const keyboard = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName) || target.isContentEditable || dialog.current?.open || !ready || !active) return;
-      if (e.code === 'Space') { e.preventDefault(); send({ type: 'running', value: !latest.current?.running }); }
+      if (e.code === 'Space') { e.preventDefault(); if (!graphicsError) send({ type: 'running', value: !latest.current?.running }); }
       if (e.code === 'ArrowRight') { e.preventDefault(); send({ type: 'step' }); }
     };
     window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
-  }, [active, ready, latest, send]);
+  }, [active, ready, graphicsError, latest, send]);
   const setOption = <K extends keyof ViewSettings>(key: K, value: ViewSettings[K]) => setView(v => ({ ...v, [key]: value }));
   /** Apply a medium parameter change and mark the preset as custom. */
   function updateParameter(key: keyof Parameters, value: number) { const next = { ...parameters, [key]: value }; setParameters(next); send({ type: 'parameters', value: next }); setPreset('custom'); }

@@ -69,7 +69,7 @@ export class LightRenderer {
     this.renderer.domElement.addEventListener('webglcontextlost', this.contextLost);
     this.setOptions(options); this.cameraPreset('orbit'); this.animate();
   }
-  private resizeCanvas() { const w = this.host.clientWidth, h = this.host.clientHeight; if (!w || !h) return; this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); this.renderer.setSize(w, h); this.cameraPreset(this.cameraMode); }
+  private resizeCanvas() { const w = this.host.clientWidth, h = this.host.clientHeight; if (!w || !h) return; this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); this.renderer.setSize(w, h); }
   private contextLost = (e: Event) => { e.preventDefault(); this.onError('The graphics context was lost. The experiment is paused; recover the viewport to continue.'); };
   private pointerDown = (e: PointerEvent) => { this.down = { x: e.clientX, y: e.clientY }; };
   private pointerUp = (e: PointerEvent) => {
@@ -159,8 +159,9 @@ export class LightRenderer {
   dispose() {
     this.disposed = true; cancelAnimationFrame(this.frame); this.resize.disconnect(); this.controls.dispose();
     this.renderer.domElement.removeEventListener('pointerdown', this.pointerDown); this.renderer.domElement.removeEventListener('pointerup', this.pointerUp); this.renderer.domElement.removeEventListener('webglcontextlost', this.contextLost);
+    const sharedArrowGeometries = new Set(this.arrows.flatMap(arrow => [arrow.line.geometry, arrow.cone.geometry]));
     const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
-    this.scene.traverse(o => { const mesh = o as THREE.Mesh; if (mesh.geometry) geometries.add(mesh.geometry); if (mesh.material) for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(m); });
+    this.scene.traverse(o => { const mesh = o as THREE.Mesh; if (mesh.geometry && !sharedArrowGeometries.has(mesh.geometry)) geometries.add(mesh.geometry); if (mesh.material) for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(m); });
     geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose());
     for (const mesh of [this.positive, this.negative, this.centres]) mesh.dispose();
     this.renderer.dispose(); this.renderer.domElement.remove();

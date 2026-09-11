@@ -23,12 +23,12 @@ export type Command =
   | { type: 'speed'; value: number }
   | { type: 'parameters'; value: Parameters }
   | { type: 'reset'; seed: number; parameters: Parameters }
-  | { type: 'save' }
+  | { type: 'save'; id: number }
   | { type: 'restore'; checkpoint: Checkpoint }
   | { type: 'recycle'; buffer: ArrayBuffer };
 export type WorkerReply =
   | { type: 'snapshot'; buffer: ArrayBuffer; count: number; diagnostics: Diagnostics; parameters: Parameters; seed: number; running: boolean; speed: number; events: ModelEvent[]; stepMs: number }
-  | { type: 'saved'; checkpoint: Checkpoint }
+  | { type: 'saved'; id: number; checkpoint: Checkpoint }
   | { type: 'error'; message: string };
 export interface ViewSettings { representation: 'dipoles' | 'points'; medium: boolean; bounds: boolean; slice: boolean; sliceZ: number; reducedMotion: boolean }
 export const DEFAULT_VIEW: ViewSettings = { representation: 'dipoles', medium: true, bounds: true, slice: false, sliceZ: 0, reducedMotion: false };

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 /** Open the light laboratory and wait for worker readiness. */
 async function openLight(page: import('@playwright/test').Page) {
   await page.goto('/');
-  if (page.viewportSize()!.width < 850) await page.getByRole('button', { name: 'Open experiment library' }).click();
+  if (page.viewportSize()!.width <= 850) await page.getByRole('button', { name: 'Open experiment library' }).click();
   await page.getByRole('button', { name: /Light through the zero-point field Explore/ }).click();
   await expect(page.getByRole('button', { name: 'Run light', exact: true })).toBeEnabled();
 }

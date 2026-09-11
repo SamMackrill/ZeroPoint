@@ -185,8 +185,9 @@ export class ElectronRenderer {
   dispose() {
     this.disposed = true; cancelAnimationFrame(this.frame); this.resize.disconnect(); this.controls.dispose();
     this.renderer.domElement.removeEventListener('pointerdown', this.pointerDown); this.renderer.domElement.removeEventListener('pointerup', this.pointerUp); this.renderer.domElement.removeEventListener('webglcontextlost', this.contextLost);
+    const sharedArrowGeometries = new Set([...this.eArrows, ...this.bArrows, ...this.sArrows].flatMap(arrow => [arrow.line.geometry, arrow.cone.geometry]));
     const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>();
-    this.scene.traverse(o => { const mesh = o as THREE.Mesh; if (mesh.geometry) geometries.add(mesh.geometry); if (mesh.material) for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(m); });
+    this.scene.traverse(o => { const mesh = o as THREE.Mesh; if (mesh.geometry && !sharedArrowGeometries.has(mesh.geometry)) geometries.add(mesh.geometry); if (mesh.material) for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(m); });
     geometries.forEach(g => g.dispose()); materials.forEach(m => { const map = (m as THREE.SpriteMaterial).map; map?.dispose(); m.dispose(); }); this.positive.dispose(); this.negative.dispose(); this.renderer.dispose(); this.renderer.domElement.remove();
   }
 }
