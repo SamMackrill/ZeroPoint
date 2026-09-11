@@ -6,6 +6,7 @@ export const dot = (a: Vec, b: Vec) => a.reduce((sum, v, i) => sum + v * b[i], 0
 export const cross = (a: Vec, b: Vec): Vec => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
 export const norm = (v: Vec) => Math.hypot(...v);
 export const unit = (v: Vec): Vec => norm(v) > 1e-12 ? scale(v, 1 / norm(v)) : [0, 0, 0];
+/** Rotate a vector around an axis using Rodrigues' formula. */
 export function rotate(v: Vec, axis: Vec, angle: number): Vec {
   if (norm(axis) < 1e-12) return v;
   const a = unit(axis);
@@ -27,6 +28,7 @@ export type ElectronLayer = Exclude<keyof ElectronView, 'spinDisplay'>;
 export const DEFAULT_ELECTRON_VIEW: ElectronView = { dipoles: true, inspect: false, shells: true, faraday: true, electric: false, rotation: true, magnetic: true, intrinsic: false, radius: false, cutaway: false, reducedMotion: false, spinDisplay: DEFAULT_SPIN_DISPLAY };
 export type ElectronCommand = { type: 'run'; value: boolean } | { type: 'step' | 'advance' | 'reset' | 'ack' } | { type: 'seek'; tick: number } | { type: 'speed'; value: number } | { type: 'configure'; parameters: ElectronParameters } | { type: 'restore'; state: ElectronState };
 export type ElectronReply = { type: 'state'; state: ElectronSnapshot } | { type: 'error'; message: string };
+/** Validate electron experiment parameters and return a safe copy. */
 export function validateElectronParameters(value: unknown): ElectronParameters {
   if (!value || typeof value !== 'object') throw new Error('Missing electron parameters.');
   const p = value as ElectronParameters;
@@ -36,11 +38,13 @@ export function validateElectronParameters(value: unknown): ElectronParameters {
   }
   return { mode: p.mode, beta: p.beta, spin: p.spin, axis: p.axis, probeX: p.probeX, probeY: p.probeY, probeZ: p.probeZ };
 }
+/** Validate a serialized electron simulation state. */
 export function validateElectronState(value: unknown): ElectronState {
   const s = value as ElectronState;
   if (!s || s.model !== ELECTRON_MODEL || !Number.isInteger(s.tick) || s.tick < 0 || s.tick > ELECTRON_END) throw new Error('Invalid electron experiment state.');
   return { model: ELECTRON_MODEL, tick: s.tick, parameters: validateElectronParameters(s.parameters) };
 }
+/** Parse an electron experiment file and migrate supported older versions. */
 export function parseElectronFile(text: string): { state: ElectronState; view: ElectronView; migrated: boolean } {
   if (text.length > 100000) throw new Error('Electron files must be smaller than 100 KB.');
   const f = JSON.parse(text);
@@ -80,6 +84,7 @@ export const SAMPLES_PER_SHELL = 80;
 export const ELECTRON_SAMPLES = LATTICE_SAMPLES + SHELL_RADII.length * SAMPLES_PER_SHELL;
 /** Magnified display hypothesis; no radial rotation-rate law is supplied by Fleming. */
 export const spinRateAtRadius = (radius: number) => .12 / Math.max(.55, radius) ** 2;
+/** Return the fixed representative location for a lattice or shell sample. */
 export function sampleCentre(index: number): Vec {
   if (index >= LATTICE_SAMPLES) {
     const shell = Math.floor((index - LATTICE_SAMPLES) / SAMPLES_PER_SHELL), site = (index - LATTICE_SAMPLES) % SAMPLES_PER_SHELL;
@@ -88,6 +93,7 @@ export function sampleCentre(index: number): Vec {
   }
   return [(index % GRID_SIDE - GRID_HALF) * GRID_SPACING, (Math.floor(index / GRID_SIDE) % GRID_SIDE - GRID_HALF) * GRID_SPACING, (Math.floor(index / (GRID_SIDE ** 2)) - GRID_HALF) * GRID_SPACING];
 }
+/** Derive the representative dipole geometry and fields at a sample site. */
 export function dipoleAt(s: ElectronState, index: number) {
   const centre = sampleCentre(index), field = referenceFields(s, centre), inward = unit(field.electric);
   const lifetime = Math.PI * (.8 + (index % 11) / 25), cycles = s.tick * ELECTRON_DT / lifetime + (index * .61803398875) % 1;

@@ -3,6 +3,7 @@ import { dot, SHELL_RADII } from './model';
 import type { ElectronState, ElectronView, Vec } from './model';
 import { displayedDipole, localTurnArrow, sectionFrame, sectionIndices, SHELL_COLOURS, shellBand, shellSense } from './spinGeometry';
 
+/** Render the equatorial section linked to the three-dimensional spin shells. */
 export function SpinSection({ state, view, selected, onPick }: { state: ElectronState; view: ElectronView; selected: number | null; onPick: (id: number) => void }) {
   const titleId = useId(), descriptionId = useId();
   const settings = view.spinDisplay, [u, v] = sectionFrame(state.parameters.axis);

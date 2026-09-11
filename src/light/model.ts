@@ -16,6 +16,7 @@ export interface LightSnapshot extends LightState { running: boolean; speed: num
 export type LightCommand = { type: 'run'; value: boolean } | { type: 'step' | 'next' | 'reset' | 'ack' } | { type: 'speed'; value: number } | { type: 'configure'; parameters: LightParameters } | { type: 'seek'; tick: number } | { type: 'restore'; state: LightState };
 export type LightReply = { type: 'state'; state: LightSnapshot } | { type: 'error'; message: string };
 
+/** Validate light experiment parameters and return a safe copy. */
 export function validateLightParameters(value: unknown): LightParameters {
   if (!value || typeof value !== 'object') throw new Error('Missing light parameters.');
   const p = value as LightParameters;
@@ -26,6 +27,7 @@ export function validateLightParameters(value: unknown): LightParameters {
   if (p.direction !== 1 && p.direction !== -1) throw new Error('Direction must be +1 or −1.');
   return { wavelength: p.wavelength, polarization: p.polarization, phase: p.phase, direction: p.direction, offset: p.offset, probe: p.probe };
 }
+/** Validate a serialized light simulation state. */
 export function validateLightState(value: unknown): LightState {
   if (!value || typeof value !== 'object') throw new Error('Missing light state.');
   const s = value as LightState;
@@ -33,6 +35,7 @@ export function validateLightState(value: unknown): LightState {
   if (!Number.isInteger(s.tick) || s.tick < 0 || s.tick > LIGHT_END_TICK) throw new Error('Invalid light timeline position.');
   return { model: LIGHT_MODEL, tick: s.tick, parameters: validateLightParameters(s.parameters) };
 }
+/** Parse and validate a serialized light experiment file. */
 export function parseLightFile(text: string): { state: LightState; view: LightView } {
   if (text.length > 100_000) throw new Error('Light files must be smaller than 100 KB.');
   const f = JSON.parse(text);
@@ -47,6 +50,7 @@ export function parseLightFile(text: string): { state: LightState; view: LightVi
 export const hopTicks = (p: LightParameters) => Math.round(p.wavelength * 60);
 export const sourceX = (p: LightParameters) => p.offset - p.direction * 6;
 export const pairCount = (p: LightParameters) => Math.ceil(LIGHT_END_TICK / hopTicks(p));
+/** Compute the induced pair state for a handoff at the requested tick. */
 export function pairAt(p: LightParameters, tick: number, index: number) {
   const duration = hopTicks(p), progress = Math.max(0, Math.min(1, (tick - index * duration) / duration));
   const sense = index % 2 === 0 ? 1 : -1;
@@ -66,6 +70,7 @@ export function waveAt(p: LightParameters, time: number, x: number) {
   const electric = envelope * Math.cos(2 * Math.PI * local / p.wavelength + p.phase * Math.PI / 180);
   return { electric, magnetic: p.direction * electric, envelope };
 }
+/** Summarize the current light timeline, position, and energy allocation. */
 export function lightReadout(s: LightState) {
   const p = s.parameters, time = s.tick * LIGHT_DT, finished = s.tick === LIGHT_END_TICK;
   const index = Math.min(pairCount(p) - 1, Math.floor(s.tick / hopTicks(p)));

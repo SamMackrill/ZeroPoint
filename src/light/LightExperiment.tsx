@@ -9,6 +9,7 @@ import type { LightRenderer } from './LightRenderer';
 import { useLight } from './useLight';
 import './light.css';
 
+/** Render a compact normalized trace with an optional timeline marker. */
 function WavePlot({ values, label, start, end, marker }: { values: number[]; label: string; start: string; end: string; marker?: number }) {
   return <div className="light-plot"><svg viewBox="0 0 480 90" preserveAspectRatio="none" role="img" aria-label={label}>
     {[20, 45, 70].map(y => <line key={y} x1="0" y1={y} x2="480" y2={y} stroke="#29404c" strokeDasharray="3 5"/>)}
@@ -17,6 +18,7 @@ function WavePlot({ values, label, start, end, marker }: { values: number[]; lab
   </svg><div><span>{start}</span><span>Normalized E projection</span><span>{end}</span></div></div>;
 }
 
+/** Render and coordinate the light induction laboratory. */
 export function LightExperiment({ active, onBack }: { active: boolean; onBack: () => void }) {
   const { state, latest, sink, send, error, restart } = useLight(active);
   const [draft, setDraft] = useState<LightParameters>({ ...DEFAULT_LIGHT });
@@ -56,14 +58,18 @@ export function LightExperiment({ active, onBack }: { active: boolean; onBack: (
   const s = state ?? { model: LIGHT_MODEL, tick: 0, parameters: DEFAULT_LIGHT, running: false, speed: 1 };
   const p = s.parameters, d = lightReadout(s), inspected = pairAt(p, s.tick, selected ?? d.index);
   const ready = !!state && !error;
+  /** Apply the draft light parameters to a fresh paused sequence. */
   function configure() { send({ type: 'configure', parameters: draft }); setSelected(null); setNotice('Parameters applied. The light sequence is paused at its start.'); }
+  /** Move playback to an exact light timeline tick. */
   function seek(tick: number) { send({ type: 'seek', tick }); }
+  /** Download the current light experiment state. */
   function save() {
     if (!latest.current) return;
     const { model, tick, parameters } = latest.current;
     downloadFile(`zeropoint-light-tick-${tick}.json`, JSON.stringify({ format: 'zeropoint-light', version: 1, state: { model, tick, parameters }, view }), 'application/json');
     setNotice(`Saved the light sequence at tick ${tick}.`);
   }
+  /** Load and restore a light experiment file selected by the user. */
   async function load(file?: File) {
     if (!file) return;
     try {
@@ -74,6 +80,7 @@ export function LightExperiment({ active, onBack }: { active: boolean; onBack: (
     } catch (e) { setNotice(`Could not load: ${e instanceof Error ? e.message : String(e)}`); }
     finally { if (input.current) input.current.value = ''; }
   }
+  /** Export the full light handoff timeline as CSV. */
   function exportCSV() {
     const rows = ['tick,time_s,distance_m,excitation_x_L,handoffs,pair_energy_eV,field_energy_eV,departed_energy_eV,probe_E_normalized'];
     for (let tick = 0; tick <= LIGHT_END_TICK; tick++) { const r = lightReadout({ ...s, tick }); rows.push([tick, r.time * TIME_SECONDS, r.time * 250e-9, r.x, r.handoffs, r.pairEnergy, r.fieldEnergy, r.departedEnergy, r.probe.electric].join(',')); }

@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 // Includes software WebGL startup, full-page exports and repeated viewport reconstruction.
 test.describe.configure({ timeout: 60000 });
+/** Open the electron laboratory and optionally enable pair inspection. */
 async function openElectron(page: import('@playwright/test').Page, inspect = true) {
   await page.goto('/');
   if (page.viewportSize()!.width < 850) await page.getByRole('button', { name: 'Open experiment library' }).click();

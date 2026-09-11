@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ElectronCommand, ElectronReply, ElectronSnapshot } from './model';
+/** Manage the electron worker and expose its latest state to React. */
 export function useElectron(active: boolean) {
   const worker = useRef<Worker | null>(null), latest = useRef<ElectronSnapshot | null>(null);
   const sink = useRef<((s: ElectronSnapshot) => void) | null>(null);

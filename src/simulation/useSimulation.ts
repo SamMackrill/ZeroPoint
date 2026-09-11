@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DEFAULT_PARAMETERS, SNAPSHOT_STRIDE } from '../model/types';
 import type { Checkpoint, Command, Snapshot, WorkerReply } from '../model/types';
+/** Manage the medium worker lifecycle, snapshots, and checkpoint requests. */
 export function useSimulation() {
   const worker = useRef<Worker | null>(null), sink = useRef<((s: Snapshot) => void) | null>(null), latest = useRef<Snapshot | null>(null);
   const [state, setState] = useState<Snapshot | null>(null), [error, setError] = useState<string | null>(null), [revision, setRevision] = useState(0);

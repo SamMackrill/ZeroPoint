@@ -9,6 +9,7 @@ export function polarizationGrid(state: ElectronState): Vec[] {
   });
 }
 
+/** Trilinearly interpolate a polarization vector within the sample grid. */
 export function samplePolarization(grid: Vec[], point: Vec): Vec {
   const q = point.map(v => v / GRID_SPACING + GRID_HALF);
   if (q.some(v => v < 0 || v > GRID_SIDE - 1)) return [0, 0, 0];
@@ -40,6 +41,7 @@ export function tracePolarization(grid: Vec[], seed: Vec, core: Vec, steps = 160
   return points;
 }
 
+/** Build display Faraday lines from the current polarization field. */
 export function faradayLines(state: ElectronState, cutaway: boolean): Vec[][] {
   if (alignmentProgress(state) === 0) return [];
   const grid = polarizationGrid(state), core: Vec = [electronX(state), 0, 0];

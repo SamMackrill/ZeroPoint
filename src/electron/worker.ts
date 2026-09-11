@@ -3,12 +3,15 @@ import type { ElectronCommand, ElectronReply } from './model';
 const ctx = self as unknown as { postMessage: (reply: ElectronReply) => void; onmessage: (event: MessageEvent<ElectronCommand>) => void };
 const simulation = new ElectronSimulation();
 let running = false, speed = 1, accumulator = 0, last = performance.now(), sent = 0, outstanding = false, dirty = true;
+/** Publish the newest electron state while allowing only one outstanding update. */
 function emit() {
   if (outstanding) { dirty = true; return; }
   outstanding = true; dirty = false; sent = performance.now();
   ctx.postMessage({ type: 'state', state: { ...simulation.snapshot(), running, speed } });
 }
+/** Pause electron playback and clear accumulated wall-clock time. */
 function pause() { running = false; accumulator = 0; }
+/** Pause playback and report a worker failure to the application. */
 function fail(error: unknown) { pause(); ctx.postMessage({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
 ctx.onmessage = ({ data }) => {
   try {

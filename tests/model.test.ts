@@ -73,11 +73,13 @@ describe('untrusted experiment files', () => {
 });
 
 describe('fixed-centre pair motion', () => {
+  /** Create a single manually born pair for lifecycle assertions. */
   function fixture() {
     const m = new Medium(2026, { ...DEFAULT_PARAMETERS, birthRate: 0 }, false);
     m.birth(); m.particles[6] = 1; m.particles[7] = 0;
     return m;
   }
+  /** Capture the first pair's render snapshot at a specific tick. */
   function sample(m: Medium, tick: number) { m.tick = tick; const data = new Float32Array(CAPACITY * SNAPSHOT_STRIDE); m.snapshot(data); return data.slice(0, SNAPSHOT_STRIDE); }
   it('never translates surviving pair centres while its dipole direction rotates', () => {
     const m = new Medium(), before = new Float32Array(CAPACITY * SNAPSHOT_STRIDE), after = new Float32Array(CAPACITY * SNAPSHOT_STRIDE);

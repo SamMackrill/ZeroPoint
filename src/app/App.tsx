@@ -18,9 +18,11 @@ const presets = [
   { id: 'slow', title: 'Slow oscillations', description: 'Inspect longer-lived fluctuations', icon: Timer, params: { birthRate: 450, frequency: .3, separation: .4 } },
 ];
 const fmt = (n: number) => n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+/** Render an accessible boolean scene-layer control. */
 function Toggle({ label, checked, onChange, icon: Icon }: { label: string; checked: boolean; onChange: (value: boolean) => void; icon: typeof Eye }) {
   return <label className="toggle-row"><span><Icon size={15} />{label}</span><input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} /><span className="switch" aria-hidden="true" /></label>;
 }
+/** Plot recent medium population or energy diagnostics. */
 function Plot({ rows, mode }: { rows: Diagnostics[]; mode: 'population' | 'energy' }) {
   const values = rows.map(r => mode === 'population' ? r.active : r.fieldEnergy), max = Math.max(1, ...values) * 1.15;
   const start = rows[0]?.time ?? 0, end = rows.at(-1)?.time ?? start;
@@ -28,6 +30,7 @@ function Plot({ rows, mode }: { rows: Diagnostics[]; mode: 'population' | 'energ
   return <div className="plot"><div className="plot-scale"><span>{fmt(max)}</span><span>{fmt(max / 2)}</span><span>0</span></div><svg viewBox="0 0 800 100" preserveAspectRatio="none" role="img" aria-label={`${mode === 'population' ? 'Active dipole count' : 'Field energy in E₀'} over recent model time`}><defs><linearGradient id="plot-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#71d7b6" stopOpacity=".2"/><stop offset="100%" stopColor="#71d7b6" stopOpacity="0"/></linearGradient></defs>{[15, 52, 90].map(y => <line key={y} x1="0" y1={y} x2="800" y2={y} stroke="#23303c" strokeDasharray="3 5" />)}{rows.length > 1 && <><polygon points={`0,100 ${points} 800,100`} fill="url(#plot-fill)"/><polyline points={points} fill="none" stroke="#7bdab9" strokeWidth="1.7" vectorEffect="non-scaling-stroke"/></>}{rows.length < 2 && <text x="400" y="55" textAnchor="middle" fill="#8294a5" fontSize="13">Run or step the experiment to collect samples</text>}</svg><div className="plot-times"><span>{start.toFixed(2)} τ</span><span>{end.toFixed(2)} τ</span></div></div>;
 }
 
+/** Coordinate navigation between the medium, light, and electron laboratories. */
 export function App() {
   const [experiment, setExperiment] = useState<'medium' | 'light' | 'electron'>('medium');
   const [visitedLight, setVisitedLight] = useState(false), [visitedElectron, setVisitedElectron] = useState(false);
@@ -36,6 +39,7 @@ export function App() {
   return <><MediumApp active={experiment === 'medium'} onOpenLight={openLight} onOpenElectron={openElectron}/>{visitedLight && <LightExperiment active={experiment === 'light'} onBack={() => setExperiment('medium')}/>} {visitedElectron && <ElectronExperiment active={experiment === 'electron'} onBack={() => setExperiment('medium')}/>}</>;
 }
 
+/** Render and coordinate the medium lifecycle laboratory. */
 function MediumApp({ active, onOpenLight, onOpenElectron }: { active: boolean; onOpenLight: () => void; onOpenElectron: () => void }) {
   const sim = useSimulation(), { state, latest, sink, send, checkpoint } = sim;
   const host = useRef<HTMLDivElement>(null), viewport = useRef<FieldRenderer | null>(null), fileInput = useRef<HTMLInputElement>(null), dialog = useRef<HTMLDialogElement>(null);
@@ -80,10 +84,13 @@ function MediumApp({ active, onOpenLight, onOpenElectron }: { active: boolean; o
     window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
   }, [active, ready, latest, send]);
   const setOption = <K extends keyof ViewSettings>(key: K, value: ViewSettings[K]) => setView(v => ({ ...v, [key]: value }));
+  /** Apply a medium parameter change and mark the preset as custom. */
   function updateParameter(key: keyof Parameters, value: number) { const next = { ...parameters, [key]: value }; setParameters(next); send({ type: 'parameters', value: next }); setPreset('custom'); }
+  /** Reset the medium with validated seed and parameter values. */
   function reset(params = parameters, id = preset) {
     try { const n = validateSeed(Number(seed)); if (seed.trim() === '') throw new Error('Enter a numeric seed.'); send({ type: 'reset', seed: n, parameters: params }); setParameters(params); setPreset(id); setRows([]); viewport.current?.select(null); setNotice('Experiment reset to tick 0.'); setShowSidebar(false); } catch (error) { setNotice(String(error)); }
   }
+  /** Capture the worker state as an in-memory checkpoint or downloaded file. */
   async function save(kind: 'file' | 'checkpoint') {
     setBusy(true);
     try {
@@ -92,13 +99,17 @@ function MediumApp({ active, onOpenLight, onOpenElectron }: { active: boolean; o
       else { const file: ExperimentFile = { format: 'zeropoint-experiment', version: 1, savedAt: new Date().toISOString(), checkpoint: c, view: viewRef.current }; downloadFile(`zeropoint-${c.seed}-tick-${c.tick}.json`, JSON.stringify(file), 'application/json'); setNotice('Experiment saved with exact simulation state.'); }
     } catch (error) { setNotice(String(error)); } finally { setBusy(false); }
   }
+  /** Validate and restore a medium experiment file selected by the user. */
   async function importFile(file?: File) {
     if (!file) return; setBusy(true);
     try { if (file.size > 8 * 1024 * 1024) throw new Error('Experiment files must be smaller than 8 MB.'); const experiment = parseExperiment(await file.text()); send({ type: 'restore', checkpoint: experiment.checkpoint }); setParameters(experiment.checkpoint.parameters); setSeed(String(experiment.checkpoint.seed)); setView(experiment.view); setRows([]); setPreset('custom'); viewport.current?.select(null); setNotice(`Loaded tick ${experiment.checkpoint.tick}. The experiment is paused.`); }
     catch (error) { setNotice(`Could not load file: ${error instanceof Error ? error.message : String(error)}`); } finally { setBusy(false); if (fileInput.current) fileInput.current.value = ''; }
   }
+  /** Restore a captured medium checkpoint and synchronize the controls. */
   function restore(c: Checkpoint) { send({ type: 'restore', checkpoint: c }); setParameters(c.parameters); setSeed(String(c.seed)); setRows([]); setPreset('custom'); viewport.current?.select(null); setNotice(`Restored checkpoint at tick ${c.tick}.`); }
+  /** Export the collected medium diagnostic samples as CSV. */
   function exportCSV() { const heading = 'tick,time_tau,physical_time_s,active,births,deaths,rejected,field_energy_E0,reservoir_E0,residual_E0,parameter_version'; downloadFile('zeropoint-diagnostics.csv', heading + '\n' + rows.map(r => [r.tick, r.time, r.time / FREQUENCY_UNIT, r.active, r.births, r.deaths, r.rejected, r.fieldEnergy, r.reservoir, r.residual, r.parameterVersion].join(',')).join('\n'), 'text/csv'); setNotice('Recent diagnostic samples exported.'); }
+  /** Open the requested model or roadmap help content. */
   function showHelp(topic: 'model' | 'roadmap') { setHelpTopic(topic); dialog.current?.showModal(); }
 
   return <div className="app-shell" style={{ display: active ? undefined : 'none' }}>
@@ -138,4 +149,3 @@ function MediumApp({ active, onOpenLight, onOpenElectron }: { active: boolean; o
     <dialog ref={dialog} className="model-dialog" onClick={e => { if (e.target === dialog.current) dialog.current.close(); }}><button className="dialog-close icon-button" aria-label="Close model information" onClick={() => dialog.current?.close()}><X size={20}/></button><div className="dialog-eyebrow"><Atom size={18}/>ZEROPOINT / MODEL NOTES</div><h2>{helpTopic === 'model' ? 'What you are observing' : 'Beyond the medium'}</h2>{helpTopic === 'model' ? <><p>This is a reproducible, reduced visualization of the blueprint’s fluctuation lifecycle. It is not a complete ZPF force solver or experimental validation of the hypothesis.</p><div className="model-equations"><span>E = hf/2</span><span>Δt = 1/f</span><span>Efield + Ereservoir = constant</span></div><h3>The choices made in this version</h3><ul><li>A periodic 8 L₀ cube, at most 10,000 representative dipoles. The population is a finite sample, not a literal Planck-resolved medium.</li><li>Seeded Poisson births; frequencies uniform from 0.5–1.5 times the frequency centre. Existing dipoles keep their assigned frequency.</li><li>We identify ΔE with E and use the blueprint’s equality ΔE Δt = h/2, giving lifetime 1/f. This is an explicit model convention.</li><li>Every birth debits E from a bookkeeping reservoir; every death credits E. Each pair has a fixed centre. Its lobes rotate in opposite positions, separate smoothly to a maximum at midlife, and collapse together before disappearance. The chosen rotation rate and separation envelope are illustrative; no kinetic-energy law is asserted.</li><li>The energy slice bins live dipole energy in a 0.5 L₀ slab. It is not pressure or an emergent force.</li><li>At 1× playback, one wall-clock second represents one τ = 10⁻²⁰ physical seconds. Fixed ticks are 1/120 τ. Runs pause when the tab is hidden.</li></ul><p className="model-limits">Torque, emergent constants, stable shells, force propagation, exchange events and cosmology need additional equations and are not implemented in this release.</p></> : <><p>The medium laboratory, light induction sequence and electron polarization experiment are available. Further experiments and calculated force responses remain planned.</p><div className="roadmap-item"><span>02</span><div><h3>Electron polarization · available</h3><p>Explore a stationary electron, local spin rotation and a moving electron’s magnetic response. Calculated torque and pressure forces remain future work.</p><button className="text-button" onClick={() => { dialog.current?.close(); onOpenElectron(); }}>Open electron experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>03</span><div><h3>Casimir effect · planned</h3><p>Explore two conducting plates, adjustable separation, inside/outside field modes and force versus gap. Compare an ideal reference with a future zepton boundary model.</p><a className="text-button" href="./docs/planned-experiments/casimir-effect.md" target="_blank" rel="noreferrer">Read experiment plan <ChevronRight size={13}/></a></div></div><div className="roadmap-item"><span>04</span><div><h3>Light through the zero-point field · available</h3><p>Follow an energy wave through successive induced, counter-rotating electron–positron pairs. Inspect fixed pair centres, local separation and collapse, surrounding field response and each induction handoff.</p><a className="text-button" href="./docs/planned-experiments/light-through-zero-point.md" target="_blank" rel="noreferrer">Read light experiment plan <ChevronRight size={13}/></a><button className="text-button" onClick={() => { dialog.current?.close(); onOpenLight(); }}>Open light experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>05</span><div><h3>Particle shells</h3><p>Requires spectral cutoffs and shell-energy rules.</p></div></div><div className="roadmap-item"><span>06</span><div><h3>Exchange & cosmology</h3><p>Requires event maps, complete conservation ledgers and a tired-light loss law.</p></div></div></>}<div className="dialog-links"><a href="./docs/model-specification.md" target="_blank" rel="noreferrer">Read model specification <ChevronRight size={14}/></a><a href="./docs/simulation-plan.html" target="_blank" rel="noreferrer">Full development plan <ChevronRight size={14}/></a></div></dialog>
   </div>;
 }
-

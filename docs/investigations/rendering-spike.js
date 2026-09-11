@@ -27,6 +27,7 @@ try {
   const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true;
   new ResizeObserver(() => { const w=viewport.clientWidth,h=viewport.clientHeight; renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix(); if(sampling) invalid=true; }).observe(viewport);
   let seed = 2026;
+  /** Return the next deterministic pseudo-random sample for the benchmark. */
   function random(){seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;}
   const base = new Float32Array(count*4);
   for(let i=0;i<count;i++){base[i*4]=(random()-.5)*12;base[i*4+1]=(random()-.5)*8;base[i*4+2]=(random()-.5)*12;base[i*4+3]=random()*Math.PI*2;}
@@ -50,6 +51,7 @@ try {
   status.textContent=`Ready · ${actualBackend} · ${count.toLocaleString()} dipoles · ${mode}`;
   measure.disabled=false;
   measure.onclick=()=>{samples=[];started=performance.now();prior=0;invalid=document.hidden;sampling=true;measure.disabled=true;download.disabled=true;delete window.spikeResult;status.textContent='Measuring: 1 second warmup + 5 seconds sample…';watchdog=setTimeout(()=>{if(sampling){sampling=false;measure.disabled=false;status.textContent='Measurement invalid: animation callbacks stalled. Keep the page visible and repeat.';window.spikeResult={...metadata,valid:false,reason:'Animation callbacks stalled',frames:samples.length};}},12000);};
+  /** Finalize benchmark statistics and expose the downloadable report. */
   function finish(){
     sampling=false;measure.disabled=false;clearTimeout(watchdog);
     const sorted=[...samples].sort((a,b)=>a-b),mean=samples.reduce((a,b)=>a+b,0)/samples.length;
@@ -57,6 +59,7 @@ try {
     document.querySelector('#report').textContent=JSON.stringify(window.spikeResult,null,2);download.disabled=false;
     status.textContent=invalid?'Measurement invalid: visibility or viewport changed. Repeat.':'Measurement complete. Compare only on this device and viewport.';
   }
+  /** Draw one benchmark frame and collect timing samples when active. */
   function draw(now=performance.now()){
     window.spikeDiagnostics.frames++;
     window.spikeDiagnostics.lastTime=now;

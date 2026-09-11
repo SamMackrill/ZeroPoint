@@ -15,6 +15,7 @@ const headers = { Authorization: `Bearer ${credentials}`, 'Content-Type': 'appli
 const cachePath = join(root, '.herenow', 'state.json');
 const cache = JSON.parse(await readFile(cachePath, 'utf8').catch(() => '{"publishes":{}}'));
 
+/** Send an authenticated request to the configured here.now API origin. */
 async function request(url, method = 'GET', body) {
   // Credentials only go to the known API host; upload targets receive file bytes alone.
   if (new URL(url).origin !== 'https://here.now') throw new Error('Unexpected API destination.');
@@ -29,6 +30,7 @@ const previous = cache.publishes?.[config.slug]?.versionId;
 if (previous && previous !== live.currentVersionId) throw new Error(`The live site changed since this checkout last published (${live.currentVersionId}, source ${live.currentVersionSource}). Read and reconcile the live files before updating the local deployment cache.`);
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.md': 'text/plain; charset=utf-8', '.pdf': 'application/pdf', '.png': 'image/png', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.woff': 'font/woff', '.woff2': 'font/woff2' };
 const files = new Map();
+/** Recursively collect publishable files under the production output directory. */
 async function collect(directory, prefix = '') {
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     if (entry.name.startsWith('.')) continue;

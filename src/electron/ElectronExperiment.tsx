@@ -19,6 +19,7 @@ const modes: { id: ElectronMode; title: string; subtitle: string; description: s
 ];
 const vector = (v: number[]) => v.map(n => Math.abs(n) < 1e-9 ? '0' : n.toFixed(4)).join(', ');
 
+/** Render and coordinate the electron polarization laboratory. */
 export function ElectronExperiment({ active, onBack }: { active: boolean; onBack: () => void }) {
   const { state, latest, sink, send, error, restart } = useElectron(active);
   const [draft, setDraft] = useState({ ...DEFAULT_ELECTRON }), [view, setView] = useState<ElectronView>(() => ({ ...DEFAULT_ELECTRON_VIEW, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
@@ -52,25 +53,30 @@ export function ElectronExperiment({ active, onBack }: { active: boolean; onBack
   const s = state ?? { model: ELECTRON_MODEL, tick: 0, parameters: DEFAULT_ELECTRON, running: false, speed: 1 };
   const p = s.parameters, mode = modes.find(m => m.id === p.mode)!, time = s.tick * ELECTRON_DT, ready = !!state && !error, finished = s.tick === ELECTRON_END;
   const field = referenceFields(s, probePosition(p)), picked = !view.inspect || selected === null ? null : displayedDipole(s, selected, view.spinDisplay), flux = enclosedCharge(s, 2);
+  /** Switch to a fresh paused run for the selected electron mode. */
   function changeMode(id: ElectronMode) {
     const next = { ...p, mode: id }; setDraft(next); send({ type: 'configure', parameters: next });
     setView(v => ({ ...v, intrinsic: false, faraday: id !== 'spin', radius: false, cutaway: false, shells: id === 'spin' ? true : v.shells })); setCamera(id === 'spin' ? 'shell' : 'orbit'); setNotice('View changed. The sequence is paused at its start.');
   }
+  /** Download the current electron experiment state. */
   function save() {
     if (!latest.current) return; const { model, tick, parameters } = latest.current;
     downloadFile(`zeropoint-electron-${p.mode}-tick-${tick}.json`, JSON.stringify({ format: 'zeropoint-electron', version: 3, state: { model, tick, parameters }, view }), 'application/json'); setNotice(`Saved electron state at tick ${tick}.`);
   }
+  /** Load and restore an electron experiment file selected by the user. */
   async function load(file?: File) {
     if (!file) return;
     try { if (file.size > 100000) throw new Error('File exceeds 100 KB.'); const saved = parseElectronFile(await file.text()); send({ type: 'restore', state: saved.state }); setDraft(saved.state.parameters); setView(saved.view); setNotice(`Loaded electron tick ${saved.state.tick}. Playback is paused.${saved.migrated ? ' Updated an older experiment to the cubic medium and revised polarization sequence.' : ''}`); }
     catch (e) { setNotice(`Could not load: ${e instanceof Error ? e.message : String(e)}`); }
     finally { if (input.current) input.current.value = ''; }
   }
+  /** Export the electron reference-field timeline as CSV. */
   function csv() {
     const rows = ['tick,time_s,electron_x_R,beta,probe_valid,Ex_E0,Ey_E0,Ez_E0,Bmotion_x_B0,Bmotion_y_B0,Bmotion_z_B0,Bspin_x_B0,Bspin_y_B0,Bspin_z_B0'];
     for (let tick = 0; tick <= ELECTRON_END; tick += 12) { const st = { ...s, tick }, f = referenceFields(st, probePosition(p)); rows.push([tick, tick * ELECTRON_DT * TAU, electronX(st), velocity(p), f.valid, ...(f.valid ? [...f.electric, ...f.motion, ...f.intrinsic] : Array(9).fill(''))].join(',')); }
     downloadFile('zeropoint-electron-reference-sequence.csv', rows.join('\n'), 'text/csv'); setNotice('Exported the full analytic reference sequence, including future samples and the separate intrinsic-dipole reference.');
   }
+  /** Select the displayed sample nearest to the configured probe. */
   function inspectProbe() { const shell = view.shells && p.mode === 'spin'; let best = shell ? LATTICE_SAMPLES : 0, distance = Infinity; for (let i = best; i < (shell ? LATTICE_SAMPLES + view.spinDisplay.count * SAMPLES_PER_SHELL : LATTICE_SAMPLES); i++) { const c = shellCentre(i, p.axis), r = Math.hypot(c[0] - p.probeX, c[1] - p.probeY, c[2] - p.probeZ); if (r < distance) { best = i; distance = r; } } setSelected(best); }
   const traces = Array.from({ length: 161 }, (_, i) => { const f = referenceFields({ ...s, tick: Math.round(s.tick * i / 160) }, probePosition(p)); return f.valid ? [f.electric[1], f.motion[2], p.mode === 'electric' ? 0 : f.intrinsic[2]] : null; });
   const max = Math.max(.01, ...traces.flatMap(v => v?.map(Math.abs) ?? []));

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LightCommand, LightReply, LightSnapshot } from './model';
+/** Manage the light worker and expose its latest state to React. */
 export function useLight(active: boolean) {
   const worker = useRef<Worker | null>(null), latest = useRef<LightSnapshot | null>(null);
   const sink = useRef<((s: LightSnapshot) => void) | null>(null);

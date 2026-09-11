@@ -33,6 +33,7 @@ export type WorkerReply =
 export interface ViewSettings { representation: 'dipoles' | 'points'; medium: boolean; bounds: boolean; slice: boolean; sliceZ: number; reducedMotion: boolean }
 export const DEFAULT_VIEW: ViewSettings = { representation: 'dipoles', medium: true, bounds: true, slice: false, sliceZ: 0, reducedMotion: false };
 export interface ExperimentFile { format: 'zeropoint-experiment'; version: 1; savedAt: string; checkpoint: Checkpoint; view: ViewSettings }
+/** Validate medium parameters and return a safe copy. */
 export function validateParameters(value: unknown): Parameters {
   if (!value || typeof value !== 'object') throw new Error('Parameters must be an object.');
   const p = value as Parameters;
@@ -41,4 +42,5 @@ export function validateParameters(value: unknown): Parameters {
   }
   return { birthRate: p.birthRate, frequency: p.frequency, separation: p.separation };
 }
+/** Validate a deterministic simulation seed. */
 export function validateSeed(seed: number) { if (!Number.isInteger(seed) || seed < 0 || seed > 0xffffffff) throw new Error('Seed must be an integer from 0 to 4294967295.'); return seed; }

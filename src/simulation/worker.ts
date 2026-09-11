@@ -6,6 +6,7 @@ const ctx = self as unknown as { postMessage: (reply: WorkerReply, transfer?: Tr
 let model: Medium | undefined, running = false, speed = 1, accumulator = 0, lastTime = performance.now(), stepMs = 0, lastSend = 0;
 // Two owned buffers. Returned buffers are recycled; no unbounded snapshot queue.
 const pool = [new ArrayBuffer(CAPACITY * SNAPSHOT_STRIDE * 4), new ArrayBuffer(CAPACITY * SNAPSHOT_STRIDE * 4)];
+/** Publish the latest simulation snapshot using an available transfer buffer. */
 function emit() {
   if (!model || !pool.length) return;
   const buffer = pool.pop()!, count = model.snapshot(new Float32Array(buffer));

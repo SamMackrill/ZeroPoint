@@ -1,6 +1,7 @@
 import { CAPACITY, DEFAULT_PARAMETERS, DEFAULT_VIEW, DT, MAX_TICK, MODEL_VERSION, STATE_STRIDE, validateParameters, validateSeed } from '../model/types';
 import type { Checkpoint, ExperimentFile, ViewSettings } from '../model/types';
 const integer = (n: unknown, max = Number.MAX_SAFE_INTEGER): n is number => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 && n <= max;
+/** Validate and, when necessary, migrate a serialized medium checkpoint. */
 export function validateCheckpoint(value: unknown): Checkpoint {
   if (!value || typeof value !== 'object') throw new Error('Missing checkpoint.');
   let c = value as Checkpoint;
@@ -36,12 +37,14 @@ export function validateCheckpoint(value: unknown): Checkpoint {
   if (legacy) c = { ...c, events: [...c.events, { tick: c.tick, kind: 'restored' as const, text: 'Upgraded to fixed-centre rotation and pair separation; legacy translational jitter removed.' }].slice(-100) };
   return c;
 }
+/** Validate persisted renderer settings, falling back to defaults when absent. */
 export function validateView(value: unknown): ViewSettings {
   if (!value || typeof value !== 'object') return { ...DEFAULT_VIEW };
   const v = value as ViewSettings;
   if (!['dipoles', 'points'].includes(v.representation) || ['medium', 'bounds', 'slice', 'reducedMotion'].some(k => typeof v[k as keyof ViewSettings] !== 'boolean') || !Number.isFinite(v.sliceZ) || v.sliceZ < -4 || v.sliceZ > 4) throw new Error('Invalid view settings.');
   return { ...v };
 }
+/** Parse and validate a serialized medium experiment file. */
 export function parseExperiment(text: string): ExperimentFile {
   if (text.length > 8 * 1024 * 1024) throw new Error('Experiment files must be smaller than 8 MB.');
   let file: ExperimentFile;
@@ -49,6 +52,7 @@ export function parseExperiment(text: string): ExperimentFile {
   if (!file || file.format !== 'zeropoint-experiment' || file.version !== 1) throw new Error('Unsupported experiment file format.');
   return { format: file.format, version: 1, savedAt: typeof file.savedAt === 'string' ? file.savedAt : '', checkpoint: validateCheckpoint(file.checkpoint), view: validateView(file.view) };
 }
+/** Download generated experiment or diagnostic content through the browser. */
 export function downloadFile(name: string, body: BlobPart, type: string) {
   const url = URL.createObjectURL(new Blob([body], { type })); const a = document.createElement('a'); a.href = url; a.download = name; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

@@ -4,9 +4,11 @@ import type { ElectronParameters, ElectronState, SpinDisplay, Vec } from './mode
 export const SHELL_COLOURS = ['#f4c783', '#bda7ff', '#8ed9c3', '#ed9cbb'];
 export const shellBand = (index: number) => Math.floor((index - LATTICE_SAMPLES) / SAMPLES_PER_SHELL);
 // Right-handed section coordinates: viewed from +axis, U is right and V is up.
+/** Return a right-handed section frame for the selected spin axis. */
 export function sectionFrame(axis: ElectronParameters['axis']): [Vec, Vec, Vec] {
   return axis === 'x' ? [[0, 1, 0], [0, 0, 1], [1, 0, 0]] : axis === 'y' ? [[0, 0, 1], [1, 0, 0], [0, 1, 0]] : [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
 }
+/** Orient a shell sample centre to the selected spin axis. */
 export function shellCentre(index: number, axis: ElectronParameters['axis']): Vec {
   if (index < LATTICE_SAMPLES) return sampleCentre(index);
   const [u, v, n] = sectionFrame(axis), c = sampleCentre(index);
@@ -46,6 +48,7 @@ export function localTurnArrow(d: ReturnType<typeof displayedDipole>): Vec[] {
   return [...points, add(add(end, scale(tangent, -.045)), scale(radial, .025)), end, add(add(end, scale(tangent, -.045)), scale(radial, -.025))];
 }
 
+/** Return the equatorial sample indices for the requested shell count. */
 export function sectionIndices(count: number) {
   return Array.from({ length: count * 16 }, (_, i) => LATTICE_SAMPLES + Math.floor(i / 16) * SAMPLES_PER_SHELL + 32 + i % 16);
 }
