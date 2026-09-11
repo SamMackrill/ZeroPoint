@@ -11,7 +11,7 @@ export function rotate(v: Vec, axis: Vec, angle: number): Vec {
   const a = unit(axis);
   return add(add(scale(v, Math.cos(angle)), scale(cross(a, v), Math.sin(angle))), scale(a, dot(a, v) * (1 - Math.cos(angle))));
 }
-export const ELECTRON_MODEL = 'electron-polarization/2';
+export const ELECTRON_MODEL = 'electron-polarization/3';
 export const ELECTRON_DT = 1 / 120, ELECTRON_END = 5760, CORE_MASK = .3;
 export const C = 299792458, RADIUS = 2.42631023538e-12 / 2, TAU = RADIUS / C;
 export const ALPHA = 7.2973525643e-3, G_FACTOR = 2.00231930436;
@@ -20,8 +20,8 @@ export interface ElectronParameters { mode: ElectronMode; beta: number; spin: 1 
 export const DEFAULT_ELECTRON: ElectronParameters = { mode: 'electric', beta: .15, spin: 1, axis: 'z', probeX: 0, probeY: 1.8, probeZ: 0 };
 export interface ElectronState { model: typeof ELECTRON_MODEL; tick: number; parameters: ElectronParameters }
 export interface ElectronSnapshot extends ElectronState { running: boolean; speed: number }
-export interface ElectronView { dipoles: boolean; shells: boolean; faraday: boolean; electric: boolean; rotation: boolean; magnetic: boolean; intrinsic: boolean; radius: boolean; cutaway: boolean; reducedMotion: boolean }
-export const DEFAULT_ELECTRON_VIEW: ElectronView = { dipoles: true, shells: true, faraday: true, electric: false, rotation: true, magnetic: true, intrinsic: false, radius: true, cutaway: true, reducedMotion: false };
+export interface ElectronView { dipoles: boolean; inspect: boolean; shells: boolean; faraday: boolean; electric: boolean; rotation: boolean; magnetic: boolean; intrinsic: boolean; radius: boolean; cutaway: boolean; reducedMotion: boolean }
+export const DEFAULT_ELECTRON_VIEW: ElectronView = { dipoles: true, inspect: false, shells: true, faraday: true, electric: false, rotation: true, magnetic: true, intrinsic: false, radius: false, cutaway: false, reducedMotion: false };
 export type ElectronCommand = { type: 'run'; value: boolean } | { type: 'step' | 'advance' | 'reset' | 'ack' } | { type: 'seek'; tick: number } | { type: 'speed'; value: number } | { type: 'configure'; parameters: ElectronParameters } | { type: 'restore'; state: ElectronState };
 export type ElectronReply = { type: 'state'; state: ElectronSnapshot } | { type: 'error'; message: string };
 export function validateElectronParameters(value: unknown): ElectronParameters {
@@ -41,18 +41,20 @@ export function validateElectronState(value: unknown): ElectronState {
 export function parseElectronFile(text: string): { state: ElectronState; view: ElectronView; migrated: boolean } {
   if (text.length > 100000) throw new Error('Electron files must be smaller than 100 KB.');
   const f = JSON.parse(text);
-  if (f?.format !== 'zeropoint-electron' || ![1, 2].includes(f.version)) throw new Error('Choose a ZeroPoint electron experiment file.');
-  const migrated = f.version === 1 && f.state?.model === 'electron-polarization/1';
-  if (!migrated && f.version !== 2) throw new Error('Incompatible electron file version.');
+  if (f?.format !== 'zeropoint-electron' || ![1, 2, 3].includes(f.version)) throw new Error('Choose a ZeroPoint electron experiment file.');
+  const migrated = [1, 2].includes(f.version) && f.state?.model === `electron-polarization/${f.version}`;
+  if (!migrated && f.version !== 3) throw new Error('Incompatible electron file version.');
   const state = validateElectronState(migrated ? { ...f.state, model: ELECTRON_MODEL } : f.state), view = { ...DEFAULT_ELECTRON_VIEW };
-  for (const k of Object.keys(view) as (keyof ElectronView)[]) { if (migrated && k === 'shells') continue; if (typeof f.view?.[k] !== 'boolean') throw new Error(`Invalid ${k} layer.`); view[k] = f.view[k]; }
+  for (const k of Object.keys(view) as (keyof ElectronView)[]) { if (migrated && (k === 'inspect' || (f.version === 1 && k === 'shells'))) continue; if (typeof f.view?.[k] !== 'boolean') throw new Error(`Invalid ${k} layer.`); view[k] = f.view[k]; }
   return { state, view, migrated };
 }
 export const velocity = (p: ElectronParameters) => p.mode === 'moving' ? p.beta : 0;
 export const electronX = (s: ElectronState) => velocity(s.parameters) * (s.tick * ELECTRON_DT - 24);
 export const spinAxis = (p: ElectronParameters): Vec => p.axis === 'x' ? [1, 0, 0] : p.axis === 'y' ? [0, 1, 0] : [0, 0, 1];
 export const probePosition = (p: ElectronParameters): Vec => [p.probeX, p.probeY, p.probeZ];
-export const alignmentProgress = (s: ElectronState) => s.parameters.mode === 'electric' ? Math.min(1, s.tick * ELECTRON_DT / 3) : 1;
+const smooth = (x: number) => { const t = Math.max(0, Math.min(1, x)); return t * t * (3 - 2 * t); };
+export const electronPresence = (s: ElectronState) => s.parameters.mode === 'electric' ? smooth(s.tick * ELECTRON_DT / .35) : 1;
+export const alignmentProgress = (s: ElectronState, radius = 0) => s.parameters.mode === 'electric' ? smooth((s.tick * ELECTRON_DT - .35 - .08 * radius) / (2.65 - .08 * radius)) : 1;
 /** Analytic reference: a uniformly moving negative point charge; no acceleration/radiation. */
 export function referenceFields(s: ElectronState, point: Vec) {
   const r: Vec = [point[0] - electronX(s), point[1], point[2]], radius = norm(r), beta = velocity(s.parameters);
@@ -65,7 +67,8 @@ export function referenceFields(s: ElectronState, point: Vec) {
   return { valid, radius, electric, motion, intrinsic };
 }
 // World-fixed representative sample. Replacement generations reuse a location, never advect it.
-export const LATTICE_SAMPLES = 19 * 9 * 7;
+export const GRID_SIDE = 13, GRID_SPACING = .8, GRID_HALF = 6;
+export const LATTICE_SAMPLES = GRID_SIDE ** 3;
 export const SHELL_RADII = [.6, 1.1, 1.8, 2.8] as const;
 export const SAMPLES_PER_SHELL = 80;
 export const ELECTRON_SAMPLES = LATTICE_SAMPLES + SHELL_RADII.length * SAMPLES_PER_SHELL;
@@ -77,7 +80,7 @@ export function sampleCentre(index: number): Vec {
     const z = (Math.floor(site / 16) - 2) * .36, r = Math.sqrt(1 - z * z), a = (site % 16) * Math.PI / 8;
     return scale([r * Math.cos(a), r * Math.sin(a), z], SHELL_RADII[shell]);
   }
-  return [(index % 19 - 9) * .6, (Math.floor(index / 19) % 9 - 4) * .8, (Math.floor(index / 171) - 3) * .8];
+  return [(index % GRID_SIDE - GRID_HALF) * GRID_SPACING, (Math.floor(index / GRID_SIDE) % GRID_SIDE - GRID_HALF) * GRID_SPACING, (Math.floor(index / (GRID_SIDE ** 2)) - GRID_HALF) * GRID_SPACING];
 }
 export function dipoleAt(s: ElectronState, index: number) {
   const centre = sampleCentre(index), field = referenceFields(s, centre), inward = unit(field.electric);
@@ -91,8 +94,10 @@ export function dipoleAt(s: ElectronState, index: number) {
   let direction = rotate(inward, localAxis, spinTurn * (u - .5));
   direction = rotate(direction, motionAxis, -motionTurn * (1 - u));
   if (s.parameters.mode === 'electric') {
-    const initialAxis = unit(cross(inward, index % 2 ? [1, .3, .2] : [.2, 1, .3]));
-    direction = rotate(direction, initialAxis, ((index * 2.399963) % (2 * Math.PI) - Math.PI) * (1 - alignmentProgress(s)));
+    const z = 1 - 2 * ((index * .7548776662466927 + .31) % 1), angle = index * 2.399963229728653;
+    const initial: Vec = [Math.sqrt(1 - z * z) * Math.cos(angle), Math.sqrt(1 - z * z) * Math.sin(angle), z];
+    const axis = unit(cross(initial, inward)), progress = alignmentProgress(s, field.radius);
+    direction = norm(inward) ? rotate(initial, norm(axis) ? axis : unit(cross(initial, [1, .2, .3])), Math.acos(Math.max(-1, Math.min(1, dot(initial, inward)))) * progress) : initial;
   }
   const separation = .22 * lifecycleEnvelope(u, 1);
   // Rotation-only lobe velocity; excludes the separately illustrated radial separation/collapse.

@@ -1,11 +1,33 @@
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-async function openElectron(page: import('@playwright/test').Page) {
+// Includes software WebGL startup, full-page exports and repeated viewport reconstruction.
+test.describe.configure({ timeout: 60000 });
+async function openElectron(page: import('@playwright/test').Page, inspect = true) {
   await page.goto('/');
   if (page.viewportSize()!.width < 850) await page.getByRole('button', { name: 'Open experiment library' }).click();
   await page.getByRole('button', { name: /Polarization, spin & motion/ }).click();
   await expect(page.getByRole('button', { name: 'Run electron', exact: true })).toBeEnabled();
+  if (inspect) await page.getByLabel('Zepton selector', { exact: true }).check();
 }
+test('stationary electron begins absent in a cube with selection opt-in and resolving 3D lines', async ({ page }) => {
+  await openElectron(page, false);
+  await expect(page.getByLabel('Zepton selector', { exact: true })).not.toBeChecked();
+  await expect(page.getByLabel('Central slab cutaway', { exact: true })).not.toBeChecked();
+  await expect(page.getByText('Unpolarized ZPF · electron not yet introduced', { exact: true })).toBeVisible();
+  await expect(page.getByTestId('electron-pair-centre')).toHaveCount(0);
+  await page.locator('.light-viewport-shell').screenshot({ path: 'test-results/electron-cube-initial.png' });
+  await page.getByRole('slider', { name: 'Electron timeline' }).fill('80');
+  await expect(page.getByTestId('electron-tick')).toContainText('Tick 80');
+  await page.locator('.light-viewport-shell').screenshot({ path: 'test-results/electron-cube-forming.png' });
+  await page.getByRole('button', { name: 'Show fully aligned field' }).click();
+  await page.locator('.light-viewport-shell').screenshot({ path: 'test-results/electron-cube-aligned.png' });
+  await page.getByLabel('Zepton selector', { exact: true }).check();
+  await expect(page.getByTestId('electron-pair-centre')).toBeVisible();
+  await page.getByLabel('Zepton selector', { exact: true }).uncheck();
+  await expect(page.getByTestId('electron-pair-centre')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await expect(page.getByText('Unpolarized ZPF · electron not yet introduced', { exact: true })).toBeVisible();
+});
 test('spin shells reveal counter-motion, radial falloff, full 3D and migrated files', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await openElectron(page); await page.getByRole('button', { name: /Spin in the surrounding field/ }).click();
@@ -27,10 +49,10 @@ test('spin shells reveal counter-motion, radial falloff, full 3D and migrated fi
   await expect(page.locator('.electron-positive')).toContainText('↺');
   const download = page.waitForEvent('download'); await page.getByRole('button', { name: 'Save electron', exact: true }).click();
   const saved = JSON.parse(await readFile((await (await download).path())!, 'utf8'));
-  expect(saved.version).toBe(2); expect(saved.state.model).toBe('electron-polarization/2');
+  expect(saved.version).toBe(3); expect(saved.state.model).toBe('electron-polarization/3');
   saved.version = 1; saved.state.model = 'electron-polarization/1'; delete saved.view.shells;
   await page.getByLabel('Import electron experiment').setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(saved)) });
-  await expect(page.getByRole('status', { name: 'Electron experiment status' })).toContainText('Updated version 1');
+  await expect(page.getByRole('status', { name: 'Electron experiment status' })).toContainText('Updated an older experiment');
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: 'Shell close-up', exact: true }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -79,7 +101,7 @@ test('electron stages, Faraday layers, replay and files preserve fixed centres',
 test('electron mobile layers, masked probe and exports work', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 }); await openElectron(page);
   await page.getByRole('button', { name: 'Show fully aligned field' }).click();
-  await page.getByLabel('Central slab cutaway', { exact: true }).uncheck();
+  await expect(page.getByLabel('Central slab cutaway', { exact: true })).not.toBeChecked();
   await page.getByLabel('Reduced flashing & camera motion').check();
   await expect(page.getByTestId('electron-tick')).toContainText('Tick 360');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

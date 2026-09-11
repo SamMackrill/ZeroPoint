@@ -1,10 +1,29 @@
 import { describe, expect, it } from 'vitest';
-import { CORE_MASK, DEFAULT_ELECTRON, DEFAULT_ELECTRON_VIEW, ELECTRON_MODEL, LATTICE_SAMPLES, SAMPLES_PER_SHELL, ElectronSimulation, add, dipoleAt, dot, electronX, enclosedCharge, norm, parseElectronFile, referenceFields, sampleCentre, scale, spinRateAtRadius, unit } from '../src/electron/model';
+import { CORE_MASK, DEFAULT_ELECTRON, DEFAULT_ELECTRON_VIEW, ELECTRON_MODEL, GRID_SIDE, GRID_SPACING, LATTICE_SAMPLES, SAMPLES_PER_SHELL, ElectronSimulation, add, alignmentProgress, electronPresence, dipoleAt, dot, electronX, enclosedCharge, norm, parseElectronFile, referenceFields, sampleCentre, scale, spinRateAtRadius, unit } from '../src/electron/model';
 import type { ElectronMode, ElectronState, Vec } from '../src/electron/model';
 import { faradayLines, polarizationGrid, samplePolarization, tracePolarization } from '../src/electron/fieldLines';
 const state = (mode: ElectronMode = 'electric', tick = 360): ElectronState => ({ model: ELECTRON_MODEL, tick, parameters: { ...DEFAULT_ELECTRON, mode } });
 
 describe('electron polarization experiment', () => {
+  it('starts unpolarized in a cube, introduces the electron, then resolves a 3D field', () => {
+    const initial = state('electric', 0), middle = state('electric', 60), end = state('electric', 360);
+    expect(DEFAULT_ELECTRON_VIEW.inspect).toBe(false); expect(DEFAULT_ELECTRON_VIEW.cutaway).toBe(false);
+    expect(electronPresence(initial)).toBe(0); expect(electronPresence(middle)).toBe(1);
+    expect(alignmentProgress(initial)).toBe(0);
+    expect(alignmentProgress(middle, .8)).toBeGreaterThan(alignmentProgress(middle, 4.8));
+    for (const radius of [0, 1, 4, 8.4]) expect(alignmentProgress(end, radius)).toBe(1);
+    const points = Array.from({ length: LATTICE_SAMPLES }, (_, i) => sampleCentre(i));
+    for (let axis = 0; axis < 3; axis++) {
+      expect(new Set(points.map(p => p[axis])).size).toBe(GRID_SIDE);
+      expect(Math.max(...points.map(p => p[axis])) - Math.min(...points.map(p => p[axis]))).toBeCloseTo((GRID_SIDE - 1) * GRID_SPACING);
+    }
+    const mean = points.reduce((sum, _p, i) => add(sum, dipoleAt(initial, i).direction), [0, 0, 0] as Vec);
+    expect(norm(mean) / LATTICE_SAMPLES).toBeLessThan(.025);
+    expect(faradayLines(initial, false)).toEqual([]);
+    const lines = faradayLines(end, false);
+    expect(lines).toHaveLength(40);
+    expect(lines.filter(line => Math.abs(line[0][2]) > .1).length).toBeGreaterThan(20);
+  });
   it('uses a capped inverse-square display rate with opposite charge-layer tangents', () => {
     expect(spinRateAtRadius(1) / spinRateAtRadius(2)).toBeCloseTo(4);
     expect(spinRateAtRadius(.6) / spinRateAtRadius(2.8)).toBeCloseTo(21.7777777778);
@@ -30,6 +49,9 @@ describe('electron polarization experiment', () => {
     const legacy = { format: 'zeropoint-electron', version: 1, state: { ...state('spin'), model: 'electron-polarization/1' }, view: oldView };
     const migrated = parseElectronFile(JSON.stringify(legacy));
     expect(migrated.migrated).toBe(true); expect(migrated.state.model).toBe(ELECTRON_MODEL); expect(migrated.state.tick).toBe(360); expect(migrated.view.shells).toBe(true);
+    const { inspect: _inspect, ...v2View } = DEFAULT_ELECTRON_VIEW;
+    const v2 = parseElectronFile(JSON.stringify({ ...legacy, version: 2, state: { ...state('electric'), model: 'electron-polarization/2' }, view: v2View }));
+    expect(v2.migrated).toBe(true); expect(v2.view.inspect).toBe(false);
     expect(() => parseElectronFile(JSON.stringify({ ...legacy, version: 2 }))).toThrow();
     expect(() => parseElectronFile(JSON.stringify({ ...legacy, version: 2, state: state('spin'), view: { ...DEFAULT_ELECTRON_VIEW, shells: 'yes' } }))).toThrow();
   });
@@ -45,7 +67,7 @@ describe('electron polarization experiment', () => {
   });
   it('aligns positive ends toward the electron and preserves inverse-square flux', () => {
     const s = state();
-    for (let i = 0; i < 1197; i++) {
+    for (let i = 0; i < LATTICE_SAMPLES; i++) {
       const d = dipoleAt(s, i); if (!d.field.valid) continue;
       expect(dot(d.direction, unit(scale(d.centre, -1)))).toBeCloseTo(1, 12);
       expect(norm(d.positive)).toBeLessThanOrEqual(norm(d.negative));
@@ -68,7 +90,7 @@ describe('electron polarization experiment', () => {
   });
   it('traces Faraday lines from sampled dipoles, with bounded paths outside the mask', () => {
     const aligned = state(), grid = polarizationGrid(aligned), index = 636;
-    expect(samplePolarization(grid, sampleCentre(index))).toEqual(grid[index]);
+    samplePolarization(grid, sampleCentre(index)).forEach((v, i) => expect(v).toBeCloseTo(grid[index][i], 12));
     expect(dot(unit(samplePolarization(grid, [0, 1.6, 0])), [0, -1, 0])).toBeCloseTo(1);
     const lines = faradayLines(aligned, true);
     expect(lines).toHaveLength(20);
@@ -85,7 +107,7 @@ describe('electron polarization experiment', () => {
   });
   it('replays exact states and rejects invalid imports without changing the run', () => {
     const a = new ElectronSimulation(), b = new ElectronSimulation(); a.configure(state('moving').parameters); a.step(137);
-    const file = parseElectronFile(JSON.stringify({ format: 'zeropoint-electron', version: 2, state: a.snapshot(), view: { ...DEFAULT_ELECTRON_VIEW, faraday: false } }));
+    const file = parseElectronFile(JSON.stringify({ format: 'zeropoint-electron', version: 3, state: a.snapshot(), view: { ...DEFAULT_ELECTRON_VIEW, faraday: false } }));
     b.restore(file.state); a.step(400); for (let i = 0; i < 400; i++) b.step(); expect(a.snapshot()).toEqual(b.snapshot());
     expect(file.view.faraday).toBe(false); const before = a.snapshot();
     for (const beta of [NaN, Infinity, -.3, .3]) expect(() => a.configure({ ...DEFAULT_ELECTRON, beta })).toThrow();
