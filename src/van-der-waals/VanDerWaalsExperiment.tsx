@@ -12,8 +12,10 @@ const stages = [
   { title: 'Correlate the fluctuations', subtitle: 'From dipoles to attraction', figure: '3-1', page: 28 },
   { title: 'Reveal the pressure', subtitle: 'A boundary changes the balance', figure: '3-3 / 3-4', page: 29 },
 ];
+/** Format a numeric readout with four significant digits or compact exponential notation. */
 const number = (n: number) => n === 0 ? '0' : Math.abs(n) < .001 || Math.abs(n) >= 10000 ? n.toExponential(3) : n.toPrecision(4);
 
+/** Draw a labelled diagram arrow between two horizontal coordinates. */
 function Arrow({ x1, x2, y, color = '#9ce3c5', width = 3 }: { x1: number; x2: number; y: number; color?: string; width?: number }) {
   const sign = Math.sign(x2 - x1);
   return <g stroke={color} fill={color}><line x1={x1} x2={x2 - sign * 7} y1={y} y2={y} strokeWidth={width}/><path d={`M ${x2} ${y} l ${-sign * 10} -6 v 12 z`} stroke="none"/></g>;
@@ -30,6 +32,7 @@ function Dipole({ x, y, moment }: { x: number; y: number; moment: number }) {
   </g>;
 }
 
+/** Illustrate how an applied field polarizes a neutral atom. */
 function InductionDiagram({ polarization }: { polarization: number }) {
   return <svg viewBox="0 0 760 350" role="img" aria-label="Neutral atom and induced dipole: an applied electric field displaces the negative charge cloud opposite to the field">
     <text x="200" y="42" textAnchor="middle">A · No applied field</text><text x="553" y="42" textAnchor="middle">B · Induced dipole</text>
@@ -43,6 +46,7 @@ function InductionDiagram({ polarization }: { polarization: number }) {
   </svg>;
 }
 
+/** Illustrate two correlated dipoles and their average London attraction. */
 function PairDiagram({ distance, tick }: { distance: number; tick: number }) {
   const spread = 160 + (distance - 1) * 95, left = 380 - spread / 2, right = 380 + spread / 2;
   const moment = Math.cos(tick * Math.PI / 60);
@@ -57,6 +61,7 @@ function PairDiagram({ distance, tick }: { distance: number; tick: number }) {
   </svg>;
 }
 
+/** Illustrate the stress imbalance between two conducting plates. */
 function PlateDiagram({ gap, modes }: { gap: number; modes: boolean }) {
   const width = 150 + (gap - 100) / 900 * 160, left = 380 - width / 2, right = 380 + width / 2;
   const net = 27 + 18 * Math.log10(Math.abs(casimir(gap, 1).pressure) / .0013);
@@ -75,6 +80,7 @@ function PlateDiagram({ gap, modes }: { gap: number; modes: boolean }) {
   </svg>;
 }
 
+/** Plot the ideal Casimir pressure sweep and expose common gap presets. */
 function PressurePlot({ gap, onGap }: { gap: number; onGap: (value: number) => void }) {
   const x = (d: number) => 62 + Math.log10(d / 100) * 620;
   const y = (p: number) => 28 + (Math.log10(Math.abs(casimir(100, 1).pressure)) - Math.log10(Math.abs(p))) * 36;
@@ -87,6 +93,7 @@ function PressurePlot({ gap, onGap }: { gap: number; onGap: (value: number) => v
   </svg><div className="vdw-gap-presets">{[100, 200, 500, 1000].map(d => <button key={d} aria-pressed={gap === d} onClick={() => onGap(d)}>{d} nm</button>)}</div></div>;
 }
 
+/** Coordinate the three-stage van der Waals and vacuum-pressure experiment. */
 export function VanDerWaalsExperiment({ active, onBack }: { active: boolean; onBack: () => void }) {
   const [stage, setStage] = useState(0), [polarization, setPolarization] = useState(.8), [distance, setDistance] = useState(1.4);
   const [gap, setGap] = useState(200), [area, setArea] = useState(1), [modes, setModes] = useState(true);
@@ -103,6 +110,7 @@ export function VanDerWaalsExperiment({ active, onBack }: { active: boolean; onB
     return () => window.clearInterval(timer);
   }, [active, running, stage]);
   const reference = casimir(gap, area), pair = london(distance), current = stages[stage];
+  /** Restore every experiment stage and control to its initial value. */
   function reset() { setRunning(false); setTick(0); setStage(0); setPolarization(.8); setDistance(1.4); setGap(200); setArea(1); setModes(true); }
 
   return <div className="vdw-app" style={{ display: active ? undefined : 'none' }}>

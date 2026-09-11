@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+/** Navigate from the workbench to the van der Waals experiment. */
 async function openExperiment(page: Page) {
   await page.goto('/');
   if (page.viewportSize()!.width <= 850) await page.getByRole('button', { name: 'Open experiment library' }).click();

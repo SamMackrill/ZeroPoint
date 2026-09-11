@@ -4,6 +4,7 @@ export const C = 299792458;
 export const GAP_MIN_NM = 100;
 export const GAP_MAX_NM = 1000;
 
+/** Require a finite, strictly positive model input. */
 function positive(value: number, name: string) {
   if (!Number.isFinite(value) || value <= 0) throw new Error(`${name} must be finite and positive.`);
 }
@@ -31,6 +32,7 @@ export function pressureSweep(areaMm2: number) {
   });
 }
 
+/** Serialize the ideal Casimir gap sweep as a unit-labelled CSV document. */
 export function pressureCSV(areaMm2: number) {
   return 'model,gap_nm,area_mm2,pressure_Pa,force_N,interaction_energy_per_area_J_m2,interaction_energy_J\n' +
     pressureSweep(areaMm2).map(r => ['ideal-perfect-conductor-T0', r.gapNm, areaMm2, r.pressure, r.force, r.energyPerArea, r.energy].join(',')).join('\n');
