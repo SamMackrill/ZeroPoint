@@ -1,6 +1,6 @@
 # Planned experiment: Casimir effect
 
-**Status: planned, not implemented.** Add a parallel-plate experiment alongside polarization and pressure (stage 3), before using a Casimir-cavity interpretation for particle shells (stage 4).
+**Status: analytic comparison implemented; full 3D boundary model planned.** The [van der Waals experiment](../van-der-waals-model.md) implements adjustable plate gap/area, example mode curves, ideal pressure/force/energy, a logarithmic gap plot and CSV export, alongside the Chapter 3 dipole illustrations. The full parallel-plate experiment described below remains planned, before using a Casimir-cavity interpretation for particle shells (stage 4).
 
 ## Question and scene
 

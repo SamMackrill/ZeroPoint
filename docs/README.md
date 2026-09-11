@@ -19,6 +19,8 @@ Verification: the blueprint copy matches its source SHA-256; local HTML links an
 
 Additional experiments:
 
+- [Van der Waals & vacuum pressure](van-der-waals-model.md): implemented polarization, correlated-dipole and plate-pressure stages based on Chapter 3, with original extracted figures, analytic references and a CSV gap sweep.
+
 - [Electron video refinement](electron-video-notes.md): timestamped video interpretation, implemented charge-motion, flux and radius/rate investigations, plus proposed torque, mass-budget and positron experiments.
 
 - [Casimir effect — adjustable parallel plates](planned-experiments/casimir-effect.md), including controls, reference physics and implementation gates.
