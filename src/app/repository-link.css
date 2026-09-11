@@ -1,0 +1,5 @@
+.topbar .repository-link{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex-shrink:0;min-height:36px;padding:0 8px;color:#b6dbc9;font-size:11px;text-decoration:none;border-radius:5px}
+.topbar .repository-link:hover{background:#223731;color:#e1f5ea}
+.topbar .repository-link:focus-visible{outline:2px solid #b6dbc9;outline-offset:3px}
+.experiment-header-actions{display:flex;align-items:center;gap:18px}
+@media(max-width:600px){.topbar .repository-link{width:36px;padding:0}.repository-label{display:none}.experiment-header-actions{gap:8px}.experiment-header-actions .light-back{width:36px;min-height:36px;justify-content:center}.experiment-header-actions .back-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}}
