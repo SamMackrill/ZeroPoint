@@ -41,6 +41,8 @@ This release implements the medium MVP and the illustrative light sequence from 
 
 Choose **Electron in the zero-point field** for stationary electric polarization, local spin rotation with counter-moving charge-shell layers and a moving electron’s magnetic response. The [electron model](docs/electron-model.md) includes optional Faraday lines from the dipole polarization, a fixed probe, replay, inspection, checkpoints and exports, with [source notes](docs/electron-source-notes.md) extracted from Fleming’s three electron papers.
 
+Choose **Extended Casimir effect** to explore [charge interactions through short-lived Zeptons](docs/casimir-model.md), based on Section 4 of Fleming’s paper. Switch electron/electron and electron/proton, follow random births through alignment and collapse, compare local pressure colours and histories, inspect one lifetime in slow motion, and release the charges to illustrate their response. Pressure and acceleration are qualitative model choices. The separate parallel-plate Casimir experiment remains planned.
+
 ## Build and validate
 
 ```powershell
