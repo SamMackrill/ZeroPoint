@@ -43,6 +43,8 @@ Choose **Electron in the zero-point field** for stationary electric polarization
 
 Choose **Van der Waals & vacuum pressure** for a three-stage experiment based on Chapter 3 of *The Zero-Point Universe*: induce a dipole, animate correlated fluctuations, then adjust conducting plates to explore pressure from a change in zero-point interaction energy. It includes the four extracted source figures, normalized London energy/force, ideal Casimir pressure/force/energy, a gap plot and CSV sweep export. The [model and source notes](docs/van-der-waals-model.md) distinguish Fleming's dipole interpretation from the analytic references.
 
+Choose **Extended Casimir effect** to explore [charge interactions through short-lived Zeptons](docs/casimir-model.md), based on Section 4 of Fleming’s paper. Switch electron/electron and electron/proton, follow random births through alignment and collapse, compare local pressure colours and histories, inspect one lifetime in slow motion, and release the charges to illustrate their response. Pressure and acceleration are qualitative model choices. The separate parallel-plate Casimir experiment remains planned.
+
 ## Build and validate
 
 ```powershell

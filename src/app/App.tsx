@@ -11,6 +11,7 @@ import { useSimulation } from '../simulation/useSimulation';
 import { LightExperiment } from '../light/LightExperiment';
 import { ElectronExperiment } from '../electron/ElectronExperiment';
 import { VanDerWaalsExperiment } from '../van-der-waals/VanDerWaalsExperiment';
+import { CasimirExperiment } from '../casimir/CasimirExperiment';
 
 const presets = [
   { id: 'balanced', title: 'Balanced medium', description: 'Explore the fluctuation lifecycle', icon: Waves, params: DEFAULT_PARAMETERS },
@@ -33,17 +34,19 @@ function Plot({ rows, mode }: { rows: Diagnostics[]; mode: 'population' | 'energ
 
 /** Coordinate navigation between the independent laboratories. */
 export function App() {
-  const [experiment, setExperiment] = useState<'medium' | 'light' | 'electron' | 'vdw'>('medium');
+  const [experiment, setExperiment] = useState<'medium' | 'light' | 'electron' | 'casimir' | 'vdw'>('medium');
   const [visitedLight, setVisitedLight] = useState(false), [visitedElectron, setVisitedElectron] = useState(false);
+  const [visitedCasimir, setVisitedCasimir] = useState(false);
   const [visitedVdw, setVisitedVdw] = useState(false);
   const openLight = () => { setVisitedLight(true); setExperiment('light'); };
   const openElectron = () => { setVisitedElectron(true); setExperiment('electron'); };
+  const openCasimir = () => { setVisitedCasimir(true); setExperiment('casimir'); };
   const openVdw = () => { setVisitedVdw(true); setExperiment('vdw'); };
-  return <><MediumApp active={experiment === 'medium'} onOpenLight={openLight} onOpenElectron={openElectron} onOpenVdw={openVdw}/>{visitedLight && <LightExperiment active={experiment === 'light'} onBack={() => setExperiment('medium')}/>} {visitedElectron && <ElectronExperiment active={experiment === 'electron'} onBack={() => setExperiment('medium')}/>} {visitedVdw && <VanDerWaalsExperiment active={experiment === 'vdw'} onBack={() => setExperiment('medium')}/>}</>;
+  return <><MediumApp active={experiment === 'medium'} onOpenLight={openLight} onOpenElectron={openElectron} onOpenCasimir={openCasimir} onOpenVdw={openVdw}/>{visitedLight && <LightExperiment active={experiment === 'light'} onBack={() => setExperiment('medium')}/>} {visitedElectron && <ElectronExperiment active={experiment === 'electron'} onBack={() => setExperiment('medium')}/>} {visitedCasimir && <CasimirExperiment active={experiment === 'casimir'} onBack={() => setExperiment('medium')}/>} {visitedVdw && <VanDerWaalsExperiment active={experiment === 'vdw'} onBack={() => setExperiment('medium')}/>}</>;
 }
 
 /** Render and coordinate the medium lifecycle laboratory. */
-function MediumApp({ active, onOpenLight, onOpenElectron, onOpenVdw }: { active: boolean; onOpenLight: () => void; onOpenElectron: () => void; onOpenVdw: () => void }) {
+function MediumApp({ active, onOpenLight, onOpenElectron, onOpenCasimir, onOpenVdw }: { active: boolean; onOpenLight: () => void; onOpenElectron: () => void; onOpenCasimir: () => void; onOpenVdw: () => void }) {
   const sim = useSimulation(), { state, latest, sink, send, checkpoint } = sim;
   const host = useRef<HTMLDivElement>(null), viewport = useRef<FieldRenderer | null>(null), fileInput = useRef<HTMLInputElement>(null), dialog = useRef<HTMLDialogElement>(null);
   const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
@@ -119,9 +122,10 @@ function MediumApp({ active, onOpenLight, onOpenElectron, onOpenVdw }: { active:
   return <div className="app-shell" style={{ display: active ? undefined : 'none' }}>
     <header className="topbar"><div className="identity"><BrandMark/><span>ZeroPoint<span className="brand-period">.</span></span><span className="brand-divider"/><span className="lab-label">FIELD LABORATORY</span><span className="version">v0.1</span></div><div className="header-actions"><RepositoryLink/><a href="./docs/simulation-plan.html" target="_blank" rel="noreferrer">Development plan <ChevronRight size={13}/></a><button className="icon-button" aria-label="About the model" onClick={() => showHelp('model')}><CircleHelp size={18}/></button><div className="local-badge"><span className="dot"/> Runs locally</div></div></header>
     <div className="workspace">
-      <aside className={`sidebar ${showSidebar ? 'mobile-open' : ''}`} aria-label="Experiment library"><div className="panel-heading"><span>WORKSPACE</span><button className="mobile-only icon-button" aria-label="Close experiment library" onClick={() => setShowSidebar(false)}><X size={17}/></button><FlaskConical className="desktop-only" size={14}/></div><div className="section-name"><Microscope size={17}/>Experiments<span className="count">7</span></div><div className="scenario-section"><span className="micro-label">01 / MEDIUM LIFECYCLE</span>{presets.map(p => <button key={p.id} className={`preset ${preset === p.id ? 'selected' : ''}`} disabled={!ready} onClick={() => reset(p.params, p.id)}><p.icon size={17}/><span><strong>{p.title}</strong><small>{p.description}</small></span>{preset === p.id && <span className="preset-dot"/>}</button>)}</div>
+      <aside className={`sidebar ${showSidebar ? 'mobile-open' : ''}`} aria-label="Experiment library"><div className="panel-heading"><span>WORKSPACE</span><button className="mobile-only icon-button" aria-label="Close experiment library" onClick={() => setShowSidebar(false)}><X size={17}/></button><FlaskConical className="desktop-only" size={14}/></div><div className="section-name"><Microscope size={17}/>Experiments<span className="count">8</span></div><div className="scenario-section"><span className="micro-label">01 / MEDIUM LIFECYCLE</span>{presets.map(p => <button key={p.id} className={`preset ${preset === p.id ? 'selected' : ''}`} disabled={!ready} onClick={() => reset(p.params, p.id)}><p.icon size={17}/><span><strong>{p.title}</strong><small>{p.description}</small></span>{preset === p.id && <span className="preset-dot"/>}</button>)}</div>
         <button className="preset light-entry" onClick={() => { setShowSidebar(false); onOpenLight(); }}><Waves size={17}/><span><strong>Light through the zero-point field</strong><small>Explore successive induction</small></span><ChevronRight size={14}/></button>
         <button className="preset light-entry electron-entry" onClick={() => { setShowSidebar(false); onOpenElectron(); }}><Atom size={17}/><span><strong>Electron in the zero-point field</strong><small>Polarization, spin & motion</small></span><ChevronRight size={14}/></button>
+        <button className="preset light-entry" onClick={() => { setShowSidebar(false); onOpenCasimir(); }}><Waves size={17}/><span><strong>Extended Casimir effect</strong><small>Zepton lifetimes & charge pressure</small></span><ChevronRight size={14}/></button>
         <button className="preset light-entry" onClick={() => { setShowSidebar(false); onOpenVdw(); }}><Layers size={17}/><span><strong>Van der Waals & vacuum pressure</strong><small>From induced dipoles to ZPE pressure</small></span><ChevronRight size={14}/></button>
         <button className="roadmap-link" onClick={() => showHelp('roadmap')}><Box size={15}/><span>Beyond the medium<small>Casimir, fields & shells</small></span><ChevronRight size={14}/></button>
         <div className="sidebar-rule"/><div className="panel-heading"><span>SCENE LAYERS</span><Layers size={14}/></div><Toggle label="Dipole medium" icon={Eye} checked={view.medium} onChange={v => setOption('medium', v)}/><Toggle label="Cell boundaries" icon={Box} checked={view.bounds} onChange={v => setOption('bounds', v)}/><Toggle label="Energy density slice" icon={ScanLine} checked={view.slice} onChange={v => setOption('slice', v)}/>{view.slice && <label className="slice-slider">Slice Z <output>{view.sliceZ.toFixed(1)} L₀</output><input aria-label="Slice Z" type="range" min="-4" max="4" step=".1" value={view.sliceZ} onChange={e => setOption('sliceZ', +e.target.value)}/><small>0.5 L₀ slab · binned energy, not pressure</small></label>}

@@ -21,6 +21,7 @@ Additional experiments:
 
 - [Van der Waals & vacuum pressure](van-der-waals-model.md): implemented polarization, correlated-dipole and plate-pressure stages based on Chapter 3, with original extracted figures, analytic references and a CSV gap sweep.
 
+- [Extended Casimir effect — charge interactions](casimir-model.md): implemented illustrative Zepton turnover, alignment, gap filling, pressure changes and electron/electron versus electron/proton motion tendencies, based on [Section 4 of Fleming's paper](papers/Electromagnetic%20Motion%20as%20an%20Extended%20Casimir%20Effect.pdf#page=3).
 - [Electron video refinement](electron-video-notes.md): timestamped video interpretation, implemented charge-motion, flux and radius/rate investigations, plus proposed torque, mass-budget and positron experiments.
 
 - [Casimir effect — adjustable parallel plates](planned-experiments/casimir-effect.md), including controls, reference physics and implementation gates.
