@@ -5,3 +5,27 @@
 @media(max-width:600px){.electron-spin-view .light-viewport-shell{height:540px}.electron-spin-view .light-viewport{top:158px;bottom:65px}.electron-spin-view .light-stage-note{top:94px}.electron-spin-view .light-stage-note strong{font-size:13px}}
 
 .electron-scene-options{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:12px 0 18px;font-size:11px;color:#91aebd}.electron-scene-options label{display:flex;align-items:center;gap:8px;color:#c6ded5}.electron-scene-options input{accent-color:#a0d9bb}@media(max-width:600px){.electron-app .light-viewport-shell{height:540px}.electron-app .light-viewport{top:158px;bottom:65px}.electron-app .light-stage-note{top:94px;right:12px}.electron-app .light-stage-note strong{font-size:12px;line-height:1.5}}
+.electron-linked-views{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:14px;align-items:stretch}
+.electron-linked-views .light-viewport-shell{height:auto;min-height:540px}
+.electron-linked-views .light-viewport{top:142px;bottom:72px}
+.electron-linked-views .light-stage-note{top:77px;left:16px;right:12px}
+.electron-linked-views .light-stage-note strong{font-size:12px;line-height:1.5}
+.electron-linked-views .light-view-top{left:12px;right:12px;flex-wrap:wrap}
+.electron-linked-views .light-view-legend{left:14px;right:14px;gap:8px;flex-wrap:wrap;font-size:8px}
+.electron-linked-views .light-view-legend .light-e,.electron-linked-views .light-view-legend .light-b,.electron-linked-views .light-view-legend .electron-spin-colour{display:none}
+.electron-linked-views .light-scale{left:14px;right:40px;font-size:7px;line-height:1.5}
+.electron-section{min-width:0;display:flex;flex-direction:column;justify-content:center;background:#0c1824;border:1px solid #385362;border-radius:9px;padding:19px 16px;overflow:hidden}
+.electron-section h2{font-size:13px;color:#d2e1e5;font-weight:500;margin:9px 0}
+.electron-section header p{font:9px var(--mono);color:#83a6b6;line-height:1.7}
+.electron-section svg{display:block;width:100%;max-height:420px;aspect-ratio:1;margin:12px 0}
+.electron-section svg [role=button]{cursor:pointer;outline:none}
+.electron-section svg [role=button]:focus{stroke:#fff;stroke-width:2}
+.electron-section-key{display:flex;gap:9px 16px;flex-wrap:wrap;font:10px var(--mono);line-height:1.6}
+.electron-section .light-small{margin:12px 0;font-size:10px}
+.electron-section>a{color:#abd2c2;font-size:10px;line-height:1.5}
+.electron-spin-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+.electron-spin-controls label{display:flex;flex-direction:column;gap:9px;font-size:11px;color:#9fb7c7}
+.electron-spin-controls select{width:100%;min-width:0;padding:8px;font-size:11px}
+.electron-rate-profile{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+@media(max-width:1180px){.electron-linked-views{grid-template-columns:1fr}.electron-linked-views .light-viewport-shell{height:480px;min-height:0}.electron-section svg{max-height:410px}.electron-section{align-items:stretch}.electron-section header,.electron-section-key,.electron-section .light-small,.electron-section>a{max-width:560px;width:100%;align-self:center}}
+@media(max-width:600px){.electron-spin-controls{grid-template-columns:1fr}.electron-linked-views .light-viewport-shell{height:510px}.electron-linked-views .light-viewport{top:158px;bottom:65px}.electron-section{padding:16px 12px}.electron-shell-actions{gap:13px;font-size:11px}.electron-section h2{font-size:12px}}

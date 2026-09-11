@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { ELECTRON_SAMPLES, LATTICE_SAMPLES, SHELL_RADII, add, alignmentProgress, electronPresence, cross, dipoleAt, electronX, norm, probePosition, referenceFields, sampleCentre, scale, spinAxis, unit, velocity } from './model';
+import { ELECTRON_SAMPLES, LATTICE_SAMPLES, SHELL_RADII, add, alignmentProgress, electronPresence, cross, electronX, norm, probePosition, referenceFields, scale, spinAxis, unit, velocity } from './model';
 import type { ElectronSnapshot, ElectronView, Vec } from './model';
 import { faradayLines } from './fieldLines';
+import { displayedDipole, localTurnArrow, sectionFrame, SHELL_COLOURS, shellBand, shellCentre } from './spinGeometry';
 
 export class ElectronRenderer {
   private scene = new THREE.Scene();
@@ -16,6 +17,8 @@ export class ElectronRenderer {
   private rings = new THREE.Group(); private rotation: THREE.LineSegments; private path: THREE.Line;
   private faraday: THREE.LineSegments; private faradayKey = '';
   private shells = new THREE.Group(); private chargeMotion: THREE.LineSegments[] = [];
+  private sectionPlane = new THREE.Mesh(new THREE.CircleGeometry(1, 64), new THREE.MeshBasicMaterial({ color: '#7ba9b6', transparent: true, opacity: .08, side: THREE.DoubleSide, depthWrite: false }));
+  private grid = new THREE.GridHelper(12, 24, '#2c4755', '#1b303e');
   private cube = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(9.6, 9.6, 9.6)), new THREE.LineBasicMaterial({ color: '#406777', transparent: true, opacity: .32 }));
   private dummy = new THREE.Object3D(); private colour = new THREE.Color();
   private resize: ResizeObserver; private frame = 0; private data: ElectronSnapshot | null = null;
@@ -51,25 +54,26 @@ export class ElectronRenderer {
     this.rotation = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: '#f0bd85', transparent: true, opacity: .7 })); this.rotation.frustumCulled = false; this.scene.add(this.rotation);
     const lines = new THREE.BufferGeometry(); lines.setAttribute('position', new THREE.BufferAttribute(new Float32Array(40 * 164 * 6), 3).setUsage(THREE.DynamicDrawUsage)); lines.setDrawRange(0, 0);
     this.faraday = new THREE.LineSegments(lines, new THREE.LineBasicMaterial({ color: '#a3ead0', transparent: true, opacity: .65 })); this.faraday.frustumCulled = false; this.scene.add(this.faraday);
-    for (const colour of ['#ffc199', '#87d4f3']) {
-      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(320 * 6 * 3), 3).setUsage(THREE.DynamicDrawUsage)); geometry.setDrawRange(0, 0);
-      const motion = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ color: colour })); motion.frustumCulled = false; this.chargeMotion.push(motion); this.scene.add(motion);
+    for (let i = 0; i < 2; i++) {
+      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(320 * 50 * 3), 3).setUsage(THREE.DynamicDrawUsage)); geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(320 * 50 * 3), 3).setUsage(THREE.DynamicDrawUsage)); geometry.setDrawRange(0, 0);
+      const motion = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: i ? .45 : .9 })); motion.frustumCulled = false; this.chargeMotion.push(motion); this.scene.add(motion);
     }
-    for (const radius of SHELL_RADII) for (const sign of [-1, 1]) {
-      const r = radius + sign * .095, material = new THREE.LineBasicMaterial({ color: sign < 0 ? '#ffc199' : '#87d4f3', transparent: true, opacity: .2 });
+    for (const [band, radius] of SHELL_RADII.entries()) {
+      const r = radius, material = new THREE.LineBasicMaterial({ color: SHELL_COLOURS[band], transparent: true, opacity: .18 });
       for (let ring = 0; ring < 5; ring++) {
         const points = Array.from({ length: 65 }, (_, i) => {
           const a = i * Math.PI / 32;
           if (ring < 3) { const z = (ring - 1) * .72, rho = Math.sqrt(1 - z * z); return new THREE.Vector3(r * rho * Math.cos(a), r * rho * Math.sin(a), r * z); }
           return ring === 3 ? new THREE.Vector3(r * Math.cos(a), 0, r * Math.sin(a)) : new THREE.Vector3(0, r * Math.cos(a), r * Math.sin(a));
         });
-        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material); line.userData.equator = ring === 1; this.shells.add(line);
+        const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points), material); line.userData.equator = ring === 1; line.userData.band = band; this.shells.add(line);
       }
     }
     this.scene.add(this.shells);
+    this.scene.add(this.sectionPlane);
     this.scene.add(this.cube);
     this.path = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-4.8, 0, 0), new THREE.Vector3(4.8, 0, 0)]), new THREE.LineDashedMaterial({ color: '#a592c4', dashSize: .12, gapSize: .1 })); this.path.computeLineDistances(); this.scene.add(this.path);
-    const grid = new THREE.GridHelper(12, 24, '#2c4755', '#1b303e'); grid.position.y = -5.2; this.scene.add(grid);
+    this.grid.position.y = -5.2; this.scene.add(this.grid);
     this.resize = new ResizeObserver(() => this.resizeCanvas()); this.resize.observe(host); this.resizeCanvas(); this.setView(view);
     this.renderer.domElement.addEventListener('pointerdown', this.pointerDown); this.renderer.domElement.addEventListener('pointerup', this.pointerUp); this.renderer.domElement.addEventListener('webglcontextlost', this.contextLost);
     this.animate();
@@ -78,12 +82,19 @@ export class ElectronRenderer {
   private setArrow(a: THREE.ArrowHelper, position: Vec, vector: Vec, length: number) { a.visible = norm(vector) > 1e-10; a.position.fromArray(position); a.setDirection(new THREE.Vector3(...unit(vector))); a.setLength(Math.max(.01, length), .08, .045); }
   private resizeCanvas() { if (!this.host.clientWidth || !this.host.clientHeight) return; this.camera.aspect = this.host.clientWidth / this.host.clientHeight; this.camera.updateProjectionMatrix(); this.renderer.setSize(this.host.clientWidth, this.host.clientHeight); this.cameraPreset(this.cameraMode); }
   cameraPreset(mode: 'front' | 'orbit' | 'probe' | 'shell') {
-    this.cameraMode = mode; const target: Vec = mode === 'probe' && this.data ? this.selected === null ? probePosition(this.data.parameters) : sampleCentre(this.selected) : [0, 0, 0];
-    const distance = mode === 'probe' ? 2.6 : mode === 'shell' ? Math.max(9.5, 3.6 / (Math.tan(this.camera.fov * Math.PI / 360) * this.camera.aspect)) : Math.max(18, 9 / (Math.tan(this.camera.fov * Math.PI / 360) * this.camera.aspect));
+    this.cameraMode = mode; const target: Vec = mode === 'probe' && this.data ? this.selected === null ? probePosition(this.data.parameters) : shellCentre(this.selected, this.data.parameters.axis) : [0, 0, 0];
+    const shellView = this.data?.parameters.mode === 'spin' && this.view.shells;
+    const extent = SHELL_RADII[this.view.spinDisplay.count - 1] + .35;
+    const distance = mode === 'probe' ? 2.6 : shellView ? extent / (Math.tan(this.camera.fov * Math.PI / 360) * Math.min(1, this.camera.aspect)) * 1.1 : Math.max(18, 9 / (Math.tan(this.camera.fov * Math.PI / 360) * this.camera.aspect));
     const tiltedShell = mode === 'shell' && !this.view.cutaway;
-    this.controls.target.fromArray(target); this.camera.position.set(target[0] + (mode === 'orbit' ? 9 : tiltedShell ? 2 : 0), target[1] + (mode === 'orbit' ? 7 : tiltedShell ? 1.2 : .01), target[2] + distance); this.controls.update(); if (this.data) this.update(this.data);
+    this.controls.target.fromArray(target);
+    if (shellView && mode !== 'probe') {
+      const [u, v, n] = sectionFrame(this.data!.parameters.axis), tilted = mode === 'orbit' || tiltedShell;
+      this.camera.up.fromArray(v); this.camera.position.fromArray(add(scale(n, distance), tilted ? add(scale(u, distance * .35), scale(v, distance * .22)) : [0, 0, 0]));
+    } else { this.camera.up.set(0, 1, 0); this.camera.position.set(target[0] + (mode === 'orbit' ? 9 : 0), target[1] + (mode === 'orbit' ? 7 : .01), target[2] + distance); }
+    this.controls.update(); if (this.data) this.update(this.data);
   }
-  setView(view: ElectronView) { this.view = view; this.controls.enableDamping = !view.reducedMotion; if (this.data) this.update(this.data); }
+  setView(view: ElectronView) { const reframe = this.view.spinDisplay.count !== view.spinDisplay.count || this.view.shells !== view.shells; this.view = view; this.controls.enableDamping = !view.reducedMotion; if (this.data) { this.update(this.data); if (reframe) this.cameraPreset(this.cameraMode); } }
   select(id: number | null) { this.selected = id; if (this.data) this.update(this.data); }
   private contextLost = (e: Event) => { e.preventDefault(); this.fail('Graphics context lost. The electron experiment is paused. Recover the viewport to continue.'); };
   private pointerDown = (e: PointerEvent) => { this.down = { x: e.clientX, y: e.clientY }; };
@@ -93,38 +104,42 @@ export class ElectronRenderer {
     const i = ray.intersectObjects([this.positive, this.negative])[0]?.instanceId; if (i !== undefined) this.pick(this.keys[i]);
   };
   update(s: ElectronSnapshot) {
-    if (this.disposed) return; this.needsRender = true; this.data = s; const x = electronX(s), p = s.parameters, beta = velocity(p), selected = this.selected === null ? null : sampleCentre(this.selected);
+    if (this.disposed) return;
+    const reframe = this.data && (this.data.parameters.mode !== s.parameters.mode || this.data.parameters.axis !== s.parameters.axis);
+    this.needsRender = true; this.data = s; const x = electronX(s), p = s.parameters, beta = velocity(p), selected = this.selected === null ? null : shellCentre(this.selected, p.axis);
     const presence = electronPresence(s); this.core.visible = presence > 0; this.core.scale.setScalar(presence);
     this.core.position.x = this.radius.position.x = x; this.radius.visible = this.view.radius && presence === 1; this.probe.position.fromArray(probePosition(p));
     this.path.visible = p.mode === 'moving'; this.path.scale.x = Math.abs(beta) / .2;
     this.positive.visible = this.negative.visible = this.view.dipoles;
     const shellView = this.view.shells && p.mode === 'spin';
+    this.grid.visible = !shellView;
     this.cube.visible = !shellView && !this.view.cutaway && this.cameraMode !== 'probe';
     this.selection.scale.setScalar(shellView ? .6 : 1);
-    this.shells.visible = shellView; this.shells.children.forEach(line => { line.visible = !this.view.cutaway || line.userData.equator; });
-    this.chargeMotion.forEach(line => { line.visible = shellView && this.view.rotation; }); const motionVertices = [0, 0];
+    this.shells.visible = shellView && this.view.spinDisplay.guides; this.shells.children.forEach(line => { line.visible = line.userData.band < this.view.spinDisplay.count && (!this.view.cutaway || line.userData.equator); });
+    const frame = sectionFrame(p.axis), basis = new THREE.Matrix4().makeBasis(...frame.map(v => new THREE.Vector3(...v)) as [THREE.Vector3, THREE.Vector3, THREE.Vector3]);
+    this.shells.quaternion.setFromRotationMatrix(basis); this.sectionPlane.quaternion.copy(this.shells.quaternion);
+    this.sectionPlane.visible = shellView && this.view.spinDisplay.section && !this.view.cutaway; this.sectionPlane.scale.setScalar(SHELL_RADII[this.view.spinDisplay.count - 1] + .2);
+    this.chargeMotion.forEach((line, i) => { line.visible = shellView && this.view.dipoles && (i === 1 || this.view.rotation); }); const motionVertices = [0, 0];
+    this.probe.visible = !shellView || this.view.inspect;
     this.electric.visible = this.view.electric && alignmentProgress(s) > .99; this.magnetic.visible = this.view.magnetic && beta !== 0;
     this.intrinsic.visible = this.view.intrinsic && p.mode !== 'electric'; this.rotation.visible = this.view.rotation && p.mode !== 'electric' && !shellView;
     this.selection.visible = !!selected; if (selected) this.selection.position.fromArray(selected);
     const rotationData = this.rotation.geometry.attributes.position, target = selected ?? probePosition(p); let count = 0, vertices = 0, arcs = 0;
     this.keys = [];
     for (let i = 0; i < ELECTRON_SAMPLES; i++) {
-      const d = dipoleAt(s, i), c = d.centre;
-      if ((shellView ? i < LATTICE_SAMPLES : i >= LATTICE_SAMPLES) || (!d.field.valid && presence > 0) || (this.view.cutaway && Math.abs(c[2]) > (shellView ? .08 : .85)) || (this.cameraMode === 'probe' && norm(add(c, scale(target, -1))) > 1)) continue;
+      if (shellView ? i < LATTICE_SAMPLES || shellBand(i) >= this.view.spinDisplay.count : i >= LATTICE_SAMPLES) continue;
+      const d = displayedDipole(s, i, this.view.spinDisplay), c = d.centre;
+      if ((!d.field.valid && presence > 0) || (this.view.cutaway && Math.abs(shellView ? c[0] * frame[2][0] + c[1] * frame[2][1] + c[2] * frame[2][2] : c[2]) > (shellView ? .08 : .85)) || (this.cameraMode === 'probe' && norm(add(c, scale(target, -1))) > 1)) continue;
       this.keys.push(i); const visibility = this.view.reducedMotion ? .85 : Math.min(1, .2 + Math.sin(Math.PI * d.progress) * 3);
-      this.dummy.scale.setScalar(visibility * (shellView ? .8 : 1)); this.colour.setScalar(.32 + .65 / (1 + d.field.radius * .18));
+      const equator = shellView && (i - LATTICE_SAMPLES) % 80 >= 32 && (i - LATTICE_SAMPLES) % 80 < 48;
+      this.dummy.scale.setScalar(visibility * (shellView ? (equator ? .5 : .32) : 1)); this.colour.setScalar(shellView ? (equator ? 1 : .25) : .32 + .65 / (1 + d.field.radius * .18));
       for (const [mesh, position] of [[this.positive, d.positive], [this.negative, d.negative]] as const) { this.dummy.position.fromArray(position); this.dummy.updateMatrix(); mesh.setMatrixAt(count, this.dummy.matrix); mesh.setColorAt(count, this.colour); }
       count++;
-      if (shellView && this.view.rotation) {
-        for (let charge = 0; charge < 2; charge++) {
-          const pos = charge ? d.negative : d.positive, v = charge ? d.spinNegativeVelocity : d.spinPositiveVelocity;
-          if (norm(v) < 1e-5) continue;
-          const dir = unit(v), end = add(pos, scale(dir, .06 + Math.min(.2, Math.abs(d.spinRate) * .55)));
-          const side = unit(cross(dir, d.localAxis)), data = this.chargeMotion[charge].geometry.attributes.position;
-          const put = (v: Vec) => data.setXYZ(motionVertices[charge]++, ...v);
-          put(pos); put(end);
-          for (const sign of [-1, 1]) { put(end); put(add(add(end, scale(dir, -.04)), scale(side, sign * .025))); }
-        }
+      if (shellView) {
+        this.colour.set(SHELL_COLOURS[shellBand(i)]).multiplyScalar(equator ? 1 : .2);
+        const put = (channel: number, v: Vec) => { const n = motionVertices[channel]++, g = this.chargeMotion[channel].geometry; g.attributes.position.setXYZ(n, ...v); g.attributes.color.setXYZ(n, this.colour.r, this.colour.g, this.colour.b); };
+        put(1, d.positive); put(1, d.negative);
+        if (this.view.rotation) { const points = localTurnArrow(d); for (let j = 1; j < points.length; j++) { put(0, points[j - 1]); put(0, points[j]); } }
       }
       if (i % 5 !== 0 || arcs >= 80 || d.field.radius > 4.4 || !this.rotation.visible) continue;
       const axis = unit(add(scale(d.localAxis, d.spinTurn), scale(d.motionAxis, d.motionTurn))); if (!norm(axis)) continue;
@@ -138,7 +153,7 @@ export class ElectronRenderer {
     }
     this.positive.count = this.negative.count = count;
     this.selection.visible = this.view.inspect && this.view.dipoles && this.selected !== null && this.keys.includes(this.selected);
-    this.chargeMotion.forEach((line, i) => { line.geometry.setDrawRange(0, motionVertices[i]); line.geometry.attributes.position.needsUpdate = true; });
+    this.chargeMotion.forEach((line, i) => { line.geometry.setDrawRange(0, motionVertices[i]); line.geometry.attributes.position.needsUpdate = true; line.geometry.attributes.color.needsUpdate = true; });
     for (const mesh of [this.positive, this.negative]) { mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; }
     this.rotation.geometry.setDrawRange(0, vertices); rotationData.needsUpdate = true;
     this.faraday.visible = this.view.faraday && alignmentProgress(s) > 0;
@@ -159,6 +174,7 @@ export class ElectronRenderer {
     this.rings.position.x = x;
     this.bArrows.forEach((a, i) => { const angle = (i % 8) * Math.PI / 4, r = [1.1, 2.25, 3.3][Math.floor(i / 8) % 3], dx = [-1.8, 0, 1.8][Math.floor(i / 24)]; const pos: Vec = [x + dx, r * Math.cos(angle), r * Math.sin(angle)]; this.setArrow(a, pos, referenceFields(s, pos).motion, .35); });
     this.sArrows.forEach((a, i) => { const angle = (i % 12) * Math.PI / 6, r = .9 + Math.floor(i / 12) * .8, axis = spinAxis(p), transverse = unit(cross(axis, p.axis === 'x' ? [0, 0, 1] : [1, 0, 0])); const pos = add([x, 0, 0], add(scale(axis, r * Math.cos(angle)), scale(transverse, r * Math.sin(angle)))); this.setArrow(a, pos, referenceFields(s, pos).intrinsic, .28); });
+    if (reframe) this.cameraPreset(this.cameraMode);
   }
   private animate = () => { if (this.disposed) return; this.frame = requestAnimationFrame(this.animate); this.controls.update(); if (this.needsRender) { this.renderer.render(this.scene, this.camera); this.needsRender = false; } };
   exportPNG() {

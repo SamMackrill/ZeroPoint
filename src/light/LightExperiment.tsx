@@ -1,5 +1,7 @@
+import { BrandMark } from '../app/BrandMark';
+import { RepositoryLink } from '../app/RepositoryLink';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, ArrowRight, Atom, Box, Download, Eye, Focus, Info, Pause, Play, RotateCcw, Save, SkipForward, Waves } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Box, Download, Eye, Focus, Info, Pause, Play, RotateCcw, Save, SkipForward, Waves } from 'lucide-react';
 import { downloadFile } from '../persistence/experiment';
 import { DEFAULT_LIGHT, DEFAULT_LIGHT_VIEW, LIGHT_DT, LIGHT_END_TICK, LIGHT_MODEL, TIME_SECONDS, hopTicks, lightReadout, pairAt, pairCount, parseLightFile, sourceX, waveAt } from './model';
 import type { LightParameters, LightState, LightView } from './model';
@@ -83,7 +85,7 @@ export function LightExperiment({ active, onBack }: { active: boolean; onBack: (
   const pairX = 100 + Math.sin(inspected.angle) * inspected.separation * 140, pairY = 66 - Math.cos(inspected.angle) * inspected.separation * 140;
 
   return <div className="light-app" style={{ display: active ? undefined : 'none' }}>
-    <header className="topbar"><div className="identity"><div className="brand-mark"><Atom size={25}/></div><span>ZeroPoint<span className="brand-period">.</span></span><span className="brand-divider"/><span className="lab-label">FIELD LABORATORY</span></div><button className="light-back" onClick={onBack}><ArrowLeft size={15}/>Medium laboratory</button></header>
+    <header className="topbar"><div className="identity"><BrandMark/><span>ZeroPoint<span className="brand-period">.</span></span><span className="brand-divider"/><span className="lab-label">FIELD LABORATORY</span></div><div className="experiment-header-actions"><RepositoryLink/><button className="light-back" onClick={onBack}><ArrowLeft size={15}/><span className="back-label">Medium laboratory</span></button></div></header>
     <main className="light-workbench">
       <div className="light-heading"><div><div className="light-eyebrow">02 / LIGHT IN THE MEDIUM</div><h1>Light through the zero-point field</h1><p>Follow an energy wave through successive, locally rotating pairs.</p></div><a className="light-badge" href="./docs/light-model.md" target="_blank" rel="noreferrer"><Info size={14}/>Illustrative induction model</a></div>
       <div className="light-toolbar"><div className="light-transport">

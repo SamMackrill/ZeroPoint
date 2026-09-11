@@ -31,6 +31,24 @@ The magnetic-moment relation is `mu = -g*e*S/(2*m_e) = -g*mu_B*S/hbar` (§4, equ
 
 ## Shells and radial rotation rate
 
+The account below records the earlier charge-layer view. The current Fig. 2 revision adds the linked views and selectable whole-band extension described next.
+
+## Figure 2 linked shell views
+
+Re-read of the supplied electron-properties paper, 11 September 2026:
+
+- **§3, pp. 2–3; Fig. 2, p. 3:** dipoles of similar wavelengths in a plane preferentially turn in the same direction while polarizing. Fleming motivates this by the energy cost of bringing neighboring like charges closer. Pairs are continually created in differing orientations and replaced; only a small fraction of the dense field needs small turns. The figure's curled arrows indicate rotation local to each dipole, with positive ends nearer the negative core.
+- **§3, p. 3, spherical extension:** the dipoles cannot all rotate on one common axis, although there is a preferred direction. The apparent rotation of the surrounding field does not require the bare electron to spin or the individual dipole centres to translate.
+- **§4, p. 4:** the two counter-rotating spherical charge layers are a positive inner layer and a negative outer layer, representing the two ends of rotating dipoles. This passage does not establish opposite local rotation for successive complete zepton bands. **§6, p. 5** reinforces local rotation and replacement instead of charges orbiting a rigid sphere.
+
+The revised experiment defaults to two complete zepton bands with alternating local turns, as requested for exploration. The control and caption explicitly label this as an **illustrative extension**, and **Shared local preference** provides a comparison following the coordination argument in §3. Neither choice derives the preference by minimizing an interaction energy. The UI avoids treating the requested extension as a quotation or a calculated result from Fleming.
+
+The main viewport samples spherical bands with spatially varying local axes; a separate 2D SVG projects the exact equatorial sites, with matching colours, generation phases and timeline. Local curled arrows make the Fig. 2 geometry visible. A shaded plane and brighter equatorial samples connect the views. Users can show one to four bands, isolate the equatorial section, toggle guides/arrows, magnify local turns and reverse the preferred projection. For fixed parameters, both views keep all pair midpoints stationary. Pairs turn toward inward alignment during each lifetime, separate and collapse, then begin another generation.
+
+The chosen radii, finite sample count, deterministic lifecycle phases, capped inverse-square rate and 1×/2×/4× turn magnification are display assumptions. The paper supplies neither a radial angular-speed law nor a prescribed set of discrete zepton shells. The source's discussion of inverse-square polarization in §2 does not supply such an angular-speed law. Analytic reference fields remain separate from this geometric illustration.
+
+### Earlier radial-law investigation
+
 Follow-up investigation, 8 September 2026:
 
 - **Electron properties, §4, p. 4:** the shell approximation places positive charge inside negative charge, with their motions in opposite directions. This describes the two charge ends of locally rotating dipoles. It does not specify that the rotation sign of each complete dipole reverses from one radial band to the next.

@@ -20,8 +20,11 @@ export interface ElectronParameters { mode: ElectronMode; beta: number; spin: 1 
 export const DEFAULT_ELECTRON: ElectronParameters = { mode: 'electric', beta: .15, spin: 1, axis: 'z', probeX: 0, probeY: 1.8, probeZ: 0 };
 export interface ElectronState { model: typeof ELECTRON_MODEL; tick: number; parameters: ElectronParameters }
 export interface ElectronSnapshot extends ElectronState { running: boolean; speed: number }
-export interface ElectronView { dipoles: boolean; inspect: boolean; shells: boolean; faraday: boolean; electric: boolean; rotation: boolean; magnetic: boolean; intrinsic: boolean; radius: boolean; cutaway: boolean; reducedMotion: boolean }
-export const DEFAULT_ELECTRON_VIEW: ElectronView = { dipoles: true, inspect: false, shells: true, faraday: true, electric: false, rotation: true, magnetic: true, intrinsic: false, radius: false, cutaway: false, reducedMotion: false };
+export interface SpinDisplay { count: number; alternating: boolean; gain: number; section: boolean; guides: boolean }
+export const DEFAULT_SPIN_DISPLAY: SpinDisplay = { count: 2, alternating: true, gain: 2, section: true, guides: true };
+export interface ElectronView { dipoles: boolean; inspect: boolean; shells: boolean; faraday: boolean; electric: boolean; rotation: boolean; magnetic: boolean; intrinsic: boolean; radius: boolean; cutaway: boolean; reducedMotion: boolean; spinDisplay: SpinDisplay }
+export type ElectronLayer = Exclude<keyof ElectronView, 'spinDisplay'>;
+export const DEFAULT_ELECTRON_VIEW: ElectronView = { dipoles: true, inspect: false, shells: true, faraday: true, electric: false, rotation: true, magnetic: true, intrinsic: false, radius: false, cutaway: false, reducedMotion: false, spinDisplay: DEFAULT_SPIN_DISPLAY };
 export type ElectronCommand = { type: 'run'; value: boolean } | { type: 'step' | 'advance' | 'reset' | 'ack' } | { type: 'seek'; tick: number } | { type: 'speed'; value: number } | { type: 'configure'; parameters: ElectronParameters } | { type: 'restore'; state: ElectronState };
 export type ElectronReply = { type: 'state'; state: ElectronSnapshot } | { type: 'error'; message: string };
 export function validateElectronParameters(value: unknown): ElectronParameters {
@@ -45,7 +48,10 @@ export function parseElectronFile(text: string): { state: ElectronState; view: E
   const migrated = [1, 2].includes(f.version) && f.state?.model === `electron-polarization/${f.version}`;
   if (!migrated && f.version !== 3) throw new Error('Incompatible electron file version.');
   const state = validateElectronState(migrated ? { ...f.state, model: ELECTRON_MODEL } : f.state), view = { ...DEFAULT_ELECTRON_VIEW };
-  for (const k of Object.keys(view) as (keyof ElectronView)[]) { if (migrated && (k === 'inspect' || (f.version === 1 && k === 'shells'))) continue; if (typeof f.view?.[k] !== 'boolean') throw new Error(`Invalid ${k} layer.`); view[k] = f.view[k]; }
+  for (const k of Object.keys(view).filter(k => k !== 'spinDisplay') as ElectronLayer[]) { if (migrated && (k === 'inspect' || (f.version === 1 && k === 'shells'))) continue; if (typeof f.view?.[k] !== 'boolean') throw new Error(`Invalid ${k} layer.`); view[k] = f.view[k]; }
+  const display = f.view?.spinDisplay;
+  if (display !== undefined && (!display || !Number.isInteger(display.count) || display.count < 1 || display.count > 4 || ![1, 2, 4].includes(display.gain) || ['alternating', 'section', 'guides'].some(k => typeof display[k] !== 'boolean'))) throw new Error('Invalid spin display settings.');
+  view.spinDisplay = display ? { count: display.count, alternating: display.alternating, gain: display.gain, section: display.section, guides: display.guides } : { ...DEFAULT_SPIN_DISPLAY };
   return { state, view, migrated };
 }
 export const velocity = (p: ElectronParameters) => p.mode === 'moving' ? p.beta : 0;
