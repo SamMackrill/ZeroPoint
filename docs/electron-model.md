@@ -10,6 +10,8 @@
 
 ## Scale and reference fields
 
+The [video refinement](electron-video-notes.md) adds a magnified, timeline-linked charge-motion view within the spin controls. Choose velocity arrows or signed conventional-current contributions, and use the shared-rotation shortcut to explore the coordination account. The existing alternating-shell option remains a labelled extension. Below the probe history, **Explore the electron’s properties** provides independent stationary Gauss-sphere and effective shell radius/rate investigations. These reference controls do not change the worker, saved state or CSV. The radius/rate graph uses effective shell kinematics; it does not change the local pair speed law.
+
 `R = lambda_C/2 = 1.21315511769 pm`, `tau = R/c`, and `c = 299792458 m/s`. At 1× playback, one second of wall time represents one tau (approximately `4.05 × 10^-21 s`). The effective radius argument gives `c/(2*pi*R) ≈ 3.933 × 10^19 Hz`. That is a source reference, not a rigid surface speed in the renderer.
 
 Use `E0 = e/(4*pi*epsilon0*R²)` and `B0 = E0/c`. Coordinates below are normalized to R and fields to E0/B0. For displacement `r = point - electronPosition` and `beta = vx/c`, the negative charge's uniform-motion reference is:

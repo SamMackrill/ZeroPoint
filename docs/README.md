@@ -19,6 +19,8 @@ Verification: the blueprint copy matches its source SHA-256; local HTML links an
 
 Additional experiments:
 
+- [Electron video refinement](electron-video-notes.md): timestamped video interpretation, implemented charge-motion, flux and radius/rate investigations, plus proposed torque, mass-budget and positron experiments.
+
 - [Casimir effect — adjustable parallel plates](planned-experiments/casimir-effect.md), including controls, reference physics and implementation gates.
 - [Light through the zero-point field — implemented illustrative model](light-model.md), with its [experiment plan and future gates](planned-experiments/light-through-zero-point.md): an energy wave carried by successive induced, counter-rotating pairs, with scene controls, source references and timing/coupling decisions. Based on the supplied [Photons as Quantum Electron-Positron Composites paper](papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf).
 

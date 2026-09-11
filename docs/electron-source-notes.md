@@ -1,5 +1,7 @@
 # Electron in the zero-point field: extracted source details
 
+The follow-up [video review](electron-video-notes.md) adds timestamped source mapping, a linked charge-motion close-up, Gauss-sphere and effective radius/rate investigations, and proposals for neighbor torque, excluded-energy mass and electron/positron comparisons.
+
 The [implemented experiment](electron-model.md) has three views: stationary electric alignment, spin at rest, and a moving electron. This document separates Fleming's account from the choices needed to animate it. The supplied PDFs and blueprint remain unchanged.
 
 ## Source map
