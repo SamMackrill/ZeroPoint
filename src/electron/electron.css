@@ -6,6 +6,17 @@
 
 .electron-scene-options{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin:12px 0 18px;font-size:11px;color:#91aebd}.electron-scene-options label{display:flex;align-items:center;gap:8px;color:#c6ded5}.electron-scene-options input{accent-color:#a0d9bb}@media(max-width:600px){.electron-app .light-viewport-shell{height:540px}.electron-app .light-viewport{top:158px;bottom:65px}.electron-app .light-stage-note{top:94px;right:12px}.electron-app .light-stage-note strong{font-size:12px;line-height:1.5}}
 .electron-linked-views{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);gap:14px;align-items:stretch}
+.electron-property-choices{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 20px}
+.electron-property-choices button{padding:9px 12px;border:1px solid #405866;border-radius:5px;color:#a8c1cd;font-size:11px;text-align:left}
+.electron-property-choices button[aria-pressed=true]{background:#203d38;border-color:#86baa3;color:#c5edda}
+.electron-property-layout{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1fr);gap:24px;align-items:center}
+.electron-property-layout>svg,.electron-charge-motion>svg{display:block;width:100%;height:auto;background:#0c1824;border-radius:6px}
+.electron-properties h3,.electron-charge-motion h3{font-size:13px;font-weight:500;color:#c6ded5;margin:0 0 10px}
+.electron-properties a,.electron-charge-motion a{font-size:10px;color:#abd2c2;line-height:1.8}
+.electron-properties .light-range{margin:18px 0}
+.electron-charge-motion{border-top:1px solid #38505d;margin-top:22px;padding-top:22px}
+.electron-charge-motion>svg{max-height:250px}
+@media(max-width:700px){.electron-property-layout{grid-template-columns:1fr;gap:18px}.electron-property-layout>svg{max-height:260px}.electron-charge-motion .light-card-heading{align-items:flex-start;gap:8px;flex-wrap:wrap}}
 .electron-linked-views .light-viewport-shell{height:auto;min-height:540px}
 .electron-linked-views .light-viewport{top:142px;bottom:72px}
 .electron-linked-views .light-stage-note{top:77px;left:16px;right:12px}
