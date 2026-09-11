@@ -19,6 +19,7 @@ Verification: the blueprint copy matches its source SHA-256; local HTML links an
 
 Additional experiments:
 
+- [Extended Casimir effect — charge interactions](casimir-model.md): implemented illustrative Zepton turnover, alignment, gap filling, pressure changes and electron/electron versus electron/proton motion tendencies, based on [Section 4 of Fleming's paper](papers/Electromagnetic%20Motion%20as%20an%20Extended%20Casimir%20Effect.pdf#page=3).
 - [Electron video refinement](electron-video-notes.md): timestamped video interpretation, implemented charge-motion, flux and radius/rate investigations, plus proposed torque, mass-budget and positron experiments.
 
 - [Casimir effect — adjustable parallel plates](planned-experiments/casimir-effect.md), including controls, reference physics and implementation gates.

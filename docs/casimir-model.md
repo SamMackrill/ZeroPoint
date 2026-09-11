@@ -1,0 +1,28 @@
+# Extended Casimir effect: charge interactions
+
+Choose **Extended Casimir effect** in the experiment library. This separate laboratory illustrates Section 4, Figures 3 and 4 of Ray Fleming's *Electromagnetic Motion as an Extended Casimir Effect* (December 2017). It is distinct from the planned parallel-plate Casimir experiment.
+
+The PDF named in the request was absent from this checkout. The matching seven-page paper was retrieved from [GSJournal, paper 7129](https://www.gsjournal.net/Science-Journals/Research%20Papers/Download/7129), verified by its title and Section 4 figures, and saved at [the requested local path](papers/Electromagnetic%20Motion%20as%20an%20Extended%20Casimir%20Effect.pdf#page=3). Section 4 is on printed page 3; Section 5 discusses the unresolved quantitative derivation. This is a visualization of the author's proposal, not a validated explanation of electrostatic forces.
+
+## Reading the experiment
+
+- Switch electron/electron and electron/proton using the two pairing cards. Switching or editing initial separation resets to a deterministic, paused state.
+- Run, pause, step (1/30 τ), reset, or slow playback to 0.1×. Space toggles playback and Right Arrow pauses and steps outside form controls. Navigation and hidden tabs pause playback. Returning preserves each laboratory's state.
+- Blue negative and orange positive lobes grow apart, turn, and collapse. Mint rings mark births. Purple arrows show deflection; outward arrows around gap births show expansion; dashed links and inward arrows show attraction to collapsing neighbours.
+- Pressure colour uses the same local scalar function as the readings. Blue is below the reference pressure, orange above it. The fixed legend saturates at 0.55 and 1.45 P₀. The white ring marks the midpoint probe. Small scene numbers are individual probes; the inner readout averages nine axis probes through the gap.
+- Click a pair or use **Inspect newest Zepton** to pin an identity. The loupe shows its signed lobes, remaining lifetime, alignment and pressure contribution. When a pinned pair ends, it stays labelled annihilated. **Follow next birth after annihilation** selects another live pair. No reused identity silently replaces a pinned pair.
+- Charges start held. **Release charges**, followed by playback, demonstrates their pressure response. Yellow arrows show equal and opposite net push, not velocities. The proton has 1836 times the illustrative inertia of the electron. Motion stops at the observation boundary; reset repeats the observation.
+
+## Implemented dynamics and assumptions
+
+The fixed-step TypeScript model uses a seeded generator and a staggered initial population on 23 × 9 possible birth sites, excluding the initial charge interiors. Ordinary pairs live 2.4–3.9 observation-time units; extra gap pairs live 1.5–2.5. These are expanded, arbitrary times, not physical seconds or a calibrated Zepton spectrum. Births have random orientations. Positive lobes relax toward the superposed, softened electric-field direction after 8% of a lifetime. A small neutral region preserves disorder in the like-charge midpoint. Separation follows `0.38 sin(π age/lifetime)` in arbitrary spatial units. The paper does not specify these parameters.
+
+In the like-charge case, mature central pairs make a small transverse deflection, triggering an extra, randomly oriented gap birth. The gap population is capped at 48. These births contribute positive pressure during expansion and a weaker positive tail during collapse. In the opposite-charge case, aligned pairs have a small positive expansion contribution followed by a larger negative contraction contribution. Collapsing aligned pairs identify a nearby aligned neighbour and shift toward it. Every ordinary death replenishes its birth site with a new identity; gap pairs expire without automatic replacement. Thus the displayed pressure fluctuates with actual animated birth and death events, rather than a timer switching a static colour wash.
+
+Pressure is an explicitly illustrative proxy. Each contributing pair adds a Gaussian kernel `0.075 c exp(-r²/0.85)` within squared distance 6 to ambient pressure P₀ = 1. The result is bounded to [0.15, 1.85]. For a gap pair, `c = 1.7 sin(πf)` during expansion and 45% of that during contraction. In the attracting chain, `c = alignment sin(πf)` times +0.22 during expansion or −1.25 during contraction. The loupe reports `c` in arbitrary units, before spatial weighting. These choices encode the paper's proposed tendencies; they do not derive van der Waals interactions, pressure in pascals, or Coulomb's law.
+
+The motion demonstration integrates `a_left = -1.8 ΔP` and `a_right = +1.8 ΔP / massRatio`. It uses no independent pairwise force law. Initial pressure is ambient and evolves as the initial cohort begins interacting. Pressure sampling and polarization follow moving charge locations, but fixed birth sites and finite bounds make this only a short displacement demonstration. Release is held when separation reaches 2.2 units or a charge crosses ±5; there is no collision, bound-state, annihilation or long-trajectory model. Spatial scales, mobilities, dipole sizes and lifetimes are schematic. No energy/momentum conservation or quantitative validation is claimed.
+
+## Verification
+
+Unit tests cover deterministic turnover and pressure history, identity expiry, growth/collapse, pressure signs across separations, simultaneous positive/negative attraction contributions, bounded population, held/released motion and inertia ratio. Browser tests cover transport, mode reset, lifecycle expiry, layer controls, navigation and mobile layout. Build and TypeScript checks cover integration with the existing laboratories.
