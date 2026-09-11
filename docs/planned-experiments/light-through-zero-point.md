@@ -2,7 +2,7 @@
 
 **Status: illustrative sequence implemented.** Stage 4a now has an interactive light laboratory with a prescribed induction sequence, controls, local pair inspection, replay, field/probe plots and file export. See the [implemented model specification](../light-model.md) for the adopted half-wavelength timing, units and limitations. Calculated coupling, emission and absorption remain future work. The sections below retain the experiment design and its later gates.
 
-Source: Ray Fleming, [Photons as Quantum Electron-Positron Composites](../Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf). The mechanisms below describe Fleming's proposed model; the visualization should identify source claims, chosen animation conventions and any subsequently calculated results.
+Source: Ray Fleming, [Photons as Quantum Electron-Positron Composites](../papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf). The mechanisms below describe Fleming's proposed model; the visualization should identify source claims, chosen animation conventions and any subsequently calculated results.
 
 ## Mechanism to visualize
 

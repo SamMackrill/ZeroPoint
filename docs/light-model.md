@@ -2,7 +2,7 @@
 
 Implemented model ID: **`light-induction/1`**. Open **Light through the zero-point field** in the experiment library. The medium and light laboratories retain their separate state when switching; switching pauses the outgoing experiment and releases its viewport.
 
-This implements the illustrative sequence in steps 1–2 of the [experiment plan](planned-experiments/light-through-zero-point.md). It follows Fleming's account of successive induced, counter-rotating dipoles and surrounding polarization/rotation in [Photons as Quantum Electron-Positron Composites](Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf), especially sections 2 and 4–6. Induction, the field response and the wave envelope are prescribed. This release does not calculate coupling forces, torque, an emergent light speed, or absorption.
+This implements the illustrative sequence in steps 1–2 of the [experiment plan](planned-experiments/light-through-zero-point.md). It follows Fleming's account of successive induced, counter-rotating dipoles and surrounding polarization/rotation in [Photons as Quantum Electron-Positron Composites](papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf), especially sections 2 and 4–6. Induction, the field response and the wave envelope are prescribed. This release does not calculate coupling forces, torque, an emergent light speed, or absorption.
 
 ## Units and timing decision
 
