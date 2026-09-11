@@ -25,9 +25,9 @@ test('controls, inspection, checkpoints, files and error handling work end to en
   await page.getByRole('button', { name: 'Dipole', exact: true }).click(); await page.getByRole('button', { name: 'Inspect first active dipole' }).click();
   const centre = page.locator('.readout-list div').filter({ has: page.locator('dt', { hasText: 'Fixed centre' }) }).locator('dd');
   const position = await centre.innerText(); await page.getByRole('button', { name: 'Step', exact: true }).click(); await expect(page.getByTestId('tick')).toHaveText('Tick 1'); await expect(centre).toHaveText(position);
-  await page.getByRole('button', { name: /Beyond the medium/ }).click(); await expect(page.getByRole('heading', { name: 'Casimir effect · planned' })).toBeVisible();
+  await page.getByRole('button', { name: /Beyond the medium/ }).click(); await expect(page.getByRole('heading', { name: 'Van der Waals / Casimir pressure · available' })).toBeVisible();
   const casimirLink = page.getByRole('link', { name: 'Read experiment plan' });
-  const response = await page.request.get((await casimirLink.getAttribute('href'))!); expect(response.ok()).toBe(true); expect(await response.text()).toContain('Status: planned, not implemented'); await page.keyboard.press('Escape');
+  const response = await page.request.get((await casimirLink.getAttribute('href'))!); expect(response.ok()).toBe(true); expect(await response.text()).toContain('Status: analytic comparison implemented'); await page.keyboard.press('Escape');
   expect(errors).toEqual([]); await page.screenshot({ path: 'test-results/workbench-desktop.png', fullPage: true });
 });
 test('narrow layout provides working drawers and has no horizontal page overflow', async ({ page }) => {

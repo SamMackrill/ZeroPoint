@@ -8,11 +8,11 @@ The current laboratory is a single-page workbench for the **reduced medium lifec
 
 The roadmap includes visualisations of:
 
-- **Casimir Effect** — adjustable parallel plates, field-mode views and force/energy as the gap changes. See the [Casimir experiment plan](docs/planned-experiments/casimir-effect.md).
+- **Casimir Effect** — an ideal plate pressure/energy reference is now available in the van der Waals experiment. The full 3D boundary model remains in the [Casimir experiment plan](docs/planned-experiments/casimir-effect.md).
 - **Lamb Shift** — energy-level comparisons showing the small shift associated with an atom’s interaction with its surrounding field, with any proposed zero-point-field explanation kept separate from the reference result.
 - **Double Slit Experiment** — adjustable slit geometry and wavelength, screen interference patterns, and comparisons between one-slit, two-slit and which-path cases.
 
-These experiments are planned and are not yet implemented or scientifically validated.
+Lamb shift and double slit remain planned. The implemented visualizations are not experimentally validated simulations.
 
 ## Run locally
 
@@ -37,9 +37,11 @@ Open <http://127.0.0.1:5174>. The simulation, fonts and controls run locally; th
 
 Choose **Light through the zero-point field** in the library to explore the new [illustrative induction experiment](docs/light-model.md). Adjust wavelength, polarization and direction, step each handoff, pin a pair, inspect field/probe plots and save or replay the sequence. Switching laboratories keeps their separate state and pauses playback.
 
-This release implements the medium MVP and the illustrative light sequence from [the HTML development plan](docs/simulation-plan.html). It does not implement force laws, emergent constants, calculated photon coupling, stable particle shells, exchange events or cosmology. The energy reservoir is bookkeeping for the assigned fluctuation energy, not a complete physical energy/momentum model.
+This release implements the medium MVP and the illustrative light sequence from [the HTML development plan](docs/simulation-plan.html). It does not implement microscopic medium force laws, emergent constants, calculated photon coupling, stable particle shells, exchange events or cosmology. The energy reservoir is bookkeeping for the assigned fluctuation energy, not a complete physical energy/momentum model.
 
 Choose **Electron in the zero-point field** for stationary electric polarization, local spin rotation with counter-moving charge-shell layers and a moving electron’s magnetic response. The [electron model](docs/electron-model.md) includes optional Faraday lines from the dipole polarization, a fixed probe, replay, inspection, checkpoints and exports, with [source notes](docs/electron-source-notes.md) extracted from Fleming’s three electron papers.
+
+Choose **Van der Waals & vacuum pressure** for a three-stage experiment based on Chapter 3 of *The Zero-Point Universe*: induce a dipole, animate correlated fluctuations, then adjust conducting plates to explore pressure from a change in zero-point interaction energy. It includes the four extracted source figures, normalized London energy/force, ideal Casimir pressure/force/energy, a gap plot and CSV sweep export. The [model and source notes](docs/van-der-waals-model.md) distinguish Fleming's dipole interpretation from the analytic references.
 
 Choose **Extended Casimir effect** to explore [charge interactions through short-lived Zeptons](docs/casimir-model.md), based on Section 4 of Fleming’s paper. Switch electron/electron and electron/proton, follow random births through alignment and collapse, compare local pressure colours and histories, inspect one lifetime in slow motion, and release the charges to illustrate their response. Pressure and acceleration are qualitative model choices. The separate parallel-plate Casimir experiment remains planned.
 
