@@ -4,6 +4,16 @@ This is a visualisation laboratory for exploring the work of Ray Fleming, detail
 
 The current laboratory is a single-page workbench for the **reduced medium lifecycle model** described in [the model specification](docs/model-specification.md), based on the [supplied ZPF blueprint](docs/Ray%20Fleming's%20Zero-Point%20Field%20Physics_%203D%20Simulation%20Blueprint.md).
 
+## Planned experiments
+
+The roadmap includes visualisations of:
+
+- **Casimir Effect** — adjustable parallel plates, field-mode views and force/energy as the gap changes. See the [Casimir experiment plan](docs/planned-experiments/casimir-effect.md).
+- **Lamb Shift** — energy-level comparisons showing the small shift associated with an atom’s interaction with its surrounding field, with any proposed zero-point-field explanation kept separate from the reference result.
+- **Double Slit Experiment** — adjustable slit geometry and wavelength, screen interference patterns, and comparisons between one-slit, two-slit and which-path cases.
+
+These experiments are planned and are not yet implemented or scientifically validated.
+
 ## Run locally
 
 Node.js 22.12+ is required (developed with Node 24).
