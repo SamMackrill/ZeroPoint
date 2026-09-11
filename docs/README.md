@@ -20,6 +20,8 @@ Verification: the blueprint copy matches its source SHA-256; local HTML links an
 Additional experiments:
 
 - [Casimir effect — adjustable parallel plates](planned-experiments/casimir-effect.md), including controls, reference physics and implementation gates.
+- [Lamb shift](planned-experiments/lamb-shift.md), with reference/shifted energy-level comparisons and future zero-point-field modelling gates.
+- [Double slit](planned-experiments/double-slit.md), with one-slit, two-slit and which-path comparisons and future medium-modelling gates.
 - [Light through the zero-point field — implemented illustrative model](light-model.md), with its [experiment plan and future gates](planned-experiments/light-through-zero-point.md): an energy wave carried by successive induced, counter-rotating pairs, with scene controls, source references and timing/coupling decisions. Based on the supplied [Photons as Quantum Electron-Positron Composites paper](papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf).
 
 - [Electron in the zero-point field](electron-model.md): implemented electric alignment, local spin rotation and moving-electron magnetic response. [Extracted details from the three electron papers](electron-source-notes.md) link the source sections and distinguish illustrative choices from analytic reference fields.

@@ -1,6 +1,18 @@
-# ZeroPoint field laboratory
+# A view into the Luminiferous Aether
 
-A single-page workbench for the **reduced medium lifecycle model** described in [the model specification](docs/model-specification.md), based on the [supplied ZPF blueprint](docs/Ray%20Fleming's%20Zero-Point%20Field%20Physics_%203D%20Simulation%20Blueprint.md).
+This is a visualisation laboratory for exploring the work of Ray Fleming, detailed in his book *The Zero-Point Universe* and his many published papers. Tragically, Ray died in 2024. You can find his [YouTube channel](https://www.youtube.com/@rayfleming2053) among the source material for this work. It is an experimental, evolving project and is **not yet scientifically accurate**; its visualisations are illustrative explorations, not validated physics.
+
+The current laboratory is a single-page workbench for the **reduced medium lifecycle model** described in [the model specification](docs/model-specification.md), based on the [supplied ZPF blueprint](docs/Ray%20Fleming's%20Zero-Point%20Field%20Physics_%203D%20Simulation%20Blueprint.md).
+
+## Planned experiments
+
+The roadmap includes visualisations of:
+
+- **Casimir Effect** — adjustable parallel plates, field-mode views and force/energy as the gap changes. See the [Casimir experiment plan](docs/planned-experiments/casimir-effect.md).
+- **Lamb Shift** — energy-level comparisons showing the small shift associated with an atom’s interaction with its surrounding field, with any proposed zero-point-field explanation kept separate from the reference result.
+- **Double Slit Experiment** — adjustable slit geometry and wavelength, screen interference patterns, and comparisons between one-slit, two-slit and which-path cases.
+
+These experiments are planned and are not yet implemented or scientifically validated.
 
 ## Run locally
 
