@@ -44,7 +44,7 @@ The UI redesign in `docs/ui-redesign-plan.html` ships as stacked PRs `UI 00`–`
 5. **Gate.** `node scripts/stack.mjs trigger`. It reviews the lowest queued layer when the hourly slot is open, and otherwise reports when the gate reopens.
 6. **Build ahead.** If fewer than 4 layers are unmerged and the next layer's base is stable, create it (`stack.mjs new`), `npm ci`, implement that roadmap phase, pass the checks, commit, `push`, open the PR against the layer below (`gh pr create --base ui/<below> --head ui/<new>`), then `stack.mjs nav`. Keep each PR to about 600 changed lines; split into `NNa`/`NNb` layers when larger.
 7. **Report.** Summarise the wake in one or two lines: merged, fixed, triggered, opened, deployed, blocked. Send a push notification when you merge, deploy, or need a decision (the palette gate, or an ambiguous design choice).
-8. **Schedule.** With `/loop`, wake at the next gate time if something is queued, otherwise in 20–30 minutes; use a 60-minute heartbeat when blocked on the user.
+8. **Watch and schedule.** Keep a Monitor running `node scripts/stack.mjs watch` (timeout at the maximum) and re-arm it when it expires; its lines (CI results, review state, CodeRabbit activity, findings, `main` moving, the gate opening, GitHub notifications) are the primary wake signal. Because it saves its last snapshot, a re-armed watcher first reports what changed while it was down. Use `/loop` wakeups only as a 30–60 minute fallback heartbeat, and read the clock (`date`) rather than estimating times. Report times in BST.
 
 ## Checks (every push)
 

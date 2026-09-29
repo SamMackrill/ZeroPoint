@@ -1,10 +1,10 @@
 // Stacked-PR helper for the UI redesign: status, CodeRabbit review gate, worktrees, restack, retarget, push and navigator.
-// Usage: node scripts/stack.mjs <status|trigger|new|restack|retarget|merge|waive|push|nav|port> [options]. See docs/ui-redesign-plan.html §16.
+// Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|waive|push|nav|port> [options]. See docs/ui-redesign-plan.html §16.
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { REVIEWER, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
+import { REVIEWER, diffSnapshots, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
 
 const args = process.argv.slice(2), command = args[0], flags = new Set(args.filter(a => a.startsWith('--')));
 const option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -108,6 +108,8 @@ function gather(state) {
       ],
       lastTriggerAt: triggers.length ? Math.max(...triggers) : 0,
       checks: checksFor(pr.number), openThreads: openThreads(repo, pr.number),
+      // Changes whenever CodeRabbit posts or edits a comment or review, so the watcher can report activity of any kind.
+      activity: (items => `${items.length}@${items.map(x => x.updated_at ?? x.submitted_at ?? '').sort().pop() ?? ''}`)([...reviews, ...comments].filter(x => x.user?.login === REVIEWER)),
       // The PR's own head commit, not whatever a same-named ref resolves to.
       patchId: patchId(`origin/${pr.baseRefName}`, pr.headRefOid),
     };
@@ -255,6 +257,53 @@ function merge() {
   saveState(next);
 }
 
+/** Capture the stack, the review gate and origin/main as a watch snapshot (see diffSnapshots). */
+function snapshot(state) {
+  const { repo, prs } = gather(state), slot = nextSlot(state), main = sha('origin/main');
+  return {
+    repo, gate: { open: Date.now() >= slot, next: pickNext(prs)?.number ?? null },
+    main: { sha: main, subject: main ? git(['log', '-1', '--format=%s', main]) : '' },
+    prs: Object.fromEntries(prs.map(pr => [pr.number, { branch: pr.branch, head: pr.head.slice(0, 7), state: pr.state, checks: pr.checks, threads: pr.openThreads, outside: pr.outsideFindings, activity: pr.activity }])),
+  };
+}
+
+/** Unread GitHub notifications for this repository newer than `since` (read-only: nothing is marked as read). */
+function notificationsSince(repo, since) {
+  const items = ghJson(['api', 'notifications', '--paginate', '--slurp']).flat().filter(n => n.repository?.full_name === repo && n.updated_at > (since ?? ''));
+  return items.map(n => ({ at: n.updated_at, line: `GitHub ${n.reason.replaceAll('_', ' ')}: ${n.subject?.title ?? ''}` }));
+}
+
+/** Local wall-clock time in UK time (BST/GMT) for event lines. */
+const stamp = () => new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+
+/**
+ * Watch the stack: every --interval seconds (default 60) diff a fresh snapshot against the last one and print one line
+ * per change. The last snapshot is saved in shared state, so a restarted watcher first reports everything that changed
+ * while it was down. --once runs a single pass. Designed to run under a Monitor, re-armed when it expires.
+ */
+async function watch() {
+  const interval = Math.max(20, Number(option('--interval') ?? 60)) * 1000;
+  let lastError = '';
+  for (;;) {
+    try {
+      run('git', ['fetch', '--quiet', '--prune', 'origin'], { allowFail: true });
+      const state = loadState(), next = snapshot(state), seen = state.watch?.notifiedAt;
+      const lines = diffSnapshots(state.watch?.last, next);
+      const notes = notificationsSince(next.repo, seen);
+      state.watch = { last: next, notifiedAt: notes.map(n => n.at).concat(seen ?? '').sort().pop() };
+      saveState(state);
+      for (const line of [...lines, ...notes.map(n => n.line)]) console.log(`[${stamp()}] ${line}`);
+      lastError = '';
+    } catch (error) {
+      const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
+      if (message !== lastError) console.log(`[${stamp()}] watch error: ${message}`);
+      lastError = message;
+    }
+    if (flags.has('--once')) return;
+    await new Promise(resolve => setTimeout(resolve, interval));
+  }
+}
+
 /** Waive a review's outside-diff findings after answering them on the PR: stack.mjs waive <pr> <reviewId> <reason…>. */
 function waive() {
   const [number, reviewId, ...words] = args.slice(1).filter(a => !a.startsWith('--')), reason = words.join(' ');
@@ -288,6 +337,6 @@ function nav() {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 
-const commands = { status, trigger, new: newLayer, restack, retarget, merge, waive, push, nav, port: () => console.log(stackPort(args[1] ?? git(['branch', '--show-current'])) ?? 5174) };
-if (!commands[command]) { console.error('Usage: node scripts/stack.mjs <status|trigger|new|restack|retarget|merge|waive|push|nav|port> [--dry-run] [--json] [--pr N] [--full] [--force] [--base ref]'); process.exit(2); }
-try { commands[command](); } catch (error) { console.error(error instanceof Error ? error.message : error); process.exit(1); }
+const commands = { status, trigger, watch, new: newLayer, restack, retarget, merge, waive, push, nav, port: () => console.log(stackPort(args[1] ?? git(['branch', '--show-current'])) ?? 5174) };
+if (!commands[command]) { console.error('Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|waive|push|nav|port> [--dry-run] [--json] [--pr N] [--full] [--force] [--base ref]'); process.exit(2); }
+Promise.resolve().then(() => commands[command]()).catch(error => { console.error(error instanceof Error ? error.message : error); process.exit(1); });

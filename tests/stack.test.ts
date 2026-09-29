@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, isReviewBody, outsideDiffFindings, reviewedHeadsInSummary, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
+import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, diffSnapshots, isReviewBody, outsideDiffFindings, reviewedHeadsInSummary, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
 
 /** Build a queued-by-default PR fixture for scheduling tests. */
 const pr = (branch: string, extra: Record<string, unknown> = {}) => ({ number: Number(branch.slice(3, 5)) + 100, branch, head: `sha-${branch}`, draft: false, checks: 'pass', openThreads: 0, reviewedShas: [] as string[], lastTriggerAt: 0, headCommittedAt: 1000, ...extra });
@@ -104,6 +104,26 @@ describe('merge readiness', () => {
     expect(mergeReady(pr('ui/00-delivery', { ...clean, checks: 'none' }))).toBe(false);
     expect(mergeReady(pr('ui/00-delivery', { ...clean, openThreads: 1 }))).toBe(false);
     expect(mergeReady(pr('ui/00-delivery', { base: 'main' }))).toBe(false);
+  });
+});
+
+describe('watch snapshots', () => {
+  const base = { branch: 'ui/00-delivery', head: 'aaaaaaa', state: 'queued', checks: 'pending', threads: 0, outside: 0, activity: '1@t1' };
+  const snap = (prs: Record<string, typeof base>, extra: Record<string, unknown> = {}) => ({ prs, gate: { open: false, next: null }, main: { sha: 'm1', subject: 'x' }, ...extra });
+  it('reports the whole picture when there is no previous snapshot', () => {
+    expect(diffSnapshots(undefined, snap({ 7: base }))).toEqual(['#7 ui/00-delivery: queued, CI pending']);
+  });
+  it('reports every kind of change, including ones nobody waited for', () => {
+    const next = snap({ 7: { ...base, head: 'bbbbbbb', checks: 'fail', state: 'reviewed', outside: 1, activity: '2@t2' }, 9: { ...base, branch: 'ui/01b-baselines' } }, { main: { sha: 'm2', subject: 'Other work' } });
+    expect(diffSnapshots(snap({ 7: base, 8: { ...base, branch: 'ui/01a-css-format' } }), next)).toEqual([
+      '#7 new head bbbbbbb', '#7 CI pending → fail', '#7 review queued → reviewed', '#7 open findings: threads 0 → 0, outside-diff 0 → 1',
+      '#7 new CodeRabbit activity', '#9 opened (ui/01b-baselines): queued, CI pending', '#8 closed or merged (ui/01a-css-format)', 'main moved to m2: Other work',
+    ]);
+  });
+  it('announces the review gate opening once per queued PR', () => {
+    const open = snap({ 7: base }, { gate: { open: true, next: 7 } });
+    expect(diffSnapshots(snap({ 7: base }), open)).toEqual(['review gate open; next in queue #7']);
+    expect(diffSnapshots(open, open)).toEqual([]);
   });
 });
 

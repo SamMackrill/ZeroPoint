@@ -115,6 +115,35 @@ export function pickNext(prs) {
   return sortStack(prs).find(pr => reviewState(pr) === 'queued') ?? null;
 }
 
+/**
+ * Describe what changed between two watch snapshots, one line per event. Snapshots hold, per open stack PR, its
+ * branch, head, review state, CI, open threads, outside-diff findings and a CodeRabbit activity key, plus the review
+ * gate and origin/main. Comparing whole snapshots (not waiting for one expected signal) is what makes the watcher
+ * catch events nobody anticipated; with no previous snapshot it reports the current picture.
+ */
+export function diffSnapshots(prev, next) {
+  const lines = [], before = prev?.prs ?? {}, after = next.prs ?? {};
+  const label = pr => `${pr.state}, CI ${pr.checks}${pr.threads ? `, ${pr.threads} open thread(s)` : ''}${pr.outside ? `, ${pr.outside} outside-diff finding(s)` : ''}`;
+  if (!prev) {
+    for (const [number, pr] of Object.entries(after)) lines.push(`#${number} ${pr.branch}: ${label(pr)}`);
+  } else {
+    for (const [number, pr] of Object.entries(after)) {
+      const old = before[number];
+      if (!old) { lines.push(`#${number} opened (${pr.branch}): ${label(pr)}`); continue; }
+      if (old.head !== pr.head) lines.push(`#${number} new head ${pr.head}`);
+      if (old.checks !== pr.checks) lines.push(`#${number} CI ${old.checks} → ${pr.checks}`);
+      if (old.state !== pr.state) lines.push(`#${number} review ${old.state} → ${pr.state}`);
+      if (old.threads !== pr.threads || old.outside !== pr.outside) lines.push(`#${number} open findings: threads ${old.threads} → ${pr.threads}, outside-diff ${old.outside} → ${pr.outside}`);
+      if (old.activity !== pr.activity) lines.push(`#${number} new CodeRabbit activity`);
+    }
+    for (const [number, old] of Object.entries(before)) if (!after[number]) lines.push(`#${number} closed or merged (${old.branch})`);
+    if (prev.main?.sha && next.main?.sha && prev.main.sha !== next.main.sha) lines.push(`main moved to ${next.main.sha.slice(0, 7)}: ${next.main.subject}`);
+  }
+  const gateOpened = next.gate?.open && next.gate.next && (!prev || !prev.gate?.open || prev.gate.next !== next.gate.next);
+  if (gateOpened) lines.push(`review gate open; next in queue #${next.gate.next}`);
+  return lines;
+}
+
 /** Render the stack navigator block placed in every PR body. */
 export function renderNav(stack, current) {
   const items = sortStack(stack).map(pr => pr.number === current ? `**#${pr.number}**` : `#${pr.number}`);
