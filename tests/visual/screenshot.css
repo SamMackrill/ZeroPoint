@@ -1,0 +1,6 @@
+/* Hide regions whose pixels depend on GPU output or frame timing, so visual baselines are deterministic.
+   visibility (not display) keeps the page layout and height unchanged. */
+canvas,
+.statusbar {
+  visibility: hidden !important;
+}

@@ -26,8 +26,8 @@ jobs:
       - run: npm run check
       - run: npm test
       - run: npx playwright install --with-deps chromium
-      # Missing visual baselines are written (and uploaded below) rather than failing; changed ones fail.
-      - run: npx playwright test --update-snapshots=missing
+      # Missing visual baselines are recorded by tests/visual/labs.spec.ts and uploaded below; changed ones fail.
+      - run: npm run test:e2e
       - run: npm run build
       - run: node scripts/bundle-size.mjs >> "$GITHUB_STEP_SUMMARY"
       - if: always()

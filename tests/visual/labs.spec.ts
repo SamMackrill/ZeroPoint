@@ -1,16 +1,28 @@
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 
 // Visual baselines for every lab and scenario in its initial, paused state. They guard the UI redesign against
 // unintended visual change (docs/ui-redesign-plan.html §16). Baselines are recorded on Linux CI only, because font
-// rasterisation differs between operating systems; CI writes missing baselines and uploads them as the
-// `visual-snapshots` artifact, and `node scripts/stack.mjs snapshots` commits them. WebGL canvases and live
-// telemetry are masked because software rendering and frame timing are not deterministic.
+// rasterisation differs between operating systems. A missing baseline is recorded (and the test passes with an
+// annotation) rather than failing; CI uploads the `visual-snapshots` artifact and `node scripts/stack.mjs snapshots`
+// commits it. WebGL canvases and live telemetry are hidden by screenshot.css.
 test.skip(process.platform !== 'linux', 'Visual baselines are recorded and compared on Linux CI.');
 
-/** Wait for fonts and layout to settle, then compare a full-page screenshot with live regions masked. */
+const STYLE = fileURLToPath(new URL('./screenshot.css', import.meta.url));
+const BASELINES = fileURLToPath(new URL('./__screenshots__/', import.meta.url));
+
+/** Wait for fonts, then compare with the stored baseline, or record it when none exists yet. */
 async function snapshot(page: Page, name: string) {
   await page.evaluate(() => document.fonts.ready);
-  await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, mask: [page.locator('canvas'), page.locator('.statusbar')] });
+  const baseline = `${BASELINES}${name}.png`;
+  if (!existsSync(baseline)) {
+    mkdirSync(BASELINES, { recursive: true });
+    await page.screenshot({ path: baseline, fullPage: true, animations: 'disabled', caret: 'hide', style: readFileSync(STYLE, 'utf8') });
+    test.info().annotations.push({ type: 'baseline recorded', description: name });
+    return;
+  }
+  await expect(page).toHaveScreenshot(`${name}.png`, { fullPage: true, stylePath: STYLE });
 }
 
 /** Load the app and open a laboratory from the Medium sidebar. */
