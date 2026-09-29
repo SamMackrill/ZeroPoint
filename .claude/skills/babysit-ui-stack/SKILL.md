@@ -37,6 +37,8 @@ The UI redesign in `docs/ui-redesign-plan.html` ships as stacked PRs `UI 00`–`
    | Model/science behaviour | Reply; log under the plan's open questions; escalate only for a real model bug |
    | Genuinely ambiguous design choice | Park this PR and ask the user |
 
+   Also read the body of CodeRabbit's latest review: findings under **"Outside diff range comments (N)"** have no thread (`status` shows `outside-diff:N`). Fix them like any finding and answer them in a PR comment. If one should not be acted on, answer it and run `node scripts/stack.mjs waive <pr> <reviewId> <reason>`.
+
    Batch all fixes for a PR into **one** push. Reply on each thread with the fixing commit SHA and resolve it (GraphQL `resolveReviewThread`). If every fix was a nitpick/doc/rename, do not re-request review — the PR becomes `clean` once threads are resolved. If a fix changed behaviour, the PR re-enters the queue automatically (new head, unreviewed).
 4. **Restack.** If any lower layer moved: `node scripts/stack.mjs restack`, run checks in each moved worktree, then `push`. A layer whose own diff is unchanged keeps its review (patch-id match).
 5. **Gate.** `node scripts/stack.mjs trigger`. It reviews the lowest queued layer when the hourly slot is open, and otherwise reports when the gate reopens.

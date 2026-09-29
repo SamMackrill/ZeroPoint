@@ -1,10 +1,10 @@
 // Stacked-PR helper for the UI redesign: status, CodeRabbit review gate, worktrees, restack, retarget, push and navigator.
-// Usage: node scripts/stack.mjs <status|trigger|new|restack|retarget|merge|push|nav|port> [options]. See docs/ui-redesign-plan.html §16.
+// Usage: node scripts/stack.mjs <status|trigger|new|restack|retarget|merge|waive|push|nav|port> [options]. See docs/ui-redesign-plan.html §16.
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { REVIEWER, isReviewBody, isTrustedTrigger, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
+import { REVIEWER, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
 
 const args = process.argv.slice(2), command = args[0], flags = new Set(args.filter(a => a.startsWith('--')));
 const option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -67,12 +67,18 @@ function checksFor(number) {
   return buckets.some(b => b === 'pending') ? 'pending' : 'pass';
 }
 
-/** Count unresolved review threads opened by CodeRabbit. */
+/** Count unresolved review threads opened by CodeRabbit, across every page (an unseen page must never read as clean). */
 function openThreads(repo, number) {
   const [owner, name] = repo.split('/');
-  const query = 'query($owner:String!,$name:String!,$number:Int!){repository(owner:$owner,name:$name){pullRequest(number:$number){reviewThreads(first:100){nodes{isResolved comments(first:1){nodes{author{login}}}}}}}}';
-  const data = ghJson(['api', 'graphql', '-f', `query=${query}`, '-F', `owner=${owner}`, '-F', `name=${name}`, '-F', `number=${number}`]);
-  return data.data.repository.pullRequest.reviewThreads.nodes.filter(t => !t.isResolved && t.comments.nodes[0]?.author?.login === 'coderabbitai').length;
+  const query = 'query($owner:String!,$name:String!,$number:Int!,$after:String){repository(owner:$owner,name:$name){pullRequest(number:$number){reviewThreads(first:100,after:$after){nodes{isResolved comments(first:1){nodes{author{login}}}} pageInfo{hasNextPage endCursor}}}}}';
+  let after = null, count = 0;
+  do {
+    const data = ghJson(['api', 'graphql', '-f', `query=${query}`, '-F', `owner=${owner}`, '-F', `name=${name}`, '-F', `number=${number}`, '-F', `after=${after ?? 'null'}`]);
+    const threads = data.data.repository.pullRequest.reviewThreads;
+    count += threads.nodes.filter(t => !t.isResolved && t.comments.nodes[0]?.author?.login === 'coderabbitai').length;
+    after = threads.pageInfo.hasNextPage ? threads.pageInfo.endCursor : null;
+  } while (after);
+  return count;
 }
 
 /** List open stack PRs from this repository only; a fork's same-named branch is never treated as a stack layer. */
@@ -114,6 +120,12 @@ function gather(state) {
     }
     if (Object.keys(evidence.patches).length) layer(state, item.branch).review = evidence;
     item.reviewedPatchIds = Object.values(evidence.patches);
+    // Findings posted outside the diff exist only in review bodies: count those from reviews of the current diff,
+    // unless waived with `stack.mjs waive`.
+    const waived = new Set(state.layers[item.branch]?.waived ?? []);
+    item.outsideFindings = reviews
+      .filter(r => r.user?.login === REVIEWER && !waived.has(r.id) && (r.commit_id === item.head || (item.patchId && evidence.patches[r.commit_id] === item.patchId)))
+      .reduce((sum, r) => sum + outsideDiffFindings(r.body), 0);
     item.state = reviewState(item);
     state.lastTriggerAt = Math.max(state.lastTriggerAt ?? 0, item.lastTriggerAt);
     prs.push(item);
@@ -128,7 +140,7 @@ function status() {
   const summary = { now: new Date().toISOString(), nextSlot: new Date(slot).toISOString(), gateOpen: Date.now() >= slot, next: pickNext(prs)?.number ?? null,
     prs: prs.map(({ body, reviewedShas, ...rest }) => ({ ...rest, head: rest.head.slice(0, 7) })) };
   if (flags.has('--json')) { console.log(JSON.stringify(summary, null, 2)); return; }
-  for (const pr of prs) say(`#${pr.number}`.padEnd(6), pr.branch.padEnd(26), `← ${pr.base}`.padEnd(24), pr.head.slice(0, 7), `ci:${pr.checks}`.padEnd(12), pr.state.padEnd(11), `threads:${pr.openThreads}`);
+  for (const pr of prs) say(`#${pr.number}`.padEnd(6), pr.branch.padEnd(26), `← ${pr.base}`.padEnd(24), pr.head.slice(0, 7), `ci:${pr.checks}`.padEnd(12), pr.state.padEnd(11), `threads:${pr.openThreads}`, pr.outsideFindings ? `outside-diff:${pr.outsideFindings}` : '');
   say(`Review gate ${summary.gateOpen ? 'OPEN' : `closed until ${summary.nextSlot}`}; next in queue: ${summary.next ? `#${summary.next}` : 'none'}`);
 }
 
@@ -243,6 +255,20 @@ function merge() {
   saveState(next);
 }
 
+/** Waive a review's outside-diff findings after answering them on the PR: stack.mjs waive <pr> <reviewId> <reason…>. */
+function waive() {
+  const [number, reviewId, ...words] = args.slice(1).filter(a => !a.startsWith('--')), reason = words.join(' ');
+  if (!Number(number) || !Number(reviewId) || !reason) throw new Error('Usage: stack.mjs waive <pr> <reviewId> <reason>');
+  const pr = openStackPrs('number,headRefName').find(p => p.number === Number(number));
+  if (!pr) throw new Error(`#${number} is not an open stack PR.`);
+  say(`${dryRun ? '[dry run] ' : ''}Waiving outside-diff findings of review ${reviewId} on #${number}.`);
+  if (dryRun) return;
+  run('gh', ['pr', 'comment', String(number), '--body', `Outside-diff finding(s) in CodeRabbit review ${reviewId} not acted on: ${reason}`]);
+  const state = loadState(), record = layer(state, pr.headRefName);
+  record.waived = [...new Set([...(record.waived ?? []), Number(reviewId)])];
+  saveState(state);
+}
+
 /** Force-push (with lease) every live local layer whose tip differs from its remote branch. */
 function push() {
   for (const branch of sortStack(localLayers(loadState()).map(b => ({ branch: b }))).map(l => l.branch)) pushBranch(branch);
@@ -262,6 +288,6 @@ function nav() {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 
-const commands = { status, trigger, new: newLayer, restack, retarget, merge, push, nav, port: () => console.log(stackPort(args[1] ?? git(['branch', '--show-current'])) ?? 5174) };
-if (!commands[command]) { console.error('Usage: node scripts/stack.mjs <status|trigger|new|restack|retarget|merge|push|nav|port> [--dry-run] [--json] [--pr N] [--full] [--force] [--base ref]'); process.exit(2); }
+const commands = { status, trigger, new: newLayer, restack, retarget, merge, waive, push, nav, port: () => console.log(stackPort(args[1] ?? git(['branch', '--show-current'])) ?? 5174) };
+if (!commands[command]) { console.error('Usage: node scripts/stack.mjs <status|trigger|new|restack|retarget|merge|waive|push|nav|port> [--dry-run] [--json] [--pr N] [--full] [--force] [--base ref]'); process.exit(2); }
 try { commands[command](); } catch (error) { console.error(error instanceof Error ? error.message : error); process.exit(1); }

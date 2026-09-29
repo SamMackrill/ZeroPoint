@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, isReviewBody, reviewedHeadsInSummary, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
+import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, isReviewBody, outsideDiffFindings, reviewedHeadsInSummary, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
 
 /** Build a queued-by-default PR fixture for scheduling tests. */
 const pr = (branch: string, extra: Record<string, unknown> = {}) => ({ number: Number(branch.slice(3, 5)) + 100, branch, head: `sha-${branch}`, draft: false, checks: 'pass', openThreads: 0, reviewedShas: [] as string[], lastTriggerAt: 0, headCommittedAt: 1000, ...extra });
@@ -31,6 +31,15 @@ describe('review gate', () => {
     expect(isReviewBody('No actionable comments were generated in the recent review. 🎉')).toBe(true);
     expect(isReviewBody('')).toBe(false);
     expect(isReviewBody(null)).toBe(false);
+  });
+  it('counts findings CodeRabbit could only post outside the diff', () => {
+    const body = '> [!CAUTION]\n> Some comments are outside the diff and can’t be posted inline due to GitHub limitations.\n> **⚠️ Outside diff range comments (1)**';
+    expect(isReviewBody(body)).toBe(true);
+    expect(outsideDiffFindings(body)).toBe(1);
+    expect(outsideDiffFindings('**Actionable comments posted: 0**')).toBe(0);
+    // A reviewed diff with an unanswered outside-diff finding is not clean, even with no open threads.
+    expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'], outsideFindings: 1 }))).toBe('reviewed');
+    expect(mergeReady(pr('ui/00-delivery', { base: 'main', reviewedShas: ['sha-ui/00-delivery'], outsideFindings: 1 }))).toBe(false);
   });
   it('reads reviewed heads from the summary when a clean review posts no review object', () => {
     const summary = ['No actionable comments were generated in the recent review.', 'Commits', 'Reviewing files that changed from the base of the PR and between 5d31e8f42651739eb0d30b89b6be2f45ef842f13 and 29bafa0855d2fe55f6cf8cdae5ab736f07d4b4f6.'].join(String.fromCharCode(10));

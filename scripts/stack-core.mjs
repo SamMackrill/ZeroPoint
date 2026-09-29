@@ -31,7 +31,17 @@ export function sortStack(items) {
  * count as a review of that head.
  */
 export function isReviewBody(body) {
-  return /actionable comments/i.test(body ?? '');
+  return /actionable comments|outside diff range comments|review info/i.test(body ?? '');
+}
+
+/**
+ * Count findings CodeRabbit could not post inline ("Outside diff range comments (N)"). They live only in the review
+ * body, never as review threads, so they cannot be resolved; they stay open until a newer head is reviewed or the
+ * finding is explicitly waived.
+ */
+export function outsideDiffFindings(body) {
+  const match = /outside diff range comments \((\d+)\)/i.exec(body ?? '');
+  return match ? Number(match[1]) : 0;
 }
 
 /**
@@ -89,7 +99,7 @@ export function reviewState(pr) {
   if (pr.checks === 'fail') return 'failing';
   const evidence = pr.reviewedPatchIds ?? [];
   const reviewed = pr.patchId && evidence.length ? evidence.includes(pr.patchId) : Boolean(pr.reviewedShas?.includes(pr.head));
-  if (reviewed) return pr.openThreads > 0 ? 'reviewed' : 'clean';
+  if (reviewed) return pr.openThreads > 0 || pr.outsideFindings > 0 ? 'reviewed' : 'clean';
   if (pr.lastTriggerAt && pr.lastTriggerAt > (pr.headCommittedAt ?? 0)) return 'triggered';
   if (pr.checks === 'pending') return 'waiting-ci';
   return 'queued';
