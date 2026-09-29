@@ -34,6 +34,15 @@ export function isReviewBody(body) {
   return /actionable comments/i.test(body ?? '');
 }
 
+/**
+ * Extract the heads CodeRabbit reports having reviewed from its summary comment ("Reviewing files that changed from
+ * the base of the PR and between <base> and <head>"). A review with no findings may post no review object at all —
+ * only this line and an edited "Review finished" reply — so the summary is evidence too.
+ */
+export function reviewedHeadsInSummary(body) {
+  return [...(body ?? '').matchAll(/Reviewing files that changed from the base of the PR and between [0-9a-f]{7,40} and ([0-9a-f]{7,40})/gi)].map(match => match[1]);
+}
+
 /** Recognise a manual CodeRabbit review request comment. */
 export function isTriggerComment(body) {
   return /^\s*@coderabbitai\s+(full\s+)?review\b/i.test(body ?? '');

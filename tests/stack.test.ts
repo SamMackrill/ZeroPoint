@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, isReviewBody, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
+import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, isReviewBody, reviewedHeadsInSummary, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
 
 /** Build a queued-by-default PR fixture for scheduling tests. */
 const pr = (branch: string, extra: Record<string, unknown> = {}) => ({ number: Number(branch.slice(3, 5)) + 100, branch, head: `sha-${branch}`, draft: false, checks: 'pass', openThreads: 0, reviewedShas: [] as string[], lastTriggerAt: 0, headCommittedAt: 1000, ...extra });
@@ -31,6 +31,11 @@ describe('review gate', () => {
     expect(isReviewBody('No actionable comments were generated in the recent review. 🎉')).toBe(true);
     expect(isReviewBody('')).toBe(false);
     expect(isReviewBody(null)).toBe(false);
+  });
+  it('reads reviewed heads from the summary when a clean review posts no review object', () => {
+    const summary = ['No actionable comments were generated in the recent review.', 'Commits', 'Reviewing files that changed from the base of the PR and between 5d31e8f42651739eb0d30b89b6be2f45ef842f13 and 29bafa0855d2fe55f6cf8cdae5ab736f07d4b4f6.'].join(String.fromCharCode(10));
+    expect(reviewedHeadsInSummary(summary)).toEqual(['29bafa0855d2fe55f6cf8cdae5ab736f07d4b4f6']);
+    expect(reviewedHeadsInSummary('Walkthrough only')).toEqual([]);
   });
   it('only lets people with write access move the gate', () => {
     expect(isTrustedTrigger({ body: '@coderabbitai review', author_association: 'OWNER' })).toBe(true);
