@@ -254,6 +254,7 @@ details>div{padding:0 18px 12px}
       <tr><td></td><td>Deploys</td><td><b>Milestones only:</b> after UI 07 (shell + Medium), after UI 11 (all labs migrated), and after UI 18.</td></tr>
       <tr><td></td><td>Babysitter runner</td><td><b>This T3 thread via <code>/loop</code>.</b> It pauses when the session isn't running and resumes from on-disk state.</td></tr>
       <tr><td></td><td>Defaults adopted</td><td>A visual baseline, stable test IDs and a caveat inventory land <i>before</i> any visual change. The palette needs your approval (via a tokens preview) before it is applied. Casimir and van der Waals gain Save/Load in their migration layers. Per-tick data bypasses React state.</td></tr>
+      <tr><td>9 · During delivery</td><td>Findings on reviewed layers</td><td><b>Fix blocking findings in place; defer the rest to a remedial PR.</b> Each fix pushed to a layer under review costs another hourly slot, so valid but non-blocking findings are answered, waived and fixed later in a dedicated remedial layer, using judgement case by case (29 Sep). See <a href="#remedial">Deferring findings</a>.</td></tr>
     </tbody>
   </table>
 </section>
@@ -1104,9 +1105,25 @@ details>div{padding:0 18px 12px}
       <tr><td>Conflicts with a decision in this plan (e.g. "restore the inline caveat")</td><td><b>Reply</b> citing the plan section, resolve, and make no change.</td></tr>
       <tr><td>Belongs to a later layer</td><td><b>Reply</b> "addressed in UI NN", add it to that layer's checklist, and resolve.</td></tr>
       <tr><td>Model or science behaviour (out of scope for UI PRs)</td><td><b>Reply</b> and log it under Open questions. Escalate only if it looks like a real model bug.</td></tr>
+      <tr><td>Valid but non-blocking, on a layer already reviewed</td><td><b>Defer</b> to the remedial PR: reply with the rationale, resolve or waive, and add it to the checklist (<a href="#remedial">below</a>).</td></tr>
       <tr><td>A genuinely ambiguous product or design choice</td><td>The <b>only</b> case that pauses for you. The babysitter parks that PR and keeps the rest of the stack moving.</td></tr>
     </tbody>
   </table>
+
+  <h3 id="remedial">Deferring findings to remedial PRs</h3>
+  <p>Each push to a layer that CodeRabbit has already reviewed starts another review, and each review costs an hourly slot. When a layer's findings keep coming, the UI work behind it stalls. So once a layer has been reviewed, every new finding is sorted into one of two kinds:</p>
+  <table>
+    <thead><tr><th style="width:24%">Kind</th><th style="width:38%">Examples</th><th>Handling</th></tr></thead>
+    <tbody>
+      <tr><td><b>Blocking</b>: fix in place</td><td>Wrong behaviour in the app; a broken test or CI; data loss; a real security exposure; anything that would make merging this layer, or anything the babysitter does on its behalf, unsafe (e.g. a merge-readiness check that can pass too early).</td><td>Fix in the layer, push once, reply with the commit, resolve. The layer re-enters the review queue.</td></tr>
+      <tr><td><b>Deferrable</b>: fix in a remedial PR</td><td>Hardening against unlikely conditions, robustness of the dev tooling, maintainability and clarity, nitpicks, and anything whose risk is not realised until later layers.</td><td>Reply with the rationale and "deferred to the remedial PR", then resolve the thread (or <code>stack.mjs waive</code> for an outside-diff finding). Add the item to the remedial PR's checklist. The layer stays clean and can merge.</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><b>Judgement first.</b> When in doubt, a finding is blocking. A deferral must be safe: nothing on <code>main</code> may depend on a deferred fix to be correct.</li>
+    <li><b>The remedial layer</b> is an ordinary stack layer named <code>ui/NN&lt;x&gt;-remedial-&lt;topic&gt;</code> (e.g. <code>ui/01h-remedial-tooling</code>), opened at the <b>top</b> of the stack. It never forces a restack of reviewed layers. Its PR body keeps the checklist, with a link to each deferred thread. It is reviewed and merged in turn like any other layer, and a new one is opened when the next batch of deferrals starts.</li>
+    <li><b>Freeze reviewed layers.</b> Improvements to the stack tooling that no finding asked for also go into the topmost unreviewed layer, never into a layer under review. <code>stack.mjs</code> runs from that layer's worktree, whose copy is the newest.</li>
+  </ul>
 
   <h3>Quality gates on every push</h3>
   <p>Locally, and in CI from UI 00: <code>npm run check</code> · <code>npm test</code> · <code>npm run test:e2e</code> (on the worktree's port) · <code>npm run build</code>. In addition: JSDoc on new and touched functions, no hex colours outside tokens (from UI 01), and the bundle-size delta recorded in the PR body (from UI 02).</p>
