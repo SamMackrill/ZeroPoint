@@ -1,0 +1,26 @@
+{
+  "medium": {
+    "medium": 22,
+    "app": 22
+  },
+  "light": {
+    "light": 10,
+    "app": 17,
+    "medium": 8
+  },
+  "electron": {
+    "medium": 8,
+    "app": 18,
+    "electron": 10
+  },
+  "casimir": {
+    "casimir": 10,
+    "app": 12,
+    "medium": 2
+  },
+  "vdw": {
+    "vdw": 10,
+    "app": 12,
+    "medium": 2
+  }
+}
