@@ -297,9 +297,14 @@ function snapshot(state) {
   };
 }
 
-/** Unread GitHub notifications for this repository newer than `since` (read-only: nothing is marked as read). */
-function notificationsSince(repo, since) {
-  const items = ghJson(['api', 'notifications', '--paginate', '--slurp']).flat().filter(n => n.repository?.full_name === repo && n.updated_at > (since ?? ''));
+/**
+ * Unread GitHub notifications for this repository newer than `since` (read-only: nothing is marked as read). Stack PRs
+ * and CI runs on stack branches are skipped because the snapshot diff already reports them; what remains is activity
+ * outside the stack, which matters for the main freeze.
+ */
+function notificationsSince(repo, since, stackNumbers) {
+  const onStack = n => stackNumbers.has(Number(/\/pulls\/(\d+)$/.exec(n.subject?.url ?? '')?.[1])) || /\bfor ui\/\d{2}[a-z]?-/.test(n.subject?.title ?? '');
+  const items = ghJson(['api', 'notifications', '--paginate', '--slurp']).flat().filter(n => n.repository?.full_name === repo && n.updated_at > (since ?? '') && !onStack(n));
   return items.map(n => ({ at: n.updated_at, line: `GitHub ${n.reason.replaceAll('_', ' ')}: ${n.subject?.title ?? ''}` }));
 }
 
@@ -322,7 +327,7 @@ async function watch() {
       run('git', ['fetch', '--quiet', '--prune', 'origin'], { allowFail: true });
       const state = loadState(), next = snapshot(state), seen = state.watch?.notifiedAt;
       const lines = diffSnapshots(state.watch?.last, next);
-      const notes = notificationsSince(next.repo, seen);
+      const notes = notificationsSince(next.repo, seen, new Set(Object.keys(next.prs).map(Number)));
       state.watch = { last: next, notifiedAt: notes.map(n => n.at).concat(seen ?? '').sort().pop() };
       saveObservations(state);
       for (const line of [...lines, ...notes.map(n => n.line)]) console.log(`[${stamp()}] ${line}`);
