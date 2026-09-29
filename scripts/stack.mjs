@@ -1,9 +1,10 @@
 // Stacked-PR helper for the UI redesign: status, CodeRabbit review gate, worktrees, restack, retarget, push and navigator.
 // Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|waive|push|nav|port> [options]. See docs/ui-redesign-plan.html §16.
 import { spawnSync } from 'node:child_process';
-import { closeSync, mkdirSync, mkdtempSync, openSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { withLock } from './state-lock.mjs';
 import { REVIEWER, diffSnapshots, mergeState, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
 
 const args = process.argv.slice(2), command = args[0], flags = new Set(args.filter(a => a.startsWith('--')));
@@ -41,19 +42,10 @@ function loadState() {
   loaded.set(state, structuredClone(state));
   return state;
 }
-/** Run fn while holding the cross-process state lock: a lock file created exclusively; one older than 30 s is stale. */
+/** Run fn while holding the ownership-aware cross-process state lock (see state-lock.mjs). */
 function withStateLock(fn) {
   mkdirSync(dirname(statePath), { recursive: true });
-  const deadline = Date.now() + 10_000;
-  for (;;) {
-    try { closeSync(openSync(lockPath, 'wx')); break; } catch (error) {
-      if (error.code !== 'EEXIST') throw error;
-      try { if (Date.now() - statSync(lockPath).mtimeMs > 30_000) { rmSync(lockPath, { force: true }); continue; } } catch { continue; }
-      if (Date.now() > deadline) throw new Error(`State lock ${lockPath} is held; remove it if no stack command is running.`);
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
-    }
-  }
-  try { return fn(); } finally { rmSync(lockPath, { force: true }); }
+  return withLock(lockPath, fn);
 }
 /**
  * Persist this process's changes unless this is a dry run. Under the lock, merge only what changed since this state was
