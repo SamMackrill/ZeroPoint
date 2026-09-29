@@ -37,6 +37,25 @@ function saveState(state) {
   mkdirSync(dirname(statePath), { recursive: true });
   writeFileSync(statePath, JSON.stringify(state, null, 2) + '\n');
 }
+/**
+ * Merge what gather() observed (review evidence, gate times, the watch snapshot) into the state on disk. The watcher
+ * runs alongside other commands, so observers must never write back a stale copy of fields other commands own
+ * (layer bases, merged flags, waivers).
+ */
+function saveObservations(observed) {
+  if (dryRun) return;
+  const current = loadState();
+  current.layers ??= {};
+  current.lastTriggerAt = Math.max(current.lastTriggerAt ?? 0, observed.lastTriggerAt ?? 0);
+  current.rateLimitUntil = Math.max(current.rateLimitUntil ?? 0, observed.rateLimitUntil ?? 0);
+  for (const [branch, record] of Object.entries(observed.layers ?? {})) {
+    if (!record.review) continue;
+    const existing = current.layers[branch]?.review;
+    current.layers[branch] = { ...current.layers[branch], review: existing?.pr === record.review.pr ? { pr: record.review.pr, patches: { ...existing.patches, ...record.review.patches } } : record.review };
+  }
+  if (observed.watch) current.watch = observed.watch;
+  saveState(current);
+}
 /** Return the layer record for a branch, creating it if needed. */
 const layer = (state, branch) => (state.layers[branch] ??= {});
 
@@ -138,7 +157,7 @@ function gather(state) {
 /** Print or emit the stack status and the next review slot. */
 function status() {
   const state = loadState(), { prs } = gather(state), slot = nextSlot(state);
-  saveState(state);
+  saveObservations(state);
   const summary = { now: new Date().toISOString(), nextSlot: new Date(slot).toISOString(), gateOpen: Date.now() >= slot, next: pickNext(prs)?.number ?? null,
     prs: prs.map(({ body, reviewedShas, ...rest }) => ({ ...rest, head: rest.head.slice(0, 7) })) };
   if (flags.has('--json')) { console.log(JSON.stringify(summary, null, 2)); return; }
@@ -149,13 +168,13 @@ function status() {
 /** Request a CodeRabbit review for the highest-priority queued PR if the hourly gate is open. */
 function trigger() {
   const state = loadState(), { prs } = gather(state), slot = nextSlot(state);
-  if (Date.now() < slot && !flags.has('--force')) { saveState(state); say(`Gate closed until ${new Date(slot).toISOString()}.`); return; }
+  if (Date.now() < slot && !flags.has('--force')) { saveObservations(state); say(`Gate closed until ${new Date(slot).toISOString()}.`); return; }
   const requested = option('--pr'), pr = requested ? prs.find(p => p.number === Number(requested)) : pickNext(prs);
-  if (!pr) { saveState(state); say('Nothing is queued for review.'); return; }
+  if (!pr) { saveObservations(state); say('Nothing is queued for review.'); return; }
   const body = flags.has('--full') ? '@coderabbitai full review' : '@coderabbitai review';
   say(`${dryRun ? '[dry run] ' : ''}Requesting review on #${pr.number} (${pr.branch}) at ${pr.head.slice(0, 7)}.`);
   if (!dryRun) { run('gh', ['pr', 'comment', String(pr.number), '--body', body]); state.lastTriggerAt = Date.now(); }
-  saveState(state);
+  saveObservations(state);
 }
 
 /** Create the next layer's branch and worktree from its base and record the base SHA for exact restacks. */
@@ -238,7 +257,7 @@ function retarget() {
 
 /** Squash-merge the bottom PR when it is merge-ready, then retarget the next layer and remove the merged branch and worktree. */
 function merge() {
-  const state = loadState(), { prs } = gather(state); saveState(state);
+  const state = loadState(), { prs } = gather(state); saveObservations(state);
   const bottom = prs.find(pr => pr.base === 'main');
   if (!bottom) { say('No stack PR targets main.'); return; }
   if (!mergeReady(bottom)) { say(`#${bottom.number} is not merge-ready (state ${bottom.state}, CI ${bottom.checks}).`); return; }
@@ -291,7 +310,7 @@ async function watch() {
       const lines = diffSnapshots(state.watch?.last, next);
       const notes = notificationsSince(next.repo, seen);
       state.watch = { last: next, notifiedAt: notes.map(n => n.at).concat(seen ?? '').sort().pop() };
-      saveState(state);
+      saveObservations(state);
       for (const line of [...lines, ...notes.map(n => n.line)]) console.log(`[${stamp()}] ${line}`);
       lastError = '';
     } catch (error) {
