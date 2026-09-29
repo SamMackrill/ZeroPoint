@@ -10,6 +10,7 @@ export default defineConfig({
   projects: [
     { name: 'functional', testDir: './tests/browser' },
     // Screenshot baselines are recorded on Linux CI only (font rendering differs by OS); see tests/visual/labs.spec.ts.
-    { name: 'visual', testDir: './tests/visual', snapshotPathTemplate: '{testDir}/__screenshots__/{arg}{ext}', expect: { toHaveScreenshot: { maxDiffPixelRatio: 0.002, animations: 'disabled', caret: 'hide' } } },
+    // Full-page captures on a loaded runner can exceed the 5 s default while fonts settle, hence the longer timeout.
+    { name: 'visual', testDir: './tests/visual', snapshotPathTemplate: '{testDir}/__screenshots__/{arg}{ext}', expect: { timeout: 20_000, toHaveScreenshot: { maxDiffPixelRatio: 0.002, animations: 'disabled', caret: 'hide' } } },
   ],
 });
