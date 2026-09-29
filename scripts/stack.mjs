@@ -1,10 +1,10 @@
 // Stacked-PR helper for the UI redesign: status, CodeRabbit review gate, worktrees, restack, retarget, push and navigator.
 // Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|waive|push|nav|port> [options]. See docs/ui-redesign-plan.html §16.
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { closeSync, mkdirSync, mkdtempSync, openSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { REVIEWER, diffSnapshots, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
+import { REVIEWER, diffSnapshots, mergeState, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
 
 const args = process.argv.slice(2), command = args[0], flags = new Set(args.filter(a => a.startsWith('--')));
 const option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -27,35 +27,50 @@ const sha = (ref, cwd) => { const r = run('git', ['rev-parse', '--verify', '--qu
 const say = (...text) => { if (!flags.has('--json')) console.log(...text); };
 
 const statePath = join(git(['rev-parse', '--path-format=absolute', '--git-common-dir']), 'ui-stack', 'state.json');
-/** Load babysitter state shared by every worktree (never committed). */
-function loadState() {
-  try { return JSON.parse(readFileSync(statePath, 'utf8')); } catch { return { lastTriggerAt: 0, rateLimitUntil: 0, layers: {} }; }
+const lockPath = `${statePath}.lock`, loaded = new WeakMap();
+
+/** Read the state file; a missing file is a fresh state, but an unreadable one is an error (never silently reset). */
+function readState() {
+  let text;
+  try { text = readFileSync(statePath, 'utf8'); } catch (error) { if (error.code === 'ENOENT') return { lastTriggerAt: 0, rateLimitUntil: 0, layers: {} }; throw error; }
+  return JSON.parse(text);
 }
-/** Persist babysitter state unless this is a dry run. */
-function saveState(state) {
-  if (dryRun) return;
+/** Load babysitter state shared by every worktree (never committed), remembering it as the base for a later merge. */
+function loadState() {
+  const state = readState();
+  loaded.set(state, structuredClone(state));
+  return state;
+}
+/** Run fn while holding the cross-process state lock: a lock file created exclusively; one older than 30 s is stale. */
+function withStateLock(fn) {
   mkdirSync(dirname(statePath), { recursive: true });
-  writeFileSync(statePath, JSON.stringify(state, null, 2) + '\n');
+  const deadline = Date.now() + 10_000;
+  for (;;) {
+    try { closeSync(openSync(lockPath, 'wx')); break; } catch (error) {
+      if (error.code !== 'EEXIST') throw error;
+      try { if (Date.now() - statSync(lockPath).mtimeMs > 30_000) { rmSync(lockPath, { force: true }); continue; } } catch { continue; }
+      if (Date.now() > deadline) throw new Error(`State lock ${lockPath} is held; remove it if no stack command is running.`);
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 50);
+    }
+  }
+  try { return fn(); } finally { rmSync(lockPath, { force: true }); }
 }
 /**
- * Merge what gather() observed (review evidence, gate times, the watch snapshot) into the state on disk. The watcher
- * runs alongside other commands, so observers must never write back a stale copy of fields other commands own
- * (layer bases, merged flags, waivers).
+ * Persist this process's changes unless this is a dry run. Under the lock, merge only what changed since this state was
+ * loaded (or last saved) into the file as it is now, then replace it atomically (temp file + rename), so concurrent
+ * commands such as `watch` and `waive` never overwrite each other and readers never see a partial write.
  */
-function saveObservations(observed) {
+function saveState(state) {
   if (dryRun) return;
-  const current = loadState();
-  current.layers ??= {};
-  current.lastTriggerAt = Math.max(current.lastTriggerAt ?? 0, observed.lastTriggerAt ?? 0);
-  current.rateLimitUntil = Math.max(current.rateLimitUntil ?? 0, observed.rateLimitUntil ?? 0);
-  for (const [branch, record] of Object.entries(observed.layers ?? {})) {
-    if (!record.review) continue;
-    const existing = current.layers[branch]?.review;
-    current.layers[branch] = { ...current.layers[branch], review: existing?.pr === record.review.pr ? { pr: record.review.pr, patches: { ...existing.patches, ...record.review.patches } } : record.review };
-  }
-  if (observed.watch) current.watch = observed.watch;
-  saveState(current);
+  withStateLock(() => {
+    const merged = mergeState(loaded.get(state) ?? {}, state, readState()), temp = `${statePath}.${process.pid}.tmp`;
+    writeFileSync(temp, JSON.stringify(merged, null, 2) + '\n');
+    renameSync(temp, statePath);
+    loaded.set(state, structuredClone(state));
+  });
 }
+/** Save what gather() observed (review evidence, gate times, the watch snapshot); saveState's merge keeps other fields. */
+const saveObservations = saveState;
 /** Return the layer record for a branch, creating it if needed. */
 const layer = (state, branch) => (state.layers[branch] ??= {});
 
@@ -95,6 +110,8 @@ function openThreads(repo, number) {
     const data = ghJson(['api', 'graphql', '-f', `query=${query}`, '-F', `owner=${owner}`, '-F', `name=${name}`, '-F', `number=${number}`, '-F', `after=${after ?? 'null'}`]);
     const threads = data.data.repository.pullRequest.reviewThreads;
     count += threads.nodes.filter(t => !t.isResolved && t.comments.nodes[0]?.author?.login === 'coderabbitai').length;
+    // A page that claims more but gives no new cursor would loop forever or undercount; refuse to report a count.
+    if (threads.pageInfo.hasNextPage && (!threads.pageInfo.endCursor || threads.pageInfo.endCursor === after)) throw new Error(`GitHub returned a non-advancing reviewThreads cursor for #${number}.`);
     after = threads.pageInfo.hasNextPage ? threads.pageInfo.endCursor : null;
   } while (after);
   return count;
@@ -301,7 +318,10 @@ const stamp = () => new Date().toLocaleTimeString('en-GB', { timeZone: 'Europe/L
  * while it was down. --once runs a single pass. Designed to run under a Monitor, re-armed when it expires.
  */
 async function watch() {
-  const interval = Math.max(20, Number(option('--interval') ?? 60)) * 1000;
+  // setTimeout clamps delays above 2^31 - 1 ms (~24.8 days) to 1 ms, and NaN would poll GitHub continuously.
+  const seconds = Number(option('--interval') ?? 60);
+  if (!Number.isFinite(seconds) || seconds * 1000 > 2 ** 31 - 1) throw new Error('--interval must be a number of seconds up to 2147483.');
+  const interval = Math.max(20, seconds) * 1000;
   let lastError = '';
   for (;;) {
     try {

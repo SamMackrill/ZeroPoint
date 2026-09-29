@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, diffSnapshots, isReviewBody, outsideDiffFindings, reviewedHeadsInSummary, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
+import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, diffSnapshots, isReviewBody, mergeState, outsideDiffFindings, reviewedHeadsInSummary, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
 
 /** Build a queued-by-default PR fixture for scheduling tests. */
 const pr = (branch: string, extra: Record<string, unknown> = {}) => ({ number: Number(branch.slice(3, 5)) + 100, branch, head: `sha-${branch}`, draft: false, checks: 'pass', openThreads: 0, reviewedShas: [] as string[], lastTriggerAt: 0, headCommittedAt: 1000, ...extra });
@@ -104,6 +104,21 @@ describe('merge readiness', () => {
     expect(mergeReady(pr('ui/00-delivery', { ...clean, checks: 'none' }))).toBe(false);
     expect(mergeReady(pr('ui/00-delivery', { ...clean, openThreads: 1 }))).toBe(false);
     expect(mergeReady(pr('ui/00-delivery', { base: 'main' }))).toBe(false);
+  });
+});
+
+describe('shared state merge', () => {
+  it('keeps a waiver written by another process while the watcher saves its snapshot', () => {
+    const base = { lastTriggerAt: 1, layers: { 'ui/00-delivery': { base: 'origin/main' } } };
+    const ours = { ...structuredClone(base), watch: { last: 'snapshot' } };
+    const theirs = { lastTriggerAt: 1, layers: { 'ui/00-delivery': { base: 'origin/main', waived: [42] } } };
+    expect(mergeState(base, ours, theirs)).toEqual({ lastTriggerAt: 1, watch: { last: 'snapshot' }, layers: { 'ui/00-delivery': { base: 'origin/main', waived: [42] } } });
+  });
+  it('applies only what this process changed: fields, deletions, later gate times and unioned evidence', () => {
+    const base = { lastTriggerAt: 5, layers: { a: { baseSha: 's1' }, b: { baseSha: 's2' }, c: { review: { pr: 7, patches: { h1: 'p1' } } } } };
+    const ours = { lastTriggerAt: 9, layers: { a: { baseSha: 's3' }, c: { review: { pr: 7, patches: { h1: 'p1', h2: 'p2' } } } } };
+    const theirs = { lastTriggerAt: 12, layers: { a: { baseSha: 's1', merged: true }, b: { baseSha: 's2' }, c: { review: { pr: 7, patches: { h1: 'p1', h3: 'p3' } } }, d: { baseSha: 's4' } } };
+    expect(mergeState(base, ours, theirs)).toEqual({ lastTriggerAt: 12, layers: { a: { baseSha: 's3', merged: true }, c: { review: { pr: 7, patches: { h1: 'p1', h2: 'p2', h3: 'p3' } } }, d: { baseSha: 's4' } } });
   });
 });
 

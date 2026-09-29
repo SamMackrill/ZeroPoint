@@ -144,6 +144,37 @@ export function diffSnapshots(prev, next) {
   return lines;
 }
 
+/**
+ * Three-way merge for the shared state file: apply to `theirs` (the file as it is now) only what this process changed
+ * between `base` (what it loaded) and `ours` (what it holds now), so concurrent commands never drop each other's
+ * writes. Layers merge field by field; gate times take the later value; review evidence for the same PR is unioned.
+ */
+export function mergeState(base = {}, ours = {}, theirs = {}) {
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  const out = structuredClone(theirs);
+  out.layers ??= {};
+  for (const key of new Set([...Object.keys(base), ...Object.keys(ours)])) {
+    if (key === 'layers' || same(base[key], ours[key])) continue;
+    if (key === 'lastTriggerAt' || key === 'rateLimitUntil') out[key] = Math.max(out[key] ?? 0, ours[key] ?? 0);
+    else if (ours[key] === undefined) delete out[key];
+    else out[key] = structuredClone(ours[key]);
+  }
+  const baseLayers = base.layers ?? {}, ourLayers = ours.layers ?? {};
+  for (const branch of new Set([...Object.keys(baseLayers), ...Object.keys(ourLayers)])) {
+    const before = baseLayers[branch], now = ourLayers[branch];
+    if (same(before, now)) continue;
+    if (now === undefined) { delete out.layers[branch]; continue; }
+    const target = (out.layers[branch] ??= {});
+    for (const field of new Set([...Object.keys(before ?? {}), ...Object.keys(now)])) {
+      if (same(before?.[field], now[field])) continue;
+      if (now[field] === undefined) delete target[field];
+      else if (field === 'review' && target.review?.pr === now.review.pr) target.review = { pr: now.review.pr, patches: { ...target.review.patches, ...now.review.patches } };
+      else target[field] = structuredClone(now[field]);
+    }
+  }
+  return out;
+}
+
 /** Render the stack navigator block placed in every PR body. */
 export function renderNav(stack, current) {
   const items = sortStack(stack).map(pr => pr.number === current ? `**#${pr.number}**` : `#${pr.number}`);
