@@ -1,3 +1,4 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-export default defineConfig({ plugins: [react()], base: './', build: { chunkSizeWarningLimit: 700 }, server: { strictPort: true }, test: { include: ['tests/**/*.test.ts'] } });
+import { devPort } from './scripts/dev-port.mjs';
+export default defineConfig({ plugins: [react()], base: './', build: { chunkSizeWarningLimit: 700 }, server: { host: '127.0.0.1', port: devPort(), strictPort: true }, test: { include: ['tests/**/*.test.ts'] } });

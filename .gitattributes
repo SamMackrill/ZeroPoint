@@ -1,0 +1,6 @@
+# Keep LF in every checkout (Windows worktrees and Linux CI alike) so stacked-PR diffs carry no line-ending noise.
+* text=auto eol=lf
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary

@@ -1,0 +1,12 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# Reviews are requested manually (`@coderabbitai review`) by the stack babysitter so the
+# free-tier hourly quota is spent deliberately. See docs/ui-redesign-plan.html §16.
+language: en-GB
+reviews:
+  profile: chill
+  auto_review:
+    enabled: false
+    drafts: false
+    # Stacked PRs target other ui/* branches; keep them reviewable if auto-review is re-enabled.
+    base_branches:
+      - ".*"

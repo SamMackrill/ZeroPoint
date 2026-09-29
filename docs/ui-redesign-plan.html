@@ -1,0 +1,1171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>ZeroPoint · UI redesign plan</title>
+<style>
+:root{
+  --bg:#0c131b;--bg-1:#101a24;--bg-2:#152230;--bg-3:#1b2b3a;--line:#253646;--line-2:#34495b;
+  --text:#e3ebf1;--text-2:#aebfcc;--text-3:#8397a8;
+  --mint:#8fe0c2;--mint-dim:#1d3a33;--amber:#f0c98a;--red:#f39a82;--pos:#f2a67f;--neg:#7fc8ec;--violet:#b39cf0;--pink:#ef9fc0;
+  --mono:ui-monospace,'IBM Plex Mono',Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 'DM Sans',system-ui,-apple-system,'Segoe UI',sans-serif}
+a{color:var(--mint);text-underline-offset:3px}
+code,kbd,.mono{font-family:var(--mono);font-size:.88em}
+code{background:var(--bg-2);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+kbd{display:inline-block;min-width:20px;text-align:center;background:var(--bg-3);border:1px solid var(--line-2);border-bottom-width:2px;border-radius:4px;padding:0 5px;font-size:12px;color:var(--text)}
+h1,h2,h3,h4{line-height:1.25;margin:0}
+h1{font-size:clamp(34px,4.4vw,54px);letter-spacing:-1.6px;margin:14px 0 18px;max-width:900px}
+h2{font-size:27px;letter-spacing:-.6px;margin:6px 0 18px}
+h3{font-size:17px;margin:26px 0 10px}
+h4{font-size:13px;letter-spacing:.3px;margin:0 0 6px;color:var(--text)}
+p{margin:8px 0 14px;max-width:880px}
+ul,ol{padding-left:20px;margin:8px 0 14px;max-width:900px}
+li{margin:4px 0}
+small,.muted{color:var(--text-3)}
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);max-width:1560px;margin:auto}
+nav{position:sticky;top:0;height:100vh;overflow:auto;padding:34px 22px;border-right:1px solid var(--line)}
+nav .brand{font-size:20px;font-weight:750;letter-spacing:-.8px;margin-bottom:24px}
+nav .brand span{color:var(--mint)}
+nav a{display:block;color:var(--text-2);text-decoration:none;font-size:13.5px;padding:5px 0}
+nav a:hover{color:#fff}
+nav .n{font-family:var(--mono);font-size:11px;color:var(--text-3);display:inline-block;width:24px}
+main{padding:46px 5vw 90px;min-width:0}
+section{border-top:1px solid var(--line);padding-top:34px;margin-top:42px}
+.eyebrow{font:600 11px/1 var(--mono);letter-spacing:1.8px;text-transform:uppercase;color:var(--mint)}
+.lead{font-size:18px;color:var(--text-2);max-width:820px}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+.tag{border:1px solid var(--line-2);border-radius:20px;padding:3px 11px;font-size:12px;color:var(--text-2)}
+.tag.m{border-color:#3d6e5f;color:var(--mint)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.card{background:var(--bg-1);border:1px solid var(--line);border-radius:9px;padding:18px 20px}
+.card p:last-child,.card ul:last-child{margin-bottom:0}
+.card h3{margin-top:0}
+.stat{background:var(--bg-1);border:1px solid var(--line);border-radius:9px;padding:14px 16px}
+.stat b{display:block;font:600 22px/1.2 var(--mono);color:var(--text)}
+.stat b s{color:var(--text-3);font-weight:400;font-size:15px;margin-right:6px}
+.stat span{font-size:12.5px;color:var(--text-3)}
+.callout{border-left:3px solid var(--mint);background:var(--bg-1);padding:12px 18px;border-radius:0 8px 8px 0;margin:16px 0;max-width:900px}
+.callout.amber{border-color:var(--amber)}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin:10px 0 18px}
+th{text-align:left;font:600 11px/1.3 var(--mono);letter-spacing:.8px;text-transform:uppercase;color:var(--text-3);padding:8px 10px;border-bottom:1px solid var(--line-2)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:hover td{background:#ffffff05}
+td:first-child{color:var(--text)}
+.act{display:inline-block;font:600 10.5px/1 var(--mono);padding:4px 7px;border-radius:4px;letter-spacing:.5px;white-space:nowrap}
+.keep{background:#1f3a31;color:var(--mint)}
+.move{background:#1b2f45;color:#9ccaf5}
+.merge{background:#2b2544;color:#c6b4f6}
+.cut{background:#43261f;color:var(--red)}
+.new{background:#3d3220;color:var(--amber)}
+details{background:var(--bg-1);border:1px solid var(--line);border-radius:9px;margin:10px 0}
+details>summary{cursor:pointer;padding:12px 18px;font-weight:600;list-style:none}
+details>summary::before{content:'▸';display:inline-block;width:16px;color:var(--text-3);transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details>div{padding:0 18px 12px}
+
+/* ---------- wireframe kit ---------- */
+.wf-wrap{margin:18px 0 8px;overflow-x:auto}
+.wf{--h:560px;width:100%;min-width:980px;height:var(--h);background:#0a1017;border:1px solid var(--line-2);border-radius:10px;display:grid;grid-template-rows:38px 1fr 22px;overflow:hidden;font-size:11.5px;color:var(--text-2);box-shadow:0 18px 50px #0007}
+.wf *{box-sizing:border-box}
+.wf .hdr{display:flex;align-items:center;gap:10px;padding:0 12px;border-bottom:1px solid var(--line);background:#0d151e;overflow:hidden;white-space:nowrap}
+.wf .logo{width:20px;height:20px;border-radius:5px;background:var(--mint-dim);border:1px solid #37584f}
+.wf .crumb{color:var(--text-3)}.wf .crumb b{color:var(--text);font-weight:600}
+.wf .chip{border:1px solid var(--line-2);border-radius:12px;padding:2px 8px;font-size:10.5px;color:var(--text-3)}
+.wf .chip.m{border-color:#3d6e5f;color:var(--mint)}
+.wf .sp{flex:1}
+.wf .search{width:200px;white-space:nowrap;height:24px;border:1px solid var(--line-2);border-radius:5px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;color:var(--text-3);background:#0f1822}
+.wf .btn{height:24px;border:1px solid var(--line-2);border-radius:5px;padding:0 9px;display:inline-flex;align-items:center;gap:5px;color:var(--text-2);background:#111b26;white-space:nowrap}
+.wf .btn.pri{background:var(--mint);color:#0b201a;border-color:var(--mint);font-weight:600}
+.wf .ico{width:24px;height:24px;border-radius:5px;display:inline-grid;place-items:center;color:var(--text-3)}
+.wf .body{display:grid;grid-template-columns:var(--rail,190px) minmax(0,1fr) var(--insp,280px);min-height:0}
+.wf .rail{border-right:1px solid var(--line);background:#0d151e;padding:10px 8px;overflow:hidden}
+.wf .grp{font:600 9.5px/1 var(--mono);letter-spacing:1.2px;color:var(--text-3);margin:10px 6px 6px;text-transform:uppercase}
+.wf .exp{padding:5px 8px;border-radius:5px;color:var(--text);font-weight:600;display:flex;justify-content:space-between}
+.wf .sc{padding:4px 8px 4px 20px;border-radius:5px;color:var(--text-2);position:relative}
+.wf .sc.on{background:var(--mint-dim);color:var(--mint)}
+.wf .sc.on::before{content:'';position:absolute;left:8px;top:50%;width:5px;height:5px;margin-top:-2.5px;border-radius:50%;background:var(--mint)}
+.wf .planned{padding:4px 8px;color:#5f7282;display:flex;justify-content:space-between}
+.wf .planned i{font-style:normal;font-size:9px;border:1px solid #2b3b49;border-radius:8px;padding:0 6px}
+.wf .center{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) 40px var(--dock,170px);min-width:0;min-height:0;overflow:hidden}
+.wf .vp{position:relative;background:radial-gradient(ellipse at 50% 45%,#13222e 0,#0a1118 70%);display:grid;grid-template-columns:var(--split,minmax(0,1fr));gap:1px;min-height:0;min-width:0}
+.wf .pane{position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 45%,#13222e 0,#0a1118 70%)}
+.wf .pane+.pane{border-left:1px solid var(--line)}
+.wf .ov{position:absolute;display:flex;gap:6px;align-items:center}
+.wf .ov.tl{top:10px;left:10px}.wf .ov.tr{top:10px;right:10px}.wf .ov.bl{bottom:10px;left:10px}.wf .ov.br{bottom:10px;right:10px}
+.wf .state{background:#0c151fcc;border:1px solid var(--line-2);border-radius:6px;padding:5px 9px;line-height:1.35}
+.wf .state b{color:var(--text);font-weight:600;display:block}
+.wf .state em{font-style:normal;font:600 9.5px/1 var(--mono);letter-spacing:1px;color:var(--amber)}
+.wf .state em.live{color:var(--mint)}
+.wf .seg{display:inline-flex;border:1px solid var(--line-2);border-radius:5px;overflow:hidden;background:#0c151fcc}
+.wf .seg span{padding:3px 8px;border-left:1px solid var(--line)}.wf .seg span:first-child{border:0}
+.wf .seg span.on{background:var(--mint-dim);color:var(--mint)}
+.wf .legend{display:flex;gap:10px;font-size:10.5px}
+.wf .dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:1px}
+.wf .scene{position:absolute;inset:18% 22%;border:1px dashed #2c4050;border-radius:6px;display:grid;place-items:center;color:#4f6a7e;font:11px var(--mono)}
+.wf .scene.round{inset:14% 26%;border-radius:50%}
+.wf .scene.wide{inset:22% 8%}
+.wf .tl-bar{min-width:0;overflow:hidden;display:flex;align-items:center;gap:6px;padding:0 10px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#0d151e}
+.wf .track{flex:1;height:22px;position:relative;margin:0 6px}
+.wf .track::before{content:'';position:absolute;left:0;right:0;top:10px;height:3px;border-radius:2px;background:#22323f}
+.wf .track .fill{position:absolute;left:0;top:10px;height:3px;border-radius:2px;background:var(--mint)}
+.wf .track .head{position:absolute;top:5px;width:12px;height:12px;border-radius:50%;background:var(--mint);margin-left:-6px;box-shadow:0 0 0 3px #8fe0c233}
+.wf .track .ev{position:absolute;top:6px;width:1px;height:11px;background:#5f7a8c}
+.wf .track .snap{position:absolute;top:1px;width:7px;height:7px;background:var(--amber);transform:rotate(45deg);margin-left:-3px}
+.wf .track.open::after{content:'live ›';position:absolute;right:-2px;top:3px;font:10px var(--mono);color:var(--text-3)}
+.wf .time{font:11px var(--mono);color:var(--text);white-space:nowrap}
+.wf .dock{display:grid;grid-template-rows:30px minmax(0,1fr);background:#0c141c;min-height:0}
+.wf .strip{display:flex;align-items:center;gap:0;border-bottom:1px solid var(--line);padding:0 4px;min-width:0;overflow:hidden}
+.wf .ro{padding:0 10px;border-right:1px solid var(--line);white-space:nowrap}
+.wf .ro span{color:var(--text-3);font-size:10px;margin-right:6px}
+.wf .ro b{font:600 11.5px var(--mono);color:var(--text)}
+.wf .tabs{display:flex;gap:2px;margin-left:auto;flex-shrink:0}
+.wf .tabs span{padding:4px 7px;border-radius:4px;color:var(--text-3)}
+.wf .tabs span.on{background:var(--bg-3);color:var(--text)}
+.wf .dock-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;padding:10px 12px;min-height:0}
+.wf .chart{border:1px solid var(--line);border-radius:6px;position:relative;overflow:hidden;background:#0b131a}
+.wf .chart svg{position:absolute;inset:18px 8px 6px 8px;width:calc(100% - 16px);height:calc(100% - 24px)}
+.wf .chart i{position:absolute;left:8px;top:4px;font-style:normal;font-size:10px;color:var(--text-3)}
+.wf .insp{min-width:0;overflow:hidden;border-left:1px solid var(--line);background:#0d151e;display:grid;grid-template-rows:32px minmax(0,1fr) auto;min-height:0}
+.wf .itabs{display:flex;border-bottom:1px solid var(--line)}
+.wf .itabs span{flex:1;text-align:center;padding-top:8px;color:var(--text-3)}
+.wf .itabs span.on{color:var(--text);box-shadow:inset 0 -2px var(--mint)}
+.wf .ibody{padding:10px 12px;overflow:hidden}
+.wf .sec{font:600 9.5px/1 var(--mono);letter-spacing:1.2px;color:var(--text-3);margin:6px 0 8px;text-transform:uppercase;display:flex;justify-content:space-between}
+.wf .prow{display:grid;grid-template-columns:1fr 64px;align-items:center;gap:4px 8px;margin-bottom:9px}
+.wf .prow label{color:var(--text-2)}
+.wf .prow label .r{color:var(--amber);margin-left:4px}
+.wf .prow label .i{color:#5c7385;margin-left:4px}
+.wf .val{height:20px;border:1px solid var(--line-2);border-radius:4px;background:#0b131b;font:10.5px/18px var(--mono);text-align:right;padding:0 5px;color:var(--text)}
+.wf .val.dirty{border-color:var(--amber)}
+.wf .rng{grid-column:1/-1;height:3px;border-radius:2px;background:#22323f;position:relative}
+.wf .rng b{position:absolute;left:0;top:0;height:3px;border-radius:2px;background:var(--mint)}
+.wf .rng b::after{content:'';position:absolute;right:-5px;top:-4px;width:10px;height:10px;border-radius:50%;background:#dff5ec}
+.wf .rowseg{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.wf .pending{border-top:1px solid #5a4a2c;background:#241e14;padding:8px 12px;display:flex;align-items:center;gap:6px;color:var(--amber)}
+.wf .pending .sp{flex:1}
+.wf .layer{display:flex;justify-content:space-between;padding:3px 0;color:var(--text-2)}
+.wf .layer.off{color:#5c6f7e}
+.wf .status{display:flex;align-items:center;gap:12px;padding:0 12px;border-top:1px solid var(--line);font:10px var(--mono);color:var(--text-3);background:#0d151e}
+.wf .note{position:absolute;background:var(--amber);color:#2b1f08;font:700 10px/1 var(--mono);width:18px;height:18px;border-radius:50%;display:grid;place-items:center;box-shadow:0 0 0 3px #0a1017;z-index:3}
+.legend-notes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 28px;font-size:13.5px;margin:12px 0 4px}
+.legend-notes div{display:flex;gap:10px}
+.legend-notes>div>b{flex:0 0 20px;height:20px;border-radius:50%;background:var(--amber);color:#2b1f08;font:700 10px/20px var(--mono);text-align:center}
+
+/* component mocks */
+.cmp{background:#0a1017;border:1px solid var(--line-2);border-radius:9px;padding:14px;font-size:12px;color:var(--text-2)}
+.cmp .wf{height:auto;min-width:0;display:block;border:0;box-shadow:none;background:none}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.sw{display:flex;align-items:center;gap:10px;background:var(--bg-1);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:12px}
+.sw i{flex:0 0 26px;height:26px;border-radius:5px;border:1px solid #ffffff1a}
+.sw code{background:none;border:0;padding:0;color:var(--text-3);font-size:11px;display:block}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:16px 0}
+.flow div{flex:1 1 120px;background:var(--bg-1);border:1px solid var(--line);padding:12px 14px;position:relative;margin-right:18px;border-radius:8px}
+.flow div:not(:last-child)::after{content:'→';position:absolute;right:-16px;top:50%;transform:translateY(-50%);color:var(--mint)}
+.flow b{display:block;color:var(--text);font-size:14px}
+.flow span{font-size:12px;color:var(--text-3)}
+.phase{display:grid;grid-template-columns:70px minmax(0,1fr);gap:18px;padding:18px 0;border-bottom:1px solid var(--line)}
+.phase .pn{font:700 26px/1 var(--mono);color:var(--mint)}
+.phase h3{margin-top:0}
+@media (max-width:980px){.layout{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}.grid2,.grid3,.grid4,.legend-notes{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav aria-label="Plan sections">
+  <div class="brand">ZeroPoint<span>.</span> UI</div>
+  <a href="#summary"><span class="n">00</span>Summary</a>
+  <a href="#decisions"><span class="n">01</span>Decision log</a>
+  <a href="#audit"><span class="n">02</span>Current UI audit</a>
+  <a href="#principles"><span class="n">03</span>Principles</a>
+  <a href="#ia"><span class="n">04</span>Information architecture</a>
+  <a href="#shell"><span class="n">05</span>The workbench shell</a>
+  <a href="#workflow"><span class="n">06</span>Core workflow</a>
+  <a href="#components"><span class="n">07</span>Controls &amp; components</a>
+  <a href="#experiments"><span class="n">08</span>Per-experiment layouts</a>
+  <a href="#inventory"><span class="n">09</span>Control inventory</a>
+  <a href="#info"><span class="n">10</span>Info layer &amp; copy</a>
+  <a href="#power"><span class="n">11</span>Power features</a>
+  <a href="#tokens"><span class="n">12</span>Visual system</a>
+  <a href="#responsive"><span class="n">13</span>Tablet &amp; a11y</a>
+  <a href="#architecture"><span class="n">14</span>Architecture</a>
+  <a href="#roadmap"><span class="n">15</span>Phased roadmap</a>
+  <a href="#delivery"><span class="n">16</span>Delivery: stacked PRs</a>
+  <a href="#open"><span class="n">17</span>Open questions</a>
+  <small style="display:block;margin-top:26px;color:var(--text-3);font-size:12px">UI only. The models, equations and science are out of scope for this plan.</small>
+</nav>
+
+<main>
+<!-- ============================================================ -->
+<div id="summary">
+  <div class="eyebrow">ZeroPoint · UI redesign plan · 29 Sep 2026</div>
+  <h1>One workbench for every experiment: clean by default, powerful when you need it</h1>
+  <p class="lead">The five laboratories (Medium, Light, Electron, Casimir and van der Waals) each grew their own layout, wording and controls. This plan replaces them with a single, fixed, app-style research workbench. The 3D view always stays on screen. Controls, readouts and time are always in the same place. Explanations appear only when you ask for them.</p>
+  <div class="tags"><span class="tag m">Audience: researcher (you)</span><span class="tag m">Desktop-first · tablet OK</span><span class="tag">One shell · experiment › scenario</span><span class="tag">Compact density</span><span class="tag">Refined dark / teal</span><span class="tag">Radix + cmdk</span><span class="tag m">Stacked PRs · CodeRabbit-gated</span></div>
+  <div class="grid4" style="margin-top:22px">
+    <div class="stat"><b><s>3,424 px</s>0</b><span>Page scroll in Electron › Spin. The viewport never scrolls away.</span></div>
+    <div class="stat"><b><s>5</s>1</b><span>Transport, header, layer and plot implementations</span></div>
+    <div class="stat"><b><s>484</s>~26</b><span>Unique hex colours in CSS → named design tokens</span></div>
+    <div class="stat"><b><s>91</s>0</b><span>Font-size declarations below 10 px → 11 px minimum</span></div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<section id="decisions">
+  <div class="eyebrow">01</div><h2>Decision log</h2>
+  <p>These are the answers from the five question rounds. Everything else in this plan follows from them.</p>
+  <table>
+    <thead><tr><th style="width:18%">Phase</th><th style="width:30%">Question</th><th>Decision</th></tr></thead>
+    <tbody>
+      <tr><td>1 · Intent</td><td>Primary user</td><td><b>Researcher (you).</b> Dense controls, exact readouts and exports come first.</td></tr>
+      <tr><td></td><td>Screens</td><td><b>Desktop-first, tablet usable,</b> phone gets a basic viewer.</td></tr>
+      <tr><td></td><td>Experiment structure</td><td><b>One shell with an experiment switcher.</b> Medium stops being "home".</td></tr>
+      <tr><td></td><td>Inline caveats</td><td><b>On-demand info layer.</b> At most one short line per control; details go in popovers and an About sheet.</td></tr>
+      <tr><td>2 · Layout</td><td>Viewport</td><td><b>Fixed centre that never scrolls.</b> Only panels scroll internally.</td></tr>
+      <tr><td></td><td>Data views</td><td><b>Collapsible, tabbed bottom dock.</b></td></tr>
+      <tr><td></td><td>Transport</td><td><b>Unified timeline bar</b> with event and checkpoint markers, the same for every experiment.</td></tr>
+      <tr><td></td><td>Panels</td><td><b>Collapsible and resizable.</b> Sizes persist.</td></tr>
+      <tr><td>3 · Controls</td><td>Applying parameters</td><td><b>Live where possible, staged otherwise.</b> ↻ marks restart-required parameters and a pending bar offers Apply or Revert.</td></tr>
+      <tr><td></td><td>Numeric input</td><td><b>Slider plus an editable value field.</b></td></tr>
+      <tr><td></td><td>Layers</td><td><b>Grouped layer list</b> with per-scenario defaults and Reset.</td></tr>
+      <tr><td></td><td>Sub-variants</td><td><b>Scenarios in the switcher tree</b>, as Experiment › Scenario.</td></tr>
+      <tr><td>4 · Views</td><td>Selection</td><td><b>Click selects, drag orbits</b> in every experiment. Esc clears.</td></tr>
+      <tr><td></td><td>Secondary visuals</td><td><b>Split-view toggle</b> (1-up or 2-up) beside the 3D view.</td></tr>
+      <tr><td></td><td>Electron property widgets</td><td><b>Become their own scenarios</b> (Charge &amp; flux, Radius limit).</td></tr>
+      <tr><td></td><td>Cut or demote</td><td>Branding clutter, big metric cards, reference/source cards, dev telemetry.</td></tr>
+      <tr><td>5 · System</td><td>State &amp; files</td><td><b>Toolbar buttons, unified:</b> the same Load, Save, Export and Capture buttons in the same place.</td></tr>
+      <tr><td></td><td>Visual direction</td><td><b>Refined version of the current dark/teal identity.</b></td></tr>
+      <tr><td></td><td>Power features</td><td>Command palette, shortcut layer, A/B comparison, shareable URL state (all four).</td></tr>
+      <tr><td></td><td>Density</td><td><b>Compact:</b> 28 px rows, 12–13 px UI text, mono numerals.</td></tr>
+      <tr><td>6 · Scope</td><td>A/B depth</td><td><b>Overlaid plots plus a parameter diff.</b> A single 3D viewport.</td></tr>
+      <tr><td></td><td>Planned experiments</td><td><b>Greyed "Planned" items</b> in the switcher.</td></tr>
+      <tr><td></td><td>Components</td><td><b>Headless primitives</b> (Radix UI + cmdk) styled with our own tokens.</td></tr>
+      <tr><td></td><td>Plan depth</td><td>Spec, wireframes and a phased roadmap mapped to source files (this document).</td></tr>
+      <tr><td>7 · Delivery</td><td>How it ships</td><td><b>A series of stacked PRs</b> with automated babysitting that answers CodeRabbit review comments. CodeRabbit is on the free tier: reviews are <b>triggered manually</b> and limited to <b>one trigger per hour</b>. Clear fixes are implemented without asking. Custom branches and worktrees are used. See <a href="#delivery">§16</a>.</td></tr>
+      <tr><td>8 · Before we begin</td><td>Merge authority</td><td><b>The babysitter squash-merges</b> the bottom PR once it is CodeRabbit-clean and green in CI, then retargets and restacks.</td></tr>
+      <tr><td></td><td>Other work on <code>main</code></td><td><b>Freeze UI and experiment work</b> until the stack has landed. Docs and papers may still merge.</td></tr>
+      <tr><td></td><td>Deploys</td><td><b>Milestones only:</b> after UI 07 (shell + Medium), after UI 11 (all labs migrated), and after UI 18.</td></tr>
+      <tr><td></td><td>Babysitter runner</td><td><b>This T3 thread via <code>/loop</code>.</b> It pauses when the session isn't running and resumes from on-disk state.</td></tr>
+      <tr><td></td><td>Defaults adopted</td><td>A visual baseline, stable test IDs and a caveat inventory land <i>before</i> any visual change. The palette needs your approval (via a tokens preview) before it is applied. Casimir and van der Waals gain Save/Load in their migration layers. Per-tick data bypasses React state.</td></tr>
+      <tr><td>9 · During delivery</td><td>Findings on reviewed layers</td><td><b>Fix blocking findings in place; defer the rest to a remedial PR.</b> Each fix pushed to a layer under review costs another hourly slot, so valid but non-blocking findings are answered, waived and fixed later in a dedicated remedial layer, using judgement case by case (29 Sep). See <a href="#remedial">Deferring findings</a>.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<section id="audit">
+  <div class="eyebrow">02</div><h2>Current UI audit</h2>
+  <p>This audit comes from reading <code>src/app/App.tsx</code>, <code>src/light</code>, <code>src/electron</code>, <code>src/casimir</code> and <code>src/van-der-waals</code> on <code>main</code> at <code>f127d6b</code>, and from screenshots at 1440×900.</p>
+  <div class="grid2">
+    <div class="card"><h3>Structure</h3><ul>
+      <li><b>Five layouts.</b> Medium is a fixed 3-column app. Light and Electron are long scrolling pages, and Electron › Spin is 3,424 px tall. Casimir and van der Waals each have their own heading, mode cards, card grid and footer.</li>
+      <li><b>Lopsided navigation.</b> Medium is home and experiments are listed only in its sidebar. Other labs go back with "← Medium laboratory" or "← Experiment library". The roadmap entry "Beyond the medium" still lists Casimir as planned.</li>
+      <li><b>The viewport scrolls away</b> while you use the timeline, probe chart or shell controls lower on the page. You can't see cause and effect together.</li>
+      <li>Scenario-like variants have four treatments: Medium presets are sidebar buttons, Electron modes and Casimir pairings are big cards above the toolbar, and van der Waals stages are numbered step cards.</li>
+    </ul></div>
+    <div class="card"><h3>Controls</h3><ul>
+      <li><b>Transport wording varies:</b> "Run" / "Run light" / "Run electron" / "Run dipoles", and "Next induction" / "Advance 1 τ". Speed options differ (Casimir uses 0.1–2×). The Space kbd hint appears in only two labs, and van der Waals has no keyboard control.</li>
+      <li><b>Files vary:</b> "Save experiment" / "Save light" / "Save electron". Checkpoints appear in three places with three styles and limits (6, 4, 4).</li>
+      <li><b>Two apply models</b> with no signal of which applies. Medium is live. Light and Electron need a form submit, and an unsaved slider looks the same as an applied one.</li>
+      <li>The Electron velocity slider is <i>disabled</i> outside Moving mode, when it should be hidden.</li>
+      <li>Selection requires a "Zepton selector" checkbox in Electron only.</li>
+      <li>Layers use toggle switches in Medium and checkboxes elsewhere. Reduced motion is repeated in each lab.</li>
+    </ul></div>
+    <div class="card"><h3>Reading load</h3><ul>
+      <li>Caveat paragraphs (<code>light-small</code>) under almost every card. Electron alone has about 20.</li>
+      <li>Large metric tiles repeat values also shown elsewhere. "Propagation speed 1.000 c" never changes.</li>
+      <li>Static reference cards (Scale &amp; conventions, Source constants, Source papers) take permanent space.</li>
+      <li>Header clutter: "Field Laboratory", v0.1 chip, "Runs locally" badge, dev-plan link, sidebar tagline and Model-note card.</li>
+    </ul></div>
+    <div class="card"><h3>Visual system</h3><ul>
+      <li><b>484 unique hex colours</b> across seven stylesheets, with no tokens beyond <code>--mint</code>, <code>--muted</code> and <code>--line</code>.</li>
+      <li><b>25 font sizes</b>, with 91 declarations below 10 px. These are hard to read and fail at a normal viewing distance.</li>
+      <li>Light and Electron share <code>light-*</code> class names. Electron imports <code>light.css</code>, so styles are coupled by accident.</li>
+      <li>Five hand-rolled SVG plot implementations (Medium, Light, Electron, Casimir pressure history, van der Waals gap sweep) with different axes, labels and colours.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="principles">
+  <div class="eyebrow">03</div><h2>Design principles</h2>
+  <div class="grid3">
+    <div class="card"><h3>1 · The field is the work</h3><p>The viewport is always visible and never scrolls. Every other element exists to change it or measure it.</p></div>
+    <div class="card"><h3>2 · Same thing, same place</h3><p>Time is always bottom-centre. Settings are always on the right. Where you are is always on the left. Files are always top-right. Wording is identical across experiments.</p></div>
+    <div class="card"><h3>3 · Show only what applies</h3><p>Hide controls and layers that don't apply to the current scenario rather than disabling them. Scenario defaults decide what's on.</p></div>
+    <div class="card"><h3>4 · Quiet by default, deep on demand</h3><p>No paragraphs in the workspace. Each ⓘ opens exactly the caveat for that control. The About sheet holds the full context.</p></div>
+    <div class="card"><h3>5 · State is always legible</h3><p>You can always see whether it's running or paused, whether a change is applied or pending, what's selected, and what B is being compared against.</p></div>
+    <div class="card"><h3>6 · Everything reachable by keyboard</h3><p>Each action has one registry entry that drives the buttons, shortcuts, command palette and URL state together.</p></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="ia">
+  <div class="eyebrow">04</div><h2>Information architecture</h2>
+  <p>There are two levels, <b>Experiment › Scenario</b>. A scenario is a named starting configuration: parameters, default layers, camera, secondary pane and dock tab. Experiments with one scenario appear as a single leaf.</p>
+  <div class="grid2">
+    <div class="card">
+<pre class="mono" style="margin:0;font-size:12.5px;line-height:1.75;color:var(--text-2)">
+<b style="color:var(--text)">Medium lifecycle</b>
+  ├ Balanced medium
+  ├ Sparse fluctuations
+  ├ Dense medium
+  └ Slow oscillations
+<b style="color:var(--text)">Light through the ZPF</b>
+  └ Induction sequence
+<b style="color:var(--text)">Electron in the ZPF</b>
+  ├ Stationary electron      <span style="color:var(--text-3)">(was mode 01)</span>
+  ├ Spin in the field        <span style="color:var(--text-3)">(was mode 02)</span>
+  ├ Moving electron          <span style="color:var(--text-3)">(was mode 03)</span>
+  ├ Charge &amp; flux            <span style="color:var(--amber)">new · from Properties</span>
+  └ Radius limit             <span style="color:var(--amber)">new · from Properties</span>
+<b style="color:var(--text)">Extended Casimir effect</b>
+  ├ Electron / electron      <span style="color:var(--text-3)">(Fig. 4 · repulsion)</span>
+  └ Electron / proton        <span style="color:var(--text-3)">(Fig. 3 · attraction)</span>
+<b style="color:var(--text)">Van der Waals &amp; vacuum pressure</b>
+  ├ Induced dipole           <span style="color:var(--text-3)">(was stage 01)</span>
+  ├ Correlated dipoles       <span style="color:var(--text-3)">(was stage 02)</span>
+  └ Plate pressure           <span style="color:var(--text-3)">(was stage 03)</span>
+<span style="color:#5f7282">PLANNED
+  Casimir plates (3D)      · planned
+  Double slit              · planned
+  Lamb shift               · planned
+  Particle shells          · planned</span></pre>
+    </div>
+    <div class="card"><h3 style="margin-top:0">Rules</h3><ul>
+      <li>Switching scenarios within an experiment restarts it (paused at tick 0). When it's configured, this is announced with a toast that offers <b>Undo</b>.</li>
+      <li>Switching experiments preserves each experiment's state, as today. Playback pauses.</li>
+      <li>Once you edit a parameter, the scenario label becomes <i>Balanced medium · modified</i>, replacing the hidden <code>'custom'</code> preset. "Reset to scenario" is available in Setup.</li>
+      <li>Planned items open a small popover with a one-line summary and a link to <code>docs/planned-experiments/*.md</code>. They never open a workbench.</li>
+      <li>The breadcrumb in the header mirrors the selection: <i>Electron › Spin in the field</i>.</li>
+      <li>URL: <code>#/electron/spin?…</code>. See <a href="#power">URL state</a>.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="shell">
+  <div class="eyebrow">05</div><h2>The workbench shell</h2>
+  <p>The shell is one layout for every experiment. The wireframe below shows <b>Medium › Balanced</b> at 1440×900, drawn at about 70% scale.</p>
+
+  <div class="wf-wrap"><div class="wf" style="--h:600px;--rail:160px;--insp:250px;position:relative">
+    <div class="hdr">
+      <span class="logo"></span><b style="color:var(--text);font-size:13px">ZeroPoint</b>
+      <span class="crumb">Medium lifecycle › <b>Balanced medium</b></span>
+      <span class="chip m">Illustrative model ⓘ</span>
+      <span class="sp"></span>
+      <span class="search">Search actions… <kbd>Ctrl K</kbd></span>
+      <span class="sp"></span>
+      <span class="btn">⤒ Load</span><span class="btn">⤓ Save</span><span class="btn">Export ▾</span>
+      <span class="ico">?</span><span class="ico">⚙</span>
+    </div>
+    <div class="body">
+      <div class="rail">
+        <div class="grp">Experiments</div>
+        <div class="exp">Medium lifecycle <span>▾</span></div>
+        <div class="sc on">Balanced medium</div><div class="sc">Sparse fluctuations</div><div class="sc">Dense medium</div><div class="sc">Slow oscillations</div>
+        <div class="exp" style="margin-top:4px">Light through the ZPF <span>›</span></div>
+        <div class="exp">Electron in the ZPF <span>›</span></div>
+        <div class="exp">Extended Casimir <span>›</span></div>
+        <div class="exp">Van der Waals <span>›</span></div>
+        <div class="grp" style="margin-top:14px">Planned</div>
+        <div class="planned">Casimir plates <i>planned</i></div><div class="planned">Double slit <i>planned</i></div><div class="planned">Lamb shift <i>planned</i></div>
+      </div>
+      <div class="center">
+        <div class="vp"><div class="pane">
+          <div class="scene">3D field · periodic cell</div>
+          <div class="ov tl"><div class="state"><em class="live">● LIVE</em><b>1,575 dipoles · periodic 8 L₀ cell</b></div></div>
+          <div class="ov tr"><span class="seg"><span class="on">Perspective</span><span>Top</span><span>Front</span></span><span class="seg"><span class="on">▢</span><span>▢▢</span></span></div>
+          <div class="ov bl legend"><span><i class="dot" style="background:var(--pos)"></i>+ lobe</span><span><i class="dot" style="background:var(--neg)"></i>− lobe</span></div>
+          <div class="ov br" style="font:10px var(--mono);color:var(--text-3)">⟂ xyz &nbsp; ├─┤ 8 L₀</div>
+        </div></div>
+        <div class="tl-bar">
+          <span class="ico" title="Reset">↺</span><span class="btn pri">❚❚ Pause</span><span class="ico">⏭</span><span class="ico" style="opacity:.35">⇥</span>
+          <span class="seg"><span>¼</span><span>½</span><span class="on">1×</span><span>2×</span><span>4×</span></span>
+          <div class="track open"><div class="fill" style="width:64%"></div><div class="snap" style="left:20%"></div><div class="snap" style="left:44%"></div><div class="head" style="left:64%"></div></div>
+          <span class="time">2.433 τ · tick 292</span><span class="btn">◆ Capture</span>
+        </div>
+        <div class="dock">
+          <div class="strip">
+            <div class="ro"><span>Active</span><b>1,575</b></div><div class="ro"><span>Time</span><b>2.433 τ</b></div><div class="ro"><span>Energy</span><b>725.0 E₀</b></div><div class="ro"><span>Residual</span><b style="color:var(--mint)">0.0e+0</b></div>
+            <div class="tabs"><span class="on">Plots</span><span>Ledger</span><span>Events</span><span>Compare</span></div>
+          </div>
+          <div class="dock-body">
+            <div class="chart"><i>Active dipoles</i><svg viewBox="0 0 100 40" preserveAspectRatio="none"><polyline points="0,32 15,28 30,22 45,17 60,14 75,13 90,12 100,12" fill="none" stroke="#8fe0c2" stroke-width="1" vector-effect="non-scaling-stroke"/></svg></div>
+            <div class="chart"><i>Field energy · E₀</i><svg viewBox="0 0 100 40" preserveAspectRatio="none"><polyline points="0,34 15,30 30,25 45,19 60,15 75,14 90,13 100,13" fill="none" stroke="#f0c98a" stroke-width="1" vector-effect="non-scaling-stroke"/></svg></div>
+          </div>
+        </div>
+      </div>
+      <div class="insp">
+        <div class="itabs"><span class="on">Setup</span><span>View</span><span>Selection</span></div>
+        <div class="ibody">
+          <div class="sec">Medium <span>Reset to scenario</span></div>
+          <div class="prow"><label>Creation rate<span class="i">ⓘ</span></label><div class="val">1,400 /τ</div><div class="rng"><b style="width:14%"></b></div></div>
+          <div class="prow"><label>Frequency centre<span class="i">ⓘ</span></label><div class="val">1.00 f₀</div><div class="rng"><b style="width:27%"></b></div></div>
+          <div class="prow"><label>Peak separation<span class="i">ⓘ</span></label><div class="val">0.30 L₀</div><div class="rng"><b style="width:37%"></b></div></div>
+          <div class="sec" style="margin-top:14px">Run</div>
+          <div class="prow"><label>Seed<span class="r">↻</span></label><div class="val dirty">2027</div></div>
+        </div>
+        <div class="pending"><span>1 change needs restart</span><span class="sp"></span><span class="btn">Revert</span><span class="btn pri">Apply ⏎</span></div>
+      </div>
+    </div>
+    <div class="status"><span>● Paused</span><span>Seed 2026</span><span>Tick 292</span><span class="sp" style="flex:1"></span><span>Illustrative reduced model</span></div>
+
+    <span class="note" style="left:330px;top:29px">A</span>
+    <span class="note" style="left:60px;top:500px">B</span>
+    <span class="note" style="left:151px;top:200px">C</span>
+    <span class="note" style="left:151px;top:379px">D</span>
+    <span class="note" style="left:151px;top:470px">E</span>
+    <span class="note" style="right:241px;top:200px">F</span>
+    <span class="note" style="right:241px;top:553px">G</span>
+    <span class="note" style="right:100px;top:29px">H</span>
+  </div></div>
+  <div class="legend-notes">
+    <div><b>A</b><span><b>Header, 40 px.</b> Brand mark, breadcrumb, and one "Illustrative model" chip that replaces every per-lab badge and pill. The palette search is centred. <b>Load, Save and Export ▾</b> sit in the same place for every experiment. Help (?) opens shortcuts and About. Settings (⚙) holds reduced motion, debug telemetry and density.</span></div>
+    <div><b>B</b><span><b>Switcher rail</b>, 190 px by default (drawn narrower here) and resizable from 160 to 280 px. It collapses to a 44 px icon rail (<kbd>Ctrl B</kbd>). Only the active experiment is expanded.</span></div>
+    <div><b>C</b><span><b>Viewport overlays</b> are kept to a minimum. The state chip (running/paused plus a scenario-specific line) is top-left. Camera presets and the 1-up/2-up toggle are top-right. The auto legend (visible layers only) is bottom-left, and the axis gizmo and scale bar are bottom-right. The orbit hint shows once, then moves to the ? sheet.</span></div>
+    <div><b>D</b><span><b>Timeline bar</b>, 40 px, the same everywhere. Reset, Run/Pause, Step, Next event, speed, scrubber with event ticks and ◆ checkpoint markers, time readout and Capture. Medium's timeline is open-ended (see <a href="#components">§07</a>).</span></div>
+    <div><b>E</b><span><b>Dock.</b> A readout strip (4 key values) that stays visible when collapsed (<kbd>Ctrl J</kbd>), plus tabs. Its height is resizable, and the dock opens on the scenario's default tab.</span></div>
+    <div><b>F</b><span><b>Inspector</b>, 280 px by default (drawn narrower here) and resizable from 240 to 400 px. It collapses with <kbd>Ctrl I</kbd>. There are three tabs: <b>Setup</b> (parameters), <b>View</b> (layers, representation, secondary pane) and <b>Selection</b>.</span></div>
+    <div><b>G</b><span><b>Pending bar.</b> It appears only when a ↻ parameter differs from the running configuration. <kbd>Ctrl ⏎</kbd> applies and <kbd>Esc</kbd> in the inspector reverts.</span></div>
+    <div><b>H</b><span><b>Unified file buttons.</b> Labels are identical across experiments, and the file format is chosen automatically. Export ▾ offers PNG image, CSV (dock data) and CSV (full sequence) where available.</span></div>
+  </div>
+
+  <h3>Panel behaviour</h3>
+  <ul>
+    <li>Use <code>react-resizable-panels</code> for the rail, the inspector and the viewport/dock split. Sizes and collapsed state persist in <code>localStorage</code> for each experiment.</li>
+    <li><b>Focus mode</b> (<kbd>Ctrl .</kbd>) collapses the rail, inspector and dock at once, leaving the header, viewport and timeline. Pressing it again restores the previous sizes.</li>
+    <li>Only the inspector body and dock body scroll. The page itself never scrolls (<code>height:100dvh; overflow:hidden</code>).</li>
+    <li>The status bar (22 px) shows only the run state, seed or configuration hash, tick, and the model disclaimer. FPS, worker ms/step, WebGL version and model ID appear only when <i>Settings › Show debug telemetry</i> is on.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="workflow">
+  <div class="eyebrow">06</div><h2>Core research workflow</h2>
+  <p>The layout is ordered to follow the loop you actually run: left to right, then down.</p>
+  <div class="flow">
+    <div><b>1 · Choose</b><span>Scenario in the rail, or <kbd>Ctrl K</kbd>, or a shared URL</span></div>
+    <div><b>2 · Configure</b><span>Setup tab. Live parameters apply now, ↻ parameters wait for Apply</span></div>
+    <div><b>3 · Run &amp; scrub</b><span>Timeline bar: Space, →, ], or drag the scrubber</span></div>
+    <div><b>4 · Select</b><span>Click in the viewport. The Selection tab and 2-up pane follow it</span></div>
+    <div><b>5 · Measure</b><span>Dock plots, probe, ledger and events</span></div>
+    <div><b>6 · Capture &amp; compare</b><span>◆ Capture, then pin as B</span></div>
+    <div><b>7 · Keep</b><span>Save, Export, or Copy link</span></div>
+  </div>
+  <div class="callout">A full loop needs no page scrolling and no explanatory text. Every step has a keyboard path, and every step leaves visible state behind: markers on the timeline, a "modified" scenario label, a B badge, and a pending bar.</div>
+</section>
+
+<!-- ============================================================ -->
+<section id="components">
+  <div class="eyebrow">07</div><h2>Controls &amp; components</h2>
+  <p>This is the smallest set of controls that covers every existing interaction. Each one uses the most appropriate control for its data type.</p>
+
+  <table>
+    <thead><tr><th style="width:26%">Data / interaction</th><th style="width:26%">Control</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Continuous number (rate, wavelength, probe X…)</td><td><b>ParamRow</b>: label, editable value field, slider</td><td>Type directly, including units. ↑/↓ nudge by one step, Shift for ×10, Alt for ×0.1. Double-click the label to reset to the scenario value. The value stays mono and right-aligned.</td></tr>
+      <tr><td>Two to five exclusive choices (direction, spin ±½, axis X/Y/Z, shells 1–4, gain 1/2/4×, Dipoles/Points)</td><td><b>Segmented control</b> (Radix ToggleGroup)</td><td>Replaces native <code>&lt;select&gt;</code> for short option sets, so every option is visible at a glance.</td></tr>
+      <tr><td>Long or rare option lists</td><td><b>Select</b> (Radix)</td><td>Rare after this change. Kept for future long lists.</td></tr>
+      <tr><td>Integer identifier (seed)</td><td><b>Number field</b> with a dice button to randomise</td><td>Restart-required (↻).</td></tr>
+      <tr><td>Scene layer on/off</td><td><b>LayerRow</b>: eye toggle, label, optional inline sub-control</td><td>For example, Energy slice reveals a "Slice Z" ParamRow indented beneath it.</td></tr>
+      <tr><td>Playback speed</td><td>Segmented control ¼ ½ 1× 2× 4×</td><td>Always visible in the timeline bar. <kbd>&lt;</kbd> and <kbd>&gt;</kbd> step through the speeds.</td></tr>
+      <tr><td>Time position</td><td><b>Scrubber</b> with event ticks and ◆ markers</td><td>Hovering a tick shows e.g. "Pair 3 induced · 2.00 τ", and clicking seeks. Hovering ◆ shows the checkpoint name and tick; clicking restores it, and right-clicking gives Rename, Pin as B or Delete.</td></tr>
+      <tr><td>Section switching</td><td><b>Tabs</b> (Radix)</td><td>Inspector tabs, dock tabs, and pane-local toggles such as Velocity or Current.</td></tr>
+      <tr><td>Explanation</td><td><b>InfoTip</b> ⓘ (Radix Popover)</td><td>One or two sentences plus an optional "More in About ›" link. Opens on click, not hover, so the text can be selected.</td></tr>
+      <tr><td>Status messages</td><td><b>Toast</b> (bottom-right, 5 s)</td><td>Replaces Light and Electron's permanent status line and Medium's toast. Scenario switches include an Undo action.</td></tr>
+      <tr><td>Selected entity</td><td><b>Readout list</b> (<code>dl</code>) in the Selection tab</td><td>Label on the left, mono value on the right, with a copy-value button on hover.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="grid2">
+    <div>
+      <h3>Timeline bar: one model, three time types</h3>
+      <table>
+        <thead><tr><th>Experiment</th><th>Track</th><th>Next event <kbd>]</kbd></th></tr></thead>
+        <tbody>
+          <tr><td>Medium</td><td><b>Open-ended.</b> The track grows with elapsed time and shows ◆ markers. Seeking restores the nearest checkpoint, so backward scrubbing without one is disabled.</td><td>Disabled (no discrete events). <kbd>Shift →</kbd> jumps +1 τ.</td></tr>
+          <tr><td>Light</td><td><b>Bounded</b> at 0–12 τ, with 12 induction ticks.</td><td>Next induction</td></tr>
+          <tr><td>Electron · Stationary</td><td>Bounded at 0–48 τ. Ticks: electron introduced, fully aligned.</td><td>Next milestone</td></tr>
+          <tr><td>Electron · Spin</td><td>Bounded at 0–48 τ.</td><td>+1 τ</td></tr>
+          <tr><td>Electron · Moving</td><td>Bounded at 0–48 τ. Tick: path centre.</td><td>Next milestone</td></tr>
+          <tr><td>Charge &amp; flux, Radius limit</td><td><b>Hidden.</b> These are static studies.</td><td>—</td></tr>
+          <tr><td>Extended Casimir</td><td><b>Open-ended</b>, like Medium. Checkpoints clone the main-thread model.</td><td>Next interaction event</td></tr>
+          <tr><td>Van der Waals · Correlated dipoles</td><td><b>Loop</b> of 120 ticks. The track wraps.</td><td>—</td></tr>
+          <tr><td>Van der Waals · Induced dipole, Plate pressure</td><td><b>Hidden.</b> Static studies.</td><td>—</td></tr>
+        </tbody>
+      </table>
+      <p class="muted">The timeline has four kinds: <code>bounded</code>, <code>open</code>, <code>loop</code> and <code>static</code>. The "Show fully aligned field" and "Electron at path centre" buttons become <b>named event ticks</b>. The 12 Light "Pair n" buttons become ticks plus rows in the Events tab.</p>
+    </div>
+    <div>
+      <h3>Staged parameters</h3>
+      <div class="cmp"><div class="wf">
+        <div class="sec" style="display:flex">Wave <span>Reset to scenario</span></div>
+        <div class="prow"><label>Wavelength<span class="r">↻</span><span class="i">ⓘ</span></label><div class="val dirty">625 nm</div><div class="rng"><b style="width:50%"></b></div></div>
+        <div style="font:10.5px var(--mono);color:var(--text-3);margin:-4px 0 10px">f = 479.7 THz <span style="color:var(--amber)">· running 599.6 THz</span></div>
+        <div class="prow"><label>Polarization<span class="r">↻</span></label><div class="val">0°</div><div class="rng"><b style="width:0%"></b></div></div>
+        <div class="rowseg"><label>Direction <span style="color:var(--amber)">↻</span></label><span class="seg"><span class="on">+X</span><span>−X</span></span></div>
+        <div class="pending" style="border-radius:6px;margin-top:8px"><span>1 change · restarts sequence</span><span class="sp"></span><span class="btn">Revert</span><span class="btn pri">Apply ⏎</span></div>
+      </div></div>
+      <ul>
+        <li>↻ means "applies on restart". Unmarked parameters are live.</li>
+        <li>Dirty fields get an amber outline. The running value is shown next to derived readouts.</li>
+        <li>Medium's frequency and separation stay live. Its seed becomes ↻. In Light every parameter is ↻. In Electron, the display settings (shells, preference, gain) become <b>live</b> and the physics inputs stay ↻.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div>
+      <h3>View tab: layer list</h3>
+      <div class="cmp"><div class="wf">
+        <div class="sec">Medium</div>
+        <div class="layer"><span>◉ Zepton pairs</span></div><div class="layer"><span>◉ Shell sampling</span></div>
+        <div class="sec" style="margin-top:10px">Fields</div>
+        <div class="layer off"><span>○ Faraday lines ⓘ</span></div><div class="layer off"><span>○ Radial E reference</span></div><div class="layer"><span>◉ Motion B</span><span style="color:var(--text-3)">B</span></div><div class="layer off"><span>○ Intrinsic spin B</span></div>
+        <div class="sec" style="margin-top:10px">Guides</div>
+        <div class="layer"><span>◉ Local rotation sense</span></div><div class="layer off"><span>○ Half-Compton radius</span></div><div class="layer off"><span>○ Central slab cutaway</span></div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;color:var(--text-3)"><span>Reset layers to scenario</span><span>Solo: Alt-click</span></div>
+      </div></div>
+      <p class="muted">Groups are Medium, Fields, Guides and Clipping. Layers that don't apply to the current scenario are hidden. Alt-click solos a layer. Reduced motion moves to global Settings and defaults to the OS preference.</p>
+    </div>
+    <div>
+      <h3>Selection tab</h3>
+      <div class="cmp"><div class="wf">
+        <div style="display:flex;justify-content:space-between;align-items:center"><b style="color:var(--text);font-size:13px">Zepton 2229 · gen 3</b><span class="seg"><span class="on">📌 Pinned</span><span>Follow active</span></span></div>
+        <div style="height:1px;background:var(--line);margin:10px 0"></div>
+        <div class="layer"><span>Fixed centre</span><b class="mono">0.60, 0, 0 R</b></div>
+        <div class="layer"><span>Age / lifetime</span><b class="mono">0.42 / 1.00 τ</b></div>
+        <div class="layer"><span>Local spin turn</span><b class="mono">21.23°</b></div>
+        <div class="layer"><span>Spin rate</span><b class="mono">21.23°/τ</b></div>
+        <div style="height:4px;background:#22323f;border-radius:2px;margin:10px 0"><div style="width:42%;height:4px;background:var(--mint);border-radius:2px"></div></div>
+        <div style="display:flex;gap:6px"><span class="btn">⌖ Focus <kbd>F</kbd></span><span class="btn">Nearest to probe</span><span class="btn">Clear <kbd>Esc</kbd></span></div>
+      </div></div>
+      <p class="muted">Every experiment behaves the same way. A click without movement (under 4 px) picks, a drag orbits, and a selection change auto-opens the Selection tab. Medium's "Inspect first active dipole" becomes <i>Select first</i> (palette and empty state).</p>
+    </div>
+  </div>
+
+  <h3>Split view (secondary pane)</h3>
+  <p>The top-right ▢/▢▢ toggle (<kbd>\</kbd>) splits the viewport. The second pane has a small picker listing that scenario's linked views. Both panes share the timeline and the selection.</p>
+  <table>
+    <thead><tr><th>Scenario</th><th>Available second panes</th><th>Default</th></tr></thead>
+    <tbody>
+      <tr><td>Medium</td><td>Selected dipole close-up (new, derived from the Dipole glyph)</td><td>1-up</td></tr>
+      <tr><td>Light</td><td>Pair close-up (current rotation-plane glyph, enlarged)</td><td>1-up</td></tr>
+      <tr><td>Electron · Spin</td><td>Equatorial section (<code>SpinSection</code>) · Charge motion (<code>ChargeMotion</code>)</td><td><b>2-up · Equatorial section</b></td></tr>
+      <tr><td>Electron · Stationary / Moving</td><td>Charge motion for the selected zepton</td><td>1-up</td></tr>
+      <tr><td>Extended Casimir</td><td>Zepton lifetime loupe (current <code>Lifetime</code> SVG)</td><td><b>2-up · Loupe</b></td></tr>
+      <tr><td>Van der Waals · Plate pressure</td><td>Source figure (Fig. 3-3 / 3-4) for side-by-side comparison</td><td>1-up</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============================================================ -->
+<section id="experiments">
+  <div class="eyebrow">08</div><h2>Per-experiment layouts</h2>
+  <p>These are all the same shell. Only the scenario definition changes: parameters, layers, panes, dock tabs and readouts.</p>
+
+  <h3>Electron › Spin in the field (2-up)</h3>
+  <div class="wf-wrap"><div class="wf" style="--h:520px;--dock:150px">
+    <div class="hdr"><span class="logo"></span><b style="color:var(--text);font-size:13px">ZeroPoint</b><span class="crumb">Electron in the ZPF › <b>Spin in the field</b></span><span class="chip m">Illustrative model ⓘ</span><span class="sp"></span><span class="search">Search… <kbd>Ctrl K</kbd></span><span class="sp"></span><span class="btn">⤒ Load</span><span class="btn">⤓ Save</span><span class="btn">Export ▾</span><span class="ico">?</span><span class="ico">⚙</span></div>
+    <div class="body" style="--rail:44px">
+      <div class="rail" style="padding:10px 6px"><div class="ico">≋</div><div class="ico">〜</div><div class="ico" style="background:var(--mint-dim);color:var(--mint)">⚛</div><div class="ico">⇄</div><div class="ico">▥</div></div>
+      <div class="center">
+        <div class="vp" style="--split:minmax(0,1fr) minmax(0,1fr)">
+          <div class="pane"><div class="scene round">3D shells</div><div class="ov tl"><div class="state"><em>❚❚ PAUSED</em><b>Local turns around a stationary core</b></div></div><div class="ov bl legend"><span><i class="dot" style="background:var(--pos)"></i>+</span><span><i class="dot" style="background:var(--neg)"></i>−</span><span><i class="dot" style="background:#f2c46e"></i>Shell 1</span><span><i class="dot" style="background:var(--violet)"></i>Shell 2</span></div></div>
+          <div class="pane"><div class="scene round" style="inset:16% 20%">Equatorial section · Z = 0</div><div class="ov tl"><span class="seg"><span class="on">Equatorial section</span><span>Charge motion</span></span></div><div class="ov tr"><span class="seg"><span>▢</span><span class="on">▢▢</span></span></div></div>
+        </div>
+        <div class="tl-bar"><span class="ico">↺</span><span class="btn pri">▶ Run</span><span class="ico">⏭</span><span class="ico">⇥</span><span class="seg"><span>¼</span><span>½</span><span class="on">1×</span><span>2×</span><span>4×</span></span><div class="track"><div class="fill" style="width:12%"></div><div class="head" style="left:12%"></div><div class="snap" style="left:40%"></div></div><span class="time">5.76 / 48 τ</span><span class="btn">◆ Capture</span></div>
+        <div class="dock"><div class="strip"><div class="ro"><span>Time</span><b>5.76 τ</b></div><div class="ro"><span>Enclosed Q</span><b>−1.0000 e</b></div><div class="ro"><span>Spin</span><b>+½ ℏ</b></div><div class="ro"><span>|E| probe</span><b>0.3086 E₀</b></div><div class="tabs"><span>Probe</span><span class="on">Shell rates</span><span>Readouts</span><span>Compare</span></div></div>
+          <div class="dock-body" style="grid-template-columns:1fr 1fr"><div class="chart"><i>↺ Shell 1 · 0.6 R — 21.23°/τ</i><div style="position:absolute;left:10px;right:40%;bottom:12px;height:5px;background:#f2c46e;border-radius:3px"></div></div><div class="chart"><i>↻ Shell 2 · 1.1 R — −11.36°/τ</i><div style="position:absolute;left:10px;right:68%;bottom:12px;height:5px;background:var(--violet);border-radius:3px"></div></div></div></div>
+      </div>
+      <div class="insp"><div class="itabs"><span class="on">Setup</span><span>View</span><span>Selection</span></div><div class="ibody">
+        <div class="sec">Electron</div>
+        <div class="rowseg"><label>Spin projection <span style="color:var(--amber)">↻</span></label><span class="seg"><span class="on">+½</span><span>−½</span></span></div>
+        <div class="rowseg"><label>Preferred axis <span style="color:var(--amber)">↻</span></label><span class="seg"><span>X</span><span>Y</span><span class="on">Z</span></span></div>
+        <div class="sec" style="margin-top:12px">Shell display</div>
+        <div class="rowseg"><label>Visible shells</label><span class="seg"><span>1</span><span class="on">2</span><span>3</span><span>4</span></span></div>
+        <div class="rowseg"><label>Adjacent shells ⓘ</label><span class="seg"><span class="on">Shared</span><span>Alternate</span></span></div>
+        <div class="rowseg"><label>Turn gain</label><span class="seg"><span>1×</span><span class="on">2×</span><span>4×</span></span></div>
+        <div class="sec" style="margin-top:12px">Probe</div>
+        <div class="prow"><label>Probe Y <span class="r">↻</span></label><div class="val">1.8 R</div><div class="rng"><b style="width:72%"></b></div></div>
+      </div></div>
+    </div>
+    <div class="status"><span>● Paused</span><span>Tick 691</span><span class="sp" style="flex:1"></span><span>Illustrative model</span></div>
+  </div></div>
+  <p class="muted">The rail is collapsed to icons here to show the compact state. The "Explore the zepton shells" card, which held three selects, four checkboxes, rate bars, three paragraphs, two links and a button, is spread across <b>Setup › Shell display</b> (three segmented controls), <b>View</b> (full shells/cutaway, turn arrows, guides), <b>split pane</b> (2D section, charge motion) and <b>dock › Shell rates</b>. The "Explore the video's shared rotation" button becomes a saved view link in the About sheet (URL state).</p>
+
+  <div class="grid2">
+    <div>
+      <h3>Light › Induction sequence</h3>
+      <div class="wf-wrap"><div class="wf" style="--h:360px;--rail:0px;--insp:200px;--dock:110px;min-width:0">
+        <div class="hdr"><span class="crumb">Light › <b>Induction sequence</b></span><span class="sp"></span><span class="btn">Load</span><span class="btn">Save</span><span class="btn">Export ▾</span></div>
+        <div class="body"><div></div><div class="center">
+          <div class="vp"><div class="pane"><div class="scene wide">wave · pairs · window</div><div class="ov tl"><div class="state"><em>❚❚ PAUSED</em><b>Pair 3 / 12 · ↺ positive</b></div></div><div class="ov tr"><span class="seg"><span class="on">Orbit</span><span>Side</span><span>Pair</span></span></div></div></div>
+          <div class="tl-bar"><span class="btn pri">▶ Run</span><span class="ico">⏭</span><span class="ico">⇥</span><div class="track">
+            <div class="ev" style="left:0%"></div><div class="ev" style="left:8.3%"></div><div class="ev" style="left:16.6%"></div><div class="ev" style="left:25%"></div><div class="ev" style="left:33.3%"></div><div class="ev" style="left:41.6%"></div><div class="ev" style="left:50%"></div><div class="ev" style="left:58.3%"></div><div class="ev" style="left:66.6%"></div><div class="ev" style="left:75%"></div><div class="ev" style="left:83.3%"></div><div class="ev" style="left:91.6%"></div>
+            <div class="fill" style="width:20%"></div><div class="head" style="left:20%"></div></div><span class="time">2.40 / 12 τ</span></div>
+          <div class="dock"><div class="strip"><div class="ro"><span>Travelled</span><b>2.40 L</b></div><div class="ro"><span>Time</span><b>2.00 fs</b></div><div class="tabs"><span class="on">Plots</span><span>Ledger</span><span>Events</span></div></div><div class="dock-body"><div class="chart"><i>Spatial profile</i></div><div class="chart"><i>Probe trace</i></div></div></div>
+        </div><div class="insp"><div class="itabs"><span class="on">Setup</span><span>View</span><span>Sel.</span></div><div class="ibody"><div class="prow"><label>Wavelength <span class="r">↻</span></label><div class="val">500 nm</div><div class="rng"><b style="width:33%"></b></div></div><div class="prow"><label>Polarization <span class="r">↻</span></label><div class="val">0°</div><div class="rng"><b style="width:0"></b></div></div><div class="rowseg"><label>Direction</label><span class="seg"><span class="on">+X</span><span>−X</span></span></div></div></div></div>
+        <div class="status"><span>● Paused</span></div>
+      </div></div>
+    </div>
+    <div>
+      <h3>Electron › Charge &amp; flux (static study)</h3>
+      <div class="wf-wrap"><div class="wf" style="--h:360px;--rail:0px;--insp:200px;--dock:110px;min-width:0;grid-template-rows:38px 1fr 22px">
+        <div class="hdr"><span class="crumb">Electron › <b>Charge &amp; flux</b></span><span class="sp"></span><span class="btn">Load</span><span class="btn">Save</span><span class="btn">Export ▾</span></div>
+        <div class="body"><div></div><div class="center" style="grid-template-rows:minmax(0,1fr) var(--dock)">
+          <div class="vp"><div class="pane"><div class="scene round" style="inset:14% 34%">Gauss sphere (2D)</div><div class="ov tl"><div class="state"><em>STATIC STUDY</em><b>Less field, more surface</b></div></div></div></div>
+          <div class="dock"><div class="strip"><div class="ro"><span>|E|/E₀</span><b>1.0000</b></div><div class="ro"><span>Area</span><b>1.0000</b></div><div class="ro"><span>Q/e</span><b>−1.0000</b></div></div><div class="dock-body" style="grid-template-columns:1fr"><div class="chart"><i>|E| and area vs r</i></div></div></div>
+        </div><div class="insp"><div class="itabs"><span class="on">Setup</span><span>View</span></div><div class="ibody"><div class="prow"><label>Sphere radius</label><div class="val">1.0 R</div><div class="rng"><b style="width:20%"></b></div></div></div></div></div>
+        <div class="status"><span>Static · no timeline</span></div>
+      </div></div>
+    </div>
+  </div>
+  <p class="muted">Static scenarios hide the timeline bar and use a 2D SVG view in the viewport slot. Save and Load still work, storing the study parameters under the same electron file format with a scenario field.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="inventory">
+  <div class="eyebrow">09</div><h2>Control inventory: keep, move, merge, cut</h2>
+  <p>Every element in the current UI and where it ends up. <span class="act keep">KEEP</span> in place (restyled) · <span class="act move">MOVE</span> to a new home · <span class="act merge">MERGE</span> into a shared component · <span class="act cut">CUT</span> or demote to About/debug · <span class="act new">NEW</span></p>
+
+  <details open><summary>Shared / Medium (<code>src/app/App.tsx</code>)</summary><div>
+  <table><thead><tr><th style="width:30%">Current element</th><th style="width:10%">Action</th><th>Destination</th></tr></thead><tbody>
+    <tr><td>"FIELD LABORATORY", v0.1 chip, "Runs locally" badge</td><td><span class="act cut">CUT</span></td><td>Version goes to About. Local-only is stated in About.</td></tr>
+    <tr><td>GitHub link, Development plan link, help icon</td><td><span class="act move">MOVE</span></td><td>The Help (?) menu: Shortcuts, About this scenario, About ZeroPoint, Model docs, Development plan, GitHub.</td></tr>
+    <tr><td>Sidebar Workspace / Experiments (6) / preset buttons</td><td><span class="act merge">MERGE</span></td><td>Switcher rail tree (scenarios).</td></tr>
+    <tr><td>Light and Electron entry buttons, "Beyond the medium"</td><td><span class="act merge">MERGE</span></td><td>Rail experiments and greyed Planned items.</td></tr>
+    <tr><td>Scene layers (3 toggles, Slice Z slider)</td><td><span class="act move">MOVE</span></td><td>Inspector › View. Slice Z nests under Energy slice.</td></tr>
+    <tr><td>Model-note card, sidebar tagline</td><td><span class="act cut">CUT</span></td><td>Folded into About.</td></tr>
+    <tr><td>Page heading (breadcrumb, h1, subtitle), "Reduced model" pill</td><td><span class="act merge">MERGE</span></td><td>Header breadcrumb and the single "Illustrative model" chip. The subtitle goes to About.</td></tr>
+    <tr><td>Run / Step / Reset / speed select</td><td><span class="act merge">MERGE</span></td><td>Timeline bar.</td></tr>
+    <tr><td>Load / Save experiment</td><td><span class="act merge">MERGE</span></td><td>Header Load / Save.</td></tr>
+    <tr><td>Viewport LIVE FIELD label</td><td><span class="act keep">KEEP</span></td><td>State chip.</td></tr>
+    <tr><td>Dipoles / Points segmented</td><td><span class="act move">MOVE</span></td><td>View › Representation. Shortcut <kbd>R</kbd>.</td></tr>
+    <tr><td>Camera icon buttons (3)</td><td><span class="act keep">KEEP</span></td><td>Labelled segmented control at viewport top-right. <kbd>1</kbd>–<kbd>4</kbd>.</td></tr>
+    <tr><td>Export PNG icon</td><td><span class="act move">MOVE</span></td><td>Header Export ▾ › PNG image.</td></tr>
+    <tr><td>Legend, cell scale, axis gizmo, slice legend</td><td><span class="act keep">KEEP</span></td><td>Auto legend (visible layers only) and scale bar.</td></tr>
+    <tr><td>"Drag to orbit · Scroll to zoom · Click to inspect" hint</td><td><span class="act cut">CUT</span></td><td>Shown once on first visit, then only in the ? sheet.</td></tr>
+    <tr><td>Metric strip (4 large tiles)</td><td><span class="act merge">MERGE</span></td><td>Dock readout strip. Physical-unit conversions go in the value's hover tooltip.</td></tr>
+    <tr><td>Population / Field energy / Event log tabs</td><td><span class="act move">MOVE</span></td><td>Dock › Plots (both series as small multiples) and Dock › Events.</td></tr>
+    <tr><td>Export CSV</td><td><span class="act move">MOVE</span></td><td>Export ▾ › CSV.</td></tr>
+    <tr><td>Checkpoints bar and Capture</td><td><span class="act merge">MERGE</span></td><td>Timeline ◆ markers and the Capture button. The limit becomes 8 for every experiment.</td></tr>
+    <tr><td>Inspector tabs Parameters / Dipole</td><td><span class="act merge">MERGE</span></td><td>Setup / View / Selection.</td></tr>
+    <tr><td>Creation rate, frequency, separation sliders</td><td><span class="act keep">KEEP</span></td><td>ParamRow (live).</td></tr>
+    <tr><td>Seed + apply-and-reset button</td><td><span class="act keep">KEEP</span></td><td>ParamRow ↻ with the pending bar and a dice button.</td></tr>
+    <tr><td>Reduce visual flashing</td><td><span class="act move">MOVE</span></td><td>Global Settings, defaulting to the OS preference.</td></tr>
+    <tr><td>Dipole inspector (readouts, life track, clear)</td><td><span class="act keep">KEEP</span></td><td>Selection tab.</td></tr>
+    <tr><td>Scale &amp; conventions card</td><td><span class="act cut">CUT</span></td><td>About › Units. Unit symbols get tooltips.</td></tr>
+    <tr><td>Reservoir, rejected births</td><td><span class="act move">MOVE</span></td><td>Dock › Ledger.</td></tr>
+    <tr><td>Parameter revision, worker ms, WebGL, FPS, model ID</td><td><span class="act cut">CUT</span></td><td>Debug telemetry (Settings toggle).</td></tr>
+    <tr><td>Model / roadmap dialog</td><td><span class="act merge">MERGE</span></td><td>About sheet and Planned popovers.</td></tr>
+    <tr><td>—</td><td><span class="act new">NEW</span></td><td>Command palette, shortcut sheet, URL state, Compare tab, focus mode.</td></tr>
+  </tbody></table></div></details>
+
+  <details><summary>Light (<code>src/light/LightExperiment.tsx</code>)</summary><div>
+  <table><thead><tr><th style="width:30%">Current element</th><th style="width:10%">Action</th><th>Destination</th></tr></thead><tbody>
+    <tr><td>"← Medium laboratory" back button</td><td><span class="act cut">CUT</span></td><td>The rail replaces it.</td></tr>
+    <tr><td>Eyebrow, h1, subtitle, "Illustrative induction model" badge</td><td><span class="act merge">MERGE</span></td><td>Breadcrumb, header chip, About.</td></tr>
+    <tr><td>Run light / Step / Next induction / Reset / speed</td><td><span class="act merge">MERGE</span></td><td>Timeline bar. Next induction becomes Next event <kbd>]</kbd>.</td></tr>
+    <tr><td>Load light / Save light</td><td><span class="act merge">MERGE</span></td><td>Header Load / Save.</td></tr>
+    <tr><td>Camera Orbit / Side / Pair close-up</td><td><span class="act keep">KEEP</span></td><td>Viewport camera segmented control.</td></tr>
+    <tr><td>Stage note (PAIR n/12, rotation, hint)</td><td><span class="act merge">MERGE</span></td><td>State chip line, e.g. "Pair 3 / 12 · ↺ positive".</td></tr>
+    <tr><td>Metrics: Travelled, Physical time, Excess energy</td><td><span class="act merge">MERGE</span></td><td>Readout strip.</td></tr>
+    <tr><td>Metric: Propagation speed</td><td><span class="act cut">CUT</span></td><td>Constant 1.000 c. Moves to Dock › Ledger as a check row.</td></tr>
+    <tr><td>Induction timeline scrubber</td><td><span class="act merge">MERGE</span></td><td>Timeline bar scrubber.</td></tr>
+    <tr><td>12 "Pair n" buttons</td><td><span class="act merge">MERGE</span></td><td>Scrubber event ticks and the Events tab (click to select and seek).</td></tr>
+    <tr><td>Narrative sentence under the timeline</td><td><span class="act move">MOVE</span></td><td>Events tab (current row expanded). A short form goes in the state chip.</td></tr>
+    <tr><td>Capture checkpoint / Restore tick n</td><td><span class="act merge">MERGE</span></td><td>◆ markers.</td></tr>
+    <tr><td>Spatial wave profile, Probe time trace</td><td><span class="act move">MOVE</span></td><td>Dock › Plots (shared Plot component).</td></tr>
+    <tr><td>Wave parameters form, Apply button</td><td><span class="act keep">KEEP</span></td><td>Setup with ↻ ParamRows and the pending bar. Direction becomes segmented +X / −X. Derived f becomes an inline readout.</td></tr>
+    <tr><td>Pair close-up card (glyph, readouts, Pin, Orbit)</td><td><span class="act move">MOVE</span></td><td>Selection tab. The glyph also becomes a split pane. Orbit becomes Focus <kbd>F</kbd>.</td></tr>
+    <tr><td>Packet energy ledger</td><td><span class="act move">MOVE</span></td><td>Dock › Ledger.</td></tr>
+    <tr><td>Scene layers (7 checkboxes)</td><td><span class="act move">MOVE</span></td><td>View › grouped layer list.</td></tr>
+    <tr><td>About this experiment + paper links</td><td><span class="act move">MOVE</span></td><td>About sheet › Sources.</td></tr>
+    <tr><td>Footnote, Export sequence CSV</td><td><span class="act move">MOVE</span></td><td>About and Export ▾ › Full sequence CSV.</td></tr>
+    <tr><td>Status line, footer</td><td><span class="act merge">MERGE</span></td><td>Toasts and the shared status bar.</td></tr>
+  </tbody></table></div></details>
+
+  <details><summary>Electron (<code>src/electron/*.tsx</code>)</summary><div>
+  <table><thead><tr><th style="width:30%">Current element</th><th style="width:10%">Action</th><th>Destination</th></tr></thead><tbody>
+    <tr><td>Mode cards (3) + explanation paragraph</td><td><span class="act merge">MERGE</span></td><td>Rail scenarios. The paragraph goes to About › This scenario.</td></tr>
+    <tr><td>Run electron / Step / Advance 1 τ / Reset / speed</td><td><span class="act merge">MERGE</span></td><td>Timeline bar. Advance 1 τ becomes <kbd>Shift →</kbd> and Next milestone.</td></tr>
+    <tr><td>Load electron / Save electron</td><td><span class="act merge">MERGE</span></td><td>Header Load / Save.</td></tr>
+    <tr><td>Cameras Front / Orbit / Local close-up (+ Shell close-up button)</td><td><span class="act merge">MERGE</span></td><td>One camera segmented control. Shell close-up joins it in the Spin scenario.</td></tr>
+    <tr><td>"Zepton selector" checkbox</td><td><span class="act cut">CUT</span></td><td>Click-selects everywhere.</td></tr>
+    <tr><td>Linked 2D section (<code>SpinSection</code>)</td><td><span class="act move">MOVE</span></td><td>Split pane (default 2-up in Spin).</td></tr>
+    <tr><td>Shell card: Visible shells / Adjacent preference / Turn gain selects</td><td><span class="act move">MOVE</span></td><td>Setup › Shell display, as three segmented controls (live).</td></tr>
+    <tr><td>Shell card checkboxes: Full 3D shells, Linked 2D, Turn arrows, Guides</td><td><span class="act move">MOVE</span></td><td>View (layers and the split toggle).</td></tr>
+    <tr><td>Shell rate bars</td><td><span class="act move">MOVE</span></td><td>Dock › Shell rates (click to select).</td></tr>
+    <tr><td>Shell caveat paragraphs (3) and links</td><td><span class="act cut">CUT</span></td><td>InfoTips on "Adjacent shells" and "Turn gain", plus About.</td></tr>
+    <tr><td>"Explore the video's shared rotation" button</td><td><span class="act move">MOVE</span></td><td>About › Saved views (a URL-state link).</td></tr>
+    <tr><td><code>ChargeMotion</code> close-up</td><td><span class="act move">MOVE</span></td><td>Split pane "Charge motion", following the selection. Velocity/Current becomes a pane-local toggle.</td></tr>
+    <tr><td>Metrics: position, time, enclosed Q, spin projection</td><td><span class="act merge">MERGE</span></td><td>Readout strip. "Bare core does not spin" goes to an InfoTip.</td></tr>
+    <tr><td>Replay card: scrubber, jump buttons, checkpoints</td><td><span class="act merge">MERGE</span></td><td>Timeline bar with named ticks and ◆ markers.</td></tr>
+    <tr><td>Fixed probe field-history chart</td><td><span class="act move">MOVE</span></td><td>Dock › Probe (chart and vector table side by side).</td></tr>
+    <tr><td><code>ElectronProperties</code> (Charge &amp; flux, Radius limit)</td><td><span class="act move">MOVE</span></td><td>Two static scenarios.</td></tr>
+    <tr><td>"What the source papers contribute"</td><td><span class="act cut">CUT</span></td><td>About › Sources.</td></tr>
+    <tr><td>Controls form: velocity, spin, axis, probe X/Y/Z, Apply</td><td><span class="act keep">KEEP</span></td><td>Setup ↻ with the pending bar. Velocity is <b>hidden</b> outside Moving. Spin and axis become segmented controls.</td></tr>
+    <tr><td>Probe reference readout</td><td><span class="act move">MOVE</span></td><td>Dock › Probe. The masked-probe notice becomes an inline warning row.</td></tr>
+    <tr><td>Inspect a zepton card, Nearest to probe</td><td><span class="act merge">MERGE</span></td><td>Selection tab.</td></tr>
+    <tr><td>Scene layers (10 checkboxes)</td><td><span class="act move">MOVE</span></td><td>View (grouped, scenario-filtered).</td></tr>
+    <tr><td>Source scale &amp; constants</td><td><span class="act cut">CUT</span></td><td>About › Constants.</td></tr>
+    <tr><td>Status line, footer</td><td><span class="act merge">MERGE</span></td><td>Toasts and the status bar.</td></tr>
+  </tbody></table></div></details>
+
+  <details><summary>Extended Casimir (<code>src/casimir/*.tsx</code>)</summary><div>
+  <table><thead><tr><th style="width:30%">Current element</th><th style="width:10%">Action</th><th>Destination</th></tr></thead><tbody>
+    <tr><td>"← Experiment library" back button</td><td><span class="act cut">CUT</span></td><td>The rail replaces it.</td></tr>
+    <tr><td>Heading, subtitle, "Illustrative model" pill and toggled notes</td><td><span class="act merge">MERGE</span></td><td>Breadcrumb, header chip, About.</td></tr>
+    <tr><td>Pairing cards (e⁻/e⁻ Fig. 4, e⁻/p⁺ Fig. 3)</td><td><span class="act merge">MERGE</span></td><td>Rail scenarios.</td></tr>
+    <tr><td>Run / Step / Reset / speed (0.1–2×)</td><td><span class="act merge">MERGE</span></td><td>Timeline bar. The speed set comes from the definition (0.1–2× here).</td></tr>
+    <tr><td>Initial separation slider (resets immediately)</td><td><span class="act keep">KEEP</span></td><td>Setup ParamRow ↻, staged in the pending bar rather than resetting on every drag.</td></tr>
+    <tr><td>Scene top line (LIVE, time) and caption</td><td><span class="act merge">MERGE</span></td><td>State chip. The colour key goes to the auto legend.</td></tr>
+    <tr><td>Pressure colour legend</td><td><span class="act keep">KEEP</span></td><td>Auto legend (continuous scale).</td></tr>
+    <tr><td>Layer checkboxes (3), "Click a pair" hint</td><td><span class="act move">MOVE</span></td><td>View layers. The hint is cut.</td></tr>
+    <tr><td>Metrics: between, outer, inner − outer, net push</td><td><span class="act merge">MERGE</span></td><td>Readout strip.</td></tr>
+    <tr><td>Pressure history chart</td><td><span class="act move">MOVE</span></td><td>Dock › Plots (shared Plot).</td></tr>
+    <tr><td>Lifetime loupe, Inspect newest, Follow checkbox</td><td><span class="act move">MOVE</span></td><td>Selection tab (Pinned / Follow next birth) and the default 2-up loupe pane.</td></tr>
+    <tr><td>Release / Hold charges</td><td><span class="act move">MOVE</span></td><td>Setup › Charges: segmented Held / Released (live). "Boundary reached" becomes a state chip line and a toast.</td></tr>
+    <tr><td>Events card (counts and list)</td><td><span class="act move">MOVE</span></td><td>Dock › Events. The counts go to Readouts.</td></tr>
+    <tr><td>Mechanism sequence (3 steps), footer links</td><td><span class="act move">MOVE</span></td><td>About › This scenario and Sources.</td></tr>
+  </tbody></table></div></details>
+
+  <details><summary>Van der Waals &amp; vacuum pressure (<code>src/van-der-waals/*.tsx</code>)</summary><div>
+  <table><thead><tr><th style="width:30%">Current element</th><th style="width:10%">Action</th><th>Destination</th></tr></thead><tbody>
+    <tr><td>Back button and Chapter 3 link</td><td><span class="act cut">CUT</span></td><td>The rail replaces the back button. The chapter link goes to About › Sources.</td></tr>
+    <tr><td>Heading, "Illustrative experiment" badge</td><td><span class="act merge">MERGE</span></td><td>Breadcrumb and header chip.</td></tr>
+    <tr><td>Stage cards 01–03</td><td><span class="act merge">MERGE</span></td><td>Rail scenarios.</td></tr>
+    <tr><td>Stage diagrams (SVG)</td><td><span class="act keep">KEEP</span></td><td>Viewport slot (2D).</td></tr>
+    <tr><td>"After Fig. n" link</td><td><span class="act move">MOVE</span></td><td>Split pane "Source figure" and About › Sources.</td></tr>
+    <tr><td>Stage explanation (heading and paragraph)</td><td><span class="act move">MOVE</span></td><td>The heading becomes the state chip line. The paragraph goes to About.</td></tr>
+    <tr><td>Applied field, pair separation, plate gap, plate area sliders</td><td><span class="act keep">KEEP</span></td><td>Setup ParamRows (live), scenario-filtered. Gap presets (100/200/500/1000 nm) become quick-value chips under the gap row.</td></tr>
+    <tr><td>Run / Step dipoles</td><td><span class="act merge">MERGE</span></td><td>Timeline bar (loop).</td></tr>
+    <tr><td>Show modes checkbox</td><td><span class="act move">MOVE</span></td><td>View layer "Cavity modes".</td></tr>
+    <tr><td>Reset icon</td><td><span class="act merge">MERGE</span></td><td>Timeline Reset and Setup "Reset to scenario".</td></tr>
+    <tr><td>Equation boxes and readouts (p = αE, London, pressure, force)</td><td><span class="act merge">MERGE</span></td><td>Readout strip and Dock › Readouts. The equation goes in the ParamRow's InfoTip.</td></tr>
+    <tr><td>Gap sweep plot and Export CSV</td><td><span class="act move">MOVE</span></td><td>Dock › Plots and Export ▾ › CSV.</td></tr>
+    <tr><td>"Reading chapter 3" context, source-figure gallery</td><td><span class="act move">MOVE</span></td><td>About › This scenario and Sources (gallery).</td></tr>
+  </tbody></table></div></details>
+</section>
+
+<!-- ============================================================ -->
+<section id="info">
+  <div class="eyebrow">10</div><h2>Info layer &amp; copy</h2>
+  <div class="grid3">
+    <div class="card"><h3>ⓘ InfoTip</h3><p>Attached to a parameter, layer or readout label. One or two sentences of caveat, plus an optional "More in About ›" link. It opens on click or Enter, and Esc closes it.</p><p class="muted">Example, Turn gain: "Magnifies each local turn for visibility. Display only; does not change the model."</p></div>
+    <div class="card"><h3>About sheet</h3><p>Opened from the header "Illustrative model" chip, Help › About this scenario, or <kbd>Shift ?</kbd>. It slides over the inspector and has four sections: <b>This scenario</b> (what you're seeing and its assumptions) · <b>Units &amp; constants</b> · <b>Sources</b> (papers, video timestamps) · <b>Saved views</b>.</p></div>
+    <div class="card"><h3>Copy rules</h3><ul><li>Labels are 1–3 words, with units in the value field and not the label.</li><li>No sentences in the workspace. Empty states are the one exception (one line).</li><li>"Illustrative" appears once, in the header chip, not per card.</li><li>Use the same verbs everywhere: Run, Pause, Step, Reset, Capture, Apply, Revert, Load, Save, Export.</li></ul></div>
+  </div>
+  <p>Existing caveat text isn't deleted. It moves verbatim into About › This scenario, grouped per scenario, so no scientific qualification is lost, and the edit pass can happen later.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="power">
+  <div class="eyebrow">11</div><h2>Power features</h2>
+  <div class="grid2">
+    <div class="card"><h3>Command palette · <kbd>Ctrl K</kbd></h3><ul>
+      <li>Built on <code>cmdk</code>, fed by the same <b>action registry</b> as the shortcuts.</li>
+      <li>Groups: Scenarios · Transport · Layers (toggle by name) · Cameras · Selection ("Select nearest to probe") · Files · View (focus mode, split, panels) · Help.</li>
+      <li>Parameter jump: typing "wavelength" focuses that ParamRow's value field.</li>
+      <li>Each result shows its shortcut on the right, which teaches the keys.</li>
+    </ul></div>
+    <div class="card"><h3>Keyboard map · <kbd>?</kbd> opens the sheet</h3>
+      <table style="margin:0"><tbody>
+        <tr><td><kbd>Space</kbd></td><td>Run / Pause</td><td><kbd>→</kbd> / <kbd>Shift →</kbd></td><td>Step / +1 τ</td></tr>
+        <tr><td><kbd>]</kbd> / <kbd>[</kbd></td><td>Next / previous event</td><td><kbd>Home</kbd></td><td>Reset to start</td></tr>
+        <tr><td><kbd>&lt;</kbd> / <kbd>&gt;</kbd></td><td>Slower / faster</td><td><kbd>C</kbd></td><td>Capture checkpoint</td></tr>
+        <tr><td><kbd>1</kbd>–<kbd>4</kbd></td><td>Camera presets</td><td><kbd>F</kbd></td><td>Focus selection</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Clear selection / close</td><td><kbd>\</kbd></td><td>Toggle split view</td></tr>
+        <tr><td><kbd>R</kbd></td><td>Representation</td><td><kbd>L</kbd></td><td>Open View › Layers</td></tr>
+        <tr><td><kbd>Ctrl B</kbd> <kbd>Ctrl I</kbd> <kbd>Ctrl J</kbd></td><td>Rail / inspector / dock</td><td><kbd>Ctrl .</kbd></td><td>Focus mode</td></tr>
+        <tr><td><kbd>Ctrl S</kbd> / <kbd>Ctrl O</kbd></td><td>Save / Load</td><td><kbd>Ctrl ⏎</kbd></td><td>Apply pending</td></tr>
+        <tr><td><kbd>Ctrl K</kbd></td><td>Palette</td><td><kbd>Ctrl Shift C</kbd></td><td>Copy link to this state</td></tr>
+      </tbody></table>
+      <p class="muted" style="margin-top:8px">Shortcuts are ignored while typing in inputs, as today. They never fire while a dialog or palette is open.</p>
+    </div>
+    <div class="card"><h3>A/B comparison · Dock › Compare</h3><ul>
+      <li><b>Pin as B</b> from a ◆ checkpoint (right-click), from the current configuration (Compare tab button), or from a loaded file ("Load as B").</li>
+      <li>B runs in a <b>headless second worker</b> without rendering. It generates only the dock series, in lock-step with A's tick.</li>
+      <li>Plots overlay A as solid lines and B as dashed lines. The readout strip shows Δ values in small text.</li>
+      <li>A parameter diff table lists only the parameters that differ, with a "Copy B's parameters to A" action.</li>
+      <li>A "B" badge appears on the dock tab and in the status bar while B is active. Clearing B stops its worker.</li>
+      <li>Light and Electron are analytic, so B is cheap. For Medium, B costs a second simulation worker; show its step time in debug telemetry.</li>
+    </ul></div>
+    <div class="card"><h3>Shareable URL state</h3><ul>
+      <li>Hash-based routing, because the app is a static host with <code>base: './'</code>: <code>#/electron/spin?axis=z&amp;spin=-1&amp;t=691&amp;cam=shell&amp;split=section&amp;L=+radius,-faraday</code></li>
+      <li>Only non-default values are encoded: parameters, tick, camera preset, layer deltas, split pane and selection.</li>
+      <li>Written with <code>history.replaceState</code>, debounced, and never while running (only the tick changes while running).</li>
+      <li>On load, the URL is validated through the same parsers as files. Invalid keys are dropped with a toast.</li>
+      <li>Saved views in About are simply URL fragments.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="tokens">
+  <div class="eyebrow">12</div><h2>Visual system (refined dark / teal)</h2>
+  <p>The identity stays the same (DM Sans, IBM Plex Mono, the mint accent and the charge colours), but it becomes a small token set in <code>src/ui/tokens.css</code>. All 354 literal colours in component CSS are replaced by tokens. Lint rule: no hex values outside <code>tokens.css</code>, except for data colours defined in TypeScript for Three.js, which import from <code>src/ui/palette.ts</code>.</p>
+  <h3>Colour tokens</h3>
+  <div class="swatches">
+    <div class="sw"><i style="background:#0a1017"></i><div>Surface 0<code>--bg-0 · viewport</code></div></div>
+    <div class="sw"><i style="background:#0d151e"></i><div>Surface 1<code>--bg-1 · panels</code></div></div>
+    <div class="sw"><i style="background:#132030"></i><div>Surface 2<code>--bg-2 · raised/hover</code></div></div>
+    <div class="sw"><i style="background:#1b2b3a"></i><div>Surface 3<code>--bg-3 · active</code></div></div>
+    <div class="sw"><i style="background:#253646"></i><div>Line<code>--line</code></div></div>
+    <div class="sw"><i style="background:#34495b"></i><div>Line strong<code>--line-2 · inputs</code></div></div>
+    <div class="sw"><i style="background:#e3ebf1"></i><div>Text 1<code>--text · values</code></div></div>
+    <div class="sw"><i style="background:#aebfcc"></i><div>Text 2<code>--text-2 · labels</code></div></div>
+    <div class="sw"><i style="background:#8397a8"></i><div>Text 3<code>--text-3 · meta (AA)</code></div></div>
+    <div class="sw"><i style="background:#8fe0c2"></i><div>Accent<code>--accent · running/selected</code></div></div>
+    <div class="sw"><i style="background:#1d3a33"></i><div>Accent dim<code>--accent-bg</code></div></div>
+    <div class="sw"><i style="background:#f0c98a"></i><div>Pending / paused<code>--warn</code></div></div>
+    <div class="sw"><i style="background:#f39a82"></i><div>Error<code>--danger</code></div></div>
+    <div class="sw"><i style="background:#f2a67f"></i><div>Positive charge<code>--data-pos</code></div></div>
+    <div class="sw"><i style="background:#7fc8ec"></i><div>Negative charge<code>--data-neg</code></div></div>
+    <div class="sw"><i style="background:#93dec0"></i><div>Electric / E<code>--data-e</code></div></div>
+    <div class="sw"><i style="background:#a894ef"></i><div>Magnetic motion<code>--data-b</code></div></div>
+    <div class="sw"><i style="background:#efa5c1"></i><div>Magnetic spin<code>--data-bspin</code></div></div>
+    <div class="sw"><i style="background:#b39cf0"></i><div>Electron core<code>--data-core</code></div></div>
+    <div class="sw"><i style="background:#f2c46e"></i><div>Shell 1–4<code>--data-shell-n</code></div></div>
+  </div>
+  <p class="muted">Rule: the <b>accent means "live or selected"</b> and nothing else. Amber means "paused or pending". Data colours never appear in chrome, and chrome colours never appear in data. Before this lands, the <code>dataviz</code> palette validator should check that series colours are distinguishable in plot overlays, including A/B dashed lines.</p>
+
+  <div class="grid2">
+    <div><h3>Type scale (min 11 px)</h3><table><tbody>
+      <tr><td><code>--fs-micro</code></td><td>11 px / 600 / mono caps</td><td>Section headers, units</td></tr>
+      <tr><td><code>--fs-ui</code></td><td>12 px</td><td>Labels, tabs, rail</td></tr>
+      <tr><td><code>--fs-value</code></td><td>13 px mono, tabular numerals</td><td>Values, readouts</td></tr>
+      <tr><td><code>--fs-title</code></td><td>15 px / 600</td><td>Panel and pane titles</td></tr>
+      <tr><td><code>--fs-strip</code></td><td>14 px mono / 600</td><td>Readout strip values</td></tr>
+      <tr><td><code>--fs-about</code></td><td>14 px / 1.6</td><td>About sheet prose</td></tr>
+    </tbody></table></div>
+    <div><h3>Spacing, sizing &amp; shape</h3><table><tbody>
+      <tr><td>Grid</td><td>4 px. Panel padding 12, section gap 16</td></tr>
+      <tr><td>Row height</td><td>28 px controls, 24 px buttons in bars</td></tr>
+      <tr><td>Radii</td><td>4 inputs · 6 buttons, chips · 8 panels, popovers</td></tr>
+      <tr><td>Borders</td><td>Panels separated by 1 px lines, not cards-in-cards. Cards appear only in popovers and the About sheet.</td></tr>
+      <tr><td>Motion</td><td>120 ms panel collapse, 80 ms hover. None when reduced motion is on.</td></tr>
+      <tr><td>Icons</td><td>lucide-react at 14 / 16 px, always with a label or tooltip.</td></tr>
+    </tbody></table></div>
+  </div>
+  <h3>Shared Plot component</h3>
+  <p>One <code>&lt;Plot series={[…]} x={…} markers={…}/&gt;</code> replaces <code>Plot</code> (App), <code>WavePlot</code> (Light) and the inline Electron chart. It has consistent axes (three ticks, a mono 11 px label), a playhead line synced to the timeline, a hover crosshair with values, a gap-aware line for masked samples, dashed B series, and CSV export of exactly what's plotted.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="responsive">
+  <div class="eyebrow">13</div><h2>Tablet, phone &amp; accessibility</h2>
+  <div class="grid3">
+    <div class="card"><h3>≥ 1280 px (desktop)</h3><p>The full shell as specified. Default sizes are rail 190, inspector 280 and dock 170.</p><p class="muted">At 1280–1439 px, the rail starts collapsed to icons.</p></div>
+    <div class="card"><h3>768–1279 px (tablet)</h3><ul><li>The rail is an icon strip that opens as an overlay.</li><li>The inspector is an overlay sheet from the right, toggled from the header.</li><li>The dock starts collapsed (strip only).</li><li>2-up switches to a vertical stack when the viewport is under 900 px wide.</li><li>Touch: tap selects, drag orbits, pinch zooms. The minimum touch target is 36 px.</li></ul></div>
+    <div class="card"><h3>&lt; 768 px (phone, basic viewer)</h3><ul><li>Header with a scenario picker (a sheet).</li><li>Viewport, timeline bar (Run, scrubber) and readout strip.</li><li>Setup, View and Selection in one bottom sheet.</li><li>No split view, compare or palette.</li></ul></div>
+  </div>
+  <h3>Accessibility checklist</h3>
+  <ul>
+    <li>Radix primitives provide roles, focus management and keyboard handling for tabs, menus, popovers, dialogs, sliders and toggle groups.</li>
+    <li>Text tokens meet WCAG AA on their surfaces. <code>--text-3</code> is the floor for any readable text. Nothing is below 11 px.</li>
+    <li>Charge and field encodings keep their non-colour cues (+/−, ↺/↻, dashed vs solid).</li>
+    <li>The run state is announced through a polite live region. Toasts use <code>role=status</code>.</li>
+    <li>Reduced motion is global and follows the OS. It also disables camera tweening.</li>
+    <li>Every viewport action has a non-pointer equivalent, such as Select first, Select nearest to probe, and the Events list.</li>
+    <li>Keep the existing accessible names and <code>data-testid</code>s wherever the element survives. See the test-migration notes in the roadmap.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="architecture">
+  <div class="eyebrow">14</div><h2>Architecture</h2>
+  <p>The shell renders any experiment described by a declarative definition. Each experiment keeps its model, worker and renderer untouched, and only its React workspace is replaced.</p>
+  <div class="grid2">
+    <div class="card"><h3>New structure</h3>
+<pre class="mono" style="margin:0;font-size:12px;line-height:1.7;color:var(--text-2)">src/
+  ui/                 <span style="color:var(--text-3)">tokens.css, palette.ts, ParamRow, Segmented,
+                      LayerList, InfoTip, Readouts, Plot, Toast</span>
+  workbench/          <span style="color:var(--text-3)">Shell, Header, Rail, Inspector, Viewport,
+                      SplitPane, TimelineBar, Dock, StatusBar,
+                      CommandPalette, ShortcutSheet, AboutSheet</span>
+    actions.ts        <span style="color:var(--text-3)">registry → buttons, keys, palette</span>
+    urlState.ts       <span style="color:var(--text-3)">hash encode/decode via file parsers</span>
+    runtime.ts        <span style="color:var(--text-3)">common worker command adapter</span>
+    compare/          <span style="color:var(--text-3)">headless B worker + series merge</span>
+  experiments/
+    medium/definition.ts
+    light/definition.ts
+    electron/definition.ts   <span style="color:var(--text-3)">(+ static studies)</span>
+    casimir/definition.ts
+    van-der-waals/definition.ts
+  model/ simulation/ rendering/ light/ electron/
+  casimir/ van-der-waals/
+                      <span style="color:var(--text-3)">models, workers, renderers kept</span></pre></div>
+    <div class="card"><h3>ExperimentDefinition (sketch)</h3>
+<pre class="mono" style="margin:0;font-size:11.5px;line-height:1.6;color:var(--text-2)">interface ExperimentDefinition&lt;P, V, S&gt; {
+  id; title; scenarios: Scenario&lt;P, V&gt;[];
+  params: ParamSpec&lt;P&gt;[];   <span style="color:var(--text-3)">// key, label, unit, min, max,
+                            // step, apply:'live'|'restart',
+                            // group, info, scenarios?</span>
+  layers: LayerSpec&lt;V&gt;[];   <span style="color:var(--text-3)">// key, label, group, info, scenarios?</span>
+  cameras: CameraSpec[];
+  timeline(s): { kind:'bounded'|'open'|'loop'|'static';
+                 end?; events: TimelineEvent[] };
+  readouts(s): { strip: Readout[]; tabs: DockTab[] };
+  panes?: SecondaryPane[];  <span style="color:var(--text-3)">// SpinSection, ChargeMotion…</span>
+  selection: { describe(id, s): Readout[]; first?; nearestProbe? };
+  useRuntime(active): Runtime;  <span style="color:var(--text-3)">// normalised commands</span>
+  file: { format; serialize; parse };
+  about: AboutContent;
+}</pre></div>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Runtime adapter</h3><p>Worker vocabularies differ today (Medium uses <code>running</code> and <code>parameters</code>; Light and Electron use <code>run</code>, <code>configure</code>, <code>next</code> and <code>advance</code>). One adapter exposes <code>run(bool)</code>, <code>step()</code>, <code>jump(τ)</code>, <code>nextEvent()</code>, <code>seek(tick)</code>, <code>reset()</code>, <code>speed(x)</code>, <code>setLive(params)</code>, <code>configure(params)</code>, <code>checkpoint()</code> and <code>restore(c)</code>. Unsupported commands report <code>capabilities</code>, which drive the timeline bar's enabled state. The worker protocols themselves don't change. Casimir and van der Waals run on the main thread (a rAF loop and an interval). A <code>MainThreadRuntime</code> driver wraps them with the same fixed-step accumulator and hidden-tab pause, so the shell treats all five experiments alike.</p></div>
+    <div class="card"><h3>New dependencies</h3><ul>
+      <li><code>@radix-ui/react-{tabs,toggle-group,slider,popover,dropdown-menu,dialog,tooltip,collapsible,scroll-area}</code>: headless and tree-shaken.</li>
+      <li><code>cmdk</code>: command palette.</li>
+      <li><code>react-resizable-panels</code>: resizable and collapsible panels with persistence.</li>
+      <li>No styling library. Plain CSS with tokens, co-located per component, replacing the minified single-line stylesheets.</li>
+    </ul></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="roadmap">
+  <div class="eyebrow">15</div><h2>Phased roadmap</h2>
+  <p>Each phase ships independently, keeps <code>npm run check</code>, <code>npm test</code> and <code>npm run test:e2e</code> green, and can be deployed. Medium migrates first because it's the smallest and already closest to the target layout. Phases are delivered as the stacked PRs <b>UI 00–18</b> described in <a href="#delivery">§16</a>.</p>
+
+  <div class="phase"><div class="pn">P0</div><div><h3>Foundations: tokens and primitives (no layout change)</h3>
+    <ul><li>First, guards: visual baselines, stable test IDs, a caveat inventory and a render-count harness (UI 01b–01c), then a palette preview for your approval (UI 01d). See the stack table in §16.</li>
+      <li>Add <code>src/ui/tokens.css</code> and <code>palette.ts</code>. Replace hex literals in all seven stylesheets (<code>app/*.css</code>, <code>light.css</code>, <code>electron.css</code>, <code>casimir.css</code>, <code>van-der-waals.css</code>). Raise all 6–10 px text to the type scale. Split the one-line CSS into readable per-component files.</li>
+      <li>Add Radix, cmdk and resizable-panels. Build <code>ParamRow</code>, <code>Segmented</code>, <code>LayerList</code>, <code>InfoTip</code>, <code>Readouts</code>, <code>Plot</code> and <code>Toast</code> with unit tests.</li>
+      <li>Swap in shared components in place, e.g. the five plot implementations become <code>Plot</code>.</li></ul>
+    <p class="muted"><b>Done when:</b> screenshots match the current layout with the new tokens and there are no hex values outside tokens. Browser tests pass unchanged.</p></div></div>
+
+  <div class="phase"><div class="pn">P1</div><div><h3>Experiment definitions and runtime adapter</h3>
+    <ul><li>Write <code>experiments/{medium,light,electron,casimir,van-der-waals}/definition.ts</code>, extracting parameter, layer, camera, readout and event metadata from the five workspace components.</li>
+      <li>Write <code>workbench/runtime.ts</code> adapters over <code>useSimulation</code>, <code>useLight</code> and <code>useElectron</code>, plus the <code>MainThreadRuntime</code> driver for Casimir and van der Waals.</li>
+      <li>Add the scenario concept: Medium presets, Electron modes, Casimir pairings and van der Waals stages, with layer and camera defaults taken from today's mode handlers.</li></ul>
+    <p class="muted"><b>Done when:</b> unit tests cover each definition (scenario defaults, parameter apply types, capability flags). No UI change yet.</p></div></div>
+
+  <div class="phase"><div class="pn">P2</div><div><h3>Shell and Medium migration</h3>
+    <ul><li>Build <code>Shell</code>, <code>Header</code>, <code>Rail</code>, <code>Inspector</code> (Setup/View/Selection), <code>Viewport</code> (overlays), <code>TimelineBar</code>, <code>Dock</code> and <code>StatusBar</code>, with resizable and collapsible panels and a fixed, non-scrolling page.</li>
+      <li>Render Medium through the shell. Add the pending bar (seed), ◆ markers, the readout strip and the Plots/Ledger/Events tabs.</li>
+      <li>Make the other four labs temporarily reachable from the rail but still render their old workspaces inside the shell's centre, so there's no regression.</li>
+      <li>Replace <code>App.tsx</code>'s four <code>visited*</code> flags with per-experiment lazy mounting in the shell.</li>
+      <li>Per-tick simulation data reaches renderers, readouts and plots through refs and subscriptions, never through shell-level React state. The UI 01b render-count harness gates this.</li></ul>
+    <p class="muted"><b>Tests:</b> update <code>workbench.spec.ts</code>. "Open experiment library" becomes the rail, "Dipole" tab becomes "Selection", and "Import experiment file" keeps its label.</p></div></div>
+
+  <div class="phase"><div class="pn">P3</div><div><h3>Light, Electron, Casimir and van der Waals migration</h3>
+    <ul><li>Render Light, Electron, Casimir and van der Waals through the shell, one PR each. Move timeline, events, plots, probe and ledger into the timeline bar and dock. Delete the long-scroll workspaces and the <code>light-*</code> class coupling.</li>
+      <li>Hide scenario-inapplicable controls, e.g. velocity outside Moving. Make segmented controls for spin, axis, direction, shells, preference and gain.</li>
+      <li>Unify checkpoints (limit 8, ◆ markers) and file buttons.</li></ul>
+    <p class="muted"><b>Tests:</b> <code>light.spec.ts</code> and <code>electron.spec.ts</code> need selector changes: "Run light"/"Run electron" become "Run"; "Next induction" and "Advance 1 τ" become "Next event" and <kbd>Shift →</kbd>; "Show fully aligned field" and "Electron at path centre" become named timeline events; "Apply electron parameters" becomes "Apply"; "Load/Save electron|light" become "Load/Save". Keep <code>data-testid</code>s (<code>light-tick</code>, <code>electron-pair-centre</code>, <code>inner-pressure</code>, <code>pressure-difference</code>…) on their new homes to limit churn. <code>casimir.spec.ts</code> and <code>van-der-waals.spec.ts</code> change the same way: pairing and stage cards become rail scenarios, and "Run dipoles" becomes "Run".</p></div></div>
+
+  <div class="phase"><div class="pn">P4</div><div><h3>Selection, split view and static studies</h3>
+    <ul><li>Unified click-vs-drag picking in all three renderers (4 px threshold). Remove the "Zepton selector". Add the Esc and <kbd>F</kbd> actions.</li>
+      <li><code>SplitPane</code> with per-scenario panes: <code>SpinSection</code>, <code>ChargeMotion</code>, the Light pair glyph and a new Medium dipole close-up.</li>
+      <li>Promote <code>ElectronProperties</code> into the "Charge &amp; flux" and "Radius limit" static scenarios (timeline hidden, 2D viewport).</li></ul>
+    <p class="muted"><b>Tests:</b> remove the "Zepton selector" steps. Add click-select and split-toggle tests. Change the "Electron property investigations" region to scenario navigation.</p></div></div>
+
+  <div class="phase"><div class="pn">P5</div><div><h3>Info layer and cuts</h3>
+    <ul><li>Add <code>InfoTip</code>s on parameters and layers. Build the <code>AboutSheet</code> (scenario, units and constants, sources, saved views) and move all caveat copy there verbatim.</li>
+      <li>Execute the cut list: header badges, model-note card, reference cards, orbit hint (first-run only), and debug telemetry behind a Settings toggle.</li>
+      <li>Add the global Settings popover (reduced motion, debug telemetry).</li></ul></div></div>
+
+  <div class="phase"><div class="pn">P6</div><div><h3>Keyboard, palette and URL state</h3>
+    <ul><li>Build <code>actions.ts</code> as the single registry, then refactor the three existing <code>keydown</code> handlers into it.</li>
+      <li><code>CommandPalette</code>, <code>ShortcutSheet</code>, focus mode.</li>
+      <li><code>urlState.ts</code>: encode and decode through the existing parsers (<code>parseExperiment</code>, <code>parseLightFile</code>, <code>parseElectronFile</code>), Copy link, and saved views.</li></ul>
+    <p class="muted"><b>Tests:</b> URL round-trip unit tests. A browser test that loads a hash and asserts the scenario, tick and layer state.</p></div></div>
+
+  <div class="phase"><div class="pn">P7</div><div><h3>A/B comparison</h3>
+    <ul><li>Headless B runtime (reusing the worker without a renderer), lock-step with A's tick, and "Pin as B" from checkpoints, the configuration or a file.</li>
+      <li>Compare tab (parameter diff, Δ readouts), overlaid <code>Plot</code> series, and a B badge.</li></ul>
+    <p class="muted"><b>Tests:</b> deterministic A/B with identical parameters must give zero Δ. A different seed must give a non-zero Δ.</p></div></div>
+
+  <div class="phase"><div class="pn">P8</div><div><h3>Tablet and phone polish, audit</h3>
+    <ul><li>Overlay rail and inspector sheets, stacked split view, the phone basic viewer and touch targets.</li>
+      <li>Accessibility pass (axe in Playwright), contrast check against tokens, keyboard-only walkthrough of the core loop.</li>
+      <li>Update the README "Use the laboratory" section to describe the new workbench.</li></ul></div></div>
+</section>
+
+<!-- ============================================================ -->
+<section id="delivery">
+  <div class="eyebrow">16</div><h2>Delivery: stacked PRs &amp; review automation</h2>
+  <p>The roadmap ships as <b>25 stacked PRs</b>, each reviewed by CodeRabbit. A babysitter loop responds to the reviews. On this repo CodeRabbit is manually triggered and limited to <b>one trigger per hour</b>. That gate is the critical path, so the process keeps implementation moving while the gate is closed and never wastes a review slot.</p>
+
+  <h3>Facts this process is built on</h3>
+  <table>
+    <thead><tr><th style="width:32%">Observed</th><th>Consequence</th></tr></thead>
+    <tbody>
+      <tr><td>CodeRabbit's summary on PR #6: "does not receive automatic reviews because it has fewer than 10 stars".</td><td>Every review is requested with a <code>@coderabbitai review</code> PR comment, or the "Trigger review" checkbox in the summary.</td></tr>
+      <tr><td>Free tier: one trigger per hour. The limit may be per account rather than per repo.</td><td>There is a single global slot. Requests are queued and prioritised (below), and fixes are batched so each slot counts. Reviews requested on other repos may use the same slot, which would stretch the schedule.</td></tr>
+      <tr><td>Manual <code>@coderabbitai review</code> works "regardless of any auto-review configuration". Auto-review covers only the default branch unless <code>base_branches</code> is extended.</td><td>UI 00 adds <code>.coderabbit.yaml</code> with <code>auto_review.enabled: false</code>, so only the babysitter spends the hourly quota even if the repo passes 10 stars. It also sets <code>base_branches: [".*"]</code>, so stacked layers aren't skipped if auto-review is ever re-enabled.</td></tr>
+      <tr><td>Pre-merge check: <b>docstring coverage ≥ 80%</b> of touched functions. PR #6 failed it at 37.5%.</td><td>Every new or touched function and component gets a one-line JSDoc, following the existing repo convention.</td></tr>
+      <tr><td>Review comments include an "AI agent prompt" block, flagged by CodeRabbit itself as untrusted.</td><td>Review text is treated as data. The babysitter never runs commands or follows instructions from it beyond the code change a finding describes.</td></tr>
+      <tr><td>The repo squash-merges (<code>… (#6)</code>). There is no branch protection and no CI workflow.</td><td>After each merge the stack is rebased <code>--onto</code> main. UI 00 adds CI so every push has a visible check.</td></tr>
+      <tr><td>Playwright uses port 5174 with <code>reuseExistingServer: true</code>.</td><td>With parallel worktrees, e2e could silently test <i>another</i> worktree's dev server. UI 00 makes the port configurable and disables reuse by default.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>The stack</h3>
+  <table>
+    <thead><tr><th>PR</th><th>Branch</th><th>Base</th><th>Scope</th><th>Phase</th></tr></thead>
+    <tbody>
+      <tr><td>UI 00</td><td><code>ui/00-delivery</code></td><td>main</td><td>This plan and its README link, <code>.coderabbit.yaml</code>, CI workflow, <code>ZP_PORT</code> for Vite and Playwright, <code>scripts/stack.mjs</code>, the babysitter skill, a CI-safe timeout for the Casimir timing test, <code>.gitattributes</code> (LF everywhere), and untracking <code>.vs/</code></td><td>—</td></tr>
+      <tr><td>UI 01a</td><td><code>ui/01a-css-format</code></td><td>00</td><td>Expand the seven minified stylesheets to one declaration per line. Verified by <b>byte-identical built CSS</b>.</td><td>P0</td></tr>
+      <tr><td>UI 01b</td><td><code>ui/01b-baselines</code></td><td>01a</td><td>Guards before any visual change: Playwright screenshot baselines for every lab and scenario (WebGL canvas masked), a caveat inventory fixture (every scientific qualification, extracted verbatim), a bundle-size record, and a render-count harness</td><td>P0</td></tr>
+      <tr><td>UI 01c</td><td><code>ui/01c-test-ids</code></td><td>01b</td><td>Stable roles and <code>data-testid</code>s on today's controls, so migrations change the markup, not the tests</td><td>P0</td></tr>
+      <tr><td>UI 01d</td><td><code>ui/01d-tokens-preview</code></td><td>01c</td><td><code>tokens.css</code> and a tokens preview (current colours → proposed tokens, side by side). <b>Pauses for your palette approval.</b></td><td>P0</td></tr>
+      <tr><td>UI 01e</td><td><code>ui/01e-tokens-apply</code></td><td>01d</td><td>Replace CSS hex literals with tokens, add the hex lint, and update the visual baselines</td><td>P0</td></tr>
+      <tr><td>UI 01f</td><td><code>ui/01f-type-scale</code></td><td>01e</td><td>Type-scale tokens, 11 px minimum</td><td>P0</td></tr>
+      <tr><td>UI 01g</td><td><code>ui/01g-ts-palette</code></td><td>01f</td><td><code>palette.ts</code> for the 149 TSX/SVG and Three.js colours</td><td>P0</td></tr>
+      <tr><td>UI 02</td><td><code>ui/02-primitives</code></td><td>01g</td><td>Radix, cmdk, resizable-panels. ParamRow, Segmented, LayerList, InfoTip, Readouts and Toast, plus a component test setup</td><td>P0</td></tr>
+      <tr><td>UI 03</td><td><code>ui/03-plot</code></td><td>02</td><td>Shared <code>Plot</code> replacing the five plot implementations</td><td>P0</td></tr>
+      <tr><td>UI 04</td><td><code>ui/04-runtime</code></td><td>03</td><td>Runtime adapter (three workers and two main-thread drivers) with capabilities</td><td>P1</td></tr>
+      <tr><td>UI 05</td><td><code>ui/05-definitions</code></td><td>04</td><td>ExperimentDefinition and scenarios for all five labs</td><td>P1</td></tr>
+      <tr><td>UI 06</td><td><code>ui/06-shell</code></td><td>05</td><td>Shell chrome, panels, timeline bar and dock, with legacy workspaces hosted inside. <b>Performance guard:</b> per-tick data flows through refs and subscriptions, not React state, and the render-count harness must not regress.</td><td>P2</td></tr>
+      <tr><td>UI 07</td><td><code>ui/07-medium</code></td><td>06</td><td>Medium through the shell</td><td>P2</td></tr>
+      <tr><td>UI 08–11</td><td><code>ui/08-light</code> … <code>ui/11-vdw</code></td><td>prev</td><td>Light, Electron, Casimir and van der Waals migrations, one PR each. Casimir and van der Waals gain Save/Load (<code>zeropoint-casimir</code> and <code>zeropoint-vdw</code> v1 formats, validated like the others).</td><td>P3</td></tr>
+      <tr><td>UI 12</td><td><code>ui/12-selection</code></td><td>11</td><td>Unified click-vs-drag picking</td><td>P4</td></tr>
+      <tr><td>UI 13</td><td><code>ui/13-split-view</code></td><td>12</td><td>SplitPane, linked panes and the Electron static studies</td><td>P4</td></tr>
+      <tr><td>UI 14</td><td><code>ui/14-info-layer</code></td><td>13</td><td>About sheet, InfoTips, cut list and Settings</td><td>P5</td></tr>
+      <tr><td>UI 15</td><td><code>ui/15-actions</code></td><td>14</td><td>Action registry, shortcuts, palette and focus mode</td><td>P6</td></tr>
+      <tr><td>UI 16</td><td><code>ui/16-url-state</code></td><td>15</td><td>URL state and saved views</td><td>P6</td></tr>
+      <tr><td>UI 17</td><td><code>ui/17-compare</code></td><td>16</td><td>A/B comparison</td><td>P7</td></tr>
+      <tr><td>UI 18</td><td><code>ui/18-responsive-a11y</code></td><td>17</td><td>Tablet and phone layouts, accessibility audit, README update</td><td>P8</td></tr>
+    </tbody>
+  </table>
+  <p class="muted"><b>Size rule:</b> about 600 changed lines per PR, excluding lockfiles and pure moves. A layer that grows past this is split (e.g. <code>09a-electron-core</code> and <code>09b-electron-spin</code>) so reviews stay focused and fixes stay small. Each PR body carries a stack navigator (<code>#a ← <b>#b</b> ← #c</code>) that <code>stack.mjs nav</code> keeps current.</p>
+
+  <h3>Branches &amp; worktrees</h3>
+  <div class="grid2">
+    <div class="card"><ul>
+      <li>One worktree per open layer at <code>C:\Users\Sam\ZeroPoint-wt\NN-slug</code>, created from its base: <code>git worktree add ../ZeroPoint-wt/07-medium -b ui/07-medium ui/06-shell</code></li>
+      <li>Each worktree runs <code>npm ci</code>, and its dev server and e2e use port <code>5200 + NN</code> via <code>ZP_PORT</code>. Worktrees never share a server.</li>
+      <li>The primary checkout stays on <code>main</code> and is used only for fetch, merge follow-up and plan edits.</li>
+      <li>After a merge, the worktree is removed and the branch deleted, locally and on the remote.</li>
+    </ul></div>
+    <div class="card"><ul>
+      <li><b>Window: at most 4 unmerged layers.</b> When the window is full, the babysitter stops starting new layers and spends its time on fixes and restacks. This bounds restack cost and conflict risk.</li>
+      <li>Restacking goes <b>layer by layer, inside each layer's own worktree</b>: <code>git rebase --onto &lt;base&gt; &lt;recorded base SHA&gt;</code>. <code>git rebase --update-refs</code> can't be used, because it skips branches checked out in other worktrees. <code>stack.mjs</code> records each layer's base SHA so the rebase is exact. Pushes use <code>--force-with-lease</code>.</li>
+      <li>State lives in <code>$(git rev-parse --git-common-dir)/ui-stack/state.json</code>. It is shared by all worktrees and never committed.</li>
+    </ul></div>
+  </div>
+
+  <h3>Review-gate scheduler</h3>
+  <div class="flow">
+    <div><b>ready</b><span>Checks green, pushed, PR open</span></div>
+    <div><b>queued</b><span>Waiting for the hourly slot</span></div>
+    <div><b>triggered</b><span><code>@coderabbitai review</code> posted</span></div>
+    <div><b>reviewed</b><span>Review for the head SHA arrived</span></div>
+    <div><b>fixing</b><span>Findings addressed in one push</span></div>
+    <div><b>clean</b><span>No open findings</span></div>
+    <div><b>merge-ready</b><span>Clean, green, base merged</span></div>
+  </div>
+  <ul>
+    <li><b>One global slot:</b> the next trigger is allowed at <code>lastTriggerAt + 60 min + 3 min</code> buffer. If CodeRabbit replies with a rate-limit notice ("Please wait N minutes…"), the wait is parsed and the slot is moved accordingly.</li>
+    <li><b>Priority when the slot opens:</b> first, the lowest queued PR in the stack, because merges go bottom-up and fixes low in the stack ripple upwards. Second, re-reviews ahead of first reviews at the same height.</li>
+    <li><b>Command:</b> <code>gh pr comment N --body "@coderabbitai review"</code> (incremental). <code>@coderabbitai full review</code> is used only when a rebase onto a squash-merged main rewrote the whole diff.</li>
+    <li><b>Completion:</b> a review exists from <code>coderabbitai[bot]</code> with <code>commit_id == head</code>, or the summary reports no actionable comments for that SHA. With no response after 90 minutes, the PR is re-queued once, then escalated.</li>
+    <li><b>Never waste a slot:</b>
+      <ul>
+        <li>Never trigger on red local checks, and batch every fix for a review into one push.</li>
+        <li>Fixes that are purely nitpicks, docs or renames are answered and resolved <i>without</i> a re-review. Re-review is requested only when a fix changed behaviour.</li>
+        <li>An upper layer keeps its <code>clean</code> state through a restack if <code>git range-diff</code> shows its own commits unchanged.</li>
+      </ul></li>
+  </ul>
+
+  <h3>Babysitter loop</h3>
+  <p>The babysitter runs as a self-paced Claude Code <code>/loop</code> driven by a project skill, <code>.claude/skills/babysit-ui-stack/SKILL.md</code>. The mechanical helper <code>scripts/stack.mjs</code> provides <code>status</code>, <code>trigger</code>, <code>restack</code>, <code>retarget</code> and <code>nav</code>. Both ship in UI 00. Each wake:</p>
+  <ol>
+    <li><b>Sync:</b> <code>git fetch --prune</code>, then reconcile state with GitHub: merges, new reviews, new comments, rate-limit replies, CI status.</li>
+    <li><b>Merged bottom PR:</b> retarget the next PR to <code>main</code> (<code>gh pr edit --base main</code>). Rebase it with <code>git rebase --onto origin/main &lt;recorded base SHA&gt;</code> (<code>stack.mjs retarget</code>), restack the layers above it (<code>stack.mjs restack</code>), force-push with lease, refresh the navigators, and remove the merged worktree.</li>
+    <li><b>Reviewed PRs:</b> triage every open CodeRabbit thread (table below) and fix. Run the checks, push once, reply on each thread with the commit SHA, and resolve it (GraphQL <code>resolveReviewThread</code>).</li>
+    <li><b>Restack:</b> if a lower branch moved, rebase the layers above it, re-run checks on each changed layer, and push.</li>
+    <li><b>Trigger:</b> if the slot is open, request a review for the highest-priority queued PR and record the time.</li>
+    <li><b>Build ahead:</b> if the window has room, implement the next layer in a new worktree, pass the checks, and open its PR (<code>queued</code>).</li>
+    <li><b>Report:</b> mark merge-ready PRs, post a push notification, and register every PR with this thread.</li>
+    <li><b>Sleep:</b> wake at the next slot time if something is queued, otherwise in 20–30 minutes. When blocked on a user merge or decision, use a 60-minute heartbeat.</li>
+  </ol>
+
+  <h3>Comment triage: act without asking when the fix is clear</h3>
+  <table>
+    <thead><tr><th style="width:36%">Finding</th><th>Action</th></tr></thead>
+    <tbody>
+      <tr><td>Correctness, broken behaviour, accessibility defect</td><td><b>Fix.</b> Add a regression test where practical.</td></tr>
+      <tr><td>Nitpick with a clear, local fix</td><td><b>Fix</b> in the same batch. No re-review is needed on its own account.</td></tr>
+      <tr><td>Docstring-coverage warning</td><td><b>Add JSDoc</b> to the listed functions.</td></tr>
+      <tr><td>Conflicts with a decision in this plan (e.g. "restore the inline caveat")</td><td><b>Reply</b> citing the plan section, resolve, and make no change.</td></tr>
+      <tr><td>Belongs to a later layer</td><td><b>Reply</b> "addressed in UI NN", add it to that layer's checklist, and resolve.</td></tr>
+      <tr><td>Model or science behaviour (out of scope for UI PRs)</td><td><b>Reply</b> and log it under Open questions. Escalate only if it looks like a real model bug.</td></tr>
+      <tr><td>Valid but non-blocking, on a layer already reviewed</td><td><b>Defer</b> to the remedial PR: reply with the rationale, resolve or waive, and add it to the checklist (<a href="#remedial">below</a>).</td></tr>
+      <tr><td>A genuinely ambiguous product or design choice</td><td>The <b>only</b> case that pauses for you. The babysitter parks that PR and keeps the rest of the stack moving.</td></tr>
+    </tbody>
+  </table>
+
+  <h3 id="remedial">Deferring findings to remedial PRs</h3>
+  <p>Each push to a layer that CodeRabbit has already reviewed starts another review, and each review costs an hourly slot. When a layer's findings keep coming, the UI work behind it stalls. So once a layer has been reviewed, every new finding is sorted into one of two kinds:</p>
+  <table>
+    <thead><tr><th style="width:24%">Kind</th><th style="width:38%">Examples</th><th>Handling</th></tr></thead>
+    <tbody>
+      <tr><td><b>Blocking</b>: fix in place</td><td>Wrong behaviour in the app; a broken test or CI; data loss; a real security exposure; anything that would make merging this layer, or anything the babysitter does on its behalf, unsafe (e.g. a merge-readiness check that can pass too early).</td><td>Fix in the layer, push once, reply with the commit, resolve. The layer re-enters the review queue.</td></tr>
+      <tr><td><b>Deferrable</b>: fix in a remedial PR</td><td>Hardening against unlikely conditions, robustness of the dev tooling, maintainability and clarity, nitpicks, and anything whose risk is not realised until later layers.</td><td>Reply with the rationale and "deferred to the remedial PR", then resolve the thread (or <code>stack.mjs waive</code> for an outside-diff finding). Add the item to the remedial PR's checklist. The layer stays clean and can merge.</td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li><b>Judgement first.</b> When in doubt, a finding is blocking. A deferral must be safe: nothing on <code>main</code> may depend on a deferred fix to be correct.</li>
+    <li><b>The remedial layer</b> is an ordinary stack layer named <code>ui/NN&lt;x&gt;-remedial-&lt;topic&gt;</code> (e.g. <code>ui/01h-remedial-tooling</code>), opened at the <b>top</b> of the stack. It never forces a restack of reviewed layers. Its PR body keeps the checklist, with a link to each deferred thread. It is reviewed and merged in turn like any other layer, and a new one is opened when the next batch of deferrals starts.</li>
+    <li><b>Freeze reviewed layers.</b> Improvements to the stack tooling that no finding asked for also go into the topmost unreviewed layer, never into a layer under review. <code>stack.mjs</code> runs from that layer's worktree, whose copy is the newest.</li>
+  </ul>
+
+  <h3>Quality gates on every push</h3>
+  <p>Locally, and in CI from UI 00: <code>npm run check</code> · <code>npm test</code> · <code>npm run test:e2e</code> (on the worktree's port) · <code>npm run build</code>. In addition: JSDoc on new and touched functions, no hex colours outside tokens (from UI 01), and the bundle-size delta recorded in the PR body (from UI 02).</p>
+
+  <h3>Freeze, milestones &amp; deploys</h3>
+  <ul>
+    <li><b>Main freeze:</b> no UI or experiment changes merge to <code>main</code> outside the stack until UI 18 lands. Docs and papers are fine. If an unexpected <code>src/</code> change appears on <code>main</code>, the babysitter restacks and notifies you rather than absorbing it silently.</li>
+    <li><b>Deploy milestones</b> (<code>npm run deploy</code> from an up-to-date <code>main</code>, after all checks pass): <b>M1</b> after UI 07 (the shell and Medium), <b>M2</b> after UI 11 (every lab in the shell), and <b>M3</b> after UI 18 (done). Nothing is published in between.</li>
+    <li><b>Design gate:</b> UI 01d pauses for your approval of the palette preview before UI 01e applies it. This is the only planned stop. Everything else continues unless a genuinely ambiguous decision comes up.</li>
+  </ul>
+
+  <h3>Merging &amp; throughput</h3>
+  <div class="grid2">
+    <div class="card"><h3 style="margin-top:0">Merging</h3><p>Squash merge, bottom-up, <b>by the babysitter</b>: <code>stack.mjs merge</code> merges the bottom PR only when it targets <code>main</code>, CodeRabbit is clean and CI passes. It pins the reviewed head commit, then retargets and restacks the next layer and removes the merged worktree and branch. You can still merge by hand at any time.</p></div>
+    <div class="card"><h3 style="margin-top:0">Throughput</h3><p>25 PRs at about 1.5 review slots each is roughly 38 slots, so <b>about 38 hours of wall time</b> are gated by CodeRabbit, however fast the coding goes, plus the palette approval. Implementation runs ahead inside the 4-layer window, and babysitter merges keep the pipeline moving.</p></div>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="open">
+  <div class="eyebrow">17</div><h2>Open questions &amp; risks</h2>
+  <div class="grid2">
+    <div class="card"><h3>To decide during build</h3><ul>
+      <li><b>Medium backward seek.</b> Should Medium keep an automatic checkpoint ring (e.g. every 1 τ) so the open-ended track can scrub backwards? It's cheap in memory at 10k dipoles, but needs a small worker addition.</li>
+      <li><b>Probe placement.</b> Should Alt-click in the viewport place the Electron probe (↻, staged)? It would be natural for a researcher, but it's a new interaction.</li>
+      <li><b>Light scenarios.</b> Should Light get named scenarios (e.g. "Short wavelength", "Reverse direction") or stay a single leaf?</li>
+      <li><b>Palette approval</b> at UI 01d: the tokens preview shows every current colour next to its proposed token.</li>
+      <li><b>Dock default per scenario.</b> The proposal is Plots for Medium and Light, Shell rates for Spin, and Probe for Stationary and Moving.</li>
+    </ul></div>
+    <div class="card"><h3>Risks</h3><ul>
+      <li><b>E2E churn</b> in P3 and P4. About 300 <code>getBy…</code> calls across five specs reference current labels. UI 01c moves them onto stable roles and test IDs first, and test updates land in the same PR as each migration.</li>
+      <li><b>Review throughput.</b> The hourly CodeRabbit gate, not implementation, sets the pace (about 38 hours). The session must be running for the loop to progress.</li>
+      <li><b>Renderer picking.</b> Click-vs-drag needs a change in each of <code>FieldRenderer</code>, <code>LightRenderer</code> and <code>ElectronRenderer</code>, plus the Casimir SVG scene. Test with software-rendered Chromium.</li>
+      <li><b>Keyboard conflicts</b> with OrbitControls, which may listen for arrow keys. Scope OrbitControls keys to the focused canvas only.</li>
+      <li><b>A/B for Medium</b> doubles CPU use. Pause B when the tab is hidden and when the Compare tab is closed.</li>
+      <li><b>Bundle size.</b> Radix, cmdk and resizable-panels add roughly 40–60 kB gzip. That's acceptable next to Three.js, but should be measured in P0.</li>
+    </ul></div>
+  </div>
+</section>
+
+<p class="muted" style="margin-top:50px">This document is the UI plan only. The model behaviour, equations and scientific caveats are unchanged and are carried verbatim into the About layer. The companion docs are the <a href="./simulation-plan.html">simulation development plan</a> and the <a href="./model-specification.md">model specification</a>.</p>
+</main>
+</div>
+</body>
+</html>
