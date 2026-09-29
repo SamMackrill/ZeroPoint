@@ -47,6 +47,11 @@ describe('review gate', () => {
     expect(reviewInProgress([reply('Action performed: Review finished.', '2026-09-29T15:42:30Z')])).toBe(false);
     expect(reviewInProgress([reply('Action performed: Review finished.', '2026-09-29T15:42:30Z'), reply('Action performed: Review triggered.', '2026-09-29T19:26:59Z')])).toBe(true);
     expect(reviewInProgress([])).toBe(false);
+    // A review with findings leaves the reply as "Review triggered"; its completed review object marks it finished.
+    const triggered = [reply('Action performed: Review triggered.', '2026-09-29T19:26:59Z')];
+    const review = (submitted_at: string) => ({ user: { login: 'coderabbitai[bot]' }, body: '**Actionable comments posted: 3**', submitted_at });
+    expect(reviewInProgress(triggered, [review('2026-09-29T19:32:11Z')])).toBe(false);
+    expect(reviewInProgress(triggered, [review('2026-09-29T15:47:37Z')])).toBe(true);
     // Even with earlier review evidence, a PR under review is neither clean nor mergeable.
     expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'], reviewInProgress: true }))).toBe('triggered');
     expect(mergeReady(pr('ui/00-delivery', { base: 'main', reviewedShas: ['sha-ui/00-delivery'], reviewInProgress: true }))).toBe(false);

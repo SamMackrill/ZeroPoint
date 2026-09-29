@@ -133,10 +133,10 @@ function gather(state) {
       reviewedShas: [
         ...reviews.filter(r => r.user?.login === REVIEWER && isReviewBody(r.body)).map(r => r.commit_id),
         // The summary names its range when a review starts, so it only counts once the review has finished.
-        ...(reviewInProgress(comments) ? [] : comments.filter(c => c.user?.login === REVIEWER).flatMap(c => reviewedHeadsInSummary(c.body)).map(head => sha(head) ?? head)),
+        ...(reviewInProgress(comments, reviews) ? [] : comments.filter(c => c.user?.login === REVIEWER).flatMap(c => reviewedHeadsInSummary(c.body)).map(head => sha(head) ?? head)),
       ],
       lastTriggerAt: triggers.length ? Math.max(...triggers) : 0,
-      checks: checksFor(pr.number), openThreads: openThreads(repo, pr.number), reviewInProgress: reviewInProgress(comments),
+      checks: checksFor(pr.number), openThreads: openThreads(repo, pr.number), reviewInProgress: reviewInProgress(comments, reviews),
       // Changes whenever CodeRabbit posts or edits a comment or review, so the watcher can report activity of any kind.
       activity: (items => `${items.length}@${items.map(x => x.updated_at ?? x.submitted_at ?? '').sort().pop() ?? ''}`)([...reviews, ...comments].filter(x => x.user?.login === REVIEWER)),
       // The PR's own head commit, not whatever a same-named ref resolves to.

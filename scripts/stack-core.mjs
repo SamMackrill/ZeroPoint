@@ -54,14 +54,17 @@ export function reviewedHeadsInSummary(body) {
 }
 
 /**
- * True while a manually requested CodeRabbit review is still running: its latest "Action performed" reply says
- * "Review triggered" and has not yet been edited to "Review finished". CodeRabbit writes the summary's reviewed range
- * when a review starts, so neither the summary nor the PR may be treated as reviewed until it finishes.
+ * True while a manually requested CodeRabbit review is still running. Its latest "Action performed" reply says
+ * "Review triggered", and the review has not finished. A finished review shows either as the reply being edited to
+ * "Review finished" (reviews with no findings) or as a completed review object submitted after the reply (reviews with
+ * findings leave the reply as "Review triggered"). CodeRabbit writes the summary's reviewed range when a review starts,
+ * so neither the summary nor the PR may be treated as reviewed until it finishes.
  */
-export function reviewInProgress(comments) {
+export function reviewInProgress(comments, reviews = []) {
   const replies = (comments ?? []).filter(c => c.user?.login === REVIEWER && /Action performed/i.test(c.body ?? ''));
   const latest = replies.sort((a, b) => (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0)).at(-1);
-  return Boolean(latest && /Review triggered/i.test(latest.body) && !/Review finished/i.test(latest.body));
+  if (!latest || !/Review triggered/i.test(latest.body) || /Review finished/i.test(latest.body)) return false;
+  return !(reviews ?? []).some(r => r.user?.login === REVIEWER && isReviewBody(r.body) && (r.submitted_at ?? '') > latest.created_at);
 }
 
 /** Recognise a manual CodeRabbit review request comment. */
