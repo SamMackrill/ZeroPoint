@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { tid } from './ids';
 
 // Render budget: with every lab mounted, step one lab ten times and count renders per profiled subtree beyond its idle rate (the
 // development-only DevProfiler wrappers: "app" plus one per lab). The UI redesign moves every lab into one shell;
@@ -9,15 +10,15 @@ const BUDGET_FILE = new URL('../fixtures/render-budget.json', import.meta.url);
 const STEPS = 10;
 type Counts = Record<string, number>;
 const budgets: Record<string, Counts> = existsSync(BUDGET_FILE) ? JSON.parse(readFileSync(BUDGET_FILE, 'utf8')) : {};
-const LABS = { light: /Light through the zero-point field/, electron: /Electron in the zero-point field/, casimir: /Extended Casimir effect/, vdw: /Van der Waals & vacuum pressure/ };
+const LABS = { light: 'lab-light', electron: 'lab-electron', casimir: 'lab-casimir', vdw: 'lab-vdw' };
 
 /** Load the app and mount every lab (each mounts on first visit), ending back on Medium. */
 async function mountAllLabs(page: Page) {
   await page.goto('/');
-  await expect(page.getByRole('button', { name: /^Run/ }).first()).toBeEnabled();
+  await expect(tid(page, 'transport-run')).toBeEnabled();
   for (const entry of Object.values(LABS)) {
-    await page.getByRole('button', { name: entry }).click();
-    await page.getByRole('button', { name: /Medium laboratory|Experiment library/ }).click();
+    await tid(page, entry).click();
+    await tid(page, 'lab-medium').click();
   }
 }
 
@@ -68,33 +69,33 @@ function checkBudget(lab: string, counts: Counts) {
 
 test('medium steps stay within the render budget', async ({ page }) => {
   await mountAllLabs(page);
-  checkBudget('medium', await rendersForSteps(page, page.getByRole('button', { name: 'Step', exact: true }), () => page.getByTestId('tick').innerText()));
+  checkBudget('medium', await rendersForSteps(page, tid(page, 'transport-step'), () => page.getByTestId('tick').innerText()));
 });
 
 test('light steps stay within the render budget', async ({ page }) => {
   await mountAllLabs(page);
-  await page.getByRole('button', { name: LABS.light }).click();
-  await expect(page.getByRole('button', { name: 'Run light', exact: true })).toBeEnabled();
-  checkBudget('light', await rendersForSteps(page, page.getByRole('button', { name: 'Step', exact: true }), () => page.getByTestId('light-tick').innerText()));
+  await tid(page, LABS.light).click();
+  await expect(tid(page, 'transport-run')).toBeEnabled();
+  checkBudget('light', await rendersForSteps(page, tid(page, 'transport-step'), () => page.getByTestId('light-tick').innerText()));
 });
 
 test('electron steps stay within the render budget', async ({ page }) => {
   await mountAllLabs(page);
-  await page.getByRole('button', { name: LABS.electron }).click();
-  await expect(page.getByRole('button', { name: 'Run electron', exact: true })).toBeEnabled();
-  checkBudget('electron', await rendersForSteps(page, page.getByRole('button', { name: 'Step', exact: true }), () => page.getByTestId('electron-tick').innerText()));
+  await tid(page, LABS.electron).click();
+  await expect(tid(page, 'transport-run')).toBeEnabled();
+  checkBudget('electron', await rendersForSteps(page, tid(page, 'transport-step'), () => page.getByTestId('electron-tick').innerText()));
 });
 
 test('casimir steps stay within the render budget', async ({ page }) => {
   await mountAllLabs(page);
-  await page.getByRole('button', { name: LABS.casimir }).click();
-  checkBudget('casimir', await rendersForSteps(page, page.locator('.casimir-app').getByRole('button', { name: 'Step', exact: true }), () => page.getByTestId('casimir-time').innerText()));
+  await tid(page, LABS.casimir).click();
+  checkBudget('casimir', await rendersForSteps(page, tid(page, 'transport-step'), () => page.getByTestId('casimir-time').innerText()));
 });
 
 test('van der Waals steps stay within the render budget', async ({ page }) => {
   await mountAllLabs(page);
-  await page.getByRole('button', { name: LABS.vdw }).click();
-  await page.getByRole('group', { name: 'Experiment stages' }).getByRole('button').nth(1).click();
+  await tid(page, LABS.vdw).click();
+  await tid(page, 'scenario-correlated').click();
   const diagram = page.locator('.vdw-diagram');
-  checkBudget('vdw', await rendersForSteps(page, page.getByRole('button', { name: 'Step dipoles' }), () => diagram.innerHTML()));
+  checkBudget('vdw', await rendersForSteps(page, tid(page, 'transport-step'), () => diagram.innerHTML()));
 });
