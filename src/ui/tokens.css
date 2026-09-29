@@ -1,0 +1,41 @@
+/* ZeroPoint design tokens (docs/ui-redesign-plan.html §12). Proposed in UI 01d; applied to the stylesheets in UI 01e.
+   Chrome colours never appear in data, and data colours never appear in chrome. The accent means "live or selected",
+   and warn means "paused or pending". Preview: docs/ui-tokens-preview.html (node scripts/tokens-preview.mjs). */
+:root {
+  /* Surfaces */
+  --bg-0: #0a1017;
+  --bg-1: #0d151e;
+  --bg-2: #132030;
+  --bg-3: #1b2b3a;
+
+  /* Lines */
+  --line: #253646;
+  --line-2: #34495b;
+  --accent-line: #4a7a68;
+  --warn-line: #7a5842;
+
+  /* Text */
+  --text: #e3ebf1;
+  --text-2: #aebfcc;
+  --text-3: #8397a8;
+  --text-4: #5f7a8e; /* disabled or decorative only: below AA contrast */
+
+  /* Accent and state */
+  --accent: #8fe0c2;
+  --accent-2: #80b8a3; /* muted accent: secondary accent labels and edges */
+  --accent-bg: #1d3a33;
+  --warn: #f0c98a;
+  --danger: #f39a82;
+
+  /* Effects */
+  --shadow: #000000;
+
+  /* Data */
+  --data-pos: #f2a67f;
+  --data-neg: #7fc8ec;
+  --data-e: #93dec0;
+  --data-b: #a894ef;
+  --data-bspin: #efa5c1;
+  --data-core: #b39cf0;
+  --data-shell-1: #f2c46e;
+}
