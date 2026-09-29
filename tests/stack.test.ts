@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, isTriggerComment, mergeReady, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
+import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
 
 /** Build a queued-by-default PR fixture for scheduling tests. */
 const pr = (branch: string, extra: Record<string, unknown> = {}) => ({ number: Number(branch.slice(3, 5)) + 100, branch, head: `sha-${branch}`, draft: false, checks: 'pass', openThreads: 0, reviewedShas: [] as string[], lastTriggerAt: 0, headCommittedAt: 1000, ...extra });
@@ -26,10 +26,23 @@ describe('review gate', () => {
     expect(isTriggerComment('@coderabbitai resolve')).toBe(false);
     expect(isTriggerComment('Thanks @coderabbitai review looks good')).toBe(false);
   });
+  it('only lets people with write access move the gate', () => {
+    expect(isTrustedTrigger({ body: '@coderabbitai review', author_association: 'OWNER' })).toBe(true);
+    expect(isTrustedTrigger({ body: '@coderabbitai review', author_association: 'COLLABORATOR' })).toBe(true);
+    expect(isTrustedTrigger({ body: '@coderabbitai review', author_association: 'NONE' })).toBe(false);
+    expect(isTrustedTrigger({ body: '@coderabbitai review', author_association: 'CONTRIBUTOR' })).toBe(false);
+  });
+  it('dates rate-limit notices from their last edit, and only CodeRabbit\'s', () => {
+    const notice = { user: { login: 'coderabbitai[bot]' }, body: 'Rate limit exceeded. Please wait **10 minutes** before requesting another review.', created_at: '2026-09-29T09:00:00Z', updated_at: '2026-09-29T10:00:00Z' };
+    expect(rateLimitDeadline(notice)).toBe(Date.parse('2026-09-29T10:10:00Z'));
+    expect(rateLimitDeadline({ ...notice, updated_at: undefined })).toBe(Date.parse('2026-09-29T09:10:00Z'));
+    expect(rateLimitDeadline({ ...notice, user: { login: 'someone' } })).toBeNull();
+  });
   it('parses CodeRabbit rate-limit waits', () => {
     expect(parseRateLimitWait('Rate limit exceeded. Please wait **12 minutes and 30 seconds** before requesting another review.')).toBe(750_000);
     expect(parseRateLimitWait('Rate limit exceeded: wait 1 hour, 5 minutes')).toBe(3_900_000);
     expect(parseRateLimitWait('Please wait 5 minutes')).toBeNull();
+    expect(parseRateLimitWait('One edge case: the tool could request a review before a rate limit ends; wait 5 minutes.')).toBeNull();
     expect(parseRateLimitWait('Rate limit notice without a duration')).toBeNull();
   });
   it('opens the slot one hour plus buffer after a trigger, or later if rate limited', () => {
@@ -50,6 +63,8 @@ describe('review queue', () => {
     expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'], openThreads: 2 }))).toBe('reviewed');
     expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'] }))).toBe('clean');
     expect(reviewState(pr('ui/01-tokens', { patchId: 'p1', reviewedPatchId: 'p1' }))).toBe('clean');
+    // A reviewed head whose diff changed (e.g. retargeted without a rebase) must be reviewed again.
+    expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'], patchId: 'p2', reviewedPatchId: 'p1' }))).toBe('queued');
   });
   it('picks the lowest queued layer first', () => {
     const prs = [pr('ui/03-plot'), pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'] }), pr('ui/02-primitives', { checks: 'fail' }), pr('ui/04-runtime')];

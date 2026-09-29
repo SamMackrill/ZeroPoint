@@ -30,9 +30,24 @@ export function isTriggerComment(body) {
   return /^\s*@coderabbitai\s+(full\s+)?review\b/i.test(body ?? '');
 }
 
+/** Only people with write access may move the shared review gate; an outsider's comment must not mark a PR triggered. */
+const TRUSTED = new Set(['OWNER', 'MEMBER', 'COLLABORATOR']);
+
+/** Recognise a review request from an owner, member or collaborator (a GitHub issue-comment object). */
+export function isTrustedTrigger(comment) {
+  return isTriggerComment(comment?.body) && TRUSTED.has(comment?.author_association);
+}
+
+/** Return when a CodeRabbit rate-limit notice expires (epoch ms), or null. CodeRabbit edits notices in place, so the wait runs from `updated_at`. */
+export function rateLimitDeadline(comment) {
+  if (comment?.user?.login !== REVIEWER) return null;
+  const wait = parseRateLimitWait(comment.body);
+  return wait === null ? null : Date.parse(comment.updated_at ?? comment.created_at) + wait;
+}
+
 /** Extract the wait in milliseconds from a CodeRabbit rate-limit notice, or null if the comment is not one. */
 export function parseRateLimitWait(body) {
-  if (!/rate limit/i.test(body ?? '')) return null;
+  if (!/rate limit exceeded/i.test(body ?? '')) return null;
   const wait = /wait\s*\**\s*(?:(\d+)\s*hours?)?[\s,]*(?:(\d+)\s*minutes?)?[\s,]*(?:and\s*)?(?:(\d+)\s*seconds?)?/i.exec(body);
   if (!wait || (wait[1] === undefined && wait[2] === undefined && wait[3] === undefined)) return null;
   return ((Number(wait[1] ?? 0) * 60 + Number(wait[2] ?? 0)) * 60 + Number(wait[3] ?? 0)) * 1000;
@@ -45,13 +60,16 @@ export function nextSlot({ lastTriggerAt = 0, rateLimitUntil = 0 }) {
 
 /**
  * Classify one PR for the review queue.
- * `reviewed`: CodeRabbit reviewed this head, or an identical diff (same patch id) after a restack.
+ * `reviewed`: CodeRabbit reviewed this diff — the same head, or an identical diff (same patch id) after a restack.
+ *   Evidence is bound to the diff it saw: a reviewed head whose base-relative diff has since changed (e.g. after a
+ *   retarget) is not reviewed.
  * `triggered`: a review was requested after the head commit and has not landed yet.
  */
 export function reviewState(pr) {
   if (pr.draft) return 'draft';
   if (pr.checks === 'fail') return 'failing';
-  const reviewed = pr.reviewedShas?.includes(pr.head) || (pr.patchId && pr.reviewedPatchId === pr.patchId);
+  const known = Boolean(pr.patchId && pr.reviewedPatchId);
+  const reviewed = (known && pr.patchId === pr.reviewedPatchId) || (pr.reviewedShas?.includes(pr.head) && !known);
   if (reviewed) return pr.openThreads > 0 ? 'reviewed' : 'clean';
   if (pr.lastTriggerAt && pr.lastTriggerAt > (pr.headCommittedAt ?? 0)) return 'triggered';
   if (pr.checks === 'pending') return 'waiting-ci';

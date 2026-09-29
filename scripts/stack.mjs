@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { REVIEWER, isTriggerComment, mergeReady, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
+import { REVIEWER, isTrustedTrigger, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
 
 const args = process.argv.slice(2), command = args[0], flags = new Set(args.filter(a => a.startsWith('--')));
 const option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -75,18 +75,22 @@ function openThreads(repo, number) {
   return data.data.repository.pullRequest.reviewThreads.nodes.filter(t => !t.isResolved && t.comments.nodes[0]?.author?.login === 'coderabbitai').length;
 }
 
+/** List open stack PRs from this repository only; a fork's same-named branch is never treated as a stack layer. */
+function openStackPrs(fields) {
+  return ghJson(['pr', 'list', '--state', 'open', '--limit', '100', '--json', `${fields},isCrossRepository`]).filter(p => !p.isCrossRepository && parseStackBranch(p.headRefName));
+}
+
 /** Gather every open stack PR with review, trigger, rate-limit and CI information, updating shared state. */
 function gather(state) {
   const repo = run('gh', ['repo', 'view', '--json', 'nameWithOwner', '-q', '.nameWithOwner']);
-  const open = ghJson(['pr', 'list', '--state', 'open', '--limit', '100', '--json', 'number,title,headRefName,baseRefName,headRefOid,isDraft,body']);
   const prs = [];
-  for (const pr of open.filter(p => parseStackBranch(p.headRefName))) {
+  for (const pr of openStackPrs('number,title,headRefName,baseRefName,headRefOid,isDraft,body')) {
     const reviews = ghJson(['api', `repos/${repo}/pulls/${pr.number}/reviews`, '--paginate', '--slurp']).flat();
     const comments = ghJson(['api', `repos/${repo}/issues/${pr.number}/comments`, '--paginate', '--slurp']).flat();
-    const triggers = comments.filter(c => isTriggerComment(c.body)).map(c => Date.parse(c.created_at));
-    for (const c of comments.filter(c => c.user?.login === REVIEWER)) {
-      const wait = parseRateLimitWait(c.body);
-      if (wait !== null) state.rateLimitUntil = Math.max(state.rateLimitUntil ?? 0, Date.parse(c.created_at) + wait);
+    const triggers = comments.filter(isTrustedTrigger).map(c => Date.parse(c.created_at));
+    for (const c of comments) {
+      const deadline = rateLimitDeadline(c);
+      if (deadline !== null) state.rateLimitUntil = Math.max(state.rateLimitUntil ?? 0, deadline);
     }
     const item = {
       number: pr.number, title: pr.title, branch: pr.headRefName, base: pr.baseRefName, head: pr.headRefOid, draft: pr.isDraft, body: pr.body,
@@ -95,11 +99,16 @@ function gather(state) {
       reviewedShas: reviews.filter(r => r.user?.login === REVIEWER).map(r => r.commit_id),
       lastTriggerAt: triggers.length ? Math.max(...triggers) : 0,
       checks: checksFor(pr.number), openThreads: openThreads(repo, pr.number),
-      patchId: patchId(`origin/${pr.baseRefName}`, `origin/${pr.headRefName}`),
-      reviewedPatchId: state.layers[pr.headRefName]?.reviewedPatchId,
+      // The PR's own head commit, not whatever a same-named ref resolves to.
+      patchId: patchId(`origin/${pr.baseRefName}`, pr.headRefOid),
     };
-    if (item.reviewedShas.includes(item.head) && item.patchId) layer(state, item.branch).reviewedPatchId = item.patchId;
-    item.reviewedPatchId = state.layers[item.branch]?.reviewedPatchId;
+    // Bind review evidence to the PR, the head CodeRabbit reviewed and the diff it saw (recorded once per reviewed head).
+    const evidence = state.layers[item.branch]?.review;
+    if (item.reviewedShas.includes(item.head) && item.patchId && (evidence?.pr !== item.number || evidence?.head !== item.head)) {
+      layer(state, item.branch).review = { pr: item.number, head: item.head, patchId: item.patchId };
+    }
+    const bound = state.layers[item.branch]?.review;
+    item.reviewedPatchId = bound?.pr === item.number ? bound.patchId : undefined;
     item.state = reviewState(item);
     state.lastTriggerAt = Math.max(state.lastTriggerAt ?? 0, item.lastTriggerAt);
     prs.push(item);
@@ -134,13 +143,13 @@ function trigger() {
 function newLayer() {
   const name = args[1], branch = `ui/${name}`;
   if (!parseStackBranch(branch)) throw new Error('Usage: stack.mjs new NN-slug [--base <ref>]  (e.g. 07-medium)');
-  const { root } = worktrees(), locals = run('git', ['branch', '--list', 'ui/*', '--format=%(refname:short)']).split('\n').filter(b => parseStackBranch(b));
-  const base = option('--base') ?? sortStack(locals.map(b => ({ branch: b }))).at(-1)?.branch ?? 'origin/main';
+  const { root } = worktrees(), state = loadState();
+  const base = option('--base') ?? sortStack(localLayers(state).map(b => ({ branch: b }))).at(-1)?.branch ?? 'origin/main';
   const path = join(dirname(root), `${root.split(/[\\/]/).pop()}-wt`, name), baseSha = sha(base);
   if (!baseSha) throw new Error(`Base ${base} does not exist.`);
   say(`${dryRun ? '[dry run] ' : ''}Creating ${branch} from ${base} (${baseSha.slice(0, 7)}) at ${path}; ZP_PORT=${stackPort(branch)}.`);
   if (!dryRun) git(['worktree', 'add', '--no-track', '-b', branch, path, base]);
-  const state = loadState(); Object.assign(layer(state, branch), { base, baseSha }); saveState(state);
+  Object.assign(layer(state, branch), { base, baseSha }); saveState(state);
   say('Next: run `npm ci` in the new worktree.');
 }
 
@@ -158,33 +167,54 @@ function rebaseLayer(state, branch, base, newBaseRef, path) {
   return true;
 }
 
-/** Restack every non-bottom local layer onto its current base, bottom-up. */
-function restack() {
-  const state = loadState(), { map } = worktrees();
-  const locals = sortStack(run('git', ['branch', '--list', 'ui/*', '--format=%(refname:short)']).split('\n').filter(b => parseStackBranch(b)).map(branch => ({ branch })));
-  let moved = 0;
-  locals.forEach(({ branch }, i) => {
-    // Prefer the base recorded by `new`/`retarget`; a merged layer's leftover branch must never become a base.
-    const base = state.layers[branch]?.base ?? (i > 0 ? locals[i - 1].branch : 'origin/main');
-    if (base !== 'origin/main' && rebaseLayer(state, branch, base, base, map.get(branch))) moved++;
-  });
-  saveState(state); say(moved ? `Restacked ${moved} layer(s). Run checks, then \`stack.mjs push\`.` : 'Stack is already up to date.');
+/** Local stack branches that are still live (merged layers whose cleanup failed are excluded). */
+function localLayers(state) {
+  return run('git', ['branch', '--list', 'ui/*', '--format=%(refname:short)']).split('\n').filter(b => parseStackBranch(b) && !state.layers[b]?.merged);
 }
 
-/** After a lower PR merges, point the next PR at main and rebase it onto origin/main without the squashed commits. */
+/** Restack every non-bottom local layer onto its current base, bottom-up. State is saved even if a later layer fails. */
+function restack() {
+  const state = loadState(), { map } = worktrees();
+  const locals = sortStack(localLayers(state).map(branch => ({ branch })));
+  let moved = 0;
+  try {
+    locals.forEach(({ branch }, i) => {
+      // Prefer the base recorded by `new`/`retarget`; a merged layer's leftover branch must never become a base.
+      const base = state.layers[branch]?.base ?? (i > 0 ? locals[i - 1].branch : 'origin/main');
+      if (base !== 'origin/main' && rebaseLayer(state, branch, base, base, map.get(branch))) moved++;
+    });
+  } finally { saveState(state); }
+  say(moved ? `Restacked ${moved} layer(s). Run checks, then \`stack.mjs push\`.` : 'Stack is already up to date.');
+}
+
+/** Force-push one branch with a lease on the remote tip last fetched. */
+function pushBranch(branch) {
+  const local = sha(branch), remote = sha(`origin/${branch}`);
+  if (local === remote) return;
+  say(`${dryRun ? '[dry run] ' : ''}Pushing ${branch} ${remote?.slice(0, 7) ?? '(new)'} → ${local.slice(0, 7)}.`);
+  if (!dryRun) git(['push', '-u', `--force-with-lease=${branch}:${remote ?? ''}`, 'origin', branch]);
+}
+
+/**
+ * After a lower PR merges, move the next layer onto main without the squashed commits. Each step is idempotent and
+ * saved before the next, and the PR's base changes only after its rebased head is pushed, so an interruption never
+ * leaves a PR pointing at main with a head that still carries the merged commits.
+ */
 function retarget() {
   const state = loadState(), { map } = worktrees();
   git(['fetch', '--prune', 'origin']);
-  const open = ghJson(['pr', 'list', '--state', 'open', '--limit', '100', '--json', 'number,headRefName,baseRefName']);
-  for (const pr of open.filter(p => parseStackBranch(p.headRefName) && p.baseRefName !== 'main')) {
+  for (const pr of openStackPrs('number,headRefName,baseRefName').filter(p => p.baseRefName !== 'main')) {
     const merged = ghJson(['pr', 'list', '--state', 'merged', '--head', pr.baseRefName, '--json', 'number']);
     if (!merged.length) continue;
     say(`${dryRun ? '[dry run] ' : ''}#${merged[0].number} (${pr.baseRefName}) merged; retargeting #${pr.number} to main.`);
-    if (!dryRun) run('gh', ['pr', 'edit', String(pr.number), '--base', 'main']);
     rebaseLayer(state, pr.headRefName, 'origin/main', 'origin/main', map.get(pr.headRefName));
-    if (!dryRun) layer(state, pr.headRefName).base = 'origin/main';
+    saveState(state);
+    pushBranch(pr.headRefName);
+    if (dryRun) continue;
+    run('gh', ['pr', 'edit', String(pr.number), '--base', 'main']);
+    layer(state, pr.headRefName).base = 'origin/main';
+    saveState(state);
   }
-  saveState(state);
 }
 
 /** Squash-merge the bottom PR when it is merge-ready, then retarget the next layer and remove the merged branch and worktree. */
@@ -197,27 +227,25 @@ function merge() {
   if (dryRun) return;
   run('gh', ['pr', 'merge', String(bottom.number), '--squash', '--match-head-commit', bottom.head]);
   retarget();
-  const path = worktrees().map.get(bottom.branch);
-  if (path) { const removed = run('git', ['worktree', 'remove', path], { allowFail: true }); say(removed.ok ? `Removed worktree ${path}.` : `Could not remove ${path}: ${removed.err}`); }
-  run('git', ['branch', '-D', bottom.branch], { allowFail: true });
-  run('git', ['push', 'origin', '--delete', bottom.branch], { allowFail: true });
-  const next = loadState(); delete next.layers[bottom.branch]; saveState(next);
+  const path = worktrees().map.get(bottom.branch), steps = [];
+  if (path) steps.push(run('git', ['worktree', 'remove', path], { allowFail: true }));
+  steps.push(run('git', ['branch', '-D', bottom.branch], { allowFail: true }));
+  steps.push(run('git', ['push', 'origin', '--delete', bottom.branch], { allowFail: true }));
+  // Keep ownership of a layer whose cleanup failed: marked merged, it is never pushed, restacked or used as a base.
+  const next = loadState();
+  if (steps.every(step => step.ok)) delete next.layers[bottom.branch];
+  else { layer(next, bottom.branch).merged = true; say(`Cleanup of ${bottom.branch} incomplete; marked merged. ${steps.map(step => step.err).filter(Boolean).join(' ')}`); }
+  saveState(next);
 }
 
-/** Force-push (with lease) every local layer whose tip differs from its remote branch. */
+/** Force-push (with lease) every live local layer whose tip differs from its remote branch. */
 function push() {
-  const locals = run('git', ['branch', '--list', 'ui/*', '--format=%(refname:short)']).split('\n').filter(b => parseStackBranch(b));
-  for (const branch of sortStack(locals.map(b => ({ branch: b }))).map(l => l.branch)) {
-    const local = sha(branch), remote = sha(`origin/${branch}`);
-    if (local === remote) continue;
-    say(`${dryRun ? '[dry run] ' : ''}Pushing ${branch} ${remote?.slice(0, 7) ?? '(new)'} → ${local.slice(0, 7)}.`);
-    if (!dryRun) git(['push', '-u', `--force-with-lease=${branch}:${remote ?? ''}`, 'origin', branch]);
-  }
+  for (const branch of sortStack(localLayers(loadState()).map(b => ({ branch: b }))).map(l => l.branch)) pushBranch(branch);
 }
 
 /** Refresh the stack navigator block at the top of every open stack PR body. */
 function nav() {
-  const open = ghJson(['pr', 'list', '--state', 'open', '--limit', '100', '--json', 'number,headRefName,body']).filter(p => parseStackBranch(p.headRefName)).map(p => ({ ...p, branch: p.headRefName }));
+  const open = openStackPrs('number,headRefName,body').map(p => ({ ...p, branch: p.headRefName }));
   const dir = mkdtempSync(join(tmpdir(), 'stack-nav-'));
   try {
     for (const pr of open) {
