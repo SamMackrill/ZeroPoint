@@ -67,6 +67,8 @@ test('light pauses when hidden and recovers graphics without losing its timeline
   await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, value: true }); document.dispatchEvent(new Event('visibilitychange')); });
   await expect(page.getByRole('button', { name: 'Run light', exact: true })).toBeVisible();
   await page.evaluate(() => { delete (document as unknown as Record<string, unknown>).hidden; });
+  // A tick can land between Run and the hidden-tab pause on a slow runner; restart so the next induction is tick 120.
+  await page.getByRole('button', { name: 'Reset', exact: true }).click(); await expect(page.getByTestId('light-tick')).toContainText('Tick 0 ');
   await page.getByRole('button', { name: 'Next induction', exact: true }).click();
   await expect(page.getByTestId('light-tick')).toContainText('Tick 120');
   const before = await page.getByTestId('light-tick').innerText();
