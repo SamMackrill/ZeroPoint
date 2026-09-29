@@ -1,2 +1,5 @@
 import { defineConfig } from '@playwright/test';
-export default defineConfig({ testDir: './tests/browser', timeout: 30000, use: { baseURL: 'http://127.0.0.1:5174', headless: true, viewport: { width: 1440, height: 1000 }, screenshot: 'only-on-failure', launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] } }, webServer: { command: 'npm run dev', url: 'http://127.0.0.1:5174', reuseExistingServer: true }, workers: 1 });
+import { devPort } from './scripts/dev-port.mjs';
+// Each worktree sets ZP_PORT so parallel checkouts never test each other's dev server. Set ZP_REUSE=1 to reuse a server you started yourself.
+const url = `http://127.0.0.1:${devPort()}`;
+export default defineConfig({ testDir: './tests/browser', timeout: 30000, use: { baseURL: url, headless: true, viewport: { width: 1440, height: 1000 }, screenshot: 'only-on-failure', launchOptions: { args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] } }, webServer: { command: 'npm run dev', url, reuseExistingServer: process.env.ZP_REUSE === '1' }, workers: 1 });
