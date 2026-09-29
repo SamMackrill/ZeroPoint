@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 
 // The main-thread model advances at most 0.1 s × speed per animation frame, so slow software-rendered CI needs longer than the 5 s default.
-const SIM_TIMEOUT = 20_000;
+const SIM_TIMEOUT = 30_000;
 
 /** Open the Casimir laboratory and return its application container. */
 async function openExperiment(page: Page) {
@@ -13,6 +13,7 @@ async function openExperiment(page: Page) {
 }
 
 test('charge modes, pressure, transport and retained paused navigation', async ({ page }) => {
+  test.slow(); // Runs the simulation past 5 τ twice; on software-rendered CI that alone can exceed the 30 s default.
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   const app = await openExperiment(page);
   await expect(page.getByTestId('casimir-time')).toHaveText('0.00 τ');
