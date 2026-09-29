@@ -1,10 +1,10 @@
 // Stacked-PR helper for the UI redesign: status, CodeRabbit review gate, worktrees, restack, retarget, push and navigator.
-// Usage: node scripts/stack.mjs <status|trigger|new|restack|retarget|push|nav|port> [options]. See docs/ui-redesign-plan.html §16.
+// Usage: node scripts/stack.mjs <status|trigger|new|restack|retarget|merge|push|nav|port> [options]. See docs/ui-redesign-plan.html §16.
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { REVIEWER, isTriggerComment, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
+import { REVIEWER, isTriggerComment, mergeReady, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
 
 const args = process.argv.slice(2), command = args[0], flags = new Set(args.filter(a => a.startsWith('--')));
 const option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -187,6 +187,23 @@ function retarget() {
   saveState(state);
 }
 
+/** Squash-merge the bottom PR when it is merge-ready, then retarget the next layer and remove the merged branch and worktree. */
+function merge() {
+  const state = loadState(), { prs } = gather(state); saveState(state);
+  const bottom = prs.find(pr => pr.base === 'main');
+  if (!bottom) { say('No stack PR targets main.'); return; }
+  if (!mergeReady(bottom)) { say(`#${bottom.number} is not merge-ready (state ${bottom.state}, CI ${bottom.checks}).`); return; }
+  say(`${dryRun ? '[dry run] ' : ''}Squash-merging #${bottom.number} (${bottom.branch}).`);
+  if (dryRun) return;
+  run('gh', ['pr', 'merge', String(bottom.number), '--squash', '--match-head-commit', bottom.head]);
+  retarget();
+  const path = worktrees().map.get(bottom.branch);
+  if (path) { const removed = run('git', ['worktree', 'remove', path], { allowFail: true }); say(removed.ok ? `Removed worktree ${path}.` : `Could not remove ${path}: ${removed.err}`); }
+  run('git', ['branch', '-D', bottom.branch], { allowFail: true });
+  run('git', ['push', 'origin', '--delete', bottom.branch], { allowFail: true });
+  const next = loadState(); delete next.layers[bottom.branch]; saveState(next);
+}
+
 /** Force-push (with lease) every local layer whose tip differs from its remote branch. */
 function push() {
   const locals = run('git', ['branch', '--list', 'ui/*', '--format=%(refname:short)']).split('\n').filter(b => parseStackBranch(b));
@@ -212,6 +229,6 @@ function nav() {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 
-const commands = { status, trigger, new: newLayer, restack, retarget, push, nav, port: () => console.log(stackPort(args[1] ?? git(['branch', '--show-current'])) ?? 5174) };
-if (!commands[command]) { console.error('Usage: node scripts/stack.mjs <status|trigger|new|restack|retarget|push|nav|port> [--dry-run] [--json] [--pr N] [--full] [--force] [--base ref]'); process.exit(2); }
+const commands = { status, trigger, new: newLayer, restack, retarget, merge, push, nav, port: () => console.log(stackPort(args[1] ?? git(['branch', '--show-current'])) ?? 5174) };
+if (!commands[command]) { console.error('Usage: node scripts/stack.mjs <status|trigger|new|restack|retarget|merge|push|nav|port> [--dry-run] [--json] [--pr N] [--full] [--force] [--base ref]'); process.exit(2); }
 try { commands[command](); } catch (error) { console.error(error instanceof Error ? error.message : error); process.exit(1); }

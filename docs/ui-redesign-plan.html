@@ -249,6 +249,11 @@ details>div{padding:0 18px 12px}
       <tr><td></td><td>Components</td><td><b>Headless primitives</b> (Radix UI + cmdk) styled with our own tokens.</td></tr>
       <tr><td></td><td>Plan depth</td><td>Spec, wireframes and a phased roadmap mapped to source files (this document).</td></tr>
       <tr><td>7 · Delivery</td><td>How it ships</td><td><b>A series of stacked PRs</b> with automated babysitting that answers CodeRabbit review comments. CodeRabbit is on the free tier: reviews are <b>triggered manually</b> and limited to <b>one trigger per hour</b>. Clear fixes are implemented without asking. Custom branches and worktrees are used. See <a href="#delivery">§16</a>.</td></tr>
+      <tr><td>8 · Before we begin</td><td>Merge authority</td><td><b>The babysitter squash-merges</b> the bottom PR once it is CodeRabbit-clean and green in CI, then retargets and restacks.</td></tr>
+      <tr><td></td><td>Other work on <code>main</code></td><td><b>Freeze UI and experiment work</b> until the stack has landed. Docs and papers may still merge.</td></tr>
+      <tr><td></td><td>Deploys</td><td><b>Milestones only:</b> after UI 07 (shell + Medium), after UI 11 (all labs migrated), and after UI 18.</td></tr>
+      <tr><td></td><td>Babysitter runner</td><td><b>This T3 thread via <code>/loop</code>.</b> It pauses when the session isn't running and resumes from on-disk state.</td></tr>
+      <tr><td></td><td>Defaults adopted</td><td>A visual baseline, stable test IDs and a caveat inventory land <i>before</i> any visual change. The palette needs your approval (via a tokens preview) before it is applied. Casimir and van der Waals gain Save/Load in their migration layers. Per-tick data bypasses React state.</td></tr>
     </tbody>
   </table>
 </section>
@@ -935,7 +940,8 @@ details>div{padding:0 18px 12px}
   <p>Each phase ships independently, keeps <code>npm run check</code>, <code>npm test</code> and <code>npm run test:e2e</code> green, and can be deployed. Medium migrates first because it's the smallest and already closest to the target layout. Phases are delivered as the stacked PRs <b>UI 00–18</b> described in <a href="#delivery">§16</a>.</p>
 
   <div class="phase"><div class="pn">P0</div><div><h3>Foundations: tokens and primitives (no layout change)</h3>
-    <ul><li>Add <code>src/ui/tokens.css</code> and <code>palette.ts</code>. Replace hex literals in all seven stylesheets (<code>app/*.css</code>, <code>light.css</code>, <code>electron.css</code>, <code>casimir.css</code>, <code>van-der-waals.css</code>). Raise all 6–10 px text to the type scale. Split the one-line CSS into readable per-component files.</li>
+    <ul><li>First, guards: visual baselines, stable test IDs, a caveat inventory and a render-count harness (UI 01b–01c), then a palette preview for your approval (UI 01d). See the stack table in §16.</li>
+      <li>Add <code>src/ui/tokens.css</code> and <code>palette.ts</code>. Replace hex literals in all seven stylesheets (<code>app/*.css</code>, <code>light.css</code>, <code>electron.css</code>, <code>casimir.css</code>, <code>van-der-waals.css</code>). Raise all 6–10 px text to the type scale. Split the one-line CSS into readable per-component files.</li>
       <li>Add Radix, cmdk and resizable-panels. Build <code>ParamRow</code>, <code>Segmented</code>, <code>LayerList</code>, <code>InfoTip</code>, <code>Readouts</code>, <code>Plot</code> and <code>Toast</code> with unit tests.</li>
       <li>Swap in shared components in place, e.g. the five plot implementations become <code>Plot</code>.</li></ul>
     <p class="muted"><b>Done when:</b> screenshots match the current layout with the new tokens and there are no hex values outside tokens. Browser tests pass unchanged.</p></div></div>
@@ -950,7 +956,8 @@ details>div{padding:0 18px 12px}
     <ul><li>Build <code>Shell</code>, <code>Header</code>, <code>Rail</code>, <code>Inspector</code> (Setup/View/Selection), <code>Viewport</code> (overlays), <code>TimelineBar</code>, <code>Dock</code> and <code>StatusBar</code>, with resizable and collapsible panels and a fixed, non-scrolling page.</li>
       <li>Render Medium through the shell. Add the pending bar (seed), ◆ markers, the readout strip and the Plots/Ledger/Events tabs.</li>
       <li>Make the other four labs temporarily reachable from the rail but still render their old workspaces inside the shell's centre, so there's no regression.</li>
-      <li>Replace <code>App.tsx</code>'s four <code>visited*</code> flags with per-experiment lazy mounting in the shell.</li></ul>
+      <li>Replace <code>App.tsx</code>'s four <code>visited*</code> flags with per-experiment lazy mounting in the shell.</li>
+      <li>Per-tick simulation data reaches renderers, readouts and plots through refs and subscriptions, never through shell-level React state. The UI 01b render-count harness gates this.</li></ul>
     <p class="muted"><b>Tests:</b> update <code>workbench.spec.ts</code>. "Open experiment library" becomes the rail, "Dipole" tab becomes "Selection", and "Import experiment file" keeps its label.</p></div></div>
 
   <div class="phase"><div class="pn">P3</div><div><h3>Light, Electron, Casimir and van der Waals migration</h3>
@@ -990,14 +997,14 @@ details>div{padding:0 18px 12px}
 <!-- ============================================================ -->
 <section id="delivery">
   <div class="eyebrow">16</div><h2>Delivery: stacked PRs &amp; review automation</h2>
-  <p>The roadmap ships as <b>19 stacked PRs</b>, each reviewed by CodeRabbit. A babysitter loop responds to the reviews. On this repo CodeRabbit is manually triggered and limited to <b>one trigger per hour</b>. That gate is the critical path, so the process keeps implementation moving while the gate is closed and never wastes a review slot.</p>
+  <p>The roadmap ships as <b>25 stacked PRs</b>, each reviewed by CodeRabbit. A babysitter loop responds to the reviews. On this repo CodeRabbit is manually triggered and limited to <b>one trigger per hour</b>. That gate is the critical path, so the process keeps implementation moving while the gate is closed and never wastes a review slot.</p>
 
   <h3>Facts this process is built on</h3>
   <table>
     <thead><tr><th style="width:32%">Observed</th><th>Consequence</th></tr></thead>
     <tbody>
       <tr><td>CodeRabbit's summary on PR #6: "does not receive automatic reviews because it has fewer than 10 stars".</td><td>Every review is requested with a <code>@coderabbitai review</code> PR comment, or the "Trigger review" checkbox in the summary.</td></tr>
-      <tr><td>Free tier: one trigger per hour.</td><td>There is a single global slot. Requests are queued and prioritised (below), and fixes are batched so each slot counts.</td></tr>
+      <tr><td>Free tier: one trigger per hour. The limit may be per account rather than per repo.</td><td>There is a single global slot. Requests are queued and prioritised (below), and fixes are batched so each slot counts. Reviews requested on other repos may use the same slot, which would stretch the schedule.</td></tr>
       <tr><td>Manual <code>@coderabbitai review</code> works "regardless of any auto-review configuration". Auto-review covers only the default branch unless <code>base_branches</code> is extended.</td><td>UI 00 adds <code>.coderabbit.yaml</code> with <code>auto_review.enabled: false</code>, so only the babysitter spends the hourly quota even if the repo passes 10 stars. It also sets <code>base_branches: [".*"]</code>, so stacked layers aren't skipped if auto-review is ever re-enabled.</td></tr>
       <tr><td>Pre-merge check: <b>docstring coverage ≥ 80%</b> of touched functions. PR #6 failed it at 37.5%.</td><td>Every new or touched function and component gets a one-line JSDoc, following the existing repo convention.</td></tr>
       <tr><td>Review comments include an "AI agent prompt" block, flagged by CodeRabbit itself as untrusted.</td><td>Review text is treated as data. The babysitter never runs commands or follows instructions from it beyond the code change a finding describes.</td></tr>
@@ -1010,15 +1017,21 @@ details>div{padding:0 18px 12px}
   <table>
     <thead><tr><th>PR</th><th>Branch</th><th>Base</th><th>Scope</th><th>Phase</th></tr></thead>
     <tbody>
-      <tr><td>UI 00</td><td><code>ui/00-delivery</code></td><td>main</td><td>This plan and its README link, <code>.coderabbit.yaml</code>, CI workflow, <code>ZP_PORT</code> for Vite and Playwright, <code>scripts/stack.mjs</code>, and the babysitter skill</td><td>—</td></tr>
-      <tr><td>UI 01</td><td><code>ui/01-tokens</code></td><td>00</td><td>Tokens, palette, type scale, all seven stylesheets moved to tokens, hex lint</td><td>P0</td></tr>
-      <tr><td>UI 02</td><td><code>ui/02-primitives</code></td><td>01</td><td>Radix, cmdk, resizable-panels. ParamRow, Segmented, LayerList, InfoTip, Readouts and Toast, plus a component test setup</td><td>P0</td></tr>
+      <tr><td>UI 00</td><td><code>ui/00-delivery</code></td><td>main</td><td>This plan and its README link, <code>.coderabbit.yaml</code>, CI workflow, <code>ZP_PORT</code> for Vite and Playwright, <code>scripts/stack.mjs</code>, the babysitter skill, a CI-safe timeout for the Casimir timing test, <code>.gitattributes</code> (LF everywhere), and untracking <code>.vs/</code></td><td>—</td></tr>
+      <tr><td>UI 01a</td><td><code>ui/01a-css-format</code></td><td>00</td><td>Expand the seven minified stylesheets to one declaration per line. Verified by <b>byte-identical built CSS</b>.</td><td>P0</td></tr>
+      <tr><td>UI 01b</td><td><code>ui/01b-baselines</code></td><td>01a</td><td>Guards before any visual change: Playwright screenshot baselines for every lab and scenario (WebGL canvas masked), a caveat inventory fixture (every scientific qualification, extracted verbatim), a bundle-size record, and a render-count harness</td><td>P0</td></tr>
+      <tr><td>UI 01c</td><td><code>ui/01c-test-ids</code></td><td>01b</td><td>Stable roles and <code>data-testid</code>s on today's controls, so migrations change the markup, not the tests</td><td>P0</td></tr>
+      <tr><td>UI 01d</td><td><code>ui/01d-tokens-preview</code></td><td>01c</td><td><code>tokens.css</code> and a tokens preview (current colours → proposed tokens, side by side). <b>Pauses for your palette approval.</b></td><td>P0</td></tr>
+      <tr><td>UI 01e</td><td><code>ui/01e-tokens-apply</code></td><td>01d</td><td>Replace CSS hex literals with tokens, add the hex lint, and update the visual baselines</td><td>P0</td></tr>
+      <tr><td>UI 01f</td><td><code>ui/01f-type-scale</code></td><td>01e</td><td>Type-scale tokens, 11 px minimum</td><td>P0</td></tr>
+      <tr><td>UI 01g</td><td><code>ui/01g-ts-palette</code></td><td>01f</td><td><code>palette.ts</code> for the 149 TSX/SVG and Three.js colours</td><td>P0</td></tr>
+      <tr><td>UI 02</td><td><code>ui/02-primitives</code></td><td>01g</td><td>Radix, cmdk, resizable-panels. ParamRow, Segmented, LayerList, InfoTip, Readouts and Toast, plus a component test setup</td><td>P0</td></tr>
       <tr><td>UI 03</td><td><code>ui/03-plot</code></td><td>02</td><td>Shared <code>Plot</code> replacing the five plot implementations</td><td>P0</td></tr>
       <tr><td>UI 04</td><td><code>ui/04-runtime</code></td><td>03</td><td>Runtime adapter (three workers and two main-thread drivers) with capabilities</td><td>P1</td></tr>
       <tr><td>UI 05</td><td><code>ui/05-definitions</code></td><td>04</td><td>ExperimentDefinition and scenarios for all five labs</td><td>P1</td></tr>
-      <tr><td>UI 06</td><td><code>ui/06-shell</code></td><td>05</td><td>Shell chrome, panels, timeline bar and dock, with legacy workspaces hosted inside</td><td>P2</td></tr>
+      <tr><td>UI 06</td><td><code>ui/06-shell</code></td><td>05</td><td>Shell chrome, panels, timeline bar and dock, with legacy workspaces hosted inside. <b>Performance guard:</b> per-tick data flows through refs and subscriptions, not React state, and the render-count harness must not regress.</td><td>P2</td></tr>
       <tr><td>UI 07</td><td><code>ui/07-medium</code></td><td>06</td><td>Medium through the shell</td><td>P2</td></tr>
-      <tr><td>UI 08–11</td><td><code>ui/08-light</code> … <code>ui/11-vdw</code></td><td>prev</td><td>Light, Electron, Casimir and van der Waals migrations, one PR each</td><td>P3</td></tr>
+      <tr><td>UI 08–11</td><td><code>ui/08-light</code> … <code>ui/11-vdw</code></td><td>prev</td><td>Light, Electron, Casimir and van der Waals migrations, one PR each. Casimir and van der Waals gain Save/Load (<code>zeropoint-casimir</code> and <code>zeropoint-vdw</code> v1 formats, validated like the others).</td><td>P3</td></tr>
       <tr><td>UI 12</td><td><code>ui/12-selection</code></td><td>11</td><td>Unified click-vs-drag picking</td><td>P4</td></tr>
       <tr><td>UI 13</td><td><code>ui/13-split-view</code></td><td>12</td><td>SplitPane, linked panes and the Electron static studies</td><td>P4</td></tr>
       <tr><td>UI 14</td><td><code>ui/14-info-layer</code></td><td>13</td><td>About sheet, InfoTips, cut list and Settings</td><td>P5</td></tr>
@@ -1098,10 +1111,17 @@ details>div{padding:0 18px 12px}
   <h3>Quality gates on every push</h3>
   <p>Locally, and in CI from UI 00: <code>npm run check</code> · <code>npm test</code> · <code>npm run test:e2e</code> (on the worktree's port) · <code>npm run build</code>. In addition: JSDoc on new and touched functions, no hex colours outside tokens (from UI 01), and the bundle-size delta recorded in the PR body (from UI 02).</p>
 
+  <h3>Freeze, milestones &amp; deploys</h3>
+  <ul>
+    <li><b>Main freeze:</b> no UI or experiment changes merge to <code>main</code> outside the stack until UI 18 lands. Docs and papers are fine. If an unexpected <code>src/</code> change appears on <code>main</code>, the babysitter restacks and notifies you rather than absorbing it silently.</li>
+    <li><b>Deploy milestones</b> (<code>npm run deploy</code> from an up-to-date <code>main</code>, after all checks pass): <b>M1</b> after UI 07 (the shell and Medium), <b>M2</b> after UI 11 (every lab in the shell), and <b>M3</b> after UI 18 (done). Nothing is published in between.</li>
+    <li><b>Design gate:</b> UI 01d pauses for your approval of the palette preview before UI 01e applies it. This is the only planned stop. Everything else continues unless a genuinely ambiguous decision comes up.</li>
+  </ul>
+
   <h3>Merging &amp; throughput</h3>
   <div class="grid2">
-    <div class="card"><h3 style="margin-top:0">Merging</h3><p>Squash merge, bottom-up. <b>Default: you merge</b> merge-ready PRs, or enable GitHub auto-merge on them. With your authorisation, the babysitter squash-merges the bottom PR itself once it is merge-ready, then restacks.</p></div>
-    <div class="card"><h3 style="margin-top:0">Throughput</h3><p>19 PRs at about 1.5 review slots each is roughly 29 slots, so <b>about 30 hours of wall time</b> are gated by CodeRabbit, however fast the coding goes. Implementation runs ahead inside the 4-layer window, so prompt merges are what keep the pipeline moving.</p></div>
+    <div class="card"><h3 style="margin-top:0">Merging</h3><p>Squash merge, bottom-up, <b>by the babysitter</b>: <code>stack.mjs merge</code> merges the bottom PR only when it targets <code>main</code>, CodeRabbit is clean and CI passes. It pins the reviewed head commit, then retargets and restacks the next layer and removes the merged worktree and branch. You can still merge by hand at any time.</p></div>
+    <div class="card"><h3 style="margin-top:0">Throughput</h3><p>25 PRs at about 1.5 review slots each is roughly 38 slots, so <b>about 38 hours of wall time</b> are gated by CodeRabbit, however fast the coding goes, plus the palette approval. Implementation runs ahead inside the 4-layer window, and babysitter merges keep the pipeline moving.</p></div>
   </div>
 </section>
 
@@ -1113,12 +1133,12 @@ details>div{padding:0 18px 12px}
       <li><b>Medium backward seek.</b> Should Medium keep an automatic checkpoint ring (e.g. every 1 τ) so the open-ended track can scrub backwards? It's cheap in memory at 10k dipoles, but needs a small worker addition.</li>
       <li><b>Probe placement.</b> Should Alt-click in the viewport place the Electron probe (↻, staged)? It would be natural for a researcher, but it's a new interaction.</li>
       <li><b>Light scenarios.</b> Should Light get named scenarios (e.g. "Short wavelength", "Reverse direction") or stay a single leaf?</li>
-      <li><b>Merge authority.</b> Should the babysitter squash-merge merge-ready PRs itself, or should they wait for you (the current default)?</li>
+      <li><b>Palette approval</b> at UI 01d: the tokens preview shows every current colour next to its proposed token.</li>
       <li><b>Dock default per scenario.</b> The proposal is Plots for Medium and Light, Shell rates for Spin, and Probe for Stationary and Moving.</li>
     </ul></div>
     <div class="card"><h3>Risks</h3><ul>
-      <li><b>E2E churn</b> in P3 and P4. About 300 <code>getBy…</code> calls across five specs reference current labels. Mitigate by keeping test IDs and landing test updates in the same PR as each migration.</li>
-      <li><b>Review throughput.</b> The hourly CodeRabbit gate, not implementation, sets the pace (about 30 hours). Slow merges stall the 4-layer window.</li>
+      <li><b>E2E churn</b> in P3 and P4. About 300 <code>getBy…</code> calls across five specs reference current labels. UI 01c moves them onto stable roles and test IDs first, and test updates land in the same PR as each migration.</li>
+      <li><b>Review throughput.</b> The hourly CodeRabbit gate, not implementation, sets the pace (about 38 hours). The session must be running for the loop to progress.</li>
       <li><b>Renderer picking.</b> Click-vs-drag needs a change in each of <code>FieldRenderer</code>, <code>LightRenderer</code> and <code>ElectronRenderer</code>, plus the Casimir SVG scene. Test with software-rendered Chromium.</li>
       <li><b>Keyboard conflicts</b> with OrbitControls, which may listen for arrow keys. Scope OrbitControls keys to the focused canvas only.</li>
       <li><b>A/B for Medium</b> doubles CPU use. Pause B when the tab is hidden and when the Compare tab is closed.</li>

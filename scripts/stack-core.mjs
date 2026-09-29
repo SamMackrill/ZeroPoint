@@ -58,6 +58,11 @@ export function reviewState(pr) {
   return 'queued';
 }
 
+/** A PR may be squash-merged by the babysitter once it is the bottom layer, CodeRabbit-clean and green in CI. */
+export function mergeReady(pr) {
+  return pr.base === 'main' && !pr.draft && pr.checks === 'pass' && reviewState(pr) === 'clean';
+}
+
 /** Choose the PR to review next: the lowest queued layer, because merges and fixes flow bottom-up. */
 export function pickNext(prs) {
   return sortStack(prs).find(pr => reviewState(pr) === 'queued') ?? null;

@@ -1,5 +1,8 @@
 import { expect, test, type Page } from '@playwright/test';
 
+// The main-thread model advances at most 0.1 s × speed per animation frame, so slow software-rendered CI needs longer than the 5 s default.
+const SIM_TIMEOUT = 20_000;
+
 /** Open the Casimir laboratory and return its application container. */
 async function openExperiment(page: Page) {
   await page.goto('/');
@@ -17,7 +20,7 @@ test('charge modes, pressure, transport and retained paused navigation', async (
   await expect(page.getByTestId('casimir-time')).toHaveText('0.03 τ');
   await app.getByLabel('Casimir playback speed').selectOption('2');
   await app.getByRole('button', { name: /Run/ }).click();
-  await expect.poll(async () => Number.parseFloat(await page.getByTestId('casimir-time').innerText())).toBeGreaterThan(5);
+  await expect.poll(async () => Number.parseFloat(await page.getByTestId('casimir-time').innerText()), { timeout: SIM_TIMEOUT }).toBeGreaterThan(5);
   await app.getByRole('button', { name: /Pause/ }).click();
   await expect(page.getByTestId('motion-tendency')).toHaveText('Apart');
   expect(Number(await page.getByTestId('pressure-difference').innerText().then(t => t.split(' ')[0]))).toBeGreaterThan(0);
@@ -25,7 +28,7 @@ test('charge modes, pressure, transport and retained paused navigation', async (
   await app.getByRole('button', { name: /Electron \/ proton/ }).click();
   await expect(page.getByTestId('casimir-time')).toHaveText('0.00 τ');
   await app.getByRole('button', { name: /Run/ }).click();
-  await expect.poll(async () => Number.parseFloat(await page.getByTestId('casimir-time').innerText())).toBeGreaterThan(5);
+  await expect.poll(async () => Number.parseFloat(await page.getByTestId('casimir-time').innerText()), { timeout: SIM_TIMEOUT }).toBeGreaterThan(5);
   await app.getByRole('button', { name: /Pause/ }).click();
   await expect(page.getByTestId('motion-tendency')).toHaveText('Together');
   await app.screenshot({ path: 'test-results/casimir-attraction.png' });

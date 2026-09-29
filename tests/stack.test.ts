@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, isTriggerComment, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
+import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, isTriggerComment, mergeReady, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
 
 /** Build a queued-by-default PR fixture for scheduling tests. */
 const pr = (branch: string, extra: Record<string, unknown> = {}) => ({ number: Number(branch.slice(3, 5)) + 100, branch, head: `sha-${branch}`, draft: false, checks: 'pass', openThreads: 0, reviewedShas: [] as string[], lastTriggerAt: 0, headCommittedAt: 1000, ...extra });
@@ -55,6 +55,18 @@ describe('review queue', () => {
     const prs = [pr('ui/03-plot'), pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'] }), pr('ui/02-primitives', { checks: 'fail' }), pr('ui/04-runtime')];
     expect(pickNext(prs)?.branch).toBe('ui/03-plot');
     expect(pickNext([pr('ui/01-tokens', { draft: true })])).toBeNull();
+  });
+});
+
+describe('merge readiness', () => {
+  const clean = { base: 'main', reviewedShas: ['sha-ui/00-delivery'] };
+  it('merges only the bottom layer once clean and green', () => {
+    expect(mergeReady(pr('ui/00-delivery', clean))).toBe(true);
+    expect(mergeReady(pr('ui/00-delivery', { ...clean, base: 'ui/99-other' }))).toBe(false);
+    expect(mergeReady(pr('ui/00-delivery', { ...clean, checks: 'pending' }))).toBe(false);
+    expect(mergeReady(pr('ui/00-delivery', { ...clean, checks: 'none' }))).toBe(false);
+    expect(mergeReady(pr('ui/00-delivery', { ...clean, openThreads: 1 }))).toBe(false);
+    expect(mergeReady(pr('ui/00-delivery', { base: 'main' }))).toBe(false);
   });
 });
 
