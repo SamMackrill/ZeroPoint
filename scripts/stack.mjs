@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { mkdirSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { REVIEWER, isTrustedTrigger, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
+import { REVIEWER, isReviewBody, isTrustedTrigger, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
 
 const args = process.argv.slice(2), command = args[0], flags = new Set(args.filter(a => a.startsWith('--')));
 const option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -96,19 +96,21 @@ function gather(state) {
       number: pr.number, title: pr.title, branch: pr.headRefName, base: pr.baseRefName, head: pr.headRefOid, draft: pr.isDraft, body: pr.body,
       // Committer date moves on every rebase, so a trigger older than the head never counts for it.
       headCommittedAt: Date.parse(run('gh', ['api', `repos/${repo}/commits/${pr.headRefOid}`, '--jq', '.commit.committer.date'])),
-      reviewedShas: reviews.filter(r => r.user?.login === REVIEWER).map(r => r.commit_id),
+      reviewedShas: reviews.filter(r => r.user?.login === REVIEWER && isReviewBody(r.body)).map(r => r.commit_id),
       lastTriggerAt: triggers.length ? Math.max(...triggers) : 0,
       checks: checksFor(pr.number), openThreads: openThreads(repo, pr.number),
       // The PR's own head commit, not whatever a same-named ref resolves to.
       patchId: patchId(`origin/${pr.baseRefName}`, pr.headRefOid),
     };
-    // Bind review evidence to the PR, the head CodeRabbit reviewed and the diff it saw (recorded once per reviewed head).
-    const evidence = state.layers[item.branch]?.review;
-    if (item.reviewedShas.includes(item.head) && item.patchId && (evidence?.pr !== item.number || evidence?.head !== item.head)) {
-      layer(state, item.branch).review = { pr: item.number, head: item.head, patchId: item.patchId };
+    // Bind review evidence to this PR and to the diff each reviewed head had when the review was first seen.
+    const stored = state.layers[item.branch]?.review, evidence = stored?.pr === item.number ? stored : { pr: item.number, patches: {} };
+    for (const reviewed of new Set(item.reviewedShas)) {
+      if (evidence.patches[reviewed]) continue;
+      const id = patchId(`origin/${pr.baseRefName}`, reviewed);
+      if (id) evidence.patches[reviewed] = id;
     }
-    const bound = state.layers[item.branch]?.review;
-    item.reviewedPatchId = bound?.pr === item.number ? bound.patchId : undefined;
+    if (Object.keys(evidence.patches).length) layer(state, item.branch).review = evidence;
+    item.reviewedPatchIds = Object.values(evidence.patches);
     item.state = reviewState(item);
     state.lastTriggerAt = Math.max(state.lastTriggerAt ?? 0, item.lastTriggerAt);
     prs.push(item);

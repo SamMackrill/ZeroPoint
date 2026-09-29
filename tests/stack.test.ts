@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
+import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, isReviewBody, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
 
 /** Build a queued-by-default PR fixture for scheduling tests. */
 const pr = (branch: string, extra: Record<string, unknown> = {}) => ({ number: Number(branch.slice(3, 5)) + 100, branch, head: `sha-${branch}`, draft: false, checks: 'pass', openThreads: 0, reviewedShas: [] as string[], lastTriggerAt: 0, headCommittedAt: 1000, ...extra });
@@ -25,6 +25,12 @@ describe('review gate', () => {
     expect(isTriggerComment('  @CodeRabbitAI full review please')).toBe(true);
     expect(isTriggerComment('@coderabbitai resolve')).toBe(false);
     expect(isTriggerComment('Thanks @coderabbitai review looks good')).toBe(false);
+  });
+  it('counts completed reviews but not review-thread replies', () => {
+    expect(isReviewBody('**Actionable comments posted: 1**')).toBe(true);
+    expect(isReviewBody('No actionable comments were generated in the recent review. 🎉')).toBe(true);
+    expect(isReviewBody('')).toBe(false);
+    expect(isReviewBody(null)).toBe(false);
   });
   it('only lets people with write access move the gate', () => {
     expect(isTrustedTrigger({ body: '@coderabbitai review', author_association: 'OWNER' })).toBe(true);
@@ -62,9 +68,11 @@ describe('review queue', () => {
     expect(reviewState(pr('ui/01-tokens', { lastTriggerAt: 500 }))).toBe('queued');
     expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'], openThreads: 2 }))).toBe('reviewed');
     expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'] }))).toBe('clean');
-    expect(reviewState(pr('ui/01-tokens', { patchId: 'p1', reviewedPatchId: 'p1' }))).toBe('clean');
+    expect(reviewState(pr('ui/01-tokens', { patchId: 'p1', reviewedPatchIds: ['p1'] }))).toBe('clean');
+    // A review of an older head with the same diff (restacked mid-review) still counts.
+    expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['older-head'], patchId: 'p1', reviewedPatchIds: ['p0', 'p1'] }))).toBe('clean');
     // A reviewed head whose diff changed (e.g. retargeted without a rebase) must be reviewed again.
-    expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'], patchId: 'p2', reviewedPatchId: 'p1' }))).toBe('queued');
+    expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'], patchId: 'p2', reviewedPatchIds: ['p1'] }))).toBe('queued');
   });
   it('picks the lowest queued layer first', () => {
     const prs = [pr('ui/03-plot'), pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'] }), pr('ui/02-primitives', { checks: 'fail' }), pr('ui/04-runtime')];

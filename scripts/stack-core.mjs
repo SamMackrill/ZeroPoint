@@ -25,6 +25,15 @@ export function sortStack(items) {
   return [...items].sort((a, b) => parseStackBranch(a.branch).order - parseStackBranch(b.branch).order);
 }
 
+/**
+ * Recognise a completed CodeRabbit review from its body ("Actionable comments posted: N" or "No actionable comments…").
+ * Replies in a review thread are also stored as review objects on the current head, with an empty body; they must not
+ * count as a review of that head.
+ */
+export function isReviewBody(body) {
+  return /actionable comments/i.test(body ?? '');
+}
+
 /** Recognise a manual CodeRabbit review request comment. */
 export function isTriggerComment(body) {
   return /^\s*@coderabbitai\s+(full\s+)?review\b/i.test(body ?? '');
@@ -60,16 +69,17 @@ export function nextSlot({ lastTriggerAt = 0, rateLimitUntil = 0 }) {
 
 /**
  * Classify one PR for the review queue.
- * `reviewed`: CodeRabbit reviewed this diff — the same head, or an identical diff (same patch id) after a restack.
- *   Evidence is bound to the diff it saw: a reviewed head whose base-relative diff has since changed (e.g. after a
- *   retarget) is not reviewed.
+ * `reviewed`: CodeRabbit reviewed this diff. Evidence is the patch id of each reviewed head, recorded when the review
+ *   is first seen, so a review of an older head with an identical diff (a restack mid-review) still counts, while a
+ *   reviewed head whose base-relative diff has since changed (e.g. retargeted without a rebase) does not.
+ *   Without patch evidence, fall back to "this exact head was reviewed".
  * `triggered`: a review was requested after the head commit and has not landed yet.
  */
 export function reviewState(pr) {
   if (pr.draft) return 'draft';
   if (pr.checks === 'fail') return 'failing';
-  const known = Boolean(pr.patchId && pr.reviewedPatchId);
-  const reviewed = (known && pr.patchId === pr.reviewedPatchId) || (pr.reviewedShas?.includes(pr.head) && !known);
+  const evidence = pr.reviewedPatchIds ?? [];
+  const reviewed = pr.patchId && evidence.length ? evidence.includes(pr.patchId) : Boolean(pr.reviewedShas?.includes(pr.head));
   if (reviewed) return pr.openThreads > 0 ? 'reviewed' : 'clean';
   if (pr.lastTriggerAt && pr.lastTriggerAt > (pr.headCommittedAt ?? 0)) return 'triggered';
   if (pr.checks === 'pending') return 'waiting-ci';
