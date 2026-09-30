@@ -5,7 +5,7 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFile
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { withLock } from './state-lock.mjs';
-import { REVIEWER, diffSnapshots, mergeState, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort, reviewInProgress } from './stack-core.mjs';
+import { REVIEWER, diffSnapshots, mergeState, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort, reviewInProgress, summariseChecks } from './stack-core.mjs';
 
 const args = process.argv.slice(2), command = args[0], flags = new Set(args.filter(a => a.startsWith('--')));
 const option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -83,14 +83,10 @@ function patchId(base, branch) {
   return diff ? run('git', ['patch-id', '--stable'], { input: diff }).split(' ')[0] || null : null;
 }
 
-/** Summarise CI buckets from `gh pr checks` as pass | fail | pending | none. */
+/** Summarise a PR's checks from `gh pr checks` as pass | fail | pending | none (see summariseChecks). */
 function checksFor(number) {
-  const result = run('gh', ['pr', 'checks', String(number), '--json', 'bucket'], { allowFail: true });
-  let buckets = [];
-  try { buckets = JSON.parse(result.out || '[]').map(c => c.bucket); } catch { return 'none'; }
-  if (!buckets.length) return 'none';
-  if (buckets.some(b => b === 'fail' || b === 'cancel')) return 'fail';
-  return buckets.some(b => b === 'pending') ? 'pending' : 'pass';
+  const result = run('gh', ['pr', 'checks', String(number), '--json', 'name,bucket'], { allowFail: true });
+  try { return summariseChecks(JSON.parse(result.out || '[]')); } catch { return 'none'; }
 }
 
 /** Count unresolved review threads opened by CodeRabbit, across every page (an unseen page must never read as clean). */

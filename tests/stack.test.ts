@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, diffSnapshots, isReviewBody, reviewInProgress, mergeState, outsideDiffFindings, reviewedHeadsInSummary, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
+import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, diffSnapshots, isReviewBody, reviewInProgress, mergeState, outsideDiffFindings, reviewedHeadsInSummary, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort, summariseChecks } from '../scripts/stack-core.mjs';
 
 /** Build a queued-by-default PR fixture for scheduling tests. */
 const pr = (branch: string, extra: Record<string, unknown> = {}) => ({ number: Number(branch.slice(3, 5)) + 100, branch, head: `sha-${branch}`, draft: false, checks: 'pass', openThreads: 0, reviewedShas: [] as string[], lastTriggerAt: 0, headCommittedAt: 1000, ...extra });
@@ -113,6 +113,15 @@ describe('review queue', () => {
     expect(pickNext([pr('ui/01-tokens', { checks: 'pending' }), pr('ui/02-primitives')])).toBeNull();
     expect(pickNext([pr('ui/01-tokens', { checks: 'none' }), pr('ui/02-primitives')])).toBeNull();
     expect(pickNext([pr('ui/01-tokens', { checks: 'fail' }), pr('ui/02-primitives')])?.branch).toBe('ui/02-primitives');
+  });
+  it('treats a head with only CodeRabbit status as not yet having CI', () => {
+    const coderabbit = { name: 'CodeRabbit', bucket: 'pass' };
+    expect(summariseChecks([])).toBe('none');
+    expect(summariseChecks([coderabbit])).toBe('none');
+    expect(summariseChecks([coderabbit, { name: 'test', bucket: 'pending' }])).toBe('pending');
+    expect(summariseChecks([coderabbit, { name: 'test', bucket: 'pass' }])).toBe('pass');
+    expect(summariseChecks([{ name: 'CodeRabbit', bucket: 'fail' }, { name: 'test', bucket: 'pass' }])).toBe('fail');
+    expect(summariseChecks([coderabbit, { name: 'test', bucket: 'cancel' }])).toBe('fail');
   });
 });
 

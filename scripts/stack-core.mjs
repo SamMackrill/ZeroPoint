@@ -101,6 +101,18 @@ export function nextSlot({ lastTriggerAt = 0, rateLimitUntil = 0 }) {
 }
 
 /**
+ * Summarise `gh pr checks` rows ({ name, bucket }) as pass | fail | pending | none. CodeRabbit's own status appears the
+ * moment a head is pushed, before GitHub Actions registers the CI run, so until a CI check exists the answer is `none`
+ * (waiting), not `pass`. Once CI exists, a failing CodeRabbit status still counts as a failure.
+ */
+export function summariseChecks(rows) {
+  if (!rows.some(row => row.name !== 'CodeRabbit')) return 'none';
+  const buckets = rows.map(row => row.bucket);
+  if (buckets.some(b => b === 'fail' || b === 'cancel')) return 'fail';
+  return buckets.some(b => b === 'pending') ? 'pending' : 'pass';
+}
+
+/**
  * Classify one PR for the review queue.
  * `reviewed`: CodeRabbit reviewed this diff. Evidence is the patch id of each reviewed head, recorded when the review
  *   is first seen, so a review of an older head with an identical diff (a restack mid-review) still counts, while a
