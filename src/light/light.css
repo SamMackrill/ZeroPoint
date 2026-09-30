@@ -150,7 +150,7 @@
 
 .light-view-top b {
   font-weight: 400;
-  color: var(--text-4);
+  color: var(--text-3);
   border-left: 1px solid var(--line-2);
   padding-left: 8px;
 }

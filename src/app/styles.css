@@ -318,7 +318,7 @@ p {
   display: block;
   font-size: 9px;
   line-height: 1.5;
-  color: var(--text-4);
+  color: var(--text-3);
   margin-top: 4px;
   max-width: 135px;
 }
@@ -365,7 +365,7 @@ p {
 .roadmap-link small {
   font-size: 9px;
   display: block;
-  color: var(--text-4);
+  color: var(--text-3);
   margin-top: 4px;
 }
 
@@ -510,7 +510,7 @@ p {
 
 .sidebar-footer {
   font-size: 8px;
-  color: var(--text-4);
+  color: var(--text-3);
   display: block;
   text-align: center;
   margin-top: 18px;
@@ -532,7 +532,7 @@ p {
 
 .breadcrumbs {
   font-size: 10px;
-  color: var(--text-4);
+  color: var(--text-3);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -858,7 +858,7 @@ p {
   right: 0;
   text-align: center;
   font-size: 8px;
-  color: var(--text-4);
+  color: var(--text-3);
   letter-spacing: .2px;
   pointer-events: none;
 }
@@ -937,7 +937,7 @@ p {
 .metric-strip em {
   font-size: 8px;
   font-style: normal;
-  color: var(--text-4);
+  color: var(--text-3);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -1033,7 +1033,7 @@ p {
 
 .chart-caption small {
   font-size: 8px;
-  color: var(--text-4);
+  color: var(--text-3);
 }
 
 .plot {
@@ -1058,14 +1058,14 @@ p {
   flex-direction: column;
   justify-content: space-between;
   font: 7px var(--mono);
-  color: var(--text-4);
+  color: var(--text-3);
 }
 
 .plot-times {
   display: flex;
   justify-content: space-between;
   font: 8px var(--mono);
-  color: var(--text-4);
+  color: var(--text-3);
   padding-top: 5px;
 }
 
@@ -1095,7 +1095,7 @@ p {
 
 .checkpoint-items small {
   font-size: 9px;
-  color: var(--text-4);
+  color: var(--text-3);
 }
 
 .checkpoint-items button {
@@ -1234,14 +1234,14 @@ p {
   display: flex;
   justify-content: space-between;
   font: 8px var(--mono);
-  color: var(--text-4);
+  color: var(--text-3);
   margin-top: 4px;
 }
 
 .parameter p {
   font-size: 9px;
   line-height: 1.6;
-  color: var(--text-4);
+  color: var(--text-3);
   margin-top: 8px;
 }
 
@@ -1257,7 +1257,7 @@ p {
 .seed-control label small {
   display: block;
   font-size: 9px;
-  color: var(--text-4);
+  color: var(--text-3);
   margin-top: 6px;
 }
 
@@ -1283,7 +1283,7 @@ p {
 
 .seed-control>small {
   font-size: 8px;
-  color: var(--text-4);
+  color: var(--text-3);
 }
 
 .inspector-divider {
@@ -1300,7 +1300,7 @@ p {
 .reduced-help {
   font-size: 9px;
   line-height: 1.8;
-  color: var(--text-4);
+  color: var(--text-3);
   display: block;
 }
 
@@ -1377,7 +1377,7 @@ p {
 .reservoir-readout small {
   font-size: 9px;
   line-height: 1.8;
-  color: var(--text-4);
+  color: var(--text-3);
 }
 
 .inspect-first {
@@ -1474,7 +1474,7 @@ p {
 
 .empty-inspector small {
   font-size: 9px;
-  color: var(--text-4);
+  color: var(--text-3);
 }
 
 .statusbar {
@@ -1486,7 +1486,7 @@ p {
   align-items: center;
   padding: 0 19px;
   font: 8px var(--mono);
-  color: var(--text-4);
+  color: var(--text-3);
   gap: 15px;
 }
 

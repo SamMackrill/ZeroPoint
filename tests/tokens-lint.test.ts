@@ -21,4 +21,13 @@ describe('colour tokens', () => {
     const used = [...css.matchAll(/var\((--[\w-]+)\)/g)].map(m => m[1]).filter(name => name !== '--mono');
     expect(used.filter(name => !defined.has(name))).toEqual([]);
   });
+  // --text-4 is below AA contrast: disabled or decorative only. As a text colour it may only colour icons.
+  it.each(files)('%s keeps readable text off --text-4', (_name, file) => {
+    let selector = '';
+    const offenders = readFileSync(file, 'utf8').split('\n').flatMap(line => {
+      if (line.trimEnd().endsWith('{')) selector = line.trim().slice(0, -1).trim();
+      return /^\s*color:\s*var\(--text-4\)/.test(line) && !/\bsvg$/.test(selector) ? [selector] : [];
+    });
+    expect(offenders).toEqual([]);
+  });
 });
