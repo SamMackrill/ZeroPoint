@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CAPACITY, SNAPSHOT_STRIDE } from '../model/types';
 import type { ViewSettings } from '../model/types';
 import { lobeScale } from '../model/pairMotion';
+import { palette, scene } from '../ui/palette';
 export interface PickedDipole { slot: number; generation: number; frequency: number; age: number; lifetime: number; separation: number; position: [number, number, number] }
 export class FieldRenderer {
   readonly renderer: THREE.WebGLRenderer;
@@ -23,24 +24,24 @@ export class FieldRenderer {
   constructor(private host: HTMLElement, options: ViewSettings, onPick: (p: PickedDipole | null) => void, onMetrics: (fps: number, calls: number) => void, onError: (message: string) => void) {
     this.options = options; this.pickListener = onPick; this.metrics = onMetrics; this.contextListener = onError;
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true });
-    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); this.renderer.setClearColor('#0b131d');
+    this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); this.renderer.setClearColor(palette.bg1);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     host.appendChild(this.renderer.domElement); this.renderer.domElement.setAttribute('aria-label', 'Three-dimensional dipole field. Drag to orbit, scroll to zoom, click a dipole to inspect.');
     this.renderer.domElement.setAttribute('role', 'img');
     this.camera.position.set(10, 6.8, 11.5);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement); this.controls.enableDamping = true; this.controls.dampingFactor = .08; this.controls.minDistance = 3; this.controls.maxDistance = 35;
-    this.scene.add(new THREE.AmbientLight('#b5d3e7', 2));
-    const light = new THREE.DirectionalLight('#ffffff', 3); light.position.set(4, 8, 5); this.scene.add(light);
+    this.scene.add(new THREE.AmbientLight(scene.ambientMedium, 2));
+    const light = new THREE.DirectionalLight(scene.keyLight, 3); light.position.set(4, 8, 5); this.scene.add(light);
     const geometry = new THREE.SphereGeometry(.052, 8, 6);
-    this.positive = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ color: '#ffa77c', emissive: '#ad431e', emissiveIntensity: .35, roughness: .5 }), CAPACITY);
-    this.negative = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ color: '#73c7ee', emissive: '#23638b', emissiveIntensity: .35, roughness: .5 }), CAPACITY);
+    this.positive = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ color: palette.dataPos, emissive: scene.posGlowMedium, emissiveIntensity: .35, roughness: .5 }), CAPACITY);
+    this.negative = new THREE.InstancedMesh(geometry, new THREE.MeshStandardMaterial({ color: palette.dataNeg, emissive: scene.negGlowMedium, emissiveIntensity: .35, roughness: .5 }), CAPACITY);
     for (const mesh of [this.positive, this.negative]) { mesh.count = 0; mesh.frustumCulled = false; mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); this.scene.add(mesh); }
     const pointGeometry = new THREE.BufferGeometry(); pointGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(CAPACITY * 3), 3).setUsage(THREE.DynamicDrawUsage)); pointGeometry.setDrawRange(0, 0);
-    this.points = new THREE.Points(pointGeometry, new THREE.PointsMaterial({ color: '#7dbfd9', size: .065, sizeAttenuation: true })); this.points.frustumCulled = false; this.scene.add(this.points);
-    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(8, 8, 8)), new THREE.LineBasicMaterial({ color: '#375468', transparent: true, opacity: .48 }));
-    const grid = new THREE.GridHelper(8, 8, '#345466', '#1e3445'); grid.position.y = -4;
+    this.points = new THREE.Points(pointGeometry, new THREE.PointsMaterial({ color: palette.dataNeg, size: .065, sizeAttenuation: true })); this.points.frustumCulled = false; this.scene.add(this.points);
+    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(8, 8, 8)), new THREE.LineBasicMaterial({ color: palette.line2, transparent: true, opacity: .48 }));
+    const grid = new THREE.GridHelper(8, 8, palette.line2, palette.line); grid.position.y = -4;
     this.bounds.add(edges, grid); this.scene.add(this.bounds);
-    this.selection = new THREE.Mesh(new THREE.SphereGeometry(.19, 16, 12), new THREE.MeshBasicMaterial({ color: '#d9f8b0', wireframe: true, transparent: true, opacity: .7 })); this.selection.visible = false; this.scene.add(this.selection);
+    this.selection = new THREE.Mesh(new THREE.SphereGeometry(.19, 16, 12), new THREE.MeshBasicMaterial({ color: palette.dataMarkHi, wireframe: true, transparent: true, opacity: .7 })); this.selection.visible = false; this.scene.add(this.selection);
     this.texture = new THREE.DataTexture(new Uint8Array(32 * 32 * 4), 32, 32, THREE.RGBAFormat); this.texture.minFilter = THREE.LinearFilter; this.texture.magFilter = THREE.LinearFilter;
     this.slice = new THREE.Mesh(new THREE.PlaneGeometry(8, 8), new THREE.MeshBasicMaterial({ map: this.texture, transparent: true, side: THREE.DoubleSide, depthWrite: false, opacity: .8 })); this.slice.renderOrder = 2; this.scene.add(this.slice);
     this.resize = new ResizeObserver(() => this.resizeCanvas()); this.resize.observe(host); this.resizeCanvas();
@@ -111,7 +112,7 @@ export class FieldRenderer {
   exportPNG(caption: string) {
     this.renderer.render(this.scene, this.camera);
     const source = this.renderer.domElement, canvas = document.createElement('canvas'); canvas.width = source.width; canvas.height = source.height + 80;
-    const c = canvas.getContext('2d')!; c.fillStyle = '#0b131d'; c.fillRect(0, 0, canvas.width, canvas.height); c.drawImage(source, 0, 0); c.fillStyle = '#d2e6e8'; c.font = '14px sans-serif'; c.fillText('ZEROPOINT / Reduced medium lifecycle model', 20, source.height + 30); c.font = '12px sans-serif'; c.fillText(caption, 20, source.height + 55);
+    const c = canvas.getContext('2d')!; c.fillStyle = palette.bg1; c.fillRect(0, 0, canvas.width, canvas.height); c.drawImage(source, 0, 0); c.fillStyle = palette.text; c.font = '14px sans-serif'; c.fillText('ZEROPOINT / Reduced medium lifecycle model', 20, source.height + 30); c.font = '12px sans-serif'; c.fillText(caption, 20, source.height + 55);
     canvas.toBlob(blob => { if (!blob) return; const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = 'zeropoint-field.png'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); });
   }
   dispose() {

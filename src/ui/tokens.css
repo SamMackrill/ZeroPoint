@@ -38,6 +38,34 @@
   --data-bspin: #efa5c1;
   --data-core: #b39cf0;
   --data-shell-1: #f2c46e;
+  --data-shell-2: #bda7ff;
+  --data-shell-3: #8ed9c3;
+  --data-shell-4: #ed9cbb;
+  --data-mark: #f2d98a; /* probe and selection marker */
+
+  /* Data shades (UI 01h): -hi for glyphs and text on dark, -lo for fills and edges, -deep for dark grounds.
+     Derived in OKLab from each data colour (lightness +0.09 / -0.22 / -0.50, chroma 70-85%). */
+  --data-pos-hi: #ffcaae;
+  --data-pos-lo: #a26748;
+  --data-pos-deep: #44200c;
+  --data-neg-hi: #b1e2fc;
+  --data-neg-lo: #47829e;
+  --data-neg-deep: #093243;
+  --data-e-hi: #c3f6e1;
+  --data-e-lo: #59957e;
+  --data-e-deep: #1a4133;
+  --data-b-hi: #c3b6f7;
+  --data-b-lo: #66559d;
+  --data-b-deep: #1d103b;
+  --data-bspin-hi: #ffcadd;
+  --data-bspin-lo: #a0677d;
+  --data-bspin-deep: #44212f;
+  --data-core-hi: #cdbefa;
+  --data-core-lo: #705d9f;
+  --data-core-deep: #24173e;
+  --data-mark-hi: #fff5be;
+  --data-mark-lo: #a89454;
+  --data-mark-deep: #50441a;
 
   /* Type (UI 01g): 11 px is the minimum readable size. Larger display sizes belong to the legacy page headings. */
   --fs-micro: 11px; /* section labels, units, captions */

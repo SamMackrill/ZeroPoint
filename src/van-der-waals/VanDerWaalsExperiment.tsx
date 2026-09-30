@@ -5,6 +5,7 @@ import { RepositoryLink } from '../app/RepositoryLink';
 import { downloadFile } from '../persistence/experiment';
 import { casimir, GAP_MAX_NM, GAP_MIN_NM, london, pressureCSV, pressureSweep } from './model';
 import './van-der-waals.css';
+import { palette } from '../ui/palette';
 
 const BOOK = './docs/papers/Book%20-%20the-zero-point-universe.pdf';
 const stages = [
@@ -16,7 +17,7 @@ const stages = [
 const number = (n: number) => n === 0 ? '0' : Math.abs(n) < .001 || Math.abs(n) >= 10000 ? n.toExponential(3) : n.toPrecision(4);
 
 /** Draw a labelled diagram arrow between two horizontal coordinates. */
-function Arrow({ x1, x2, y, color = '#9ce3c5', width = 3 }: { x1: number; x2: number; y: number; color?: string; width?: number }) {
+function Arrow({ x1, x2, y, color = palette.accent, width = 3 }: { x1: number; x2: number; y: number; color?: string; width?: number }) {
   const sign = Math.sign(x2 - x1);
   return <g stroke={color} fill={color}><line x1={x1} x2={x2 - sign * 7} y1={y} y2={y} strokeWidth={width}/><path d={`M ${x2} ${y} l ${-sign * 10} -6 v 12 z`} stroke="none"/></g>;
 }
@@ -24,11 +25,11 @@ function Arrow({ x1, x2, y, color = '#9ce3c5', width = 3 }: { x1: number; x2: nu
 /** Charge lobes stay symmetric about a fixed centre; this is a schematic, not particle dynamics. */
 function Dipole({ x, y, moment }: { x: number; y: number; moment: number }) {
   const offset = moment * 30;
-  return <g><ellipse cx={x} cy={y} rx="70" ry="51" fill="#142b37" stroke="#355968" strokeDasharray="4 6"/>
-    <line x1={x - offset} x2={x + offset} y1={y} y2={y} stroke="#7b9fa9"/>
-    <circle cx={x - offset} cy={y} r="16" fill="#427d9b" stroke="#90d6ed"/><text x={x - offset} y={y + 6} textAnchor="middle" fill="#ecfaff">−</text>
-    <circle cx={x + offset} cy={y} r="16" fill="#966448" stroke="#f5b88d"/><text x={x + offset} y={y + 6} textAnchor="middle" fill="#fff3e7">+</text>
-    <circle cx={x} cy={y + 66} r="2" fill="#6c8b9a"/>
+  return <g><ellipse cx={x} cy={y} rx="70" ry="51" fill={palette.bg3} stroke={palette.line2} strokeDasharray="4 6"/>
+    <line x1={x - offset} x2={x + offset} y1={y} y2={y} stroke={palette.text3}/>
+    <circle cx={x - offset} cy={y} r="16" fill={palette.dataNegLo} stroke={palette.dataNeg}/><text x={x - offset} y={y + 6} textAnchor="middle" fill={palette.text}>−</text>
+    <circle cx={x + offset} cy={y} r="16" fill={palette.dataPosLo} stroke={palette.dataPos}/><text x={x + offset} y={y + 6} textAnchor="middle" fill={palette.text}>+</text>
+    <circle cx={x} cy={y + 66} r="2" fill={palette.text3}/>
   </g>;
 }
 
@@ -36,11 +37,11 @@ function Dipole({ x, y, moment }: { x: number; y: number; moment: number }) {
 function InductionDiagram({ polarization }: { polarization: number }) {
   return <svg viewBox="0 0 760 350" role="img" aria-label="Neutral atom and induced dipole: an applied electric field displaces the negative charge cloud opposite to the field">
     <text x="200" y="42" textAnchor="middle">A · No applied field</text><text x="553" y="42" textAnchor="middle">B · Induced dipole</text>
-    <circle cx="200" cy="180" r="75" fill="#32627b33" stroke="#82cdec" strokeDasharray="3 6"/>
-    <circle cx={553 - polarization * 45} cy="180" r="75" fill="#32627b33" stroke="#82cdec"/>
-    {[200, 553].map(x => <g key={x}><circle cx={x} cy="180" r="14" fill="#9a684f" stroke="#f5b88d"/><text x={x} y="186" textAnchor="middle" fill="#ffe0c8">+</text></g>)}
-    <text x="200" y="121" textAnchor="middle" fill="#91d9f4">−</text><text x={553 - polarization * 45} y="121" textAnchor="middle" fill="#91d9f4">−</text>
-    <Arrow x1={475} x2={475 + 150 * polarization + 1} y={83}/><text x="650" y="89" fill="#9ce3c5">E</text>
+    <circle cx="200" cy="180" r="75" fill={`${palette.line2}33`} stroke={palette.dataNeg} strokeDasharray="3 6"/>
+    <circle cx={553 - polarization * 45} cy="180" r="75" fill={`${palette.line2}33`} stroke={palette.dataNeg}/>
+    {[200, 553].map(x => <g key={x}><circle cx={x} cy="180" r="14" fill={palette.dataPosLo} stroke={palette.dataPos}/><text x={x} y="186" textAnchor="middle" fill={palette.dataPosHi}>+</text></g>)}
+    <text x="200" y="121" textAnchor="middle" fill={palette.dataNegHi}>−</text><text x={553 - polarization * 45} y="121" textAnchor="middle" fill={palette.dataNegHi}>−</text>
+    <Arrow x1={475} x2={475 + 150 * polarization + 1} y={83}/><text x="650" y="89" fill={palette.accent}>E</text>
     <text x="200" y="292" textAnchor="middle">Mean dipole = 0</text><text x="553" y="292" textAnchor="middle">p = αE</text>
     <text x="380" y="328" textAnchor="middle" className="vdw-svg-muted">Net charge stays zero. The charge distribution changes.</text>
   </svg>;
@@ -54,7 +55,7 @@ function PairDiagram({ distance, tick }: { distance: number; tick: number }) {
     <text x="380" y="42" textAnchor="middle">Fluctuate together. Attract on average.</text>
     <Dipole x={left} y={150} moment={moment}/><Dipole x={right} y={150} moment={moment}/>
     <text x={left} y="90" textAnchor="middle" className="vdw-svg-muted">Dipole A</text><text x={right} y="90" textAnchor="middle" className="vdw-svg-muted">Dipole B</text>
-    <line x1={left} x2={right} y1="229" y2="229" stroke="#627b8c"/>
+    <line x1={left} x2={right} y1="229" y2="229" stroke={palette.text4}/>
     <text x="380" y="254" textAnchor="middle">r = {distance.toFixed(2)} r₀</text>
     <Arrow x1={left - 50} x2={left + 12 + 42 / distance ** 3} y={282}/><Arrow x1={right + 50} x2={right - 12 - 42 / distance ** 3} y={282}/>
     <text x="380" y="326" textAnchor="middle" className="vdw-svg-muted">⟨pA⟩ = ⟨pB⟩ = 0, but ⟨pA pB⟩ ≠ 0 · schematic correlation</text>
@@ -66,16 +67,16 @@ function PlateDiagram({ gap, modes }: { gap: number; modes: boolean }) {
   const width = 150 + (gap - 100) / 900 * 160, left = 380 - width / 2, right = 380 + width / 2;
   const net = 27 + 18 * Math.log10(Math.abs(casimir(gap, 1).pressure) / .0013);
   return <svg viewBox="0 0 760 380" role="img" aria-label={`Two conducting plates ${gap} nanometres apart, with balanced background stress and an inward net pressure difference. Mode shapes and arrow scales are illustrative.`}>
-    <defs><pattern id="vdw-field-grid" width="42" height="44" patternUnits="userSpaceOnUse"><ellipse cx="21" cy="22" rx="10" ry="4" transform="rotate(-35 21 22)" fill="none" stroke="#476577" strokeWidth="1"/></pattern></defs>
+    <defs><pattern id="vdw-field-grid" width="42" height="44" patternUnits="userSpaceOnUse"><ellipse cx="21" cy="22" rx="10" ry="4" transform="rotate(-35 21 22)" fill="none" stroke={palette.text4} strokeWidth="1"/></pattern></defs>
     <rect x="45" y="63" width={left - 57} height="213" fill="url(#vdw-field-grid)"/><rect x={right + 12} y="63" width={703 - right} height="213" fill="url(#vdw-field-grid)"/>
-    <rect x={left} y="63" width={width} height="213" fill="#16312f" fillOpacity=".6"/>
+    <rect x={left} y="63" width={width} height="213" fill={palette.accentBg} fillOpacity=".6"/>
     <text x="115" y="35" textAnchor="middle">Outside</text><text x="380" y="35" textAnchor="middle">Modified field</text><text x="645" y="35" textAnchor="middle">Outside</text>
-    {modes && [1, 2, 3].map(n => <g key={n}><polyline points={Array.from({ length: 101 }, (_, i) => `${left + width * i / 100},${72 + n * 49 - 16 * Math.sin(n * Math.PI * i / 100)}`).join(' ')} fill="none" stroke={['#94e2bd', '#87c6ed', '#d5b4f0'][n - 1]} strokeWidth="2"/><text x="380" y={94 + n * 49} textAnchor="middle" className="vdw-mode-label">n = {n}</text></g>)}
-    {[left - 12, right].map(x => <rect key={x} x={x} y="55" width="12" height="231" rx="2" fill="#93a8b5"/>)}
-    <Arrow x1={left - 102} x2={left - 14} y={302} color="#7595a6" width={5}/><Arrow x1={left + 64} x2={left + 2} y={302} color="#7595a6" width={3}/>
-    <Arrow x1={right + 102} x2={right + 14} y={302} color="#7595a6" width={5}/><Arrow x1={right - 64} x2={right - 2} y={302} color="#7595a6" width={3}/>
+    {modes && [1, 2, 3].map(n => <g key={n}><polyline points={Array.from({ length: 101 }, (_, i) => `${left + width * i / 100},${72 + n * 49 - 16 * Math.sin(n * Math.PI * i / 100)}`).join(' ')} fill="none" stroke={[palette.accent, palette.dataNeg, palette.dataCoreHi][n - 1]} strokeWidth="2"/><text x="380" y={94 + n * 49} textAnchor="middle" className="vdw-mode-label">n = {n}</text></g>)}
+    {[left - 12, right].map(x => <rect key={x} x={x} y="55" width="12" height="231" rx="2" fill={palette.text3}/>)}
+    <Arrow x1={left - 102} x2={left - 14} y={302} color={palette.text3} width={5}/><Arrow x1={left + 64} x2={left + 2} y={302} color={palette.text3} width={3}/>
+    <Arrow x1={right + 102} x2={right + 14} y={302} color={palette.text3} width={5}/><Arrow x1={right - 64} x2={right - 2} y={302} color={palette.text3} width={3}/>
     <Arrow x1={left} x2={left + net} y={342}/><Arrow x1={right} x2={right - net} y={342}/>
-    <text x="380" y="325" textAnchor="middle" fill="#9ce3c5">Net attraction</text>
+    <text x="380" y="325" textAnchor="middle" fill={palette.accent}>Net attraction</text>
     <text x="380" y="373" textAnchor="middle" className="vdw-svg-muted">d = {gap} nm · pressure imbalance exaggerated for visibility</text>
   </svg>;
 }
@@ -85,10 +86,10 @@ function PressurePlot({ gap, onGap }: { gap: number; onGap: (value: number) => v
   const x = (d: number) => 62 + Math.log10(d / 100) * 620;
   const y = (p: number) => 28 + (Math.log10(Math.abs(casimir(100, 1).pressure)) - Math.log10(Math.abs(p))) * 36;
   return <div className="vdw-plot"><svg viewBox="0 0 760 226" role="img" aria-label="Logarithmic plot of attractive pressure magnitude versus plate gap. Doubling the gap reduces pressure magnitude sixteenfold.">
-    {[100, 200, 500, 1000].map(d => <g key={d}><line x1={x(d)} x2={x(d)} y1="20" y2="178" stroke="#29404c" strokeDasharray="3 5"/><text x={x(d)} y="201" textAnchor="middle">{d}</text></g>)}
-    {[10, 1, .1, .01].map(p => <g key={p}><line x1="62" x2="682" y1={y(p)} y2={y(p)} stroke="#29404c" strokeDasharray="3 5"/><text x="49" y={y(p) + 5} textAnchor="end">{p}</text></g>)}
-    <polyline points={pressureSweep(1).map(r => `${x(r.gapNm)},${y(r.pressure)}`).join(' ')} fill="none" stroke="#96e0c1" strokeWidth="2.5"/>
-    <circle cx={x(gap)} cy={y(casimir(gap, 1).pressure)} r="6" fill="#f2c38d" stroke="#172530" strokeWidth="2"/>
+    {[100, 200, 500, 1000].map(d => <g key={d}><line x1={x(d)} x2={x(d)} y1="20" y2="178" stroke={palette.line} strokeDasharray="3 5"/><text x={x(d)} y="201" textAnchor="middle">{d}</text></g>)}
+    {[10, 1, .1, .01].map(p => <g key={p}><line x1="62" x2="682" y1={y(p)} y2={y(p)} stroke={palette.line} strokeDasharray="3 5"/><text x="49" y={y(p) + 5} textAnchor="end">{p}</text></g>)}
+    <polyline points={pressureSweep(1).map(r => `${x(r.gapNm)},${y(r.pressure)}`).join(' ')} fill="none" stroke={palette.dataE} strokeWidth="2.5"/>
+    <circle cx={x(gap)} cy={y(casimir(gap, 1).pressure)} r="6" fill={palette.warn} stroke={palette.bg2} strokeWidth="2"/>
     <text x="65" y="14">|P| / Pa</text><text x="682" y="222" textAnchor="end">Gap / nm · log axes</text>
   </svg><div className="vdw-gap-presets">{[100, 200, 500, 1000].map(d => <button key={d} aria-pressed={gap === d} onClick={() => onGap(d)}>{d} nm</button>)}</div></div>;
 }

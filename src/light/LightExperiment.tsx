@@ -8,13 +8,14 @@ import type { LightParameters, LightState, LightView } from './model';
 import type { LightRenderer } from './LightRenderer';
 import { useLight } from './useLight';
 import './light.css';
+import { palette } from '../ui/palette';
 
 /** Render a compact normalized trace with an optional timeline marker. */
 function WavePlot({ values, label, start, end, marker }: { values: number[]; label: string; start: string; end: string; marker?: number }) {
   return <div className="light-plot"><svg viewBox="0 0 480 90" preserveAspectRatio="none" role="img" aria-label={label}>
-    {[20, 45, 70].map(y => <line key={y} x1="0" y1={y} x2="480" y2={y} stroke="#29404c" strokeDasharray="3 5"/>)}
-    <polyline points={values.map((v, i) => `${i / (values.length - 1) * 480},${45 - v * 32}`).join(' ')} fill="none" stroke="#9ce7c1" strokeWidth="1.8" vectorEffect="non-scaling-stroke"/>
-    {marker !== undefined && <line x1={marker * 480} x2={marker * 480} y1="5" y2="85" stroke="#e8c77c" strokeDasharray="3 3"/>}
+    {[20, 45, 70].map(y => <line key={y} x1="0" y1={y} x2="480" y2={y} stroke={palette.line} strokeDasharray="3 5"/>)}
+    <polyline points={values.map((v, i) => `${i / (values.length - 1) * 480},${45 - v * 32}`).join(' ')} fill="none" stroke={palette.accent} strokeWidth="1.8" vectorEffect="non-scaling-stroke"/>
+    {marker !== undefined && <line x1={marker * 480} x2={marker * 480} y1="5" y2="85" stroke={palette.dataShell1} strokeDasharray="3 3"/>}
   </svg><div><span>{start}</span><span>Normalized E projection</span><span>{end}</span></div></div>;
 }
 
@@ -136,7 +137,7 @@ export function LightExperiment({ active, onBack }: { active: boolean; onBack: (
           </form>
         </section>
         <section className="light-card light-inspector"><div className="light-card-heading"><h2>Pair {inspected.index + 1} close-up</h2><button onClick={() => setSelected(selected === null ? d.index : null)}>{selected === null ? 'Pin pair' : 'Follow active'}</button></div>
-          <svg className="light-pair-glyph" viewBox="0 0 200 135" role="img" aria-label="Selected pair in its rotation plane; fixed midpoint and opposite charge lobes"><circle cx="100" cy="66" r="59" fill="none" stroke="#2e424f" strokeDasharray="3 5"/><path d="M93 66H107M100 59V73" stroke="#a3cbb9"/><line x1={pairX} y1={pairY} x2={200 - pairX} y2={132 - pairY} stroke="#647d88"/>{inspected.active && <><circle cx={pairX} cy={pairY} r="10" fill="#d9916e"/><text x={pairX} y={pairY + 4} textAnchor="middle" fill="#18222a" fontSize="14">+</text><circle cx={200 - pairX} cy={132 - pairY} r="10" fill="#79c5e5"/><text x={200 - pairX} y={136 - pairY} textAnchor="middle" fill="#18222a" fontSize="14">−</text></>}<text x="100" y="130" textAnchor="middle" fill="#8cabb7" fontSize="9">Rotation plane · geometry exaggerated</text></svg>
+          <svg className="light-pair-glyph" viewBox="0 0 200 135" role="img" aria-label="Selected pair in its rotation plane; fixed midpoint and opposite charge lobes"><circle cx="100" cy="66" r="59" fill="none" stroke={palette.line2} strokeDasharray="3 5"/><path d="M93 66H107M100 59V73" stroke={palette.dataShell3}/><line x1={pairX} y1={pairY} x2={200 - pairX} y2={132 - pairY} stroke={palette.text4}/>{inspected.active && <><circle cx={pairX} cy={pairY} r="10" fill={palette.danger}/><text x={pairX} y={pairY + 4} textAnchor="middle" fill={palette.bg2} fontSize="14">+</text><circle cx={200 - pairX} cy={132 - pairY} r="10" fill={palette.dataNeg}/><text x={200 - pairX} y={136 - pairY} textAnchor="middle" fill={palette.bg2} fontSize="14">−</text></>}<text x="100" y="130" textAnchor="middle" fill={palette.accent2} fontSize="9">Rotation plane · geometry exaggerated</text></svg>
           <dl className="light-readouts"><div><dt>State</dt><dd>{inspected.active ? 'Induced' : s.tick < inspected.index * hopTicks(p) ? 'Awaiting induction' : inspected.progress < 1 ? 'Window exited' : 'Collapsed / retired'}</dd></div><div><dt>Fixed centre</dt><dd data-testid="light-pair-centre">{inspected.centre.toFixed(3)} L</dd></div><div><dt>Pair age / lifetime</dt><dd>{inspected.age.toFixed(3)} / {inspected.lifetime.toFixed(3)} τ</dd></div><div><dt>Signed rotation</dt><dd data-testid="light-rotation">{(inspected.sense * inspected.progress * 180).toFixed(1)}° / {inspected.sense * 180}°</dd></div><div><dt>Full separation</dt><dd>{inspected.separation.toFixed(3)} L</dd></div></dl>
           <button className="light-focus" onClick={() => { setSelected(inspected.index); setCamera('pair'); renderer.current?.cameraPreset('pair'); }}><Focus size={14}/>Orbit this fixed centre</button>
         </section>
