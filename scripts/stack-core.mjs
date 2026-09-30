@@ -53,6 +53,20 @@ export function reviewedHeadsInSummary(body) {
   return [...(body ?? '').matchAll(/Reviewing files that changed from the base of the PR and between [0-9a-f]{7,40} and ([0-9a-f]{7,40})/gi)].map(match => match[1]);
 }
 
+/**
+ * True while a manually requested CodeRabbit review is still running. Its latest "Action performed" reply says
+ * "Review triggered", and the review has not finished. A finished review shows either as the reply being edited to
+ * "Review finished" (reviews with no findings) or as a completed review object submitted after the reply (reviews with
+ * findings leave the reply as "Review triggered"). CodeRabbit writes the summary's reviewed range when a review starts,
+ * so neither the summary nor the PR may be treated as reviewed until it finishes.
+ */
+export function reviewInProgress(comments, reviews = []) {
+  const replies = (comments ?? []).filter(c => c.user?.login === REVIEWER && /Action performed/i.test(c.body ?? ''));
+  const latest = replies.sort((a, b) => (a.created_at < b.created_at ? -1 : a.created_at > b.created_at ? 1 : 0)).at(-1);
+  if (!latest || !/Review triggered/i.test(latest.body) || /Review finished/i.test(latest.body)) return false;
+  return !(reviews ?? []).some(r => r.user?.login === REVIEWER && isReviewBody(r.body) && (r.submitted_at ?? '') > latest.created_at);
+}
+
 /** Recognise a manual CodeRabbit review request comment. */
 export function isTriggerComment(body) {
   return /^\s*@coderabbitai\s+(full\s+)?review\b/i.test(body ?? '');
@@ -97,6 +111,7 @@ export function nextSlot({ lastTriggerAt = 0, rateLimitUntil = 0 }) {
 export function reviewState(pr) {
   if (pr.draft) return 'draft';
   if (pr.checks === 'fail') return 'failing';
+  if (pr.reviewInProgress) return 'triggered';
   const evidence = pr.reviewedPatchIds ?? [];
   const reviewed = pr.patchId && evidence.length ? evidence.includes(pr.patchId) : Boolean(pr.reviewedShas?.includes(pr.head));
   if (reviewed) return pr.openThreads > 0 || pr.outsideFindings > 0 ? 'reviewed' : 'clean';

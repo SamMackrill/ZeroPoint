@@ -5,7 +5,7 @@ import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { withLock } from './state-lock.mjs';
-import { REVIEWER, diffSnapshots, mergeState, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from './stack-core.mjs';
+import { REVIEWER, diffSnapshots, mergeState, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort, reviewInProgress } from './stack-core.mjs';
 
 const args = process.argv.slice(2), command = args[0], flags = new Set(args.filter(a => a.startsWith('--')));
 const option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -132,10 +132,11 @@ function gather(state) {
       headCommittedAt: Date.parse(run('gh', ['api', `repos/${repo}/commits/${pr.headRefOid}`, '--jq', '.commit.committer.date'])),
       reviewedShas: [
         ...reviews.filter(r => r.user?.login === REVIEWER && isReviewBody(r.body)).map(r => r.commit_id),
-        ...comments.filter(c => c.user?.login === REVIEWER).flatMap(c => reviewedHeadsInSummary(c.body)).map(head => sha(head) ?? head),
+        // The summary names its range when a review starts, so it only counts once the review has finished.
+        ...(reviewInProgress(comments, reviews) ? [] : comments.filter(c => c.user?.login === REVIEWER).flatMap(c => reviewedHeadsInSummary(c.body)).map(head => sha(head) ?? head)),
       ],
       lastTriggerAt: triggers.length ? Math.max(...triggers) : 0,
-      checks: checksFor(pr.number), openThreads: openThreads(repo, pr.number),
+      checks: checksFor(pr.number), openThreads: openThreads(repo, pr.number), reviewInProgress: reviewInProgress(comments, reviews),
       // Changes whenever CodeRabbit posts or edits a comment or review, so the watcher can report activity of any kind.
       activity: (items => `${items.length}@${items.map(x => x.updated_at ?? x.submitted_at ?? '').sort().pop() ?? ''}`)([...reviews, ...comments].filter(x => x.user?.login === REVIEWER)),
       // The PR's own head commit, not whatever a same-named ref resolves to.
@@ -171,7 +172,8 @@ function status() {
     prs: prs.map(({ body, reviewedShas, ...rest }) => ({ ...rest, head: rest.head.slice(0, 7) })) };
   if (flags.has('--json')) { console.log(JSON.stringify(summary, null, 2)); return; }
   for (const pr of prs) say(`#${pr.number}`.padEnd(6), pr.branch.padEnd(26), `← ${pr.base}`.padEnd(24), pr.head.slice(0, 7), `ci:${pr.checks}`.padEnd(12), pr.state.padEnd(11), `threads:${pr.openThreads}`, pr.outsideFindings ? `outside-diff:${pr.outsideFindings}` : '');
-  say(`Review gate ${summary.gateOpen ? 'OPEN' : `closed until ${summary.nextSlot}`}; next in queue: ${summary.next ? `#${summary.next}` : 'none'}`);
+  const until = new Date(slot).toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
+  say(`Review gate ${summary.gateOpen ? 'OPEN' : `closed until ${until}`}; next in queue: ${summary.next ? `#${summary.next}` : 'none'}`);
 }
 
 /** Request a CodeRabbit review for the highest-priority queued PR if the hourly gate is open. */
@@ -295,9 +297,14 @@ function snapshot(state) {
   };
 }
 
-/** Unread GitHub notifications for this repository newer than `since` (read-only: nothing is marked as read). */
-function notificationsSince(repo, since) {
-  const items = ghJson(['api', 'notifications', '--paginate', '--slurp']).flat().filter(n => n.repository?.full_name === repo && n.updated_at > (since ?? ''));
+/**
+ * Unread GitHub notifications for this repository newer than `since` (read-only: nothing is marked as read). Stack PRs
+ * and CI runs on stack branches are skipped because the snapshot diff already reports them; what remains is activity
+ * outside the stack, which matters for the main freeze.
+ */
+function notificationsSince(repo, since, stackNumbers) {
+  const onStack = n => stackNumbers.has(Number(/\/pulls\/(\d+)$/.exec(n.subject?.url ?? '')?.[1])) || /\bfor ui\/\d{2}[a-z]?-/.test(n.subject?.title ?? '');
+  const items = ghJson(['api', 'notifications', '--paginate', '--slurp']).flat().filter(n => n.repository?.full_name === repo && n.updated_at > (since ?? '') && !onStack(n));
   return items.map(n => ({ at: n.updated_at, line: `GitHub ${n.reason.replaceAll('_', ' ')}: ${n.subject?.title ?? ''}` }));
 }
 
@@ -320,7 +327,7 @@ async function watch() {
       run('git', ['fetch', '--quiet', '--prune', 'origin'], { allowFail: true });
       const state = loadState(), next = snapshot(state), seen = state.watch?.notifiedAt;
       const lines = diffSnapshots(state.watch?.last, next);
-      const notes = notificationsSince(next.repo, seen);
+      const notes = notificationsSince(next.repo, seen, new Set(Object.keys(next.prs).map(Number)));
       state.watch = { last: next, notifiedAt: notes.map(n => n.at).concat(seen ?? '').sort().pop() };
       saveObservations(state);
       for (const line of [...lines, ...notes.map(n => n.line)]) console.log(`[${stamp()}] ${line}`);

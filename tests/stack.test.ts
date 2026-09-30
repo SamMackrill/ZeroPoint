@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, diffSnapshots, isReviewBody, mergeState, outsideDiffFindings, reviewedHeadsInSummary, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
+import { BUFFER_MS, GATE_MS, NAV_END, NAV_START, diffSnapshots, isReviewBody, reviewInProgress, mergeState, outsideDiffFindings, reviewedHeadsInSummary, isTriggerComment, isTrustedTrigger, mergeReady, rateLimitDeadline, nextSlot, parseRateLimitWait, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort } from '../scripts/stack-core.mjs';
 
 /** Build a queued-by-default PR fixture for scheduling tests. */
 const pr = (branch: string, extra: Record<string, unknown> = {}) => ({ number: Number(branch.slice(3, 5)) + 100, branch, head: `sha-${branch}`, draft: false, checks: 'pass', openThreads: 0, reviewedShas: [] as string[], lastTriggerAt: 0, headCommittedAt: 1000, ...extra });
@@ -40,6 +40,21 @@ describe('review gate', () => {
     // A reviewed diff with an unanswered outside-diff finding is not clean, even with no open threads.
     expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'], outsideFindings: 1 }))).toBe('reviewed');
     expect(mergeReady(pr('ui/00-delivery', { base: 'main', reviewedShas: ['sha-ui/00-delivery'], outsideFindings: 1 }))).toBe(false);
+  });
+  it('treats a review as running until CodeRabbit reports it finished', () => {
+    const reply = (body: string, created_at: string) => ({ user: { login: 'coderabbitai[bot]' }, body, created_at });
+    expect(reviewInProgress([reply('Action performed: Review triggered.', '2026-09-29T19:26:59Z')])).toBe(true);
+    expect(reviewInProgress([reply('Action performed: Review finished.', '2026-09-29T15:42:30Z')])).toBe(false);
+    expect(reviewInProgress([reply('Action performed: Review finished.', '2026-09-29T15:42:30Z'), reply('Action performed: Review triggered.', '2026-09-29T19:26:59Z')])).toBe(true);
+    expect(reviewInProgress([])).toBe(false);
+    // A review with findings leaves the reply as "Review triggered"; its completed review object marks it finished.
+    const triggered = [reply('Action performed: Review triggered.', '2026-09-29T19:26:59Z')];
+    const review = (submitted_at: string) => ({ user: { login: 'coderabbitai[bot]' }, body: '**Actionable comments posted: 3**', submitted_at });
+    expect(reviewInProgress(triggered, [review('2026-09-29T19:32:11Z')])).toBe(false);
+    expect(reviewInProgress(triggered, [review('2026-09-29T15:47:37Z')])).toBe(true);
+    // Even with earlier review evidence, a PR under review is neither clean nor mergeable.
+    expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'], reviewInProgress: true }))).toBe('triggered');
+    expect(mergeReady(pr('ui/00-delivery', { base: 'main', reviewedShas: ['sha-ui/00-delivery'], reviewInProgress: true }))).toBe(false);
   });
   it('reads reviewed heads from the summary when a clean review posts no review object', () => {
     const summary = ['No actionable comments were generated in the recent review.', 'Commits', 'Reviewing files that changed from the base of the PR and between 5d31e8f42651739eb0d30b89b6be2f45ef842f13 and 29bafa0855d2fe55f6cf8cdae5ab736f07d4b4f6.'].join(String.fromCharCode(10));
