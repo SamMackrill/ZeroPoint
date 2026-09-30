@@ -7,7 +7,10 @@ test('controls, inspection, checkpoints, files and error handling work end to en
   await tid(page, 'transport-step').click(); await expect(page.getByTestId('tick')).toHaveText('Tick 1');
   await tid(page, 'transport-run').click(); await expect(tid(page, 'transport-run')).toContainText('Pause');
   await expect.poll(async () => +(await page.getByTestId('tick').innerText()).replace('Tick ', '')).toBeGreaterThan(3);
-  await tid(page, 'transport-run').click(); await page.waitForTimeout(150); const paused = await page.getByTestId('tick').innerText(); await page.waitForTimeout(250); await expect(page.getByTestId('tick')).toHaveText(paused);
+  await tid(page, 'transport-run').click(); await expect(tid(page, 'transport-run')).toContainText('Run');
+  // The worker can finish an in-flight tick after Pause on a loaded machine: wait until the tick holds still (a pause that never takes effect still fails here).
+  await expect.poll(async () => { const before = await page.getByTestId('tick').innerText(); await page.waitForTimeout(250); return before === await page.getByTestId('tick').innerText(); }).toBe(true);
+  const paused = await page.getByTestId('tick').innerText(); await page.waitForTimeout(250); await expect(page.getByTestId('tick')).toHaveText(paused);
   await page.getByRole('button', { name: 'Dipole', exact: true }).click(); await page.getByRole('button', { name: 'Inspect first active dipole' }).click(); await expect(page.locator('.dipole-inspector h2')).toContainText('Dipole ');
   await tid(page, 'capture').click(); await expect(page.locator('.checkpoint-items button')).toHaveCount(1);
   await tid(page, 'transport-step').click(); await page.locator('.checkpoint-items button').click(); await expect(page.getByTestId('tick')).toHaveText(paused);

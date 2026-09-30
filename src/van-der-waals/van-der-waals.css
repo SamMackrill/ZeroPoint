@@ -1,6 +1,6 @@
 .vdw-app {
   min-height: 100vh;
-  background: radial-gradient(ellipse at 35% 0%,#172732,#0c141e 65%);
+  background: radial-gradient(ellipse at 35% 0%,var(--bg-3),var(--bg-1) 65%);
 }
 
 .vdw-main {
@@ -15,7 +15,7 @@
   gap: 16px;
   margin-bottom: 30px;
   font-size: 12px;
-  color: #9bb2c2;
+  color: var(--text-2);
 }
 
 .vdw-nav button,
@@ -43,18 +43,18 @@
 .vdw-heading p {
   font-size: 14px;
   line-height: 1.7;
-  color: #93aaba;
+  color: var(--text-3);
 }
 
 .vdw-badge {
   font: 9px var(--mono);
   letter-spacing: .8px;
   white-space: nowrap;
-  color: #a2c8b6;
-  border: 1px solid #38584e;
+  color: var(--text-2);
+  border: 1px solid var(--line-2);
   border-radius: 20px;
   padding: 9px 12px;
-  background: #19302b;
+  background: var(--accent-bg);
 }
 
 .vdw-stages {
@@ -69,15 +69,15 @@
   align-items: center;
   gap: 15px;
   padding: 19px 17px;
-  border: 1px solid #2d414e;
+  border: 1px solid var(--line-2);
   border-radius: 7px;
   text-align: left;
-  background: #121f2b;
+  background: var(--bg-2);
 }
 
 .vdw-stages button>span {
   font: 13px var(--mono);
-  color: #7c95a4;
+  color: var(--text-3);
 }
 
 .vdw-stages strong {
@@ -88,24 +88,24 @@
 
 .vdw-stages small {
   display: block;
-  color: #8099ab;
+  color: var(--text-3);
   font-size: 11px;
   margin-top: 7px;
 }
 
 .vdw-stages button>svg {
   margin-left: auto;
-  color: #6e938a;
+  color: var(--text-3);
 }
 
 .vdw-stages button[aria-pressed=true] {
-  border-color: #739f8c;
-  background: #1b322f;
+  border-color: var(--text-3);
+  background: var(--accent-bg);
 }
 
 .vdw-stages button[aria-pressed=true]>span,
 .vdw-stages button[aria-pressed=true] strong {
-  color: #ade7ce;
+  color: var(--accent);
 }
 
 .vdw-layout {
@@ -118,9 +118,9 @@
 .vdw-scene-card,
 .vdw-controls,
 .vdw-card {
-  border: 1px solid #304552;
+  border: 1px solid var(--line-2);
   border-radius: 8px;
-  background: #101e2a;
+  background: var(--bg-2);
   overflow: hidden;
   min-width: 0;
 }
@@ -132,13 +132,13 @@
   gap: 10px;
   font: 10px var(--mono);
   letter-spacing: .5px;
-  color: #8ba3b2;
+  color: var(--text-3);
   padding: 19px 21px;
 }
 
 .vdw-card-heading a {
   font: 11px 'DM Sans',sans-serif;
-  color: #b9c3a8;
+  color: var(--text-2);
   letter-spacing: 0;
 }
 
@@ -152,7 +152,7 @@
 }
 
 .vdw-diagram {
-  background: radial-gradient(ellipse at center,#182c39,#0c1925);
+  background: radial-gradient(ellipse at center,var(--bg-3),var(--bg-1));
   overflow-x: auto;
 }
 
@@ -160,7 +160,7 @@
   display: block;
   width: 100%;
   height: auto;
-  fill: #c2d4df;
+  fill: var(--text-2);
 }
 
 .vdw-diagram text {
@@ -169,12 +169,12 @@
 
 .vdw-diagram .vdw-svg-muted {
   font-size: 14px;
-  fill: #8ea9b8;
+  fill: var(--text-3);
 }
 
 .vdw-diagram .vdw-mode-label {
   font: 12px var(--mono);
-  fill: #76958f;
+  fill: var(--text-3);
 }
 
 .vdw-legend {
@@ -183,10 +183,10 @@
   gap: 16px;
   flex-wrap: wrap;
   padding: 15px 21px;
-  border-bottom: 1px solid #283e4b;
-  background: #0d1a26;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-1);
   font-size: 10px;
-  color: #9bb2c1;
+  color: var(--text-2);
 }
 
 .vdw-legend>span {
@@ -198,7 +198,7 @@
 .vdw-legend small {
   margin-left: auto;
   font-size: 10px;
-  color: #6f899c;
+  color: var(--text-3);
 }
 
 .vdw-legend i {
@@ -208,15 +208,15 @@
 }
 
 .vdw-positive {
-  background: #f5b88d;
+  background: var(--warn);
 }
 
 .vdw-negative {
-  background: #82cdec;
+  background: var(--data-neg);
 }
 
 .vdw-mint {
-  background: #9ce3c5;
+  background: var(--accent);
 }
 
 .vdw-explanation {
@@ -233,7 +233,7 @@
 .vdw-app p {
   font-size: 13px;
   line-height: 1.85;
-  color: #a0b5c5;
+  color: var(--text-2);
 }
 
 .vdw-controls {
@@ -247,14 +247,14 @@
 .vdw-slider {
   display: block;
   font-size: 12px;
-  color: #b4c9d3;
+  color: var(--text-2);
   margin-bottom: 21px;
 }
 
 .vdw-slider output {
   float: right;
   font: 11px var(--mono);
-  color: #b5e3ca;
+  color: var(--accent);
 }
 
 .vdw-slider input {
@@ -265,15 +265,15 @@
 .vdw-app .vdw-control-note {
   font-size: 11px;
   line-height: 1.8;
-  color: #8ea7b8;
+  color: var(--text-3);
 }
 
 .vdw-equation {
   font: 14px/2 var(--mono);
-  color: #ade4ca;
-  border: 1px solid #304c49;
+  color: var(--accent);
+  border: 1px solid var(--line-2);
   border-radius: 5px;
-  background: #142924;
+  background: var(--bg-3);
   padding: 13px 15px;
   margin: 20px 0;
 }
@@ -285,12 +285,12 @@
   gap: 10px;
   width: 100%;
   margin-top: 28px;
-  border: 1px solid #456859;
-  background: #25483b;
+  border: 1px solid var(--accent-line);
+  background: var(--accent-bg);
   border-radius: 5px;
   padding: 12px;
   font-size: 12px;
-  color: #c4eed6;
+  color: var(--text);
   text-align: left;
 }
 
@@ -304,12 +304,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #28483e;
-  border: 1px solid #527764;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-line);
   border-radius: 5px;
   padding: 10px 12px;
   font-size: 12px;
-  color: #bce7d0;
+  color: var(--accent);
 }
 
 .vdw-readouts {
@@ -318,18 +318,18 @@
 
 .vdw-readouts>div {
   padding: 13px 0;
-  border-bottom: 1px solid #2b3e49;
+  border-bottom: 1px solid var(--line);
 }
 
 .vdw-readouts dt {
   font-size: 11px;
-  color: #8fa9b9;
+  color: var(--text-3);
 }
 
 .vdw-readouts dd {
   margin: 8px 0 0;
   font: 19px var(--mono);
-  color: #d7eadf;
+  color: var(--text);
   overflow-wrap: anywhere;
 }
 
@@ -338,12 +338,12 @@
   align-items: center;
   gap: 8px;
   font-size: 11px;
-  color: #adc3cf;
+  color: var(--text-2);
   line-height: 1.6;
 }
 
 .vdw-check input {
-  accent-color: #9ce3c5;
+  accent-color: var(--accent);
 }
 
 .vdw-pressure-details {
@@ -373,7 +373,7 @@
 
 .vdw-plot text {
   font: 12px var(--mono);
-  fill: #92acba;
+  fill: var(--accent-2);
 }
 
 .vdw-gap-presets {
@@ -386,15 +386,15 @@
 .vdw-gap-presets button {
   font: 11px var(--mono);
   padding: 8px 12px;
-  border: 1px solid #3c535e;
+  border: 1px solid var(--line-2);
   border-radius: 4px;
-  color: #a7c5d2;
+  color: var(--text-2);
 }
 
 .vdw-gap-presets button[aria-pressed=true] {
-  background: #294238;
-  border-color: #79aa91;
-  color: #bbebce;
+  background: var(--accent-bg);
+  border-color: var(--accent-2);
+  color: var(--accent);
 }
 
 .vdw-context {
@@ -403,8 +403,8 @@
   gap: 35px;
   margin: 30px 0;
   padding: 25px 0;
-  border-top: 1px solid #2b3e49;
-  border-bottom: 1px solid #2b3e49;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
 }
 
 .vdw-context h2 {
@@ -416,9 +416,9 @@
 }
 
 .vdw-sources {
-  border: 1px solid #304552;
+  border: 1px solid var(--line-2);
   border-radius: 7px;
-  background: #101d28;
+  background: var(--bg-2);
 }
 
 .vdw-sources summary {
@@ -428,18 +428,18 @@
   padding: 20px;
   cursor: pointer;
   font-size: 13px;
-  color: #bed3d9;
+  color: var(--text-2);
 }
 
 .vdw-sources summary:focus-visible {
-  outline: 2px solid var(--mint);
+  outline: 2px solid var(--accent);
   outline-offset: 4px;
 }
 
 .vdw-sources summary>span {
   margin-left: auto;
   font-size: 11px;
-  color: #8ba5b5;
+  color: var(--text-3);
 }
 
 .vdw-source-content {
@@ -486,12 +486,12 @@
 .vdw-source-grid strong {
   display: block;
   font-weight: 500;
-  color: #c5d8de;
+  color: var(--text);
 }
 
 .vdw-source-grid span {
   display: block;
-  color: #8aa3b5;
+  color: var(--text-3);
   margin-top: 4px;
 }
 
@@ -504,7 +504,7 @@
 }
 
 .vdw-source-content a {
-  color: #b3d6bc;
+  color: var(--accent);
 }
 
 .vdw-source-content p a {
