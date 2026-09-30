@@ -1,5 +1,5 @@
 // Stacked-PR helper for the UI redesign: status, CodeRabbit review gate, worktrees, restack, retarget, push and navigator.
-// Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|waive|push|nav|port> [options]. See docs/ui-redesign-plan.html §16.
+// Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|waive|push|nav|snapshots|port> [options]. See docs/ui-redesign-plan.html §16.
 import { spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -349,6 +349,18 @@ function waive() {
   saveState(state);
 }
 
+/** Download the Linux visual baselines CI recorded for the current branch into tests/visual/__screenshots__ (then review and commit). */
+function snapshots() {
+  const branch = git(['branch', '--show-current']), top = git(['rev-parse', '--show-toplevel']);
+  const [latest] = ghJson(['run', 'list', '--branch', branch, '--workflow', 'CI', '--limit', '1', '--json', 'databaseId,headSha,status']);
+  if (!latest) throw new Error(`No CI run found for ${branch}.`);
+  if (latest.status !== 'completed') throw new Error(`CI run ${latest.databaseId} for ${branch} is still ${latest.status}.`);
+  if (latest.headSha !== sha('HEAD')) say(`Warning: run ${latest.databaseId} is for ${latest.headSha.slice(0, 7)}, not HEAD.`);
+  say(`${dryRun ? '[dry run] ' : ''}Downloading visual-snapshots from run ${latest.databaseId}.`);
+  if (!dryRun) run('gh', ['run', 'download', String(latest.databaseId), '-n', 'visual-snapshots', '-D', join(top, 'tests', 'visual', '__screenshots__')]);
+  say(run('git', ['status', '--short', 'tests/visual'], { cwd: top }) || 'Baselines unchanged.');
+}
+
 /** Force-push (with lease) every live local layer whose tip differs from its remote branch. */
 function push() {
   for (const branch of sortStack(localLayers(loadState()).map(b => ({ branch: b }))).map(l => l.branch)) pushBranch(branch);
@@ -368,6 +380,6 @@ function nav() {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 
-const commands = { status, trigger, watch, new: newLayer, restack, retarget, merge, waive, push, nav, port: () => console.log(stackPort(args[1] ?? git(['branch', '--show-current'])) ?? 5174) };
-if (!commands[command]) { console.error('Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|waive|push|nav|port> [--dry-run] [--json] [--pr N] [--full] [--force] [--base ref]'); process.exit(2); }
+const commands = { status, trigger, watch, new: newLayer, restack, retarget, merge, waive, push, nav, snapshots, port: () => console.log(stackPort(args[1] ?? git(['branch', '--show-current'])) ?? 5174) };
+if (!commands[command]) { console.error('Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|waive|push|nav|snapshots|port> [--dry-run] [--json] [--pr N] [--full] [--force] [--base ref]'); process.exit(2); }
 Promise.resolve().then(() => commands[command]()).catch(error => { console.error(error instanceof Error ? error.message : error); process.exit(1); });

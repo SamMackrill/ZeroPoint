@@ -50,6 +50,13 @@ The UI redesign in `docs/ui-redesign-plan.html` ships as stacked PRs `UI 00`–`
 7. **Report.** Summarise the wake in one or two lines: merged, fixed, triggered, opened, deployed, blocked. Send a push notification when you merge, deploy, or need a decision (the palette gate, or an ambiguous design choice).
 8. **Watch and schedule.** Keep a Monitor running `node scripts/stack.mjs watch` (timeout at the maximum) and re-arm it when it expires; its lines (CI results, review state, CodeRabbit activity, findings, `main` moving, the gate opening, GitHub notifications) are the primary wake signal. Because it saves its last snapshot, a re-armed watcher first reports what changed while it was down. Use `/loop` wakeups only as a 30–60 minute fallback heartbeat, and read the clock (`date`) rather than estimating times. Report times in BST.
 
+## Guards (from UI 01b)
+
+- **Visual baselines** (`tests/visual`, Linux CI only): CI writes missing baselines and uploads them as the `visual-snapshots` artifact. After a layer's first CI run, or after an *intended* visual change, run `node scripts/stack.mjs snapshots` in its worktree, look at every new or changed PNG, and commit them with the layer. A visual failure on CI that the layer did not intend is a bug: fix it, don't re-baseline it. The failure's diff images are in the `playwright-results` artifact.
+- **Render budget** (`tests/browser/render-budget.spec.ts`): renders per lab while stepping, with every lab mounted. Re-record with `ZP_RECORD_BUDGET=1` only when a layer intentionally reduces renders, and say so in the PR body.
+- **Copy inventory** (`tests/copy-inventory.test.ts`): every 8+ word explanation or caveat must survive somewhere in `src/`. New prose gets added with `node scripts/copy-inventory.mjs --write`. Removing or rewording inventoried prose needs an explicit reason in the PR body.
+- **Bundle size**: paste `node scripts/bundle-size.mjs` (after `npm run build`) into each PR body. CI also writes it to the run summary.
+
 ## Checks (every push)
 
 ```bash

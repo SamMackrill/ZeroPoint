@@ -12,6 +12,7 @@ import { LightExperiment } from '../light/LightExperiment';
 import { ElectronExperiment } from '../electron/ElectronExperiment';
 import { VanDerWaalsExperiment } from '../van-der-waals/VanDerWaalsExperiment';
 import { CasimirExperiment } from '../casimir/CasimirExperiment';
+import { DevProfiler } from './DevProfiler';
 
 const presets = [
   { id: 'balanced', title: 'Balanced medium', description: 'Explore the fluctuation lifecycle', icon: Waves, params: DEFAULT_PARAMETERS },
@@ -42,7 +43,8 @@ export function App() {
   const openElectron = () => { setVisitedElectron(true); setExperiment('electron'); };
   const openCasimir = () => { setVisitedCasimir(true); setExperiment('casimir'); };
   const openVdw = () => { setVisitedVdw(true); setExperiment('vdw'); };
-  return <><MediumApp active={experiment === 'medium'} onOpenLight={openLight} onOpenElectron={openElectron} onOpenCasimir={openCasimir} onOpenVdw={openVdw}/>{visitedLight && <LightExperiment active={experiment === 'light'} onBack={() => setExperiment('medium')}/>} {visitedElectron && <ElectronExperiment active={experiment === 'electron'} onBack={() => setExperiment('medium')}/>} {visitedCasimir && <CasimirExperiment active={experiment === 'casimir'} onBack={() => setExperiment('medium')}/>} {visitedVdw && <VanDerWaalsExperiment active={experiment === 'vdw'} onBack={() => setExperiment('medium')}/>}</>;
+  // Each lab is profiled separately in development so the render budget can catch one lab re-rendering another.
+  return <><DevProfiler id="medium"><MediumApp active={experiment === 'medium'} onOpenLight={openLight} onOpenElectron={openElectron} onOpenCasimir={openCasimir} onOpenVdw={openVdw}/></DevProfiler>{visitedLight && <DevProfiler id="light"><LightExperiment active={experiment === 'light'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedElectron && <DevProfiler id="electron"><ElectronExperiment active={experiment === 'electron'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedCasimir && <DevProfiler id="casimir"><CasimirExperiment active={experiment === 'casimir'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedVdw && <DevProfiler id="vdw"><VanDerWaalsExperiment active={experiment === 'vdw'} onBack={() => setExperiment('medium')}/></DevProfiler>}</>;
 }
 
 /** Render and coordinate the medium lifecycle laboratory. */

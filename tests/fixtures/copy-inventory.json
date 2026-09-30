@@ -1,0 +1,458 @@
+[
+  {
+    "file": "src/app/App.tsx",
+    "text": "Run or step the experiment to collect samples"
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": ". Controls, diagnostics and experiment files remain available."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Experiment files must be smaller than 8 MB."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "0.5 L₀ slab · binned energy, not pressure"
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Reduced lifecycle model. Physical scales are mapped to an observable clock."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "A space to observe. A model to question."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Observe pairs rotate, separate and collapse around fixed centres."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Changes apply at the next available model tick."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Lobe-centre distance at midlife. The pair centre stays fixed."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Pause and click a dipole in the field, or select one here."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Selection follows this generation only. When it vanishes, its energy returns to the reservoir."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "This is a reproducible, reduced visualization of the blueprint’s fluctuation lifecycle. It is not a complete ZPF force solver or experimental validation of the hypothesis."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "A periodic 8 L₀ cube, at most 10,000 representative dipoles. The population is a finite sample, not a literal Planck-resolved medium."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "The energy slice bins live dipole energy in a 0.5 L₀ slab. It is not pressure or an emergent force."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Torque, emergent constants, stable shells, force propagation, exchange events and cosmology need additional equations and are not implemented in this release."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "The medium laboratory, light induction sequence and electron polarization experiment are available. Further experiments and calculated force responses remain planned."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Explore a stationary electron, local spin rotation and a moving electron’s magnetic response. Calculated torque and pressure forces remain future work."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Van der Waals / Casimir pressure · available"
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Induce and correlate dipoles, then explore adjustable plates and the ideal Casimir pressure, force and energy. The microscopic zepton boundary model remains planned."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Follow an energy wave through successive induced, counter-rotating electron–positron pairs. Inspect fixed pair centres, local separation and collapse, surrounding field response and each induction handoff."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Requires event maps, complete conservation ledgers and a tired-light loss law."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Inspect a Zepton to follow its short lifetime."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Extended Casimir effect · short-lived Zeptons and local van der Waals pressure."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Random births at the meeting point push outwards"
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Orange + / blue − lobes · mint rings: births · yellow arrows: net push"
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Inner and outer pressure history in units of ambient pressure P zero"
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Gap average along the axis · outer probes beyond each charge"
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "A weak or neutral midpoint leaves new dipoles disordered. Neighbouring dipoles turn toward their local field."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Each new pair first expands and pushes back, then contracts. Dashed links show neighbouring pairs moving inward."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Charges are held so you can watch the surrounding field."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Observation limit reached. Reset to repeat the motion."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Dipoles continually appear with random orientations and turn in the field of each electron."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Opposing alignments deflect near the middle. Fresh dipoles fill gaps and expand against neighbours."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Repeated gap births sustain higher local pressure, producing an outward motion tendency."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Between opposite charges, dipoles orient in a continuous chain."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "New pairs push back as they grow. During collapse, adjacent pairs shift inward toward the voids."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Contraction outweighs growth in this illustration. Higher outer pressure pushes the charges together."
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Fleming’s proposed mechanism · qualitative pressure, arbitrary spatial units"
+  },
+  {
+    "file": "src/casimir/CasimirExperiment.tsx",
+    "text": "Section 4 · Figures 3 & 4 ↗"
+  },
+  {
+    "file": "src/casimir/Scene.tsx",
+    "text": "Dynamic Zepton field with signed dipoles, interaction arrows and local pressure colour. Use Inspect newest Zepton for the accessible lifetime view."
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
+    "text": "Opposite charges with opposite velocities give parallel conventional-current contributions"
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
+    "text": "The two charge ends move in opposite directions around their fixed midpoint"
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
+    "text": "Fixed midpoint · rotation component only · magnified"
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
+    "text": "The negative charge reverses the current sign: (+e)v+ and (−e)v− point together. This illustrates why the two charge motions can reinforce magnetism."
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
+    "text": "The + and − ends have opposite rotation velocities while their midpoint stays fixed. Switch to current to include each charge’s sign."
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
+    "text": "This site lies on the preferred axis, where this display has no spin turn."
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
+    "text": "Arrows show direction, not speed. This is a local current comparison, not an integrated magnetic moment or a calculation of g ≈ 2. Separation and collapse velocities are omitted. The main timeline drives this pair."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Start with an unpolarized cubic medium. The electron appears, and nearby pairs align first as a three-dimensional electric pattern resolves."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Following Fig. 2: neighboring zeptons turn locally as they polarize around the stationary electron. Compare the spherical field and equatorial section, then inspect how opposite charge motions contribute to current. Alternating whole bands is an optional extension."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "As the electron passes, nearby pairs turn locally. Reverse its velocity to reverse the motion-induced magnetic field."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "View changed. The sequence is paused at its start."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Updated an older experiment to the cubic medium and revised polarization sequence."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Exported the full analytic reference sequence, including future samples and the separate intrinsic-dipole reference."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Curled arrows turn at each pair · shaded plane links to 2D"
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Faraday lines follow dipoles · field arrows are references"
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Click a pair to inspect its fixed centre"
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Selection off · drag to orbit the volume"
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Shell sampling is hidden. Choose Shell close-up to restore the linked views."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "toward the core. Reverse the spin projection in Electron & probe controls to reverse every shell. Playback, step and timeline control both views together."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Alternating complete zepton shells is an illustrative extension."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Shared preference illustrates the local coordination in §3."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Fleming’s §4 counter-rotating charge shells are the inner + and outer − ends of a dipole, rather than a stated rule for successive whole zepton shells. The shell spacing, magnified turns and capped 1/r² rate are display assumptions."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Shared local preference selected, following the video’s coordination explanation at 4:44."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Electric Y, motion magnetic Z, and intrinsic magnetic Z reference components at the fixed probe"
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "A bare negative polarizer aligns positive dipole ends inward. Fleming relates the surrounding polarization flux to unit charge."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Neighboring partially aligned dipoles favor a common rotation sense. Their centres and the bare core need not move."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Read extracted source details & model decisions ↗"
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Probe lies inside the 0.3 R numerical mask. Field values are excluded."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "This sample is currently inside the electron’s numerical mask."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Enable the zepton selector, then click a pair or choose Nearest to probe. Selection pins a fixed sampling location across successive pair generations."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Faraday lines trace the neighboring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative. Magnetic guides follow the motion-induced rotation direction."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions."
+  },
+  {
+    "file": "src/electron/ElectronExperiment.tsx",
+    "text": "Fixed zepton centres · local worker · source-linked model"
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "Cross-section of a variable Gauss sphere around a stationary negative electron"
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "Increase the sphere radius. The inward field falls as 1/r² while the area grows as r², keeping the enclosed charge constant."
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "Effective speed versus radius at the selected pattern rate, with a speed-of-light threshold"
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "Above the proposed limit: this trial radius would be excluded at this rate."
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "At the proposed limit: the effective shell speed equals c."
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "Below the proposed limit: the effective shell speed is less than c."
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "These controls explore references independently of the main scene and its saved timeline."
+  },
+  {
+    "file": "src/electron/SpinSection.tsx",
+    "text": "Positive ends face inward. Curled arrows turn around each fixed pair centre."
+  },
+  {
+    "file": "src/electron/SpinSection.tsx",
+    "text": "Successive zepton bands reverse their local turn preference."
+  },
+  {
+    "file": "src/electron/SpinSection.tsx",
+    "text": "Curled arrows show each zepton’s local turn. The dot at its centre stays fixed while the +/− pair separates, aligns and collapses."
+  },
+  {
+    "file": "src/electron/SpinSection.tsx",
+    "text": "Compare with Fleming’s Fig. 2 & §3 ↗"
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "Parameters applied. The light sequence is paused at its start."
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "Light files must be smaller than 100 KB."
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "Exported the complete prescribed sequence, including future timeline samples."
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "Follow an energy wave through successive, locally rotating pairs."
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "is induced at its own fixed centre, with the opposite rotation sense."
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "τ. Step or scrub to inspect its separation and collapse."
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "Electric projection at the fixed probe over elapsed time"
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "Wave, field response and energy partition are prescribed illustrations of Fleming’s mechanism."
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "Assigned energy bookkeeping. Field energy and angular momentum are not calculated from a force solver."
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "Successive dipoles make half-turns over half-wavelength intervals. The surrounding response and finite pulse shape are visual conventions."
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "Paused stepping is available. At 1×, one second of playback represents $"
+  },
+  {
+    "file": "src/light/LightExperiment.tsx",
+    "text": "Fixed centres · prescribed c · local worker"
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Neutral atom and induced dipole: an applied electric field displaces the negative charge cloud opposite to the field"
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Net charge stays zero. The charge distribution changes."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Two correlated fluctuating dipoles with fixed centres and inward arrows showing their average London attraction"
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "nanometres apart, with balanced background stress and an inward net pressure difference. Mode shapes and arrow scales are illustrative."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Logarithmic plot of attractive pressure magnitude versus plate gap. Doubling the gap reduces pressure magnitude sixteenfold."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Follow an induced dipole into a collective force — and a measurable pressure difference."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "A fluctuating dipole couples to its neighbour. Their correlated fluctuations lower the pair’s interaction energy, producing London dispersion attraction. Run the schematic to see both moments reverse while the mean attraction remains inward. Fleming extends this dipole picture to the zero-point field."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "In Fleming’s picture, the surrounding fluctuations press on both faces of each plate. Boundaries change the field between them, leaving a small inward imbalance. The standard calculation obtains this force per area from the change in the field–plate interaction energy as the gap changes."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Polarizability α describes how readily a charge distribution responds to an electric field."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": ". Double the area → twice the force, at the same pressure."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Each field mode has ground-state energy ½ℏω. The plates change the allowed spectrum. Subtracting the infinite-separation reference gives a finite interaction energy per area:"
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Pressure is the force per area associated with changing the cavity width. This is a"
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Fleming treats vacuum fluctuations as interacting electric dipoles. The numerical plate result here is the standard ideal Casimir reference, evaluated separately from that illustration. A microscopic pressure law for Fleming’s medium is not derived by these diagrams."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": ". Page numbers below are PDF page positions. Interactive diagrams above are adaptations."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Opposed and aligned dipoles, with changes in electric moment."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "A neutral hydrogen atom and its polarized charge distribution."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Fleming’s schematic of fluctuations outside and between plates."
+  },
+  {
+    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "text": "Nearly balanced opposing stresses leave a net inward force."
+  }
+]

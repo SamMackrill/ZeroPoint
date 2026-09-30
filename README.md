@@ -58,7 +58,7 @@ npm run preview
 
 The build produces `dist/`, including the docs and fonts. It can be hosted as a static site; `base: './'` permits serving from a subdirectory. The local production preview uses <http://127.0.0.1:4173>. Browser tests use software-rendered Chromium for functional coverage, not performance claims.
 
-The dev server and browser tests use port 5174 unless `ZP_PORT` is set, so separate worktrees can run side by side. Browser tests start their own server; set `ZP_REUSE=1` to reuse one you already started. CI runs the same checks on every pull request.
+The dev server and browser tests use port 5174 unless `ZP_PORT` is set, so separate worktrees can run side by side. Browser tests start their own server; set `ZP_REUSE=1` to reuse one you already started. CI runs the same checks on every pull request, plus visual baselines (`tests/visual`, recorded on Linux CI), a per-lab render budget, a copy inventory that keeps every explanation and caveat, and a bundle-size report (`node scripts/bundle-size.mjs`).
 
 The UI redesign is delivered as stacked pull requests (`ui/NN-*` branches) with manually triggered CodeRabbit reviews; see §16 of the [UI redesign plan](docs/ui-redesign-plan.html). `npm run stack -- status` summarises the stack and the hourly review gate.
 
