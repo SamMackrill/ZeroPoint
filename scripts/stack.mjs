@@ -1,5 +1,5 @@
 // Stacked-PR helper for the UI redesign: status, CodeRabbit review gate, worktrees, restack, retarget, push and navigator.
-// Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|waive|push|nav|snapshots|port> [options]. See docs/ui-redesign-plan.html §16.
+// Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|hold|release|waive|push|nav|snapshots|port> [options]. See docs/ui-redesign-plan.html §16.
 import { spawnSync } from 'node:child_process';
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -136,7 +136,7 @@ function gather(state) {
         ...(reviewInProgress(comments, reviews) ? [] : comments.filter(c => c.user?.login === REVIEWER).flatMap(c => reviewedHeadsInSummary(c.body)).map(head => sha(head) ?? head)),
       ],
       lastTriggerAt: triggers.length ? Math.max(...triggers) : 0,
-      checks: checksFor(pr.number), openThreads: openThreads(repo, pr.number), reviewInProgress: reviewInProgress(comments, reviews),
+      hold: state.layers[pr.headRefName]?.hold, checks: checksFor(pr.number), openThreads: openThreads(repo, pr.number), reviewInProgress: reviewInProgress(comments, reviews),
       // Changes whenever CodeRabbit posts or edits a comment or review, so the watcher can report activity of any kind.
       activity: (items => `${items.length}@${items.map(x => x.updated_at ?? x.submitted_at ?? '').sort().pop() ?? ''}`)([...reviews, ...comments].filter(x => x.user?.login === REVIEWER)),
       // The PR's own head commit, not whatever a same-named ref resolves to.
@@ -171,7 +171,7 @@ function status() {
   const summary = { now: new Date().toISOString(), nextSlot: new Date(slot).toISOString(), gateOpen: Date.now() >= slot, next: pickNext(prs)?.number ?? null,
     prs: prs.map(({ body, reviewedShas, ...rest }) => ({ ...rest, head: rest.head.slice(0, 7) })) };
   if (flags.has('--json')) { console.log(JSON.stringify(summary, null, 2)); return; }
-  for (const pr of prs) say(`#${pr.number}`.padEnd(6), pr.branch.padEnd(26), `← ${pr.base}`.padEnd(24), pr.head.slice(0, 7), `ci:${pr.checks}`.padEnd(12), pr.state.padEnd(11), `threads:${pr.openThreads}`, pr.outsideFindings ? `outside-diff:${pr.outsideFindings}` : '');
+  for (const pr of prs) say(`#${pr.number}`.padEnd(6), pr.branch.padEnd(26), `← ${pr.base}`.padEnd(24), pr.head.slice(0, 7), `ci:${pr.checks}`.padEnd(12), pr.state.padEnd(11), `threads:${pr.openThreads}`, pr.hold ? `HOLD (${pr.hold})` : '', pr.outsideFindings ? `outside-diff:${pr.outsideFindings}` : '');
   const until = new Date(slot).toLocaleString('en-GB', { timeZone: 'Europe/London', hour: '2-digit', minute: '2-digit', timeZoneName: 'short' });
   say(`Review gate ${summary.gateOpen ? 'OPEN' : `closed until ${until}`}; next in queue: ${summary.next ? `#${summary.next}` : 'none'}`);
 }
@@ -271,7 +271,7 @@ function merge() {
   const state = loadState(), { prs } = gather(state); saveObservations(state);
   const bottom = prs.find(pr => pr.base === 'main');
   if (!bottom) { say('No stack PR targets main.'); return; }
-  if (!mergeReady(bottom)) { say(`#${bottom.number} is not merge-ready (state ${bottom.state}, CI ${bottom.checks}).`); return; }
+  if (!mergeReady(bottom)) { say(`#${bottom.number} is not merge-ready (state ${bottom.state}, CI ${bottom.checks}${bottom.hold ? `, held: ${bottom.hold}` : ''}).`); return; }
   say(`${dryRun ? '[dry run] ' : ''}Squash-merging #${bottom.number} (${bottom.branch}).`);
   if (dryRun) return;
   run('gh', ['pr', 'merge', String(bottom.number), '--squash', '--match-head-commit', bottom.head]);
@@ -344,6 +344,23 @@ async function watch() {
   }
 }
 
+/**
+ * Hold a PR so `merge` refuses it, e.g. a visual layer awaiting the owner's approval: stack.mjs hold <pr> <reason…>.
+ * `stack.mjs release <pr> <note…>` lifts it once approved. Both leave a comment on the PR.
+ */
+function hold() {
+  const release = command === 'release', [number, ...words] = args.slice(1).filter(a => !a.startsWith('--')), note = words.join(' ');
+  if (!Number(number) || !note) throw new Error(`Usage: stack.mjs ${command} <pr> <${release ? 'note' : 'reason'}>`);
+  const pr = openStackPrs('number,headRefName').find(p => p.number === Number(number));
+  if (!pr) throw new Error(`#${number} is not an open stack PR.`);
+  say(`${dryRun ? '[dry run] ' : ''}${release ? 'Releasing' : 'Holding'} #${number}: ${note}`);
+  if (dryRun) return;
+  run('gh', ['pr', 'comment', String(number), '--body', release ? `Merge hold released: ${note}` : `Merge hold: ${note}`]);
+  const state = loadState(), record = layer(state, pr.headRefName);
+  if (release) delete record.hold; else record.hold = note;
+  saveState(state);
+}
+
 /** Waive a review's outside-diff findings after answering them on the PR: stack.mjs waive <pr> <reviewId> <reason…>. */
 function waive() {
   const [number, reviewId, ...words] = args.slice(1).filter(a => !a.startsWith('--')), reason = words.join(' ');
@@ -408,6 +425,6 @@ function nav() {
   } finally { rmSync(dir, { recursive: true, force: true }); }
 }
 
-const commands = { status, trigger, watch, new: newLayer, restack, retarget, merge, waive, push, nav, snapshots, port: () => console.log(stackPort(args[1] ?? git(['branch', '--show-current'])) ?? 5174) };
-if (!commands[command]) { console.error('Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|waive|push|nav|snapshots|port> [--dry-run] [--json] [--pr N] [--full] [--force] [--base ref]'); process.exit(2); }
+const commands = { status, trigger, watch, new: newLayer, restack, retarget, merge, hold, release: hold, waive, push, nav, snapshots, port: () => console.log(stackPort(args[1] ?? git(['branch', '--show-current'])) ?? 5174) };
+if (!commands[command]) { console.error('Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|hold|release|waive|push|nav|snapshots|port> [--dry-run] [--json] [--pr N] [--full] [--force] [--base ref]'); process.exit(2); }
 Promise.resolve().then(() => commands[command]()).catch(error => { console.error(error instanceof Error ? error.message : error); process.exit(1); });

@@ -120,9 +120,12 @@ export function reviewState(pr) {
   return 'queued';
 }
 
-/** A PR may be squash-merged by the babysitter once it is the bottom layer, CodeRabbit-clean and green in CI. */
+/**
+ * A PR may be squash-merged by the babysitter once it is the bottom layer, CodeRabbit-clean and green in CI, and not
+ * held. A layer that visibly changes the UI is held until the owner approves its before/after page.
+ */
 export function mergeReady(pr) {
-  return pr.base === 'main' && !pr.draft && pr.checks === 'pass' && reviewState(pr) === 'clean';
+  return pr.base === 'main' && !pr.draft && !pr.hold && pr.checks === 'pass' && reviewState(pr) === 'clean';
 }
 
 /** Choose the PR to review next: the lowest queued layer, because merges and fixes flow bottom-up. */
