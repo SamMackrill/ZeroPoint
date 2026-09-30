@@ -1,7 +1,7 @@
 // Stacked-PR helper for the UI redesign: status, CodeRabbit review gate, worktrees, restack, retarget, push and navigator.
 // Usage: node scripts/stack.mjs <status|trigger|watch|new|restack|retarget|merge|waive|push|nav|snapshots|port> [options]. See docs/ui-redesign-plan.html §16.
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { withLock } from './state-lock.mjs';
@@ -327,8 +327,10 @@ async function watch() {
       run('git', ['fetch', '--quiet', '--prune', 'origin'], { allowFail: true });
       const state = loadState(), next = snapshot(state), seen = state.watch?.notifiedAt;
       const lines = diffSnapshots(state.watch?.last, next);
-      const notes = notificationsSince(next.repo, seen, new Set(Object.keys(next.prs).map(Number)));
-      state.watch = { last: next, notifiedAt: notes.map(n => n.at).concat(seen ?? '').sort().pop() };
+      // Stack PRs seen in any earlier snapshot stay filtered, so a PR merged between passes isn't relayed as outside activity.
+      const known = [...new Set([...(state.watch?.stackNumbers ?? []), ...Object.keys(next.prs).map(Number)])];
+      const notes = notificationsSince(next.repo, seen, new Set(known));
+      state.watch = { last: next, notifiedAt: notes.map(n => n.at).concat(seen ?? '').sort().pop(), stackNumbers: known };
       saveObservations(state);
       for (const line of [...lines, ...notes.map(n => n.line)]) console.log(`[${stamp()}] ${line}`);
       lastError = '';
@@ -356,7 +358,12 @@ function waive() {
   saveState(state);
 }
 
-/** Download the Linux visual baselines CI recorded for the current branch into tests/visual/__screenshots__ (then review and commit). */
+/**
+ * Download the Linux visual baselines CI recorded for the current branch and copy them into tests/visual/__screenshots__
+ * (then review and commit). The artifact is extracted into an empty temporary directory first, because `gh run download`
+ * refuses to overwrite files. New baselines are added; an existing one is replaced only with --overwrite, otherwise
+ * differences are listed and left alone.
+ */
 function snapshots() {
   const branch = git(['branch', '--show-current']), top = git(['rev-parse', '--show-toplevel']);
   const [latest] = ghJson(['run', 'list', '--branch', branch, '--workflow', 'CI', '--limit', '1', '--json', 'databaseId,headSha,status']);
@@ -364,7 +371,21 @@ function snapshots() {
   if (latest.status !== 'completed') throw new Error(`CI run ${latest.databaseId} for ${branch} is still ${latest.status}.`);
   if (latest.headSha !== sha('HEAD')) say(`Warning: run ${latest.databaseId} is for ${latest.headSha.slice(0, 7)}, not HEAD.`);
   say(`${dryRun ? '[dry run] ' : ''}Downloading visual-snapshots from run ${latest.databaseId}.`);
-  if (!dryRun) run('gh', ['run', 'download', String(latest.databaseId), '-n', 'visual-snapshots', '-D', join(top, 'tests', 'visual', '__screenshots__')]);
+  if (dryRun) return;
+  const temp = mkdtempSync(join(tmpdir(), 'visual-snapshots-')), target = join(top, 'tests', 'visual', '__screenshots__');
+  try {
+    run('gh', ['run', 'download', String(latest.databaseId), '-n', 'visual-snapshots', '-D', temp]);
+    mkdirSync(target, { recursive: true });
+    const counts = { added: 0, replaced: 0, unchanged: 0, kept: 0 };
+    for (const name of readdirSync(temp).filter(file => file.endsWith('.png'))) {
+      const from = join(temp, name), to = join(target, name);
+      if (!existsSync(to)) { copyFileSync(from, to); counts.added++; continue; }
+      if (readFileSync(from).equals(readFileSync(to))) { counts.unchanged++; continue; }
+      if (flags.has('--overwrite')) { copyFileSync(from, to); counts.replaced++; continue; }
+      counts.kept++; say(`Differs from CI, kept local (use --overwrite to replace): ${name}`);
+    }
+    say(`Baselines: ${counts.added} added, ${counts.replaced} replaced, ${counts.unchanged} unchanged, ${counts.kept} kept.`);
+  } finally { rmSync(temp, { recursive: true, force: true }); }
   say(run('git', ['status', '--short', 'tests/visual'], { cwd: top }) || 'Baselines unchanged.');
 }
 
