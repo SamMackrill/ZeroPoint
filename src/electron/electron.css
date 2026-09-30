@@ -11,49 +11,49 @@
   gap: 9px;
   text-align: left;
   padding: 16px 19px;
-  border: 1px solid #314653;
+  border: 1px solid var(--line-2);
   border-radius: 7px;
-  background: #14212d;
+  background: var(--bg-2);
 }
 
 .electron-modes small {
   font: 8px var(--mono);
   letter-spacing: 1px;
-  color: #8c9eaf;
+  color: var(--text-3);
 }
 
 .electron-modes strong {
   font-size: 13px;
   font-weight: 500;
-  color: #c6d4df;
+  color: var(--text-2);
 }
 
 .electron-modes button[aria-pressed=true] {
-  background: #24373c;
-  border-color: #6b8292;
+  background: var(--line);
+  border-color: var(--text-4);
 }
 
 .electron-modes button[aria-pressed=true] strong {
-  color: #dbe9dd;
+  color: var(--text);
 }
 
 .electron-explanation {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  color: #94b5b5;
+  color: var(--accent-2);
   margin: 17px 2px 23px;
 }
 
 .electron-explanation p {
   font-size: 12px;
   line-height: 1.7;
-  color: #a3b9c7;
+  color: var(--text-2);
   max-width: 930px;
 }
 
 .electron-spin-colour {
-  color: #efa5c1;
+  color: var(--data-bspin);
 }
 
 .electron-app .light-scale {
@@ -70,10 +70,10 @@
 
 .electron-replay-actions button {
   padding: 7px 9px;
-  border: 1px solid #3b574b;
+  border: 1px solid var(--line-2);
   border-radius: 4px;
   font-size: 10px;
-  color: #b8d5c3;
+  color: var(--accent);
 }
 
 .electron-chart svg {
@@ -87,7 +87,7 @@
   justify-content: space-between;
   gap: 8px;
   font: 8px var(--mono);
-  color: #8aabba;
+  color: var(--text-3);
   margin-top: 12px;
 }
 
@@ -109,20 +109,20 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: #594431;
-  color: #ffbf8d;
+  background: var(--line-2);
+  color: var(--warn);
   font-size: 20px;
 }
 
 .electron-pair-signs span:last-child {
-  background: #24495d;
-  color: #9bd6ef;
+  background: var(--line-2);
+  color: var(--data-neg);
 }
 
 .electron-pair-signs i {
   width: 32px;
   height: 1px;
-  background: #8aa5a3;
+  background: var(--text-3);
 }
 
 .electron-reading>div:last-child {
@@ -134,25 +134,25 @@
 .electron-reading strong {
   font-size: 11px;
   font-weight: 500;
-  color: #b7d5c4;
+  color: var(--accent);
 }
 
 .electron-reading p {
   font-size: 10px;
-  color: #879fac;
+  color: var(--text-3);
   line-height: 1.9;
   margin: 10px 0;
 }
 
 .electron-reading a {
   font-size: 9px;
-  color: #b6b0d6;
+  color: var(--text-2);
 }
 
 .electron-excluded {
   font-size: 11px;
   line-height: 1.8;
-  color: #e0bb87;
+  color: var(--warn);
 }
 
 .electron-app .light-readouts>div {
@@ -216,7 +216,7 @@
 }
 
 .electron-shell-card {
-  border-color: #655342;
+  border-color: var(--warn-line);
 }
 
 .electron-shell-key {
@@ -233,15 +233,15 @@
 
 .electron-shell-key small {
   font-size: 10px;
-  color: var(--muted);
+  color: var(--text-3);
 }
 
 .electron-positive {
-  color: #ffc199;
+  color: var(--warn);
 }
 
 .electron-negative {
-  color: #87d4f3;
+  color: var(--data-neg);
 }
 
 .electron-shell-actions {
@@ -259,7 +259,7 @@
 }
 
 .electron-shell-actions input {
-  accent-color: #94d7bc;
+  accent-color: var(--accent);
 }
 
 .electron-rate-profile {
@@ -274,22 +274,22 @@
   text-align: left;
   gap: 9px;
   padding: 12px;
-  border: 1px solid #3a4c58;
-  background: #0e1c27;
-  color: #c8d9e1;
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  color: var(--text);
   border-radius: 6px;
   cursor: pointer;
 }
 
 .electron-rate-profile button:hover {
-  border-color: #ffc199;
+  border-color: var(--warn);
 }
 
 .electron-rate-profile i {
   display: block;
   height: 5px;
   min-width: 3px;
-  background: #ffc199;
+  background: var(--warn);
   border-radius: 3px;
 }
 
@@ -334,18 +334,18 @@
   flex-wrap: wrap;
   margin: 12px 0 18px;
   font-size: 11px;
-  color: #91aebd;
+  color: var(--accent-2);
 }
 
 .electron-scene-options label {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #c6ded5;
+  color: var(--text);
 }
 
 .electron-scene-options input {
-  accent-color: #a0d9bb;
+  accent-color: var(--accent);
 }
 
 @media(max-width:600px) {
@@ -382,17 +382,17 @@
 
 .electron-property-choices button {
   padding: 9px 12px;
-  border: 1px solid #405866;
+  border: 1px solid var(--line-2);
   border-radius: 5px;
-  color: #a8c1cd;
+  color: var(--text-2);
   font-size: 11px;
   text-align: left;
 }
 
 .electron-property-choices button[aria-pressed=true] {
-  background: #203d38;
-  border-color: #86baa3;
-  color: #c5edda;
+  background: var(--accent-bg);
+  border-color: var(--accent-2);
+  color: var(--text);
 }
 
 .electron-property-layout {
@@ -407,7 +407,7 @@
   display: block;
   width: 100%;
   height: auto;
-  background: #0c1824;
+  background: var(--bg-1);
   border-radius: 6px;
 }
 
@@ -415,14 +415,14 @@
 .electron-charge-motion h3 {
   font-size: 13px;
   font-weight: 500;
-  color: #c6ded5;
+  color: var(--text);
   margin: 0 0 10px;
 }
 
 .electron-properties a,
 .electron-charge-motion a {
   font-size: 10px;
-  color: #abd2c2;
+  color: var(--accent);
   line-height: 1.8;
 }
 
@@ -431,7 +431,7 @@
 }
 
 .electron-charge-motion {
-  border-top: 1px solid #38505d;
+  border-top: 1px solid var(--line-2);
   margin-top: 22px;
   padding-top: 22px;
 }
@@ -508,8 +508,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  background: #0c1824;
-  border: 1px solid #385362;
+  background: var(--bg-1);
+  border: 1px solid var(--line-2);
   border-radius: 9px;
   padding: 19px 16px;
   overflow: hidden;
@@ -517,14 +517,14 @@
 
 .electron-section h2 {
   font-size: 13px;
-  color: #d2e1e5;
+  color: var(--text);
   font-weight: 500;
   margin: 9px 0;
 }
 
 .electron-section header p {
   font: 9px var(--mono);
-  color: #83a6b6;
+  color: var(--text-3);
   line-height: 1.7;
 }
 
@@ -542,7 +542,7 @@
 }
 
 .electron-section svg [role=button]:focus {
-  stroke: #fff;
+  stroke: var(--text);
   stroke-width: 2;
 }
 
@@ -560,7 +560,7 @@
 }
 
 .electron-section>a {
-  color: #abd2c2;
+  color: var(--accent);
   font-size: 10px;
   line-height: 1.5;
 }
@@ -576,7 +576,7 @@
   flex-direction: column;
   gap: 9px;
   font-size: 11px;
-  color: #9fb7c7;
+  color: var(--text-2);
 }
 
 .electron-spin-controls select {

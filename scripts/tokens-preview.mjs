@@ -95,6 +95,8 @@ const hexOf = rgba => '#' + rgba.slice(0, 3).map(v => v.toString(16).padStart(2,
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const tokens = readTokens(readFileSync(join(root, TOKENS_FILE), 'utf8'));
   const uses = STYLESHEETS.flatMap(file => readUses(readFileSync(join(root, file), 'utf8'), file));
+  // Since UI 01e the stylesheets use tokens, so there is nothing left to map: the page is the record of the UI 01d proposal.
+  if (!uses.length) { console.log('The stylesheets already use tokens; docs/ui-tokens-preview.html records the approved UI 01d proposal and is left unchanged.'); process.exit(0); }
   const colours = new Map();
   for (const use of uses) {
     const key = hexOf(use.rgba) + (use.rgba[3] < 1 ? `@${use.rgba[3].toFixed(2)}` : '');

@@ -1,5 +1,5 @@
 .casimir-app {
-  background: #0e1721;
+  background: var(--bg-1);
   min-height: 100vh;
 }
 
@@ -13,7 +13,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #849cae;
+  color: var(--text-3);
   font: 10px var(--mono);
   letter-spacing: 1px;
   margin-bottom: 25px;
@@ -39,12 +39,12 @@
   font-size: 32px;
   font-weight: 500;
   letter-spacing: -1px;
-  color: #e4eee9;
+  color: var(--text);
 }
 
 .casimir-heading p {
   font-size: 13px;
-  color: #8ea6b8;
+  color: var(--text-3);
   margin-top: 10px;
   line-height: 1.6;
 }
@@ -56,19 +56,19 @@
 
 .casimir-notes {
   padding: 20px;
-  border: 1px solid #405c61;
-  background: #172b32;
+  border: 1px solid var(--line-2);
+  background: var(--bg-3);
   border-radius: 8px;
   margin-bottom: 20px;
   font-size: 12px;
   line-height: 1.9;
-  color: #b4c7d2;
+  color: var(--text-2);
 }
 
 .casimir-notes a {
   display: inline-block;
   margin: 12px 20px 0 0;
-  color: #aee0c6;
+  color: var(--accent);
 }
 
 .casimir-modes {
@@ -84,14 +84,14 @@
   text-align: left;
   gap: 22px;
   padding: 19px 22px;
-  border: 1px solid #31434f;
-  background: #13222f;
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
   border-radius: 8px;
 }
 
 .casimir-modes button[aria-pressed=true] {
-  border-color: #719d90;
-  background: #1b3337;
+  border-color: var(--text-3);
+  background: var(--accent-bg);
 }
 
 .casimir-pair-symbol {
@@ -99,12 +99,12 @@
   align-items: center;
   gap: 12px;
   font: 22px var(--mono);
-  color: #accce0;
+  color: var(--text-2);
   white-space: nowrap;
 }
 
 .casimir-pair-symbol svg {
-  color: #8aab9c;
+  color: var(--accent-2);
 }
 
 .casimir-modes strong {
@@ -116,13 +116,13 @@
   display: block;
   font-size: 11px;
   margin-top: 6px;
-  color: #94abba;
+  color: var(--text-3);
 }
 
 .casimir-mode-number {
   margin-left: auto;
   font: 9px var(--mono);
-  color: #8dafa7;
+  color: var(--accent-2);
   white-space: nowrap;
 }
 
@@ -148,7 +148,7 @@
   align-items: center;
   gap: 15px;
   font-size: 11px;
-  color: #9cb1bf;
+  color: var(--text-2);
 }
 
 .casimir-separation input {
@@ -174,10 +174,10 @@
 
 .casimir-scene {
   position: relative;
-  border: 1px solid #334959;
+  border: 1px solid var(--line-2);
   border-radius: 9px;
   overflow: hidden;
-  background: #0e1a25;
+  background: var(--bg-1);
 }
 
 .casimir-canvas {
@@ -197,7 +197,7 @@
   justify-content: space-between;
   gap: 10px;
   font: 9px var(--mono);
-  color: #a4becb;
+  color: var(--text-2);
   pointer-events: none;
 }
 
@@ -209,7 +209,7 @@
 
 .casimir-scene-top b {
   font-weight: 400;
-  color: #768f9f;
+  color: var(--text-3);
   margin-left: 8px;
 }
 
@@ -227,12 +227,12 @@
 .casimir-scene-caption strong {
   font-size: 12px;
   font-weight: 500;
-  color: #d0dedf;
+  color: var(--text);
 }
 
 .casimir-scene-caption span {
   font-size: 9px;
-  color: #91a9ba;
+  color: var(--text-3);
 }
 
 .casimir-legend {
@@ -241,7 +241,7 @@
   gap: 18px;
   padding: 16px 0;
   font: 8px var(--mono);
-  color: #a9becb;
+  color: var(--text-2);
 }
 
 .casimir-legend>span {
@@ -255,9 +255,9 @@
 .casimir-legend i {
   height: 7px;
   border-radius: 5px;
-  background: linear-gradient(90deg,#47b1d9,#12202c 50%,#f29059);
+  background: linear-gradient(90deg,var(--text-3),var(--bg-2) 50%,var(--danger));
   display: block;
-  border: 1px solid #3f535b;
+  border: 1px solid var(--line-2);
 }
 
 .casimir-legend>div>div {
@@ -271,7 +271,7 @@
   font-size: 8px;
   max-width: 110px;
   line-height: 1.6;
-  color: #8298a8;
+  color: var(--text-3);
 }
 
 .casimir-layers {
@@ -279,10 +279,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 12px 18px;
-  border-top: 1px solid #253b49;
+  border-top: 1px solid var(--line);
   padding: 15px 0 20px;
   font-size: 10px;
-  color: #9eb6c5;
+  color: var(--text-2);
 }
 
 .casimir-layers label,
@@ -293,22 +293,22 @@
 }
 
 .casimir-app input[type=checkbox] {
-  accent-color: #a4dabc;
+  accent-color: var(--accent);
   margin: 0;
 }
 
 .casimir-layers>span {
   font-size: 9px;
-  color: #7994a8;
+  color: var(--text-3);
   margin-left: auto;
 }
 
 .casimir-metrics {
   display: grid;
   grid-template-columns: repeat(4,minmax(0,1fr));
-  border: 1px solid #304352;
+  border: 1px solid var(--line-2);
   border-radius: 8px;
-  background: #14222f;
+  background: var(--bg-2);
   padding: 18px 0;
   margin: 0 0 20px;
 }
@@ -318,7 +318,7 @@
   display: flex;
   flex-direction: column;
   gap: 11px;
-  border-right: 1px solid #304352;
+  border-right: 1px solid var(--line-2);
 }
 
 .casimir-metrics>div:last-child {
@@ -327,18 +327,18 @@
 
 .casimir-metrics span {
   font: 8px var(--mono);
-  color: #8fa8b9;
+  color: var(--text-3);
   letter-spacing: .4px;
 }
 
 .casimir-metrics strong {
   font: 20px var(--mono);
-  color: #d6e8dd;
+  color: var(--text);
 }
 
 .casimir-metrics strong small {
   font-size: 10px;
-  color: #819dab;
+  color: var(--text-3);
 }
 
 .casimir-metrics>div:last-child strong {
@@ -348,8 +348,8 @@
 
 .casimir-card,
 .casimir-chart {
-  border: 1px solid #2f4352;
-  background: #14222f;
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
   border-radius: 8px;
   padding: 19px;
 }
@@ -365,12 +365,12 @@
 .casimir-card-heading h2 {
   font-size: 12px;
   font-weight: 500;
-  color: #c8dce0;
+  color: var(--text);
 }
 
 .casimir-card-heading>span {
   font: 8px var(--mono);
-  color: #88a8b3;
+  color: var(--text-3);
   white-space: nowrap;
 }
 
@@ -378,13 +378,13 @@
   display: inline-block;
   width: 5px;
   height: 5px;
-  background: #efbd8c;
+  background: var(--warn);
   border-radius: 50%;
   margin: 0 5px 0 9px;
 }
 
 .casimir-card-heading i:last-child {
-  background: #95b1c5;
+  background: var(--text-2);
 }
 
 .casimir-chart svg {
@@ -395,7 +395,7 @@
 
 .casimir-chart svg text {
   font: 9px var(--mono);
-  fill: #7e9bac;
+  fill: var(--text-3);
 }
 
 .casimir-chart-times {
@@ -404,7 +404,7 @@
   justify-content: space-between;
   gap: 15px;
   font: 8px var(--mono);
-  color: #88a2b3;
+  color: var(--text-3);
   line-height: 1.6;
 }
 
@@ -427,12 +427,12 @@
 
 .casimir-life-heading strong {
   font-weight: 500;
-  color: #d8e9d9;
+  color: var(--text);
 }
 
 .casimir-life-heading span {
   font: 8px var(--mono);
-  color: #d8bd92;
+  color: var(--warn);
 }
 
 .casimir-loupe {
@@ -444,7 +444,7 @@
 
 .casimir-life-track {
   height: 4px;
-  background: #2c454f;
+  background: var(--line-2);
   border-radius: 4px;
   overflow: hidden;
 }
@@ -452,21 +452,21 @@
 .casimir-life-track i {
   display: block;
   height: 100%;
-  background: #acd9b9;
+  background: var(--accent);
 }
 
 .casimir-life-labels {
   display: flex;
   justify-content: space-between;
   gap: 4px;
-  color: #89a2b0;
+  color: var(--text-3);
   font: 7px var(--mono);
   margin-top: 7px;
 }
 
 .casimir-stage {
   font-size: 11px;
-  color: #c5e3c9;
+  color: var(--accent);
   margin: 17px 0 9px;
 }
 
@@ -478,20 +478,20 @@
   display: flex;
   justify-content: space-between;
   gap: 14px;
-  border-bottom: 1px solid #2a3d4b;
+  border-bottom: 1px solid var(--line);
   padding: 10px 0;
   font-size: 10px;
 }
 
 .casimir-readings dt {
-  color: #88a1b3;
+  color: var(--text-3);
 }
 
 .casimir-readings dd {
   margin: 0;
   text-align: right;
   font: 9px var(--mono);
-  color: #c8d5dc;
+  color: var(--text-2);
   line-height: 1.5;
   max-width: 165px;
 }
@@ -505,23 +505,23 @@
 
 .casimir-inspect-actions button,
 .casimir-release {
-  border: 1px solid #527668;
+  border: 1px solid var(--accent-line);
   border-radius: 5px;
   padding: 10px;
   font-size: 11px;
-  color: #cae3ca;
-  background: #223b36;
+  color: var(--text);
+  background: var(--accent-bg);
 }
 
 .casimir-inspect-actions label {
   font-size: 10px;
-  color: #9fb9c4;
+  color: var(--text-2);
   line-height: 1.6;
 }
 
 .casimir-muted {
   font-size: 11px;
-  color: #8faab9;
+  color: var(--text-3);
   line-height: 1.8;
 }
 
@@ -540,14 +540,14 @@
   display: flex;
   gap: 17px;
   font-size: 10px;
-  color: #8ca6b6;
+  color: var(--text-3);
   margin-bottom: 12px;
 }
 
 .casimir-counts b {
   display: block;
   font: 19px var(--mono);
-  color: #bcd8cc;
+  color: var(--accent);
   margin-bottom: 5px;
 }
 
@@ -556,25 +556,25 @@
   padding: 0;
   margin: 12px 0 0;
   font-size: 10px;
-  color: #a8becb;
+  color: var(--text-2);
 }
 
 .casimir-events li {
   padding: 10px 0;
-  border-top: 1px solid #2a3d4b;
+  border-top: 1px solid var(--line);
   line-height: 1.7;
 }
 
 .casimir-events time {
   display: block;
   font: 8px var(--mono);
-  color: #8bbbaa;
+  color: var(--accent-2);
   margin-bottom: 4px;
 }
 
 .casimir-limit {
   font-size: 11px;
-  color: #e9c799;
+  color: var(--warn);
   line-height: 1.7;
   margin-top: 10px;
 }
@@ -583,42 +583,42 @@
   display: grid;
   grid-template-columns: repeat(3,minmax(0,1fr));
   gap: 30px;
-  border-top: 1px solid #2b414f;
+  border-top: 1px solid var(--line-2);
   margin-top: 28px;
   padding: 28px 0;
 }
 
 .casimir-explanation>div>span {
   font: 10px var(--mono);
-  color: #8cbdad;
+  color: var(--accent-2);
 }
 
 .casimir-explanation h2 {
   font-size: 14px;
   font-weight: 500;
   margin: 11px 0 9px;
-  color: #c5dbd6;
+  color: var(--text);
 }
 
 .casimir-explanation p {
   font-size: 12px;
   line-height: 1.8;
-  color: #90aaba;
+  color: var(--text-3);
 }
 
 .casimir-footer {
   display: flex;
   flex-wrap: wrap;
   gap: 12px 25px;
-  border-top: 1px solid #273a49;
+  border-top: 1px solid var(--line);
   padding-top: 20px;
   font-size: 10px;
-  color: #7795a8;
+  color: var(--text-3);
   line-height: 1.7;
 }
 
 .casimir-footer a {
-  color: #b3d4c4;
+  color: var(--accent);
 }
 
 .casimir-footer>span {
@@ -784,7 +784,7 @@
   }
   .casimir-metrics>div {
     padding: 15px;
-    border-bottom: 1px solid #304352;
+    border-bottom: 1px solid var(--line-2);
   }
   .casimir-metrics>div:nth-child(2) {
     border-right: 0;
