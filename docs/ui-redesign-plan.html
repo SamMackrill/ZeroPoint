@@ -213,7 +213,7 @@ details>div{padding:0 18px 12px}
     <div class="stat"><b><s>3,424 px</s>0</b><span>Page scroll in Electron › Spin. The viewport never scrolls away.</span></div>
     <div class="stat"><b><s>5</s>1</b><span>Transport, header, layer and plot implementations</span></div>
     <div class="stat"><b><s>484</s>~26</b><span>Unique hex colours in CSS → named design tokens</span></div>
-    <div class="stat"><b><s>91</s>0</b><span>Font-size declarations below 10 px → 11 px minimum</span></div>
+    <div class="stat"><b><s>282</s>0</b><span>Font sizes below 11 px (186 below 10 px) → 11 px minimum</span></div>
   </div>
 </div>
 
@@ -255,6 +255,7 @@ details>div{padding:0 18px 12px}
       <tr><td></td><td>Babysitter runner</td><td><b>This T3 thread via <code>/loop</code>.</b> It pauses when the session isn't running and resumes from on-disk state.</td></tr>
       <tr><td></td><td>Defaults adopted</td><td>A visual baseline, stable test IDs and a caveat inventory land <i>before</i> any visual change. The palette needs your approval (via a tokens preview) before it is applied. Casimir and van der Waals gain Save/Load in their migration layers. Per-tick data bypasses React state.</td></tr>
       <tr><td>9 · During delivery</td><td>Findings on reviewed layers</td><td><b>Fix blocking findings in place; defer the rest to a remedial PR.</b> Each fix pushed to a layer under review costs another hourly slot, so valid but non-blocking findings are answered, waived and fixed later in a dedicated remedial layer, using judgement case by case (29 Sep). See <a href="#remedial">Deferring findings</a>.</td></tr>
+      <tr><td>10 · During delivery</td><td>Visual layers</td><td><b>Every layer that visibly changes the UI waits for the owner's OK before it merges.</b> Its PR carries a before/after page of real screens (<code>scripts/compare-screens.mjs</code>), <code>stack.mjs hold</code> blocks the merge, and the approval is asked with the chat's question tool rather than inside a status update (30 Sep).</td></tr>
     </tbody>
   </table>
 </section>
@@ -286,7 +287,7 @@ details>div{padding:0 18px 12px}
     </ul></div>
     <div class="card"><h3>Visual system</h3><ul>
       <li><b>484 unique hex colours</b> across seven stylesheets, with no tokens beyond <code>--mint</code>, <code>--muted</code> and <code>--line</code>.</li>
-      <li><b>25 font sizes</b>, with 91 declarations below 10 px. These are hard to read and fail at a normal viewing distance.</li>
+      <li><b>25 font sizes</b>, with 282 declarations below 11 px, 186 of them below 10 px (recounted in UI 01g to include the <code>font</code> shorthand, which the first count missed). These are hard to read and fail at a normal viewing distance.</li>
       <li>Light and Electron share <code>light-*</code> class names. Electron imports <code>light.css</code>, so styles are coupled by accident.</li>
       <li>Five hand-rolled SVG plot implementations (Medium, Light, Electron, Casimir pressure history, van der Waals gap sweep) with different axes, labels and colours.</li>
     </ul></div>
@@ -1133,7 +1134,7 @@ details>div{padding:0 18px 12px}
   <ul>
     <li><b>Main freeze:</b> no UI or experiment changes merge to <code>main</code> outside the stack until UI 18 lands. Docs and papers are fine. If an unexpected <code>src/</code> change appears on <code>main</code>, the babysitter restacks and notifies you rather than absorbing it silently.</li>
     <li><b>Deploy milestones</b> (<code>npm run deploy</code> from an up-to-date <code>main</code>, after all checks pass): <b>M1</b> after UI 07 (the shell and Medium), <b>M2</b> after UI 11 (every lab in the shell), and <b>M3</b> after UI 18 (done). Nothing is published in between.</li>
-    <li><b>Design gate:</b> UI 01d pauses for your approval of the palette preview before UI 01e applies it. This is the only planned stop. Everything else continues unless a genuinely ambiguous decision comes up.</li>
+    <li><b>Design gates:</b> UI 01d paused for your approval of the palette preview before UI 01e applied it. Since then, <b>every layer that visibly changes the UI</b> is built, reviewed and CI-checked as normal, but held (<code>stack.mjs hold</code>) until you approve its before/after page of real screens. The approval is asked with the question tool. Layers above a held one keep moving; only its merge waits.</li>
   </ul>
 
   <h3>Merging &amp; throughput</h3>

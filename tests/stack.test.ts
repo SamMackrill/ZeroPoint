@@ -119,6 +119,8 @@ describe('merge readiness', () => {
     expect(mergeReady(pr('ui/00-delivery', { ...clean, checks: 'none' }))).toBe(false);
     expect(mergeReady(pr('ui/00-delivery', { ...clean, openThreads: 1 }))).toBe(false);
     expect(mergeReady(pr('ui/00-delivery', { base: 'main' }))).toBe(false);
+    // A visual layer held for the owner's approval never merges, however clean.
+    expect(mergeReady(pr('ui/00-delivery', { ...clean, hold: 'awaiting owner approval of before/after page' }))).toBe(false);
   });
 });
 

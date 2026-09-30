@@ -30,4 +30,10 @@ describe('colour tokens', () => {
     });
     expect(offenders).toEqual([]);
   });
+  // Type scale (UI 01g): nothing below 11 px, and every size up to 15 px comes from a --fs-* token. Literal sizes of
+  // 16 px and above are legacy page headings that the shell replaces.
+  it.each(files)('%s uses the type scale', (_name, file) => {
+    const sizes = [...readFileSync(file, 'utf8').matchAll(/^\s*(?:font-size|font):[^;]*?(?:^|\s|:)(\d+(?:\.\d+)?)px/gm)].map(m => Number(m[1]));
+    expect(sizes.filter(px => px < 16)).toEqual([]);
+  });
 });

@@ -92,7 +92,7 @@ select {
 }
 
 small {
-  font-size: 11px;
+  font-size: var(--fs-micro);
 }
 
 h1,
@@ -150,14 +150,14 @@ p {
 }
 
 .lab-label {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 500;
   letter-spacing: 1.8px;
   color: var(--text-3);
 }
 
 .version {
-  font: 10px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text-3);
   border: 1px solid var(--line);
   border-radius: 4px;
@@ -172,7 +172,7 @@ p {
 }
 
 .header-actions>a {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   display: flex;
   align-items: center;
@@ -194,7 +194,7 @@ p {
 }
 
 .local-badge {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   border-left: 1px solid var(--line);
   padding-left: 19px;
   display: flex;
@@ -244,7 +244,7 @@ p {
 }
 
 .panel-heading {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   font-weight: 600;
   letter-spacing: 1.65px;
   color: var(--text-3);
@@ -262,14 +262,14 @@ p {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 12px;
+  font-size: var(--fs-ui);
   font-weight: 550;
   margin: 0 6px 24px;
 }
 
 .count {
   margin-left: auto;
-  font: 10px var(--mono);
+  font: var(--fs-micro) var(--mono);
   border: 1px solid var(--line);
   color: var(--text-2);
   border-radius: 4px;
@@ -277,7 +277,7 @@ p {
 }
 
 .micro-label {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   letter-spacing: 1.4px;
   color: var(--text-3);
   font-weight: 550;
@@ -308,7 +308,7 @@ p {
 
 .preset strong {
   display: block;
-  font-size: 11px;
+  font-size: var(--fs-micro);
   font-weight: 550;
   letter-spacing: .05px;
   color: var(--text-2);
@@ -316,7 +316,7 @@ p {
 
 .preset small {
   display: block;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   line-height: 1.5;
   color: var(--text-3);
   margin-top: 4px;
@@ -358,12 +358,12 @@ p {
   color: var(--text-3);
   padding: 18px 6px 7px;
   text-align: left;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   width: 100%;
 }
 
 .roadmap-link small {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   display: block;
   color: var(--text-3);
   margin-top: 4px;
@@ -386,7 +386,7 @@ p {
   gap: 8px;
   margin: 0 6px 19px;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
 }
 
@@ -447,7 +447,7 @@ p {
 
 .slice-slider {
   display: block;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   padding: 2px 8px 15px;
 }
@@ -460,7 +460,7 @@ p {
 
 .slice-slider small {
   display: block;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   line-height: 1.6;
 }
 
@@ -477,7 +477,7 @@ p {
 }
 
 .model-card>div {
-  font-size: 8px;
+  font-size: var(--fs-micro);
   letter-spacing: 1.6px;
   color: var(--accent-2);
   display: flex;
@@ -486,21 +486,21 @@ p {
 }
 
 .model-card p {
-  font-size: 12px;
+  font-size: var(--fs-ui);
   line-height: 1.7;
   margin: 10px 0 7px;
   color: var(--text-2);
 }
 
 .model-card small {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   line-height: 1.7;
   display: block;
   color: var(--text-3);
 }
 
 .model-card button {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--accent);
   display: flex;
   gap: 4px;
@@ -509,7 +509,7 @@ p {
 }
 
 .sidebar-footer {
-  font-size: 8px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   display: block;
   text-align: center;
@@ -531,7 +531,7 @@ p {
 }
 
 .breadcrumbs {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   display: flex;
   align-items: center;
@@ -551,7 +551,7 @@ p {
 }
 
 .page-heading p {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   margin-top: 8px;
   line-height: 1.6;
@@ -566,7 +566,7 @@ p {
   border: 1px solid var(--line-2);
   border-radius: 15px;
   padding: 5px 9px;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   display: flex;
   align-items: center;
   gap: 5px;
@@ -600,7 +600,7 @@ p {
   border: 1px solid var(--accent);
   border-radius: 5px;
   padding: 8px 11px;
-  font-size: 11px;
+  font-size: var(--fs-micro);
   font-weight: 650;
   min-width: 104px;
   justify-content: center;
@@ -621,7 +621,7 @@ p {
 }
 
 .play-button kbd {
-  font-size: 8px;
+  font-size: var(--fs-micro);
   font-weight: 400;
   opacity: .6;
   border: 1px solid currentColor;
@@ -634,7 +634,7 @@ p {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
   border-radius: 5px;
   padding: 8px;
@@ -662,7 +662,7 @@ p {
   padding: 5px 0 5px 4px;
   background: transparent;
   border: 0;
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
 }
 
@@ -713,7 +713,7 @@ p {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   background: color-mix(in srgb, var(--bg-1) 73%, transparent);
   border-radius: 5px;
@@ -723,7 +723,7 @@ p {
 
 .view-label>span:nth-child(2) {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: var(--fs-micro);
   letter-spacing: 1px;
   color: var(--text-2);
 }
@@ -746,7 +746,7 @@ p {
 }
 
 .view-buttons button {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   padding: 4px 8px;
   border-radius: 3px;
   color: var(--text-3);
@@ -767,7 +767,7 @@ p {
 }
 
 .view-axis svg text {
-  font: 10px var(--mono);
+  font: var(--fs-micro) var(--mono);
 }
 
 .camera-tools {
@@ -809,7 +809,7 @@ p {
 .charge-legend {
   display: flex;
   gap: 14px;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
 }
 
@@ -840,7 +840,7 @@ p {
   display: flex;
   gap: 8px;
   align-items: center;
-  font: 8px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text-3);
 }
 
@@ -857,7 +857,7 @@ p {
   left: 0;
   right: 0;
   text-align: center;
-  font-size: 8px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   letter-spacing: .2px;
   pointer-events: none;
@@ -879,7 +879,7 @@ p {
   flex-direction: column;
   gap: 6px;
   padding: 9px;
-  font: 8px var(--mono);
+  font: var(--fs-micro) var(--mono);
 }
 
 .slice-legend i {
@@ -909,7 +909,7 @@ p {
 }
 
 .metric-strip>div>span {
-  font-size: 8px;
+  font-size: var(--fs-micro);
   letter-spacing: 1.2px;
   color: var(--text-3);
   font-weight: 500;
@@ -928,14 +928,14 @@ p {
 }
 
 .metric-strip strong small {
-  font: 9px 'DM Sans',sans-serif;
+  font: var(--fs-micro) 'DM Sans',sans-serif;
   letter-spacing: 0;
   color: var(--text-3);
   margin-left: 6px;
 }
 
 .metric-strip em {
-  font-size: 8px;
+  font-size: var(--fs-micro);
   font-style: normal;
   color: var(--text-3);
   display: flex;
@@ -974,7 +974,7 @@ p {
 }
 
 .diagnostic-tabs button {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   display: flex;
   align-items: center;
@@ -1002,7 +1002,7 @@ p {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--accent-2);
   white-space: nowrap;
   padding: 5px 0;
@@ -1017,7 +1017,7 @@ p {
 }
 
 .chart-caption>span {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
   display: flex;
   align-items: center;
@@ -1032,7 +1032,7 @@ p {
 }
 
 .chart-caption small {
-  font-size: 8px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
@@ -1057,14 +1057,14 @@ p {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  font: 7px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text-3);
 }
 
 .plot-times {
   display: flex;
   justify-content: space-between;
-  font: 8px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text-3);
   padding-top: 5px;
 }
@@ -1082,7 +1082,7 @@ p {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
@@ -1094,12 +1094,12 @@ p {
 }
 
 .checkpoint-items small {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
 .checkpoint-items button {
-  font: 8px var(--mono);
+  font: var(--fs-micro) var(--mono);
   background: var(--bg-3);
   border: 1px solid var(--line-2);
   color: var(--text-2);
@@ -1122,13 +1122,13 @@ p {
 }
 
 .event-list span {
-  font: 8px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--accent-2);
   white-space: nowrap;
 }
 
 .event-list p {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   line-height: 1.7;
 }
@@ -1158,7 +1158,7 @@ p {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   position: relative;
   padding: 0 0 12px;
@@ -1190,13 +1190,13 @@ p {
 }
 
 .inspector-intro h2 {
-  font-size: 12px;
+  font-size: var(--fs-ui);
   font-weight: 550;
   color: var(--text);
 }
 
 .inspector-intro p {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   line-height: 1.7;
   margin-top: 8px;
@@ -1207,7 +1207,7 @@ p {
 }
 
 .parameter>label {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
   display: flex;
   align-items: center;
@@ -1216,7 +1216,7 @@ p {
 }
 
 .parameter output {
-  font: 10px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text);
   background: var(--bg-3);
   border: 1px solid var(--line-2);
@@ -1226,20 +1226,20 @@ p {
 }
 
 .parameter output span {
-  font: 8px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text-3);
 }
 
 .range-labels {
   display: flex;
   justify-content: space-between;
-  font: 8px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text-3);
   margin-top: 4px;
 }
 
 .parameter p {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   line-height: 1.6;
   color: var(--text-3);
   margin-top: 8px;
@@ -1250,13 +1250,13 @@ p {
 }
 
 .seed-control>label {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
 }
 
 .seed-control label small {
   display: block;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   margin-top: 6px;
 }
@@ -1269,7 +1269,7 @@ p {
 }
 
 .seed-control input {
-  font: 11px var(--mono);
+  font: var(--fs-micro) var(--mono);
   width: 100%;
   flex: 1;
 }
@@ -1282,7 +1282,7 @@ p {
 }
 
 .seed-control>small {
-  font-size: 8px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
@@ -1294,11 +1294,11 @@ p {
 
 .inspector>.toggle-row {
   margin: 0 0 9px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
 }
 
 .reduced-help {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   line-height: 1.8;
   color: var(--text-3);
   display: block;
@@ -1316,7 +1316,7 @@ p {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 8px;
+  font-size: var(--fs-micro);
   letter-spacing: 1px;
 }
 
@@ -1333,7 +1333,7 @@ p {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   margin: 10px 0;
 }
 
@@ -1344,13 +1344,13 @@ p {
 .constants-card dd {
   margin: 0;
   color: var(--text-2);
-  font: 9px var(--mono);
+  font: var(--fs-micro) var(--mono);
 }
 
 .formula {
   padding-top: 11px;
   border-top: 1px solid var(--line-2);
-  font: 11px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--accent);
   text-align: center;
 }
@@ -1365,17 +1365,17 @@ p {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
 .reservoir-readout strong {
-  font: 12px var(--mono);
+  font: var(--fs-ui) var(--mono);
   color: var(--text-2);
 }
 
 .reservoir-readout small {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   line-height: 1.8;
   color: var(--text-3);
 }
@@ -1388,7 +1388,7 @@ p {
   align-items: center;
   gap: 7px;
   width: 100%;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--accent);
   background: var(--bg-3);
 }
@@ -1432,7 +1432,7 @@ p {
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   border-bottom: 1px solid var(--line);
   padding: 12px 0;
 }
@@ -1444,7 +1444,7 @@ p {
 .readout-list dd {
   margin: 0;
   color: var(--text-2);
-  font: 9px var(--mono);
+  font: var(--fs-micro) var(--mono);
   text-align: right;
 }
 
@@ -1467,13 +1467,13 @@ p {
 }
 
 .empty-inspector p {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   margin: 13px 0 8px;
 }
 
 .empty-inspector small {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
@@ -1485,7 +1485,7 @@ p {
   justify-content: space-between;
   align-items: center;
   padding: 0 19px;
-  font: 8px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text-3);
   gap: 15px;
 }
@@ -1525,7 +1525,7 @@ p {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 12px;
+  font-size: var(--fs-ui);
 }
 
 .toast button {
@@ -1536,7 +1536,7 @@ p {
 }
 
 .error-banner {
-  font-size: 12px;
+  font-size: var(--fs-ui);
   line-height: 1.6;
   background: var(--accent-bg);
   border: 1px solid var(--warn-line);
@@ -1578,7 +1578,7 @@ p {
 }
 
 .graphics-error p {
-  font-size: 12px;
+  font-size: var(--fs-ui);
   line-height: 1.7;
   max-width: 440px;
 }
@@ -1617,7 +1617,7 @@ p {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   letter-spacing: 1.8px;
   color: var(--accent);
   margin-bottom: 19px;
@@ -1632,13 +1632,13 @@ p {
 }
 
 .model-dialog p {
-  font-size: 12px;
+  font-size: var(--fs-ui);
   line-height: 1.9;
   color: var(--text-3);
 }
 
 .model-dialog h3 {
-  font-size: 13px;
+  font-size: var(--fs-value);
   font-weight: 550;
   color: var(--text);
   margin: 24px 0 10px;
@@ -1646,7 +1646,7 @@ p {
 
 .model-dialog ul {
   padding-left: 19px;
-  font-size: 12px;
+  font-size: var(--fs-ui);
   line-height: 1.8;
   color: var(--text-2);
 }
@@ -1663,7 +1663,7 @@ p {
 }
 
 .model-equations span {
-  font: 11px var(--mono);
+  font: var(--fs-micro) var(--mono);
   background: var(--accent-bg);
   color: var(--accent);
   border: 1px solid var(--line-2);
@@ -1689,7 +1689,7 @@ p {
 
 .dialog-links a {
   color: var(--accent);
-  font-size: 11px;
+  font-size: var(--fs-micro);
   display: flex;
   align-items: center;
   gap: 3px;
@@ -1703,7 +1703,7 @@ p {
 }
 
 .roadmap-item>span {
-  font: 12px var(--mono);
+  font: var(--fs-ui) var(--mono);
   color: var(--accent-2);
   margin-top: 26px;
 }
@@ -1742,10 +1742,10 @@ p {
     padding: 29px 35px;
   }
   .preset strong {
-    font-size: 12px;
+    font-size: var(--fs-ui);
   }
   .preset small {
-    font-size: 10px;
+    font-size: var(--fs-micro);
     max-width: 155px;
   }
   .page-heading h1 {
@@ -1785,7 +1785,7 @@ p {
     gap: 12px;
   }
   .page-heading p {
-    font-size: 11px;
+    font-size: var(--fs-micro);
   }
   .viewport-shell {
     height: 46vh;
@@ -1837,7 +1837,7 @@ p {
     padding: 22px;
   }
   .header-actions>a {
-    font-size: 10px;
+    font-size: var(--fs-micro);
   }
   .metric-strip {
     margin-top: 12px;
@@ -1850,7 +1850,7 @@ p {
   }
   .statusbar {
     padding: 0 12px;
-    font-size: 7px;
+    font-size: var(--fs-micro);
   }
   .statusbar .desktop-only {
     display: none;
@@ -1890,11 +1890,11 @@ p {
     font-size: 23px;
   }
   .page-heading p {
-    font-size: 10px;
+    font-size: var(--fs-micro);
     max-width: 265px;
   }
   .assumption-pill {
-    font-size: 8px;
+    font-size: var(--fs-micro);
     padding: 4px 6px;
     margin-top: 30px;
     gap: 3px;
@@ -1904,7 +1904,7 @@ p {
     gap: 5px;
   }
   .breadcrumbs {
-    font-size: 9px;
+    font-size: var(--fs-micro);
     margin-bottom: 10px;
   }
   .run-toolbar {
@@ -1925,7 +1925,7 @@ p {
   }
   .tool-button {
     padding: 7px;
-    font-size: 9px;
+    font-size: var(--fs-micro);
     gap: 4px;
   }
   .toolbar-divider {
@@ -1951,7 +1951,7 @@ p {
     display: none;
   }
   .speed-label select {
-    font-size: 10px;
+    font-size: var(--fs-micro);
   }
   .viewport-shell {
     height: 365px;
@@ -1964,7 +1964,7 @@ p {
     gap: 5px;
   }
   .view-label {
-    font-size: 8px;
+    font-size: var(--fs-micro);
     padding: 4px;
     gap: 5px;
   }
@@ -1972,13 +1972,13 @@ p {
     margin: 0;
   }
   .view-label>span:nth-child(2) {
-    font-size: 7px;
+    font-size: var(--fs-micro);
   }
   .view-buttons {
     padding: 2px;
   }
   .view-buttons button {
-    font-size: 8px;
+    font-size: var(--fs-micro);
     padding: 4px 7px;
   }
   .camera-tools {
@@ -1997,11 +1997,11 @@ p {
     gap: 5px;
   }
   .charge-legend {
-    font-size: 8px;
+    font-size: var(--fs-micro);
     gap: 8px;
   }
   .cell-scale {
-    font-size: 7px;
+    font-size: var(--fs-micro);
     gap: 4px;
   }
   .cell-scale i {
@@ -2013,7 +2013,7 @@ p {
     width: 37px;
   }
   .orbit-hint {
-    font-size: 7px;
+    font-size: var(--fs-micro);
   }
   .metric-strip {
     grid-template-columns: repeat(2,minmax(0,1fr));
@@ -2033,10 +2033,10 @@ p {
     font-size: 20px;
   }
   .metric-strip>div>span {
-    font-size: 8px;
+    font-size: var(--fs-micro);
   }
   .metric-strip em {
-    font-size: 8px;
+    font-size: var(--fs-micro);
   }
   .diagnostic-heading {
     padding: 0 10px;
@@ -2046,24 +2046,24 @@ p {
     gap: 15px;
   }
   .diagnostic-tabs button {
-    font-size: 9px;
+    font-size: var(--fs-micro);
     gap: 5px;
   }
   .diagnostic-tabs svg {
     display: none;
   }
   .diagnostic-heading .text-button {
-    font-size: 8px;
+    font-size: var(--fs-micro);
     gap: 3px;
   }
   .chart-caption {
     margin: 13px 11px 3px;
   }
   .chart-caption small {
-    font-size: 7px;
+    font-size: var(--fs-micro);
   }
   .chart-caption>span {
-    font-size: 8px;
+    font-size: var(--fs-micro);
   }
   .checkpoint-bar {
     padding: 8px 10px;
@@ -2071,13 +2071,13 @@ p {
     flex-wrap: wrap;
   }
   .checkpoint-bar>span {
-    font-size: 8px;
+    font-size: var(--fs-micro);
   }
   .checkpoint-items {
     min-width: 90px;
   }
   .checkpoint-items small {
-    font-size: 8px;
+    font-size: var(--fs-micro);
   }
   .statusbar {
     height: auto;
@@ -2085,7 +2085,7 @@ p {
     flex-wrap: wrap;
     padding: 7px 11px;
     gap: 7px;
-    font-size: 7px;
+    font-size: var(--fs-micro);
   }
   .statusbar>span {
     gap: 6px;
@@ -2101,17 +2101,17 @@ p {
   }
   .model-dialog p,
   .model-dialog li {
-    font-size: 11px;
+    font-size: var(--fs-micro);
   }
   .toast {
-    font-size: 11px;
+    font-size: var(--fs-micro);
     width: calc(100vw - 25px);
   }
   .graphics-error {
     padding: 20px;
   }
   .graphics-error p {
-    font-size: 11px;
+    font-size: var(--fs-micro);
   }
 }
 

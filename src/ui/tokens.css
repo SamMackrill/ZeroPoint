@@ -38,4 +38,11 @@
   --data-bspin: #efa5c1;
   --data-core: #b39cf0;
   --data-shell-1: #f2c46e;
+
+  /* Type (UI 01g): 11 px is the minimum readable size. Larger display sizes belong to the legacy page headings. */
+  --fs-micro: 11px; /* section labels, units, captions */
+  --fs-ui: 12px; /* labels, tabs, rail items */
+  --fs-value: 13px; /* values and readouts */
+  --fs-body: 14px; /* body copy, readout strip values */
+  --fs-title: 15px; /* panel and pane titles */
 }
