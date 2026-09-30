@@ -329,7 +329,9 @@ async function watch() {
       const lines = diffSnapshots(state.watch?.last, next);
       // Stack PRs seen in any earlier snapshot stay filtered, so a PR merged between passes isn't relayed as outside activity.
       const known = [...new Set([...(state.watch?.stackNumbers ?? []), ...Object.keys(next.prs).map(Number)])];
-      const notes = notificationsSince(next.repo, seen, new Set(known));
+      // Notifications are a secondary signal: if GitHub's notifications API fails, still save and report the snapshot diff.
+      let notes = [];
+      try { notes = notificationsSince(next.repo, seen, new Set(known)); } catch (error) { lines.push(`notifications unavailable: ${error instanceof Error ? error.message.split('\n')[0] : error}`); }
       state.watch = { last: next, notifiedAt: notes.map(n => n.at).concat(seen ?? '').sort().pop(), stackNumbers: known };
       saveObservations(state);
       for (const line of [...lines, ...notes.map(n => n.line)]) console.log(`[${stamp()}] ${line}`);
