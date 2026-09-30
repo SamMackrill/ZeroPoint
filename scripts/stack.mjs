@@ -304,7 +304,9 @@ function snapshot(state) {
  */
 function notificationsSince(repo, since, stackNumbers) {
   const onStack = n => stackNumbers.has(Number(/\/pulls\/(\d+)$/.exec(n.subject?.url ?? '')?.[1])) || /\bfor ui\/\d{2}[a-z]?-/.test(n.subject?.title ?? '');
-  const items = ghJson(['api', 'notifications', '--paginate', '--slurp']).flat().filter(n => n.repository?.full_name === repo && n.updated_at > (since ?? '') && !onStack(n));
+  // One repository-scoped page from `since`: paginating the account-wide feed fails with HTTP 502 on long histories.
+  const query = `per_page=50${since ? `&since=${encodeURIComponent(since)}` : ''}`;
+  const items = (ghJson(['api', `repos/${repo}/notifications?${query}`]) ?? []).filter(n => n.updated_at > (since ?? '') && !onStack(n));
   return items.map(n => ({ at: n.updated_at, line: `GitHub ${n.reason.replaceAll('_', ' ')}: ${n.subject?.title ?? ''}` }));
 }
 

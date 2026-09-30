@@ -93,6 +93,7 @@ describe('review queue', () => {
     expect(reviewState(pr('ui/01-tokens', { draft: true }))).toBe('draft');
     expect(reviewState(pr('ui/01-tokens', { checks: 'fail' }))).toBe('failing');
     expect(reviewState(pr('ui/01-tokens', { checks: 'pending' }))).toBe('waiting-ci');
+    expect(reviewState(pr('ui/01-tokens', { checks: 'none' }))).toBe('waiting-ci');
     expect(reviewState(pr('ui/01-tokens', { lastTriggerAt: 2000 }))).toBe('triggered');
     expect(reviewState(pr('ui/01-tokens', { lastTriggerAt: 500 }))).toBe('queued');
     expect(reviewState(pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'], openThreads: 2 }))).toBe('reviewed');
@@ -107,6 +108,11 @@ describe('review queue', () => {
     const prs = [pr('ui/03-plot'), pr('ui/01-tokens', { reviewedShas: ['sha-ui/01-tokens'] }), pr('ui/02-primitives', { checks: 'fail' }), pr('ui/04-runtime')];
     expect(pickNext(prs)?.branch).toBe('ui/03-plot');
     expect(pickNext([pr('ui/01-tokens', { draft: true })])).toBeNull();
+  });
+  it('waits for a lower layer whose CI is still running rather than skipping ahead', () => {
+    expect(pickNext([pr('ui/01-tokens', { checks: 'pending' }), pr('ui/02-primitives')])).toBeNull();
+    expect(pickNext([pr('ui/01-tokens', { checks: 'none' }), pr('ui/02-primitives')])).toBeNull();
+    expect(pickNext([pr('ui/01-tokens', { checks: 'fail' }), pr('ui/02-primitives')])?.branch).toBe('ui/02-primitives');
   });
 });
 

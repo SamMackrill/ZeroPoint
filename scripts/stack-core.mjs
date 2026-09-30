@@ -116,7 +116,8 @@ export function reviewState(pr) {
   const reviewed = pr.patchId && evidence.length ? evidence.includes(pr.patchId) : Boolean(pr.reviewedShas?.includes(pr.head));
   if (reviewed) return pr.openThreads > 0 || pr.outsideFindings > 0 ? 'reviewed' : 'clean';
   if (pr.lastTriggerAt && pr.lastTriggerAt > (pr.headCommittedAt ?? 0)) return 'triggered';
-  if (pr.checks === 'pending') return 'waiting-ci';
+  // 'none' means GitHub has not registered the checks for a fresh push yet, not that the PR has no CI.
+  if (pr.checks === 'pending' || pr.checks === 'none') return 'waiting-ci';
   return 'queued';
 }
 
@@ -128,9 +129,18 @@ export function mergeReady(pr) {
   return pr.base === 'main' && !pr.draft && !pr.hold && pr.checks === 'pass' && reviewState(pr) === 'clean';
 }
 
-/** Choose the PR to review next: the lowest queued layer, because merges and fixes flow bottom-up. */
+/**
+ * Choose the PR to review next: the lowest queued layer, because merges and fixes flow bottom-up. A lower layer that is
+ * only waiting for CI holds the queue (its CI finishes within minutes and the slot should go to it); held, failing and
+ * draft layers are skipped.
+ */
 export function pickNext(prs) {
-  return sortStack(prs).find(pr => reviewState(pr) === 'queued') ?? null;
+  for (const pr of sortStack(prs)) {
+    const state = reviewState(pr);
+    if (state === 'queued') return pr;
+    if (state === 'waiting-ci') return null;
+  }
+  return null;
 }
 
 /**
