@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { lightReadout, pairAt, pairCount, sourceX, waveAt } from './model';
 import type { LightSnapshot, LightView } from './model';
+import { palette, scene } from '../ui/palette';
 
 const SAMPLES = 241, BACKGROUND = 540;
 export class LightRenderer {
@@ -31,37 +32,37 @@ export class LightRenderer {
   private disposed = false;
   constructor(private host: HTMLElement, private options: LightView, private onPick: (index: number) => void, private onError: (message: string) => void) {
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
-    this.renderer.setClearColor('#0a1420');
+    this.renderer.setClearColor(palette.bg1);
     this.renderer.domElement.setAttribute('role', 'img');
     this.renderer.domElement.setAttribute('aria-label', 'Light induction in the zero-point medium. Drag to orbit; click a pair centre to pin it.');
     host.appendChild(this.renderer.domElement);
-    this.scene.add(new THREE.AmbientLight('#a9cfe0', 2));
-    const light = new THREE.DirectionalLight('#ffffff', 2.5); light.position.set(2, 5, 6); this.scene.add(light);
+    this.scene.add(new THREE.AmbientLight(scene.ambientLight, 2));
+    const light = new THREE.DirectionalLight(scene.keyLight, 2.5); light.position.set(2, 5, 6); this.scene.add(light);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true; this.controls.minDistance = 1.3; this.controls.maxDistance = 30;
     const sphere = new THREE.SphereGeometry(.062, 10, 8);
-    this.positive = new THREE.InstancedMesh(sphere, new THREE.MeshStandardMaterial({ color: '#ffc29c', emissive: '#8c391a', emissiveIntensity: .25 }), BACKGROUND + 24);
-    this.negative = new THREE.InstancedMesh(sphere, new THREE.MeshStandardMaterial({ color: '#8bdaff', emissive: '#205773', emissiveIntensity: .25 }), BACKGROUND + 24);
-    this.centres = new THREE.InstancedMesh(new THREE.TorusGeometry(.09, .012, 5, 16), new THREE.MeshBasicMaterial({ color: '#99c9c3', transparent: true, opacity: .6 }), 24);
+    this.positive = new THREE.InstancedMesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataPosHi, emissive: scene.posGlowLight, emissiveIntensity: .25 }), BACKGROUND + 24);
+    this.negative = new THREE.InstancedMesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataNegHi, emissive: scene.negGlowLight, emissiveIntensity: .25 }), BACKGROUND + 24);
+    this.centres = new THREE.InstancedMesh(new THREE.TorusGeometry(.09, .012, 5, 16), new THREE.MeshBasicMaterial({ color: palette.text2, transparent: true, opacity: .6 }), 24);
     for (const mesh of [this.positive, this.negative, this.centres]) { mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.frustumCulled = false; mesh.count = 0; this.scene.add(mesh); }
     const makeLine = (color: string) => {
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(SAMPLES * 3), 3).setUsage(THREE.DynamicDrawUsage));
       const line = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color })); line.frustumCulled = false; this.scene.add(line); return line;
     };
-    this.electric = makeLine('#a2edc6'); this.magnetic = makeLine('#b4a1f1');
+    this.electric = makeLine(palette.accent); this.magnetic = makeLine(palette.dataCore);
     for (let i = 0; i < 50; i++) {
-      const arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 1, i % 2 ? '#b4a1f1' : '#a2edc6', .09, .045);
+      const arrow = new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), 1, i % 2 ? palette.dataCore : palette.accent, .09, .045);
       this.arrows.push(arrow); this.response.add(arrow);
     }
     this.scene.add(this.response);
-    this.envelope = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: '#6cdcb1', transparent: true, opacity: .065, depthWrite: false, wireframe: true }));
-    this.probe = new THREE.Mesh(new THREE.TorusGeometry(.9, .009, 4, 48), new THREE.MeshBasicMaterial({ color: '#e8c77c', transparent: true, opacity: .65 }));
+    this.envelope = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: palette.accent, transparent: true, opacity: .065, depthWrite: false, wireframe: true }));
+    this.probe = new THREE.Mesh(new THREE.TorusGeometry(.9, .009, 4, 48), new THREE.MeshBasicMaterial({ color: palette.dataShell1, transparent: true, opacity: .65 }));
     this.probe.rotation.y = Math.PI / 2;
-    this.selection = new THREE.Mesh(new THREE.SphereGeometry(.35, 16, 12), new THREE.MeshBasicMaterial({ color: '#d6f3a3', wireframe: true, transparent: true, opacity: .35 }));
+    this.selection = new THREE.Mesh(new THREE.SphereGeometry(.35, 16, 12), new THREE.MeshBasicMaterial({ color: palette.dataMarkHi, wireframe: true, transparent: true, opacity: .35 }));
     this.scene.add(this.envelope, this.probe, this.selection);
-    const grid = new THREE.GridHelper(12, 24, '#2a4958', '#19303e'); grid.position.y = -1.8; grid.scale.z = .3;
-    const path = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6, 0, 0), new THREE.Vector3(6, 0, 0)]), new THREE.LineDashedMaterial({ color: '#577b84', dashSize: .08, gapSize: .06 })); path.computeLineDistances();
+    const grid = new THREE.GridHelper(12, 24, palette.line2, palette.dataNegDeep); grid.position.y = -1.8; grid.scale.z = .3;
+    const path = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6, 0, 0), new THREE.Vector3(6, 0, 0)]), new THREE.LineDashedMaterial({ color: palette.text4, dashSize: .08, gapSize: .06 })); path.computeLineDistances();
     this.base.add(grid, path); this.scene.add(this.base);
     this.resize = new ResizeObserver(() => this.resizeCanvas()); this.resize.observe(host); this.resizeCanvas();
     this.renderer.domElement.addEventListener('pointerdown', this.pointerDown);
@@ -150,8 +151,8 @@ export class LightRenderer {
   exportPNG() {
     this.renderer.render(this.scene, this.camera);
     const source = this.renderer.domElement, c = document.createElement('canvas'); c.width = source.width; c.height = source.height + 64;
-    const ctx = c.getContext('2d')!; ctx.fillStyle = '#0a1420'; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(source, 0, 0);
-    ctx.fillStyle = '#c8e6db'; ctx.font = '13px sans-serif';
+    const ctx = c.getContext('2d')!; ctx.fillStyle = palette.bg1; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(source, 0, 0);
+    ctx.fillStyle = palette.dataEHi; ctx.font = '13px sans-serif';
     ctx.fillText(`ZEROPOINT / Light induction · illustrative sequence · tick ${this.data?.tick ?? 0}`, 16, source.height + 24);
     ctx.fillText(`Wavelength ${(this.data?.parameters.wavelength ?? 2) * 250} nm · 1 L = 250 nm · prescribed speed c`, 16, source.height + 46);
     c.toBlob(blob => { if (!blob) return; const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = 'zeropoint-light.png'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); });

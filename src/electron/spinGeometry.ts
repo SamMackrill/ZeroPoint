@@ -1,7 +1,8 @@
 import { add, cross, dipoleAt, dot, LATTICE_SAMPLES, norm, referenceFields, rotate, sampleCentre, scale, SAMPLES_PER_SHELL, spinAxis, spinRateAtRadius, unit } from './model';
 import type { ElectronParameters, ElectronState, SpinDisplay, Vec } from './model';
+import { palette } from '../ui/palette';
 
-export const SHELL_COLOURS = ['#f4c783', '#bda7ff', '#8ed9c3', '#ed9cbb'];
+export const SHELL_COLOURS = [palette.warn, palette.dataShell2, palette.dataShell3, palette.dataShell4];
 export const shellBand = (index: number) => Math.floor((index - LATTICE_SAMPLES) / SAMPLES_PER_SHELL);
 // Right-handed section coordinates: viewed from +axis, U is right and V is up.
 /** Return a right-handed section frame for the selected spin axis. */

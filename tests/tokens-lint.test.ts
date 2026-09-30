@@ -1,6 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { renderPalette } from '../scripts/sync-palette.mjs';
+import { readTokens } from '../scripts/tokens-preview.mjs';
 
 const root = join(__dirname, '..');
 
@@ -35,5 +37,23 @@ describe('colour tokens', () => {
   it.each(files)('%s uses the type scale', (_name, file) => {
     const sizes = [...readFileSync(file, 'utf8').matchAll(/^\s*(?:font-size|font):[^;]*?(?:^|\s|:)(\d+(?:\.\d+)?)px/gm)].map(m => Number(m[1]));
     expect(sizes.filter(px => px < 16)).toEqual([]);
+  });
+});
+
+/** List every TypeScript source under src/, recursively. */
+function codeFiles(dir = join(root, 'src')): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? codeFiles(join(dir, entry.name)) : /\.tsx?$/.test(entry.name) ? [join(dir, entry.name)] : []);
+}
+
+// Code colours (Three.js, canvas, generated SVG) come from src/ui/palette.ts, generated from the same tokens (UI 01h).
+describe('palette in code', () => {
+  const paletteFile = join(root, 'src', 'ui', 'palette.ts');
+  it('palette.ts is generated from tokens.css (run node scripts/sync-palette.mjs)', () => {
+    const tokens = readTokens(readFileSync(join(root, 'src', 'ui', 'tokens.css'), 'utf8'));
+    expect(readFileSync(paletteFile, 'utf8')).toBe(renderPalette(tokens));
+  });
+  const files = codeFiles().filter(file => file !== paletteFile).map(file => [relative(root, file).split(sep).join('/'), file]);
+  it.each(files)('%s takes colours from the palette, not literals', (_name, file) => {
+    expect(readFileSync(file, 'utf8').match(/['"`]#[0-9a-f]{3,8}['"`]/gi) ?? []).toEqual([]);
   });
 });

@@ -3,6 +3,7 @@ import { cross, dot, norm, scale, unit } from './model';
 import type { ElectronState, SpinDisplay, Vec } from './model';
 import { displayedDipole } from './spinGeometry';
 import { chargeMotion } from './propertyGeometry';
+import { palette } from '../ui/palette';
 
 /** Magnify the same fixed-site pair used in the shell scene and inspector. */
 export function ChargeMotion({ state, index, display }: { state: ElectronState; index: number; display: SpinDisplay }) {
@@ -20,21 +21,21 @@ export function ChargeMotion({ state, index, display }: { state: ElectronState; 
       <button aria-pressed={current} onClick={() => setCurrent(true)}>Conventional current qv</button>
     </div>
     <svg viewBox="0 0 460 215" role="img" aria-label={current ? 'Opposite charges with opposite velocities give parallel conventional-current contributions' : 'The two charge ends move in opposite directions around their fixed midpoint'}>
-      <text x="18" y="25" fill="#91aebd" fontSize="12">← toward the electron</text>
-      <path d="M65 104H400" stroke="#34505f" strokeDasharray="3 6"/>
-      <path d={`M${ends[0].join(',')}L${ends[1].join(',')}`} stroke="#8395a3"/>
+      <text x="18" y="25" fill={palette.accent2} fontSize="12">← toward the electron</text>
+      <path d="M65 104H400" stroke={palette.line2} strokeDasharray="3 6"/>
+      <path d={`M${ends[0].join(',')}L${ends[1].join(',')}`} stroke={palette.text3}/>
       {ends.map(([x, y], i) => {
         const [vx, vy] = project(vectors[i]), length = Math.hypot(vx, vy);
         const ux = length ? vx / length : 0, uy = length ? vy / length : 0;
         const ax = x + ux * 48, ay = y + uy * 48;
-        const colour = i ? '#87d4f3' : '#ffc199';
+        const colour = i ? palette.dataNeg : palette.dataPosHi;
         return <g key={i}>
           {length > 1e-9 && <path d={`M${x + ux * 16} ${y + uy * 16}L${ax} ${ay}M${ax - ux * 7 + uy * 4} ${ay - uy * 7 - ux * 4}L${ax} ${ay}L${ax - ux * 7 - uy * 4} ${ay - uy * 7 + ux * 4}`} stroke={colour} strokeWidth="2" fill="none"/>}
-          <circle cx={x} cy={y} r="12" fill="#152736" stroke={colour}/><text x={x} y={y + 5} textAnchor="middle" fill={colour} fontSize="17">{i ? '−' : '+'}</text>
+          <circle cx={x} cy={y} r="12" fill={palette.bg3} stroke={colour}/><text x={x} y={y + 5} textAnchor="middle" fill={colour} fontSize="17">{i ? '−' : '+'}</text>
         </g>;
       })}
-      <circle cx="230" cy="104" r="3" fill="#f3e1ab"/>
-      <text x="230" y="192" textAnchor="middle" fill="#91aebd" fontSize="12">Fixed midpoint · rotation component only · magnified</text>
+      <circle cx="230" cy="104" r="3" fill={palette.dataMark}/>
+      <text x="230" y="192" textAnchor="middle" fill={palette.accent2} fontSize="12">Fixed midpoint · rotation component only · magnified</text>
     </svg>
     <p className="light-small" data-testid="charge-motion-explanation">{current ? 'The negative charge reverses the current sign: (+e)v+ and (−e)v− point together. This illustrates why the two charge motions can reinforce magnetism.' : 'The + and − ends have opposite rotation velocities while their midpoint stays fixed. Switch to current to include each charge’s sign.'}{norm(d.localAxis) < 1e-9 ? ' This site lies on the preferred axis, where this display has no spin turn.' : ''}</p>
     <p className="light-small">Arrows show direction, not speed. This is a local current comparison, not an integrated magnetic moment or a calculation of g ≈ 2. Separation and collapse velocities are omitted. The main timeline drives this pair.</p>

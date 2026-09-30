@@ -5,6 +5,7 @@ import { RepositoryLink } from '../app/RepositoryLink';
 import { CasimirModel, STEP, extent, lifeStage, phase, type ChargePair, type Zepton } from './model';
 import { Scene, type SceneLayers } from './Scene';
 import './casimir.css';
+import { palette } from '../ui/palette';
 
 /** Format a pressure delta with an explicit sign and fixed precision. */
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(3)}`;
@@ -18,16 +19,16 @@ function Lifetime({ particle, expired }: { particle: Zepton | null; expired: boo
   return <>
     <div className="casimir-life-heading"><strong>Zepton #{p.id}</strong><span>{p.gap ? 'GAP BIRTH' : 'FIELD BIRTH'}</span></div>
     <svg viewBox="0 0 300 145" className="casimir-loupe" role="img" aria-label={`${lifeStage(p)}; ${Math.round(f * 100)} percent of lifetime elapsed`}>
-      <circle cx="150" cy="70" r="55" fill="none" stroke="#28424d" strokeDasharray="3 5" />
+      <circle cx="150" cy="70" r="55" fill="none" stroke={palette.line2} strokeDasharray="3 5" />
       {!expired && <g>
-        <line x1={150 - dx} y1={70 - dy} x2={150 + dx} y2={70 + dy} stroke="#97b2c1" />
-        <circle cx={150 - dx} cy={70 - dy} r="13" fill="#204f68" stroke="#8dd7f8" />
-        <circle cx={150 + dx} cy={70 + dy} r="13" fill="#6c4937" stroke="#ffc397" />
-        <text x={150 - dx} y={75 - dy} textAnchor="middle" fill="#c8efff" fontSize="17">−</text>
-        <text x={150 + dx} y={75 + dy} textAnchor="middle" fill="#ffe0c4" fontSize="17">+</text>
+        <line x1={150 - dx} y1={70 - dy} x2={150 + dx} y2={70 + dy} stroke={palette.text2} />
+        <circle cx={150 - dx} cy={70 - dy} r="13" fill={palette.line2} stroke={palette.dataNeg} />
+        <circle cx={150 + dx} cy={70 + dy} r="13" fill={palette.warnLine} stroke={palette.dataPosHi} />
+        <text x={150 - dx} y={75 - dy} textAnchor="middle" fill={palette.dataNegHi} fontSize="17">−</text>
+        <text x={150 + dx} y={75 + dy} textAnchor="middle" fill={palette.dataPosHi} fontSize="17">+</text>
       </g>}
-      {expired && <text x="150" y="76" textAnchor="middle" fill="#b4c6cf" fontSize="13">Lifetime complete</text>}
-      <text x="150" y="141" textAnchor="middle" fill="#8ba4b4" fontSize="10">{f < .5 ? 'Lobes separate as the pair grows' : 'Lobes return inward as the pair collapses'}</text>
+      {expired && <text x="150" y="76" textAnchor="middle" fill={palette.text2} fontSize="13">Lifetime complete</text>}
+      <text x="150" y="141" textAnchor="middle" fill={palette.text3} fontSize="10">{f < .5 ? 'Lobes separate as the pair grows' : 'Lobes return inward as the pair collapses'}</text>
     </svg>
     <div className="casimir-life-track" role="progressbar" aria-label="Zepton lifetime" aria-valuenow={Math.round(f * 100)} aria-valuemin={0} aria-valuemax={100}><i style={{ width: `${f * 100}%` }}/></div>
     <div className="casimir-life-labels"><span>Birth</span><span>Maximum size</span><span>Annihilation</span></div>
@@ -121,7 +122,7 @@ export function CasimirExperiment({ active, onBack }: { active: boolean; onBack:
           <div className="casimir-legend"><span>LOCAL PRESSURE / P₀</span><div><i/><div><span>0.55 · lower</span><span>1 · ambient</span><span>1.45 · higher</span></div></div><small>Colour saturates at the scale endpoints</small></div>
           <div className="casimir-layers">{(['pressure', 'interactions', 'zeptons'] as const).map(key => <label key={key}><input type="checkbox" data-testid={`layer-${key}`} checked={layers[key]} onChange={e => setLayers(v => ({ ...v, [key]: e.target.checked }))}/>{key === 'pressure' ? 'Pressure colour' : key === 'interactions' ? 'Interaction arrows' : 'Zeptons'}</label>)}<span>Click a pair to inspect its lifetime</span></div>
           <section className="casimir-metrics" aria-label="Pressure readings"><div><span>BETWEEN CHARGES</span><strong data-testid="inner-pressure">{model.inner.toFixed(3)} <small>P₀</small></strong></div><div><span>OUTER MEDIUM</span><strong>{model.outer.toFixed(3)} <small>P₀</small></strong></div><div><span>INNER − OUTER</span><strong data-testid="pressure-difference">{signed(model.delta)} <small>P₀</small></strong></div><div><span>NET PUSH</span><strong data-testid="motion-tendency">{tendency}</strong></div></section>
-          <section className="casimir-chart"><div className="casimir-card-heading"><h2>Pressure builds from fleeting interactions</h2><span><i/> Inner <i/> Outer</span></div><svg viewBox="0 0 750 180" role="img" aria-label="Inner and outer pressure history in units of ambient pressure P zero"><text x="20" y="20">1.45 P₀</text><text x="20" y="170">0.55 P₀</text><line x1="20" y1="95" x2="730" y2="95" stroke="#4d6577" strokeDasharray="4 5"/><text x="677" y="88">1.00 P₀</text><polyline points={plot('outer')} fill="none" stroke="#95b1c5" strokeDasharray="4 5" strokeWidth="1.5"/><polyline points={plot('inner')} fill="none" stroke="#efbd8c" strokeWidth="2"/></svg><div className="casimir-chart-times"><span>{start.toFixed(1)} τ</span><span>Gap average along the axis · outer probes beyond each charge</span><span>{end.toFixed(1)} τ</span></div></section>
+          <section className="casimir-chart"><div className="casimir-card-heading"><h2>Pressure builds from fleeting interactions</h2><span><i/> Inner <i/> Outer</span></div><svg viewBox="0 0 750 180" role="img" aria-label="Inner and outer pressure history in units of ambient pressure P zero"><text x="20" y="20">1.45 P₀</text><text x="20" y="170">0.55 P₀</text><line x1="20" y1="95" x2="730" y2="95" stroke={palette.text4} strokeDasharray="4 5"/><text x="677" y="88">1.00 P₀</text><polyline points={plot('outer')} fill="none" stroke={palette.text2} strokeDasharray="4 5" strokeWidth="1.5"/><polyline points={plot('inner')} fill="none" stroke={palette.warn} strokeWidth="2"/></svg><div className="casimir-chart-times"><span>{start.toFixed(1)} τ</span><span>Gap average along the axis · outer probes beyond each charge</span><span>{end.toFixed(1)} τ</span></div></section>
         </div>
         <aside className="casimir-inspector" aria-label="Zepton lifecycle inspector">
           <section className="casimir-card"><div className="casimir-card-heading"><h2>One fleeting lifetime</h2><span>LIVE LOUPE</span></div><Lifetime particle={displayed} expired={!inspected}/><div className="casimir-inspect-actions"><button onClick={() => { const p = [...model.particles].reverse().find(p => model.bridge(p)); if (p) { setSelected(p.id); lastSelected.current = { ...p }; setFollow(false); } }}>Inspect newest Zepton</button><label><input type="checkbox" checked={follow} onChange={e => setFollow(e.target.checked)}/> Follow next birth after annihilation</label></div><p className="casimir-muted">{like ? 'A weak or neutral midpoint leaves new dipoles disordered. Neighbouring dipoles turn toward their local field.' : 'Each new pair first expands and pushes back, then contracts. Dashed links show neighbouring pairs moving inward.'}</p></section>

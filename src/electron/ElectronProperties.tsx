@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { effectiveShellScale, fluxAtRadius } from './propertyGeometry';
+import { palette } from '../ui/palette';
 
 /** Independent reference investigations prompted by the electron-properties video. */
 export function ElectronProperties() {
@@ -14,15 +15,15 @@ export function ElectronProperties() {
     </div>
     {topic === 'flux' ? <div className="electron-property-layout">
       <svg viewBox="0 0 320 260" role="img" aria-label="Cross-section of a variable Gauss sphere around a stationary negative electron">
-        <circle cx="160" cy="128" r="35" stroke="#526976" fill="none" strokeDasharray="4 5"/>
-        <circle cx="160" cy="128" r={radius * 35} stroke="#93dec0" fill="#93dec00a"/>
+        <circle cx="160" cy="128" r="35" stroke={palette.text4} fill="none" strokeDasharray="4 5"/>
+        <circle cx="160" cy="128" r={radius * 35} stroke={palette.dataE} fill={`${palette.dataE}0a`}/>
         {Array.from({ length: 12 }, (_, i) => {
           const a = i * Math.PI / 6, x = 160 + radius * 35 * Math.cos(a), y = 128 + radius * 35 * Math.sin(a);
           const length = Math.min(38, radius * 35 - 12, 15 * flux.field), ex = x - length * Math.cos(a), ey = y - length * Math.sin(a);
-          return <path key={i} d={`M${x} ${y}L${ex} ${ey}M${ex + 5 * Math.cos(a + .5)} ${ey + 5 * Math.sin(a + .5)}L${ex} ${ey}L${ex + 5 * Math.cos(a - .5)} ${ey + 5 * Math.sin(a - .5)}`} stroke="#93dec0" fill="none"/>;
+          return <path key={i} d={`M${x} ${y}L${ex} ${ey}M${ex + 5 * Math.cos(a + .5)} ${ey + 5 * Math.sin(a + .5)}L${ex} ${ey}L${ex + 5 * Math.cos(a - .5)} ${ey + 5 * Math.sin(a - .5)}`} stroke={palette.dataE} fill="none"/>;
         })}
-        <circle cx="160" cy="128" r="10" fill="#b199e3"/><text x="160" y="134" textAnchor="middle" fill="#21172e" fontSize="19">−</text>
-        <text x="160" y="249" textAnchor="middle" fill="#91aebd" fontSize="11">Dashed: R · solid: integration sphere r</text>
+        <circle cx="160" cy="128" r="10" fill={palette.dataCore}/><text x="160" y="134" textAnchor="middle" fill={palette.dataCoreDeep} fontSize="19">−</text>
+        <text x="160" y="249" textAnchor="middle" fill={palette.accent2} fontSize="11">Dashed: R · solid: integration sphere r</text>
       </svg>
       <div><h3>Less field, more surface</h3><p className="light-small">Increase the sphere radius. The inward field falls as 1/r² while the area grows as r², keeping the enclosed charge constant.</p>
         <label className="light-range">Gauss sphere radius<output>{radius.toFixed(1)} R</output><input aria-label="Gauss sphere radius" type="range" min=".5" max="3" step=".1" value={radius} onChange={e => setRadius(+e.target.value)}/></label>
@@ -32,13 +33,13 @@ export function ElectronProperties() {
       </div>
     </div> : <div className="electron-property-layout">
       <svg viewBox="0 0 320 260" role="img" aria-label="Effective speed versus radius at the selected pattern rate, with a speed-of-light threshold">
-        <path d="M40 22V218H295" stroke="#617c8c" fill="none"/>
-        <path d="M40 170H295" stroke="#e8bb82" strokeDasharray="5 5"/>
-        <text x="46" y="162" fill="#e8bb82" fontSize="11">v = c</text>
-        <path d={`M40 218L280 ${218 - 96 * rate}`} stroke="#93dec0" strokeWidth="2"/>
-        <circle cx={40 + trialRadius * 120} cy={218 - shell.speedOverC * 48} r="5" fill={shell.speedOverC > 1 ? '#e8bb82' : '#93dec0'}/>
-        <text x="43" y="16" fill="#91aebd" fontSize="11">v/c = 2πrf/c</text>
-        <text x="40" y="237" fill="#91aebd" fontSize="11">0</text><text x="157" y="237" fill="#91aebd" fontSize="11">R</text><text x="274" y="237" fill="#91aebd" fontSize="11">2R</text>
+        <path d="M40 22V218H295" stroke={palette.text4} fill="none"/>
+        <path d="M40 170H295" stroke={palette.warn} strokeDasharray="5 5"/>
+        <text x="46" y="162" fill={palette.warn} fontSize="11">v = c</text>
+        <path d={`M40 218L280 ${218 - 96 * rate}`} stroke={palette.dataE} strokeWidth="2"/>
+        <circle cx={40 + trialRadius * 120} cy={218 - shell.speedOverC * 48} r="5" fill={shell.speedOverC > 1 ? palette.warn : palette.dataE}/>
+        <text x="43" y="16" fill={palette.accent2} fontSize="11">v/c = 2πrf/c</text>
+        <text x="40" y="237" fill={palette.accent2} fontSize="11">0</text><text x="157" y="237" fill={palette.accent2} fontSize="11">R</text><text x="274" y="237" fill={palette.accent2} fontSize="11">2R</text>
       </svg>
       <div><h3>Where the proposed shell reaches c</h3><p className="light-small">Hold the effective rate fixed and increase the trial radius, or change the rate to move the limit. R = λC/2; f₀ = c/(2πR).</p>
         <label className="light-range">Trial shell radius<output>{trialRadius.toFixed(2)} R</output><input aria-label="Trial shell radius" type="range" min=".5" max="2" step=".05" value={trialRadius} onChange={e => setTrialRadius(+e.target.value)}/></label>
