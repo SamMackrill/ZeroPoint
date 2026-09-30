@@ -11,6 +11,22 @@ function stylesheets(dir = join(root, 'src')): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? stylesheets(join(dir, entry.name)) : entry.name.endsWith('.css') ? [join(dir, entry.name)] : []);
 }
 
+/**
+ * Selectors of rules that colour text with --text-4. Only svg selectors are exempt, and a rule qualifies only when every
+ * selector in its (possibly multi-line) selector list ends in svg.
+ */
+function text4Offenders(css: string): string[] {
+  let selector = '', pending: string[] = [];
+  return css.split('\n').flatMap(line => {
+    const trimmed = line.trim();
+    if (trimmed.endsWith('{')) { selector = [...pending, trimmed.slice(0, -1).trim()].join(' '); pending = []; }
+    else if (trimmed.endsWith(',')) pending.push(trimmed);
+    else pending = [];
+    const svgOnly = selector.split(',').every(part => /\bsvg$/.test(part.trim()));
+    return /^\s*color:\s*var\(--text-4\)/.test(line) && !svgOnly ? [selector] : [];
+  });
+}
+
 // Colours are design tokens (src/ui/tokens.css, approved in UI 01d). Component stylesheets refer to them with var() or
 // color-mix(); a raw colour literal anywhere else would reintroduce the one-off palette the redesign removed.
 describe('colour tokens', () => {
@@ -25,12 +41,12 @@ describe('colour tokens', () => {
   });
   // --text-4 is below AA contrast: disabled or decorative only. As a text colour it may only colour icons.
   it.each(files)('%s keeps readable text off --text-4', (_name, file) => {
-    let selector = '';
-    const offenders = readFileSync(file, 'utf8').split('\n').flatMap(line => {
-      if (line.trimEnd().endsWith('{')) selector = line.trim().slice(0, -1).trim();
-      return /^\s*color:\s*var\(--text-4\)/.test(line) && !/\bsvg$/.test(selector) ? [selector] : [];
-    });
-    expect(offenders).toEqual([]);
+    expect(text4Offenders(readFileSync(file, 'utf8'))).toEqual([]);
+  });
+  it('flags a readable selector grouped with an svg one', () => {
+    expect(text4Offenders('.caption, svg {\n  color: var(--text-4);\n}\n')).toEqual(['.caption, svg']);
+    expect(text4Offenders('.caption,\nsvg {\n  color: var(--text-4);\n}\n')).toEqual(['.caption, svg']);
+    expect(text4Offenders('.a svg,\n.b svg {\n  color: var(--text-4);\n}\n')).toEqual([]);
   });
   // Type scale (UI 01g): nothing below 11 px, and every size up to 15 px comes from a --fs-* token. Literal sizes of
   // 16 px and above are legacy page headings that the shell replaces.

@@ -26,16 +26,26 @@ export function tokenMapping(tokens, uses) {
   return table;
 }
 
-/** In the page: rewrite every rgb()/rgba() in every rule to its token colour (runs inside the browser). */
+/**
+ * In the page: rewrite every rgb()/rgba() and hex colour in every rule to its token colour (runs inside the browser).
+ * The CSSOM serialises ordinary properties as rgb(), but keeps custom property values (--mint: #…) as written.
+ */
 function applyMapping(table) {
   const key = inner => { const p = inner.split(/[\s,/]+/).filter(Boolean).map(Number); return `${p[0]},${p[1]},${p[2]},${(p[3] ?? 1).toFixed(2)}`; };
+  const hexKey = hex => {
+    let h = hex.slice(1).toLowerCase();
+    if (h.length <= 4) h = [...h].map(c => c + c).join('');
+    const n = [0, 2, 4, 6].map(i => parseInt(h.slice(i, i + 2) || 'ff', 16));
+    return `${n[0]},${n[1]},${n[2]},${(n[3] / 255).toFixed(2)}`;
+  };
   const rewrite = rules => {
     for (const rule of rules) {
       if (rule.cssRules) rewrite(rule.cssRules);
       if (!rule.style) continue;
       for (let i = 0; i < rule.style.length; i++) {
         const property = rule.style[i], value = rule.style.getPropertyValue(property);
-        const next = value.replace(/rgba?\(([^)]+)\)/g, (match, inner) => table[key(inner)] ?? match);
+        const next = value.replace(/rgba?\(([^)]+)\)/g, (match, inner) => table[key(inner)] ?? match)
+          .replace(/#(?:[0-9a-f]{8}|[0-9a-f]{6}|[0-9a-f]{3,4})\b/gi, match => table[hexKey(match)] ?? match);
         if (next !== value) rule.style.setProperty(property, next, rule.style.getPropertyPriority(property));
       }
     }
@@ -50,22 +60,25 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const port = 5600 + Math.floor(Math.random() * 300);
   const server = await createServer({ root, logLevel: 'error', server: { host: '127.0.0.1', port, strictPort: true } });
   await server.listen();
-  const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  // Launch the browser inside the server's cleanup scope, so a failed launch still stops Vite.
   try {
-    for (const screen of SCREENS) {
-      const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-      await page.goto(`http://127.0.0.1:${port}/`);
-      await page.getByTestId('transport-run').filter({ visible: true }).first().waitFor();
-      if (screen.lab) await page.getByTestId(screen.lab).filter({ visible: true }).click();
-      if (screen.scenario) await page.getByTestId(screen.scenario).filter({ visible: true }).click();
-      await page.waitForTimeout(1200);
-      await page.evaluate(() => document.fonts.ready);
-      await page.screenshot({ path: join(MOCKUP_DIR, `${screen.name}-before.jpg`), type: 'jpeg', quality: 82 });
-      await page.evaluate(applyMapping, table);
-      await page.waitForTimeout(300);
-      await page.screenshot({ path: join(MOCKUP_DIR, `${screen.name}-after.jpg`), type: 'jpeg', quality: 82 });
-      await page.close();
-      console.log(`mockups: ${screen.name}`);
-    }
-  } finally { await browser.close(); await server.close(); }
+    const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+    try {
+      for (const screen of SCREENS) {
+        const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+        await page.goto(`http://127.0.0.1:${port}/`);
+        await page.getByTestId('transport-run').filter({ visible: true }).first().waitFor();
+        if (screen.lab) await page.getByTestId(screen.lab).filter({ visible: true }).click();
+        if (screen.scenario) await page.getByTestId(screen.scenario).filter({ visible: true }).click();
+        await page.waitForTimeout(1200);
+        await page.evaluate(() => document.fonts.ready);
+        await page.screenshot({ path: join(MOCKUP_DIR, `${screen.name}-before.jpg`), type: 'jpeg', quality: 82 });
+        await page.evaluate(applyMapping, table);
+        await page.waitForTimeout(300);
+        await page.screenshot({ path: join(MOCKUP_DIR, `${screen.name}-after.jpg`), type: 'jpeg', quality: 82 });
+        await page.close();
+        console.log(`mockups: ${screen.name}`);
+      }
+    } finally { await browser.close(); }
+  } finally { await server.close(); }
 }
