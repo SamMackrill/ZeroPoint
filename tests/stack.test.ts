@@ -156,7 +156,7 @@ describe('shared state merge', () => {
     const base = { watch: { last: 's0', stackNumbers: [12] } };
     const ours = { watch: { last: 's1', stackNumbers: [12, 13] } };
     const theirs = { watch: { last: 's2', stackNumbers: [12, 14] } };
-    expect(mergeState(base, ours, theirs).watch).toEqual({ last: 's1', stackNumbers: [12, 13, 14] });
+    expect(mergeState(base, ours, theirs)).toEqual({ watch: { last: 's1', stackNumbers: [12, 13, 14] }, layers: {} });
   });
 });
 
