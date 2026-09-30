@@ -152,6 +152,12 @@ describe('shared state merge', () => {
     const theirs = { lastTriggerAt: 12, layers: { a: { baseSha: 's1', merged: true }, b: { baseSha: 's2' }, c: { review: { pr: 7, patches: { h1: 'p1', h3: 'p3' } } }, d: { baseSha: 's4' } } };
     expect(mergeState(base, ours, theirs)).toEqual({ lastTriggerAt: 12, layers: { a: { baseSha: 's3', merged: true }, c: { review: { pr: 7, patches: { h1: 'p1', h2: 'p2', h3: 'p3' } } }, d: { baseSha: 's4' } } });
   });
+  it("keeps a concurrent watcher's stack numbers when saving its own snapshot", () => {
+    const base = { watch: { last: 's0', stackNumbers: [12] } };
+    const ours = { watch: { last: 's1', stackNumbers: [12, 13] } };
+    const theirs = { watch: { last: 's2', stackNumbers: [12, 14] } };
+    expect(mergeState(base, ours, theirs).watch).toEqual({ last: 's1', stackNumbers: [12, 13, 14] });
+  });
 });
 
 describe('watch snapshots', () => {

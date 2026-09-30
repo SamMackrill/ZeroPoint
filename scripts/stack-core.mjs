@@ -197,6 +197,11 @@ export function mergeState(base = {}, ours = {}, theirs = {}) {
     if (key === 'layers' || same(base[key], ours[key])) continue;
     if (key === 'lastTriggerAt' || key === 'rateLimitUntil') out[key] = Math.max(out[key] ?? 0, ours[key] ?? 0);
     else if (ours[key] === undefined) delete out[key];
+    else if (key === 'watch' && (theirs.watch?.stackNumbers || ours.watch.stackNumbers)) {
+      // Stack numbers only ever grow; a concurrent watcher's additions must survive this save.
+      const numbers = [...new Set([...(theirs.watch?.stackNumbers ?? []), ...(ours.watch.stackNumbers ?? [])])].sort((a, b) => a - b);
+      out.watch = { ...structuredClone(ours.watch), stackNumbers: numbers };
+    }
     else out[key] = structuredClone(ours[key]);
   }
   const baseLayers = base.layers ?? {}, ourLayers = ours.layers ?? {};
