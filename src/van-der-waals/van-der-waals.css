@@ -14,7 +14,7 @@
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 30px;
-  font-size: 12px;
+  font-size: var(--fs-ui);
   color: var(--text-2);
 }
 
@@ -41,13 +41,13 @@
 }
 
 .vdw-heading p {
-  font-size: 14px;
+  font-size: var(--fs-body);
   line-height: 1.7;
   color: var(--text-3);
 }
 
 .vdw-badge {
-  font: 9px var(--mono);
+  font: var(--fs-micro) var(--mono);
   letter-spacing: .8px;
   white-space: nowrap;
   color: var(--text-2);
@@ -76,20 +76,20 @@
 }
 
 .vdw-stages button>span {
-  font: 13px var(--mono);
+  font: var(--fs-value) var(--mono);
   color: var(--text-3);
 }
 
 .vdw-stages strong {
   font-weight: 500;
-  font-size: 14px;
+  font-size: var(--fs-body);
   display: block;
 }
 
 .vdw-stages small {
   display: block;
   color: var(--text-3);
-  font-size: 11px;
+  font-size: var(--fs-micro);
   margin-top: 7px;
 }
 
@@ -130,14 +130,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  font: 10px var(--mono);
+  font: var(--fs-micro) var(--mono);
   letter-spacing: .5px;
   color: var(--text-3);
   padding: 19px 21px;
 }
 
 .vdw-card-heading a {
-  font: 11px 'DM Sans',sans-serif;
+  font: var(--fs-micro) 'DM Sans',sans-serif;
   color: var(--text-2);
   letter-spacing: 0;
 }
@@ -146,7 +146,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font: 11px 'DM Sans',sans-serif;
+  font: var(--fs-micro) 'DM Sans',sans-serif;
   letter-spacing: 0;
   padding: 4px;
 }
@@ -168,12 +168,12 @@
 }
 
 .vdw-diagram .vdw-svg-muted {
-  font-size: 14px;
+  font-size: var(--fs-body);
   fill: var(--text-3);
 }
 
 .vdw-diagram .vdw-mode-label {
-  font: 12px var(--mono);
+  font: var(--fs-ui) var(--mono);
   fill: var(--text-3);
 }
 
@@ -185,7 +185,7 @@
   padding: 15px 21px;
   border-bottom: 1px solid var(--line);
   background: var(--bg-1);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
 }
 
@@ -197,7 +197,7 @@
 
 .vdw-legend small {
   margin-left: auto;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
@@ -231,7 +231,7 @@
 }
 
 .vdw-app p {
-  font-size: 13px;
+  font-size: var(--fs-value);
   line-height: 1.85;
   color: var(--text-2);
 }
@@ -246,14 +246,14 @@
 
 .vdw-slider {
   display: block;
-  font-size: 12px;
+  font-size: var(--fs-ui);
   color: var(--text-2);
   margin-bottom: 21px;
 }
 
 .vdw-slider output {
   float: right;
-  font: 11px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--accent);
 }
 
@@ -263,13 +263,13 @@
 }
 
 .vdw-app .vdw-control-note {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   line-height: 1.8;
   color: var(--text-3);
 }
 
 .vdw-equation {
-  font: 14px/2 var(--mono);
+  font: var(--fs-body)/2 var(--mono);
   color: var(--accent);
   border: 1px solid var(--line-2);
   border-radius: 5px;
@@ -289,7 +289,7 @@
   background: var(--accent-bg);
   border-radius: 5px;
   padding: 12px;
-  font-size: 12px;
+  font-size: var(--fs-ui);
   color: var(--text);
   text-align: left;
 }
@@ -308,7 +308,7 @@
   border: 1px solid var(--accent-line);
   border-radius: 5px;
   padding: 10px 12px;
-  font-size: 12px;
+  font-size: var(--fs-ui);
   color: var(--accent);
 }
 
@@ -322,7 +322,7 @@
 }
 
 .vdw-readouts dt {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
@@ -337,7 +337,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
   line-height: 1.6;
 }
@@ -372,7 +372,7 @@
 }
 
 .vdw-plot text {
-  font: 12px var(--mono);
+  font: var(--fs-ui) var(--mono);
   fill: var(--accent-2);
 }
 
@@ -384,7 +384,7 @@
 }
 
 .vdw-gap-presets button {
-  font: 11px var(--mono);
+  font: var(--fs-micro) var(--mono);
   padding: 8px 12px;
   border: 1px solid var(--line-2);
   border-radius: 4px;
@@ -412,7 +412,7 @@
 }
 
 .vdw-context p {
-  font-size: 12px;
+  font-size: var(--fs-ui);
 }
 
 .vdw-sources {
@@ -427,7 +427,7 @@
   gap: 10px;
   padding: 20px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--fs-value);
   color: var(--text-2);
 }
 
@@ -438,7 +438,7 @@
 
 .vdw-sources summary>span {
   margin-left: auto;
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
@@ -478,7 +478,7 @@
 }
 
 .vdw-source-grid figcaption {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   line-height: 1.7;
   margin-top: 12px;
 }
@@ -500,7 +500,7 @@
   gap: 20px;
   flex-wrap: wrap;
   margin-top: 20px;
-  font-size: 12px;
+  font-size: var(--fs-ui);
 }
 
 .vdw-source-content a {
@@ -526,10 +526,10 @@
     gap: 10px;
   }
   .vdw-stages strong {
-    font-size: 12px;
+    font-size: var(--fs-ui);
   }
   .vdw-stages small {
-    font-size: 10px;
+    font-size: var(--fs-micro);
   }
   .vdw-stages button>svg {
     display: none;
@@ -568,7 +568,7 @@
     align-items: flex-start;
   }
   .vdw-stages strong {
-    font-size: 12px;
+    font-size: var(--fs-ui);
     line-height: 1.5;
   }
   .vdw-stages small {
@@ -591,7 +591,7 @@
     line-height: 1.35;
   }
   .vdw-heading p {
-    font-size: 12px;
+    font-size: var(--fs-ui);
   }
   .vdw-app .topbar {
     padding: 0 15px;
@@ -601,11 +601,11 @@
     display: none;
   }
   .vdw-card-heading {
-    font-size: 8px;
+    font-size: var(--fs-micro);
     padding: 16px 14px;
   }
   .vdw-card-heading a {
-    font-size: 10px;
+    font-size: var(--fs-micro);
   }
   .vdw-legend {
     gap: 10px;
@@ -625,7 +625,7 @@
     grid-template-columns: 1fr;
   }
   .vdw-nav {
-    font-size: 11px;
+    font-size: var(--fs-micro);
   }
   .vdw-source-grid a {
     height: 220px;

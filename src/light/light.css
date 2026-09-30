@@ -9,7 +9,7 @@
   align-items: center;
   gap: 8px;
   color: var(--text-2);
-  font-size: 12px;
+  font-size: var(--fs-ui);
 }
 
 .light-heading {
@@ -21,7 +21,7 @@
 }
 
 .light-eyebrow {
-  font: 9px var(--mono);
+  font: var(--fs-micro) var(--mono);
   letter-spacing: 1.5px;
   color: var(--accent-2);
 }
@@ -35,7 +35,7 @@
 
 .light-heading p {
   color: var(--text-3);
-  font-size: 12px;
+  font-size: var(--fs-ui);
 }
 
 .light-badge {
@@ -47,7 +47,7 @@
   color: var(--accent);
   border-radius: 20px;
   padding: 8px 12px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   white-space: nowrap;
 }
 
@@ -68,7 +68,7 @@
 
 .light-transport select {
   padding: 7px;
-  font-size: 11px;
+  font-size: var(--fs-micro);
 }
 
 .light-next {
@@ -80,7 +80,7 @@
   border-radius: 5px;
   padding: 9px 12px;
   color: var(--accent);
-  font-size: 11px;
+  font-size: var(--fs-micro);
 }
 
 .light-file-actions button {
@@ -90,7 +90,7 @@
   border: 1px solid var(--line-2);
   padding: 9px;
   border-radius: 5px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
 }
 
@@ -141,7 +141,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  font: 8px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--accent);
   background: color-mix(in srgb, var(--bg-1) 79%, transparent);
   border-radius: 4px;
@@ -166,7 +166,7 @@
 }
 
 .light-view-top button {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   padding: 6px 8px;
   display: flex;
   align-items: center;
@@ -191,13 +191,13 @@
 }
 
 .light-stage-note strong {
-  font-size: 15px;
+  font-size: var(--fs-title);
   font-weight: 400;
   color: var(--text);
 }
 
 .light-stage-note small {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
@@ -208,7 +208,7 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
   pointer-events: none;
 }
@@ -235,7 +235,7 @@
   position: absolute;
   right: 20px;
   bottom: 21px;
-  font: 8px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text-3);
   pointer-events: none;
 }
@@ -270,7 +270,7 @@
 }
 
 .light-metrics>div>span {
-  font-size: 8px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   letter-spacing: 1px;
 }
@@ -281,13 +281,13 @@
 }
 
 .light-metrics strong small {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   margin-left: 7px;
 }
 
 .light-metrics em {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   font-style: normal;
   color: var(--text-3);
 }
@@ -312,14 +312,14 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--fs-ui);
   font-weight: 500;
   color: var(--text);
 }
 
 .light-card-heading>span,
 .light-card-heading>button {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
@@ -339,7 +339,7 @@
 }
 
 .light-range {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
   display: block;
   margin: 18px 0;
@@ -347,7 +347,7 @@
 
 .light-range output {
   float: right;
-  font: 10px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text);
 }
 
@@ -357,7 +357,7 @@
 }
 
 .light-derived {
-  font: 9px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--accent);
   padding: 10px;
   background: var(--accent-bg);
@@ -366,7 +366,7 @@
 }
 
 .light-direction {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
   display: flex;
   align-items: center;
@@ -376,7 +376,7 @@
 }
 
 .light-direction select {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   padding: 7px;
   max-width: 150px;
 }
@@ -388,26 +388,26 @@
   border-radius: 5px;
   padding: 10px;
   width: 100%;
-  font-size: 10px;
+  font-size: var(--fs-micro);
 }
 
 .light-form-note {
   display: block;
   color: var(--text-3);
-  font-size: 9px;
+  font-size: var(--fs-micro);
   margin-top: 8px;
   text-align: center;
 }
 
 .light-scrubber {
   display: block;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
 }
 
 .light-scrubber output {
   float: right;
-  font: 10px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text-2);
 }
 
@@ -450,16 +450,16 @@
 }
 
 .light-events strong {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 500;
 }
 
 .light-events small {
-  font: 9px var(--mono);
+  font: var(--fs-micro) var(--mono);
 }
 
 .light-timeline>p {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   line-height: 1.8;
   color: var(--text-3);
   margin: 6px 0 15px;
@@ -477,7 +477,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 9px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
   border: 1px solid var(--line-2);
   padding: 6px;
@@ -500,13 +500,13 @@
   display: flex;
   justify-content: space-between;
   gap: 5px;
-  font: 8px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text-3);
   margin-top: 8px;
 }
 
 .light-plot>div>span:nth-child(2) {
-  font-size: 7px;
+  font-size: var(--fs-micro);
 }
 
 .light-footnote {
@@ -514,7 +514,7 @@
   justify-content: space-between;
   gap: 20px;
   color: var(--text-3);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   line-height: 1.7;
 }
 
@@ -523,7 +523,7 @@
   align-items: center;
   gap: 6px;
   color: var(--accent);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   white-space: nowrap;
 }
 
@@ -542,7 +542,7 @@
   gap: 8px;
   border-bottom: 1px solid var(--line);
   padding: 10px 0;
-  font-size: 9px;
+  font-size: var(--fs-micro);
 }
 
 .light-readouts dt {
@@ -550,7 +550,7 @@
 }
 
 .light-readouts dd {
-  font: 9px var(--mono);
+  font: var(--fs-micro) var(--mono);
   color: var(--text-2);
   margin: 0;
   text-align: right;
@@ -566,13 +566,13 @@
   border-radius: 4px;
   padding: 8px;
   color: var(--accent);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   margin-top: 15px;
 }
 
 .light-small {
   color: var(--text-3);
-  font-size: 9px;
+  font-size: var(--fs-micro);
   line-height: 1.8;
   margin-top: 13px;
 }
@@ -583,7 +583,7 @@
   justify-content: space-between;
   gap: 10px;
   padding: 9px 0;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
 }
 
@@ -599,19 +599,19 @@
 }
 
 .light-source strong {
-  font-size: 11px;
+  font-size: var(--fs-micro);
   font-weight: 500;
 }
 
 .light-source p {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-3);
   line-height: 1.9;
   margin: 9px 0;
 }
 
 .light-source a {
-  font-size: 9px;
+  font-size: var(--fs-micro);
   display: block;
   line-height: 2.2;
   color: var(--accent);
@@ -620,7 +620,7 @@
 .light-status {
   min-height: 28px;
   margin-top: 22px;
-  font-size: 11px;
+  font-size: var(--fs-micro);
   color: var(--text-2);
 }
 
@@ -663,7 +663,7 @@
     font-size: 20px;
   }
   .light-metrics em {
-    font-size: 8px;
+    font-size: var(--fs-micro);
   }
   .light-plots {
     grid-template-columns: 1fr;
@@ -695,7 +695,7 @@
     max-width: 420px;
   }
   .light-heading .light-badge {
-    font-size: 9px;
+    font-size: var(--fs-micro);
     padding: 7px;
   }
   .light-plots {
@@ -732,11 +732,11 @@
     line-height: 1.2;
   }
   .light-heading p {
-    font-size: 11px;
+    font-size: var(--fs-micro);
     line-height: 1.8;
   }
   .light-back {
-    font-size: 10px;
+    font-size: var(--fs-micro);
     gap: 5px;
   }
   .light-transport {
@@ -748,19 +748,19 @@
   }
   .light-next {
     padding: 8px;
-    font-size: 10px;
+    font-size: var(--fs-micro);
     gap: 5px;
   }
   .light-transport .play-button {
-    font-size: 10px;
+    font-size: var(--fs-micro);
     padding: 9px;
   }
   .light-transport .tool-button {
-    font-size: 9px;
+    font-size: var(--fs-micro);
     padding: 7px 5px;
   }
   .light-transport select {
-    font-size: 10px;
+    font-size: var(--fs-micro);
     padding: 6px;
   }
   .light-file-actions {
@@ -789,22 +789,22 @@
     gap: 7px;
   }
   .light-stage-note strong {
-    font-size: 13px;
+    font-size: var(--fs-value);
   }
   .light-stage-note small {
-    font-size: 9px;
+    font-size: var(--fs-micro);
   }
   .light-view-legend {
     left: 12px;
     bottom: 16px;
     gap: 9px;
-    font-size: 8px;
+    font-size: var(--fs-micro);
   }
   .light-scale {
     left: 12px;
     right: auto;
     bottom: 40px;
-    font-size: 7px;
+    font-size: var(--fs-micro);
   }
   .light-png {
     bottom: 39px;
@@ -826,7 +826,7 @@
     font-size: 22px;
   }
   .light-metrics em {
-    font-size: 9px;
+    font-size: var(--fs-micro);
   }
   .light-controls {
     grid-template-columns: 1fr;
@@ -842,16 +842,16 @@
     gap: 0;
   }
   .light-timeline .light-card-heading span {
-    font-size: 8px;
+    font-size: var(--fs-micro);
   }
   .light-readouts>div {
-    font-size: 10px;
+    font-size: var(--fs-micro);
   }
   .light-readouts dd {
-    font-size: 10px;
+    font-size: var(--fs-micro);
   }
   .light-toggle {
-    font-size: 11px;
+    font-size: var(--fs-micro);
   }
   .light-source {
     margin: 3px 0 8px;
@@ -860,7 +860,7 @@
     gap: 8px;
   }
   .light-range {
-    font-size: 11px;
+    font-size: var(--fs-micro);
   }
 }
 

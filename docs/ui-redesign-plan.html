@@ -213,7 +213,7 @@ details>div{padding:0 18px 12px}
     <div class="stat"><b><s>3,424 px</s>0</b><span>Page scroll in Electron › Spin. The viewport never scrolls away.</span></div>
     <div class="stat"><b><s>5</s>1</b><span>Transport, header, layer and plot implementations</span></div>
     <div class="stat"><b><s>484</s>~26</b><span>Unique hex colours in CSS → named design tokens</span></div>
-    <div class="stat"><b><s>91</s>0</b><span>Font-size declarations below 10 px → 11 px minimum</span></div>
+    <div class="stat"><b><s>282</s>0</b><span>Font sizes below 11 px (186 below 10 px) → 11 px minimum</span></div>
   </div>
 </div>
 
@@ -286,7 +286,7 @@ details>div{padding:0 18px 12px}
     </ul></div>
     <div class="card"><h3>Visual system</h3><ul>
       <li><b>484 unique hex colours</b> across seven stylesheets, with no tokens beyond <code>--mint</code>, <code>--muted</code> and <code>--line</code>.</li>
-      <li><b>25 font sizes</b>, with 91 declarations below 10 px. These are hard to read and fail at a normal viewing distance.</li>
+      <li><b>25 font sizes</b>, with 282 declarations below 11 px, 186 of them below 10 px (recounted in UI 01g to include the <code>font</code> shorthand, which the first count missed). These are hard to read and fail at a normal viewing distance.</li>
       <li>Light and Electron share <code>light-*</code> class names. Electron imports <code>light.css</code>, so styles are coupled by accident.</li>
       <li>Five hand-rolled SVG plot implementations (Medium, Light, Electron, Casimir pressure history, van der Waals gap sweep) with different axes, labels and colours.</li>
     </ul></div>
