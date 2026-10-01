@@ -308,18 +308,21 @@ function snapshot(state) {
 }
 
 /**
- * Unread GitHub notifications for this repository newer than `since` (read-only: nothing is marked as read). Stack PRs
- * and CI runs on stack branches are skipped because the snapshot diff already reports them; what remains is activity
- * outside the stack, which matters for the main freeze.
+ * Unread GitHub notifications for this repository newer than `since` (read-only: nothing is marked as read), and the
+ * newest timestamp fetched, which becomes the next watermark. Stack PRs and CI runs on stack branches are skipped
+ * because the snapshot diff already reports them; what remains is activity outside the stack, which matters for the
+ * main freeze.
  */
 function notificationsSince(repo, since, stackNumbers) {
   const onStack = n => stackNumbers.has(Number(/\/pulls\/(\d+)$/.exec(n.subject?.url ?? '')?.[1])) || /\bfor ui\/\d{2}[a-z]?-/.test(n.subject?.title ?? '');
   // Every repository-scoped page since the watermark (paginating the account-wide feed fails with HTTP 502 on long
   // histories), so the caller can advance the watermark without skipping notifications on later pages.
   const query = `per_page=50${since ? `&since=${encodeURIComponent(since)}` : ''}`;
-  const pages = ghJson(['api', '--paginate', '--slurp', `repos/${repo}/notifications?${query}`]) ?? [];
-  const items = pages.flat().filter(n => n.updated_at > (since ?? '') && !onStack(n));
-  return items.map(n => ({ at: n.updated_at, line: `GitHub ${n.reason.replaceAll('_', ' ')}: ${n.subject?.title ?? ''}` }));
+  const fetched = (ghJson(['api', '--paginate', '--slurp', `repos/${repo}/notifications?${query}`]) ?? []).flat().filter(n => n.updated_at > (since ?? ''));
+  // The watermark covers everything fetched, including filtered stack notifications, so they are not re-read next pass.
+  const newest = fetched.map(n => n.updated_at).concat(since ?? '').sort().pop() || since;
+  const notes = fetched.filter(n => !onStack(n)).map(n => ({ at: n.updated_at, line: `GitHub ${n.reason.replaceAll('_', ' ')}: ${n.subject?.title ?? ''}` }));
+  return { notes, newest };
 }
 
 /** Local wall-clock time in UK time (BST/GMT) for event lines. */
@@ -344,9 +347,9 @@ async function watch() {
       // Stack PRs seen in any earlier snapshot stay filtered, so a PR merged between passes isn't relayed as outside activity.
       const known = [...new Set([...(state.watch?.stackNumbers ?? []), ...Object.keys(next.prs).map(Number)])];
       // Notifications are a secondary signal: if GitHub's notifications API fails, still save and report the snapshot diff.
-      let notes = [];
-      try { notes = notificationsSince(next.repo, seen, new Set(known)); } catch (error) { lines.push(`notifications unavailable: ${error instanceof Error ? error.message.split('\n')[0] : error}`); }
-      state.watch = { last: next, notifiedAt: notes.map(n => n.at).concat(seen ?? '').sort().pop(), stackNumbers: known };
+      let notes = [], notifiedAt = seen;
+      try { ({ notes, newest: notifiedAt } = notificationsSince(next.repo, seen, new Set(known))); } catch (error) { lines.push(`notifications unavailable: ${error instanceof Error ? error.message.split('\n')[0] : error}`); }
+      state.watch = { last: next, notifiedAt, stackNumbers: known };
       saveObservations(state);
       for (const line of [...lines, ...notes.map(n => n.line)]) console.log(`[${stamp()}] ${line}`);
       lastError = '';

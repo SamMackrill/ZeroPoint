@@ -29,12 +29,15 @@ describe('plot scales', () => {
     expect(linePath([0, 1, 2, 3, 4], [1, 2, null, 4, 5], id, id)).toBe('M0 1L1 2M3 4L4 5');
     expect(linePath([1, 2, 3], [1, -1, 2], id, id, { y: 'log' })).toBe('M1 1M3 2');
     expect(areaPath([0, 1, 2, 3], [1, 2, null, 4], id, id, 10)).toBe('M0 10L0 1L1 2L1 10Z');
+    expect(areaPath([1, 2, 3, 4], [1, 2, 0, 4], id, id, 10, { y: 'log' })).toBe('M1 10L1 1L2 2L2 10Z');
   });
   it('finds the nearest sample', () => {
     expect(nearestIndex([0, 1, 2, 4], 2.9)).toBe(2);
     expect(nearestIndex([0, 1, 2, 4], 3.1)).toBe(3);
     expect(nearestIndex([0, 1, 2, 4], -5)).toBe(0);
     expect(nearestIndex([], 1)).toBe(-1);
+    expect(nearestIndex([100, 200], 145)).toBe(0);
+    expect(nearestIndex([100, 200], 145, 'log')).toBe(1);
   });
   it('exports exactly what is plotted as CSV, gaps empty and labels quoted', () => {
     expect(plotCsv('x (τ)', [0, 0.5], [{ label: 'Inner', values: [1, null] }, { label: 'B, z', values: [2, 3] }])).toBe('x (τ),Inner,"B, z"\n0,1,2\n0.5,,3\n');

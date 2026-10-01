@@ -55,23 +55,25 @@ export function linePath(x: readonly number[], values: readonly Sample[], px: (x
 }
 
 /** The closed area under each run of a line, down to a baseline, with the same gaps as linePath. */
-export function areaPath(x: readonly number[], values: readonly Sample[], px: (x: number) => number, py: (y: number) => number, baseline: number): string {
+export function areaPath(x: readonly number[], values: readonly Sample[], px: (x: number) => number, py: (y: number) => number, baseline: number, kinds: { x?: ScaleKind; y?: ScaleKind } = {}): string {
   const runs: [number, number][][] = [];
   let run: [number, number][] = [];
   values.forEach((v, i) => {
-    if (drawable(v) && drawable(x[i])) run.push([round(px(x[i])), round(py(v))]);
+    if (drawable(v, kinds.y) && drawable(x[i], kinds.x)) run.push([round(px(x[i])), round(py(v))]);
     else if (run.length) { runs.push(run); run = []; }
   });
   if (run.length) runs.push(run);
   return runs.filter(r => r.length > 1).map(r => `M${r[0][0]} ${baseline}${r.map(([a, b]) => `L${a} ${b}`).join('')}L${r.at(-1)![0]} ${baseline}Z`).join('');
 }
 
-/** Index of the sample whose x is nearest to `target` (x sorted ascending); -1 for no samples. */
-export function nearestIndex(x: readonly number[], target: number): number {
+/** Index of the sample whose x is nearest to `target` on an axis of `kind` (x sorted ascending); -1 for no samples. */
+export function nearestIndex(x: readonly number[], target: number, kind: ScaleKind = 'linear'): number {
   if (!x.length) return -1;
   let lo = 0, hi = x.length - 1;
   while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (x[mid] <= target) lo = mid; else hi = mid; }
-  return Math.abs(x[hi] - target) < Math.abs(x[lo] - target) ? hi : lo;
+  // Distances are compared as plotted: on a log axis, 145 is nearer 200 than 100.
+  const at = (v: number) => (kind === 'log' ? Math.log10(v) : v);
+  return Math.abs(at(x[hi]) - at(target)) < Math.abs(at(x[lo]) - at(target)) ? hi : lo;
 }
 
 /** Quote a CSV field when it contains a comma, quote or newline. */
