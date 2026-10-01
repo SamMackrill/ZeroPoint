@@ -70,6 +70,22 @@
   white-space: nowrap;
 }
 
+button.workbench-chip {
+  background: transparent;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+button.workbench-chip:hover {
+  color: var(--text);
+  border-color: var(--accent-line);
+}
+
+button.workbench-chip:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .workbench-actions {
   display: flex;
   align-items: center;

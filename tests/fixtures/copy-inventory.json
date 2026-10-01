@@ -12,78 +12,6 @@
     "text": "Unshifted reference levels beside the small Lamb shift."
   },
   {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Inspect a Zepton to follow its short lifetime."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Extended Casimir effect · short-lived Zeptons and local van der Waals pressure."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Random births at the meeting point push outwards"
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Orange + / blue − lobes · mint rings: births · yellow arrows: net push"
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Inner and outer pressure history in units of ambient pressure P zero"
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Gap average along the axis · outer probes beyond each charge"
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "A weak or neutral midpoint leaves new dipoles disordered. Neighbouring dipoles turn toward their local field."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Each new pair first expands and pushes back, then contracts. Dashed links show neighbouring pairs moving inward."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Charges are held so you can watch the surrounding field."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Observation limit reached. Reset to repeat the motion."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Dipoles continually appear with random orientations and turn in the field of each electron."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Opposing alignments deflect near the middle. Fresh dipoles fill gaps and expand against neighbours."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Repeated gap births sustain higher local pressure, producing an outward motion tendency."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Between opposite charges, dipoles orient in a continuous chain."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "New pairs push back as they grow. During collapse, adjacent pairs shift inward toward the voids."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Contraction outweighs growth in this illustration. Higher outer pressure pushes the charges together."
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Fleming’s proposed mechanism · qualitative pressure, arbitrary spatial units"
-  },
-  {
-    "file": "src/casimir/CasimirExperiment.tsx",
-    "text": "Section 4 · Figures 3 & 4 ↗"
-  },
-  {
     "file": "src/casimir/Scene.tsx",
     "text": "Dynamic Zepton field with signed dipoles, interaction arrows and local pressure colour. Use Inspect newest Zepton for the accessible lifetime view."
   },
@@ -158,6 +86,74 @@
   {
     "file": "src/electron/SpinSection.tsx",
     "text": "Compare with Fleming’s Fig. 2 & §3 ↗"
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Inspect a Zepton to follow its short lifetime."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Random births at the meeting point push outwards"
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Orange + / blue − lobes · mint rings: births · yellow arrows: net push"
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Observation limit reached. Reset to repeat the motion."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Inner and outer pressure history in units of ambient pressure P zero"
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Gap average along the axis · outer probes beyond each charge"
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Section 4 · Figures 3 & 4 ↗"
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Dipoles continually appear with random orientations and turn in the field of each electron."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Opposing alignments deflect near the middle. Fresh dipoles fill gaps and expand against neighbours."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Repeated gap births sustain higher local pressure, producing an outward motion tendency."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Between opposite charges, dipoles orient in a continuous chain."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "New pairs push back as they grow. During collapse, adjacent pairs shift inward toward the voids."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Contraction outweighs growth in this illustration. Higher outer pressure pushes the charges together."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Fleming’s proposed mechanism · qualitative pressure, arbitrary spatial units. Extended Casimir effect · short-lived Zeptons and local van der Waals pressure."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "A weak or neutral midpoint leaves new dipoles disordered. Neighbouring dipoles turn toward their local field."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Each new pair first expands and pushes back, then contracts. Dashed links show neighbouring pairs moving inward."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Charges are held so you can watch the surrounding field."
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
