@@ -71,6 +71,8 @@ export interface CameraSpec {
 export interface TimelineEvent {
   tick: number;
   label: string;
+  /** Stable id: the event's tick on the scrubber carries the test id event-<id>. */
+  id?: string;
 }
 
 /** The four timeline kinds (§07): bounded, open-ended, looping, or none for a static study. */

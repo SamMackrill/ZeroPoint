@@ -10,8 +10,8 @@ const LIVE = ['stationary', 'spin', 'moving'] as const;
  * 0.35 τ and the field is fully aligned at 3 τ (tick 360); a moving electron passes the path centre at 24 τ.
  */
 export function electronMilestones(scenario: string): TimelineEvent[] {
-  if (scenario === 'stationary') return [{ tick: Math.round(0.35 / ELECTRON_DT), label: 'Electron introduced' }, { tick: 360, label: 'Fully aligned' }];
-  if (scenario === 'moving') return [{ tick: 2880, label: 'Path centre' }];
+  if (scenario === 'stationary') return [{ tick: Math.round(0.35 / ELECTRON_DT), label: 'Electron introduced', id: 'introduced' }, { tick: 360, label: 'Fully aligned', id: 'aligned' }];
+  if (scenario === 'moving') return [{ tick: 2880, label: 'Path centre', id: 'path-centre' }];
   return [];
 }
 

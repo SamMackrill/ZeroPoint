@@ -8,6 +8,8 @@ export interface Readout {
   value: string;
   unit?: string;
   info?: ReactNode;
+  /** A test id for the value. */
+  testId?: string;
 }
 
 /** Props for Readouts. */
@@ -41,7 +43,7 @@ export function Readouts({ items, copyable, testId }: ReadoutsProps) {
         <div key={item.label} className="readout">
           <dt>{item.label}{item.info}</dt>
           <dd>
-            <span className="readout-value">{item.value}</span>
+            <span className="readout-value" data-testid={item.testId}>{item.value}</span>
             {item.unit && <span className="readout-unit">{item.unit}</span>}
             {copyable && (
               <button type="button" className="readout-copy" aria-label={`Copy ${item.label}`} onClick={() => copy(item)}>
