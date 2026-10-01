@@ -8,3 +8,4 @@ import { vanDerWaalsDefinition } from './van-der-waals/definition';
 export const EXPERIMENTS = [mediumDefinition, lightDefinition, electronDefinition, casimirDefinition, vanDerWaalsDefinition] as const;
 
 export { casimirDefinition, electronDefinition, lightDefinition, mediumDefinition, vanDerWaalsDefinition };
+export type { MediumParams } from './medium/definition';

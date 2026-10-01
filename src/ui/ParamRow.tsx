@@ -50,7 +50,8 @@ export function ParamRow({ label, value, onChange, min, max, step, unit, default
   /** Handle Enter, Esc and ↑/↓ nudges in the value field. */
   const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') { event.preventDefault(); commitDraft(); }
-    else if (event.key === 'Escape') { event.preventDefault(); setDraft(null); }
+    // Esc reverts typed text; with nothing typed it bubbles (the inspector uses it to revert staged changes).
+    else if (event.key === 'Escape' && draft !== null) { event.preventDefault(); setDraft(null); }
     else if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
       event.preventDefault();
       const base = draft === null ? value : parseValue(draft) ?? value;

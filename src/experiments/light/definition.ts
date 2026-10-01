@@ -15,7 +15,7 @@ export function inductionEvents(params: LightParameters): TimelineEvent[] {
 /** The light induction laboratory: a bounded 0–12 τ sequence in which every parameter restarts the sequence. */
 export const lightDefinition: ExperimentDefinition<LightParameters, LightView> = {
   id: 'light',
-  title: 'Light',
+  title: 'Light through the ZPF',
   scenarios: [{ id: 'induction', title: 'Induction sequence', description: 'A wave induces pair after pair as it travels' }],
   defaultParams: DEFAULT_LIGHT,
   defaultView: DEFAULT_LIGHT_VIEW,

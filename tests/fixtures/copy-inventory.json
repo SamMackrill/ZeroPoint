@@ -1,6 +1,18 @@
 [
   {
     "file": "src/app/App.tsx",
+    "text": "A full parallel-plate boundary model beyond the analytic comparison."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Slit geometry and observation conditions against the screen pattern."
+  },
+  {
+    "file": "src/app/App.tsx",
+    "text": "Unshifted reference levels beside the small Lamb shift."
+  },
+  {
+    "file": "src/app/App.tsx",
     "text": "Run or step the experiment to collect samples"
   },
   {
@@ -458,5 +470,13 @@
   {
     "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
     "text": "Nearly balanced opposing stresses leave a net inward force."
+  },
+  {
+    "file": "src/workbench/Inspector.tsx",
+    "text": "Click something in the viewport to inspect it."
+  },
+  {
+    "file": "src/workbench/Shell.tsx",
+    "text": "Panel sizes will not be saved: browser storage is unavailable."
   }
 ]

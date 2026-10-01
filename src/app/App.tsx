@@ -14,6 +14,9 @@ import { VanDerWaalsExperiment } from '../van-der-waals/VanDerWaalsExperiment';
 import { CasimirExperiment } from '../casimir/CasimirExperiment';
 import { DevProfiler } from './DevProfiler';
 import { palette } from '../ui/palette';
+import { EXPERIMENTS, mediumDefinition } from '../experiments';
+import { Header, Rail, type PlannedExperiment } from '../workbench/Chrome';
+import { HostedLayout } from '../workbench/Shell';
 import { Plot } from '../ui/Plot';
 
 const presets = [
@@ -21,6 +24,13 @@ const presets = [
   { id: 'sparse', title: 'Sparse fluctuations', description: 'Follow individual dipoles', icon: Sparkles, params: { birthRate: 200, frequency: .6, separation: .3 } },
   { id: 'dense', title: 'Dense medium', description: 'A closer look at collective activity', icon: Grid3X3, params: { birthRate: 6500, frequency: 1, separation: .24 } },
   { id: 'slow', title: 'Slow oscillations', description: 'Inspect longer-lived fluctuations', icon: Timer, params: { birthRate: 450, frequency: .3, separation: .4 } },
+];
+/** Planned experiments: greyed in the rail, each opening a one-line summary and its plan. */
+const PLANNED: PlannedExperiment[] = [
+  { id: 'casimir-plates', title: 'Casimir plates (3D)', summary: 'A full parallel-plate boundary model beyond the analytic comparison.', href: './docs/planned-experiments/casimir-effect.md' },
+  { id: 'double-slit', title: 'Double slit', summary: 'Slit geometry and observation conditions against the screen pattern.', href: './docs/planned-experiments/double-slit.md' },
+  { id: 'lamb-shift', title: 'Lamb shift', summary: 'Unshifted reference levels beside the small Lamb shift.', href: './docs/planned-experiments/lamb-shift.md' },
+  { id: 'particle-shells', title: 'Particle shells', summary: 'Requires spectral cutoffs and shell-energy rules.' },
 ];
 const fmt = (n: number) => n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
 /** Render an accessible boolean scene-layer control. */
@@ -46,12 +56,22 @@ export function App() {
   const openElectron = () => { setVisitedElectron(true); setExperiment('electron'); };
   const openCasimir = () => { setVisitedCasimir(true); setExperiment('casimir'); };
   const openVdw = () => { setVisitedVdw(true); setExperiment('vdw'); };
+  const open: Record<typeof experiment, () => void> = { medium: () => setExperiment('medium'), light: openLight, electron: openElectron, casimir: openCasimir, vdw: openVdw };
+  // Medium's scenarios move to the rail (its own library sidebar is hidden on desktop); other labs keep theirs in-page until they migrate.
+  const [mediumPreset, setMediumPreset] = useState('balanced'), [mediumScenario, setMediumScenario] = useState('balanced');
+  const [scenarioRequest, setScenarioRequest] = useState<{ id: string; at: number } | null>(null), [helpRequest, setHelpRequest] = useState(0);
+  const onPresetChange = useCallback((id: string) => { setMediumPreset(id); if (id !== 'custom') setMediumScenario(id); }, []);
+  const definition = EXPERIMENTS.find(d => d.id === experiment)!;
+  const scenarioTitle = experiment === 'medium' ? mediumDefinition.scenarios.find(s => s.id === mediumScenario)?.title : undefined;
+  const header = <Header experiment={definition.title} scenario={scenarioTitle} modified={experiment === 'medium' && mediumPreset === 'custom'} onHelp={experiment === 'medium' ? () => setHelpRequest(n => n + 1) : undefined}/>;
+  const rail = <Rail experiments={EXPERIMENTS.map(d => ({ id: d.id, title: d.title, scenarios: d.id === 'medium' ? d.scenarios : undefined }))} planned={PLANNED} experiment={experiment}
+    scenario={experiment === 'medium' && mediumPreset !== 'custom' ? mediumPreset : undefined} onExperiment={id => open[id as typeof experiment]()} onScenario={(_e, id) => setScenarioRequest({ id, at: performance.now() })}/>;
   // Each lab is profiled separately in development so the render budget can catch one lab re-rendering another.
-  return <><DevProfiler id="medium"><MediumApp active={experiment === 'medium'} onOpenLight={openLight} onOpenElectron={openElectron} onOpenCasimir={openCasimir} onOpenVdw={openVdw}/></DevProfiler>{visitedLight && <DevProfiler id="light"><LightExperiment active={experiment === 'light'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedElectron && <DevProfiler id="electron"><ElectronExperiment active={experiment === 'electron'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedCasimir && <DevProfiler id="casimir"><CasimirExperiment active={experiment === 'casimir'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedVdw && <DevProfiler id="vdw"><VanDerWaalsExperiment active={experiment === 'vdw'} onBack={() => setExperiment('medium')}/></DevProfiler>}</>;
+  return <HostedLayout header={header} rail={rail}><DevProfiler id="medium"><MediumApp active={experiment === 'medium'} onOpenLight={openLight} onOpenElectron={openElectron} onOpenCasimir={openCasimir} onOpenVdw={openVdw} scenarioRequest={scenarioRequest} onPresetChange={onPresetChange} helpRequest={helpRequest}/></DevProfiler>{visitedLight && <DevProfiler id="light"><LightExperiment active={experiment === 'light'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedElectron && <DevProfiler id="electron"><ElectronExperiment active={experiment === 'electron'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedCasimir && <DevProfiler id="casimir"><CasimirExperiment active={experiment === 'casimir'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedVdw && <DevProfiler id="vdw"><VanDerWaalsExperiment active={experiment === 'vdw'} onBack={() => setExperiment('medium')}/></DevProfiler>}</HostedLayout>;
 }
 
 /** Render and coordinate the medium lifecycle laboratory. */
-function MediumApp({ active, onOpenLight, onOpenElectron, onOpenCasimir, onOpenVdw }: { active: boolean; onOpenLight: () => void; onOpenElectron: () => void; onOpenCasimir: () => void; onOpenVdw: () => void }) {
+function MediumApp({ active, onOpenLight, onOpenElectron, onOpenCasimir, onOpenVdw, scenarioRequest, onPresetChange, helpRequest }: { active: boolean; onOpenLight: () => void; onOpenElectron: () => void; onOpenCasimir: () => void; onOpenVdw: () => void; scenarioRequest?: { id: string; at: number } | null; onPresetChange?: (id: string) => void; helpRequest?: number }) {
   const sim = useSimulation(), { state, latest, sink, send, checkpoint } = sim;
   const host = useRef<HTMLDivElement>(null), viewport = useRef<FieldRenderer | null>(null), fileInput = useRef<HTMLInputElement>(null), dialog = useRef<HTMLDialogElement>(null);
   const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
@@ -99,6 +119,14 @@ function MediumApp({ active, onOpenLight, onOpenElectron, onOpenCasimir, onOpenV
   /** Apply a medium parameter change and mark the preset as custom. */
   function updateParameter(key: keyof Parameters, value: number) { const next = { ...parameters, [key]: value }; setParameters(next); send({ type: 'parameters', value: next }); setPreset('custom'); }
   /** Reset the medium with validated seed and parameter values. */
+  useEffect(() => { onPresetChange?.(preset); }, [preset, onPresetChange]);
+  // A scenario chosen in the shell's rail applies the preset as the library button does.
+  const resetRef = useRef<(params: Parameters, id: string) => void>(() => undefined);
+  useEffect(() => { const p = scenarioRequest && presets.find(x => x.id === scenarioRequest.id); if (p) resetRef.current(p.params, p.id); }, [scenarioRequest]);
+  // The shell header's ? button opens the same About dialog as the lab's own (hidden on desktop) help button.
+  const showHelpRef = useRef<(topic: 'model' | 'roadmap') => void>(() => undefined);
+  useEffect(() => { if (helpRequest) showHelpRef.current('model'); }, [helpRequest]);
+  resetRef.current = (params, id) => reset(params, id);
   function reset(params = parameters, id = preset) {
     try { const n = validateSeed(Number(seed)); if (seed.trim() === '') throw new Error('Enter a numeric seed.'); send({ type: 'reset', seed: n, parameters: params }); setParameters(params); setPreset(id); setRows([]); viewport.current?.select(null); setNotice('Experiment reset to tick 0.'); setShowSidebar(false); } catch (error) { setNotice(String(error)); }
   }
@@ -122,6 +150,7 @@ function MediumApp({ active, onOpenLight, onOpenElectron, onOpenCasimir, onOpenV
   /** Export the collected medium diagnostic samples as CSV. */
   function exportCSV() { const heading = 'tick,time_tau,physical_time_s,active,births,deaths,rejected,field_energy_E0,reservoir_E0,residual_E0,parameter_version'; downloadFile('zeropoint-diagnostics.csv', heading + '\n' + rows.map(r => [r.tick, r.time, r.time / FREQUENCY_UNIT, r.active, r.births, r.deaths, r.rejected, r.fieldEnergy, r.reservoir, r.residual, r.parameterVersion].join(',')).join('\n'), 'text/csv'); setNotice('Recent diagnostic samples exported.'); }
   /** Open the requested model or roadmap help content. */
+  showHelpRef.current = topic => showHelp(topic);
   function showHelp(topic: 'model' | 'roadmap') { setHelpTopic(topic); dialog.current?.showModal(); }
 
   return <div className="app-shell" style={{ display: active ? undefined : 'none' }}>

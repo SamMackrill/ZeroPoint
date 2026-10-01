@@ -1,0 +1,206 @@
+.wb-inspector {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-1);
+}
+
+.wb-inspector-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.wb-inspector-tabs button {
+  height: 36px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--text-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  cursor: pointer;
+}
+
+.wb-inspector-tabs button:hover {
+  color: var(--text);
+}
+
+.wb-inspector-tabs button[data-state=active] {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.wb-inspector-tabs button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.inspector-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 14px 16px;
+}
+
+.inspector-body:focus-visible {
+  outline: none;
+}
+
+.inspector-body[data-state=inactive] {
+  display: none;
+}
+
+.inspector-empty {
+  color: var(--text-3);
+  font-size: var(--fs-ui);
+}
+
+.inspector-group + .inspector-group {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.inspector-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.inspector-group-head h3 {
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.inspector-link {
+  padding: 0;
+  background: transparent;
+  color: var(--text-3);
+  border: 0;
+  font-family: inherit;
+  font-size: var(--fs-micro);
+  cursor: pointer;
+}
+
+.inspector-link:hover {
+  color: var(--accent);
+}
+
+.inspector-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 0;
+}
+
+.inspector-choice-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-2);
+  font-size: var(--fs-ui);
+}
+
+.inspector-choice.is-dirty .segmented {
+  border-color: var(--warn);
+}
+
+.inspector-restart {
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+}
+
+.inspector-range {
+  position: relative;
+}
+
+.inspector-dice {
+  position: absolute;
+  top: 8px;
+  right: 104px;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-3);
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.inspector-dice:hover {
+  color: var(--accent);
+}
+
+.inspector-quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 2px 0 4px;
+}
+
+.inspector-quick button {
+  padding: 2px 7px;
+  background: var(--bg-2);
+  color: var(--text-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: var(--fs-micro) var(--mono);
+  cursor: pointer;
+}
+
+.inspector-quick button[aria-pressed=true] {
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.pending-bar {
+  position: sticky;
+  bottom: -16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px -14px -16px;
+  padding: 8px 14px;
+  background: var(--bg-2);
+  color: var(--warn);
+  border-top: 1px solid var(--warn-line);
+  font-size: var(--fs-ui);
+}
+
+.pending-bar span {
+  flex: 1;
+}
+
+.pending-revert,
+.pending-apply {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  cursor: pointer;
+}
+
+.pending-revert {
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--line-2);
+}
+
+.pending-apply {
+  background: var(--accent-bg);
+  color: var(--accent);
+  border: 1px solid var(--accent-line);
+  font-weight: 600;
+}

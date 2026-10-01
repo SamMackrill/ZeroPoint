@@ -1,0 +1,111 @@
+.dock {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg-1);
+  border-top: 1px solid var(--line);
+}
+
+.dock-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 44px;
+  padding: 0 10px 0 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dock.is-collapsed .dock-head {
+  border-bottom: 0;
+}
+
+.dock-strip {
+  display: flex;
+  gap: 22px;
+  margin: 0;
+}
+
+.dock-strip div {
+  display: grid;
+  gap: 1px;
+}
+
+.dock-strip dt {
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+}
+
+.dock-strip dd {
+  margin: 0;
+  color: var(--text);
+  font: var(--fs-body) var(--mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.dock-strip small {
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+}
+
+.dock-tabs {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+}
+
+.dock-tabs button {
+  height: 28px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--text-3);
+  border: 0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  cursor: pointer;
+}
+
+.dock-tabs button:hover {
+  color: var(--text);
+}
+
+.dock-tabs button[data-state=active] {
+  background: var(--bg-2);
+  color: var(--text);
+}
+
+.dock-toggle {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-3);
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.dock-toggle:hover {
+  color: var(--text);
+}
+
+.dock-tabs button:focus-visible,
+.dock-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.dock-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 14px;
+}
+
+.dock-body:focus-visible {
+  outline: none;
+}

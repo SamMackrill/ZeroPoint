@@ -1,0 +1,354 @@
+.workbench-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  height: 40px;
+  padding: 0 12px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line);
+}
+
+.workbench-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  letter-spacing: -.3px;
+  white-space: nowrap;
+}
+
+.workbench-brand .brand-mark {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.workbench-brand .brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.workbench-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text-2);
+  font-size: var(--fs-ui);
+  white-space: nowrap;
+}
+
+.workbench-breadcrumb [aria-current=page] {
+  color: var(--text);
+}
+
+.workbench-breadcrumb em {
+  color: var(--warn);
+  font-style: normal;
+}
+
+.workbench-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  color: var(--text-2);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  font-size: var(--fs-micro);
+  white-space: nowrap;
+}
+
+.workbench-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.workbench-header .repository-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 8px;
+  color: var(--text-2);
+  font-size: var(--fs-micro);
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+.workbench-header .repository-link:hover {
+  background: var(--bg-2);
+  color: var(--text);
+}
+
+.workbench-header .repository-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.workbench-icon-button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-2);
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.workbench-icon-button:hover {
+  background: var(--bg-2);
+  color: var(--text);
+}
+
+.workbench-icon-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.workbench-rail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: auto;
+  background: var(--bg-1);
+  border-right: 1px solid var(--line);
+}
+
+.rail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  padding: 0 8px 0 14px;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.workbench-rail.is-collapsed .rail-head {
+  justify-content: center;
+  padding: 0;
+}
+
+.rail-toggle {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-3);
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.rail-toggle:hover {
+  color: var(--text);
+}
+
+.rail-list,
+.rail-scenarios,
+.rail-planned ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rail-list {
+  padding: 0 6px;
+}
+
+.rail-experiment {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 30px;
+  padding: 0 8px;
+  background: transparent;
+  color: var(--text-2);
+  border: 0;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.workbench-rail.is-collapsed .rail-experiment {
+  justify-content: center;
+  padding: 0;
+}
+
+.rail-experiment:hover {
+  background: var(--bg-2);
+  color: var(--text);
+}
+
+.rail-experiment.is-active {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.rail-experiment.is-active svg {
+  color: var(--accent);
+}
+
+.rail-scenarios {
+  margin: 2px 0 6px 21px;
+  padding-left: 8px;
+  border-left: 1px solid var(--line);
+}
+
+.rail-scenario {
+  display: block;
+  width: 100%;
+  padding: 5px 8px;
+  background: transparent;
+  color: var(--text-3);
+  border: 0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.rail-scenario:hover {
+  color: var(--text);
+  background: var(--bg-2);
+}
+
+.rail-scenario.is-active {
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.rail-planned {
+  margin-top: auto;
+  padding: 12px 6px 14px;
+  border-top: 1px solid var(--line);
+}
+
+.rail-planned-head {
+  display: block;
+  padding: 0 8px 6px;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.rail-planned-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 4px 8px;
+  background: transparent;
+  color: var(--text-3);
+  border: 0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.rail-planned-item small {
+  font-size: var(--fs-micro);
+}
+
+.rail-planned-item:hover {
+  color: var(--text-2);
+}
+
+.rail-planned-pop {
+  z-index: 50;
+  max-width: 260px;
+  padding: 10px 12px;
+  background: var(--bg-3);
+  color: var(--text-2);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--shadow) 45%, transparent);
+  font-size: var(--fs-ui);
+  line-height: 1.5;
+}
+
+.rail-planned-pop strong {
+  color: var(--text);
+}
+
+.rail-planned-pop p {
+  margin: 4px 0 6px;
+}
+
+.rail-planned-pop a {
+  color: var(--accent);
+}
+
+.rail-experiment:focus-visible,
+.rail-scenario:focus-visible,
+.rail-planned-item:focus-visible,
+.rail-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.workbench-status {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 22px;
+  padding: 0 12px;
+  background: var(--bg-1);
+  color: var(--text-3);
+  border-top: 1px solid var(--line);
+  font: var(--fs-micro) var(--mono);
+}
+
+.status-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--warn);
+}
+
+.status-state i {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+}
+
+.status-state.is-running {
+  color: var(--accent);
+}
+
+.status-disclaimer {
+  margin-left: auto;
+}
