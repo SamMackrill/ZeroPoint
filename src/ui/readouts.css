@@ -1,0 +1,66 @@
+.readouts {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+}
+
+.readout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 24px;
+}
+
+.readout dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-2);
+  font-size: var(--fs-ui);
+}
+
+.readout dd {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 0 0 0 auto;
+}
+
+.readout-value {
+  color: var(--text);
+  font: var(--fs-value) var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.readout-unit {
+  color: var(--text-3);
+  font: var(--fs-micro) var(--mono);
+}
+
+.readout-copy {
+  display: inline-grid;
+  place-items: center;
+  align-self: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-3);
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.readout:hover .readout-copy,
+.readout-copy:focus-visible {
+  opacity: 1;
+}
+
+.readout-copy:hover {
+  color: var(--accent);
+}
+
+.readout-copy:focus-visible {
+  outline: 2px solid var(--accent);
+}
