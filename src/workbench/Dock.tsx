@@ -22,9 +22,9 @@ export interface DockProps {
  * The dock (§05 E): a readout strip of the scenario's key values, then tabs. Collapsing (Ctrl J) keeps the strip.
  */
 export function Dock({ readouts, tabs, tab, onTab, collapsed = false, onCollapsedChange }: DockProps) {
-  const value = tab ?? tabs[0]?.id;
+  // Controlled when the caller passes `tab`; otherwise Radix keeps the selection, starting at the first tab.
   return (
-    <Tabs.Root className={`dock${collapsed ? ' is-collapsed' : ''}`} value={value} onValueChange={id => { onTab?.(id); if (collapsed) onCollapsedChange?.(false); }}>
+    <Tabs.Root className={`dock${collapsed ? ' is-collapsed' : ''}`} value={tab} defaultValue={tabs[0]?.id} onValueChange={id => { onTab?.(id); if (collapsed) onCollapsedChange?.(false); }}>
       <div className="dock-head">
         <dl className="dock-strip" aria-label="Key readouts">
           {readouts.slice(0, 4).map(r => (

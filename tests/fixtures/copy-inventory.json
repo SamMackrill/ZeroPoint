@@ -474,5 +474,9 @@
   {
     "file": "src/workbench/Inspector.tsx",
     "text": "Click something in the viewport to inspect it."
+  },
+  {
+    "file": "src/workbench/Shell.tsx",
+    "text": "Panel sizes will not be saved: browser storage is unavailable."
   }
 ]

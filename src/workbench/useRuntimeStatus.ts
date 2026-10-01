@@ -5,7 +5,7 @@ import type { RuntimeStatus } from './runtime';
 export interface StatusSource { status(): RuntimeStatus; subscribe(listener: () => void): () => void }
 
 /** Status fields compared to decide whether a re-render is needed. */
-const same = (a: RuntimeStatus, b: RuntimeStatus) => a.running === b.running && a.tick === b.tick && a.speed === b.speed && a.finished === b.finished;
+const same = (a: RuntimeStatus, b: RuntimeStatus) => a.running === b.running && a.tick === b.tick && a.time === b.time && a.speed === b.speed && a.finished === b.finished;
 
 /**
  * A runtime's status for the timeline bar, updated from its subscription at most `hz` times a second (plus once when

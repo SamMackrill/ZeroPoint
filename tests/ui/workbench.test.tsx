@@ -12,6 +12,7 @@ import { SetupPanel, ViewPanel, Inspector } from '../../src/workbench/Inspector'
 import { Dock } from '../../src/workbench/Dock';
 import { Rail, StatusBar } from '../../src/workbench/Chrome';
 import { useRuntimeStatus } from '../../src/workbench/useRuntimeStatus';
+import { layoutStorage } from '../../src/workbench/Shell';
 
 const ALL: Capabilities = { run: true, step: true, jump: true, nextEvent: true, seek: true, reset: true, speed: true, live: false, configure: true, checkpoint: true, restore: true };
 
@@ -90,6 +91,14 @@ describe('useRuntimeStatus', () => {
       expect(renders.mock.calls.length - before).toBeLessThanOrEqual(3);
     } finally { vi.useRealTimers(); }
   });
+  it('updates when only the time changes', () => {
+    const rt = fakeRuntime({ tick: 5, time: 0.5 });
+    /** Show the time. */
+    function Probe() { const s = useRuntimeStatus(rt, 1000); return <span>{s?.time}</span>; }
+    render(<Probe/>);
+    act(() => { rt.set({ time: 0.75 }); });
+    return new Promise<void>(resolve => setTimeout(() => { expect(screen.getByText('0.75')).toBeTruthy(); resolve(); }, 20));
+  });
 });
 
 describe('Setup and View panels', () => {
@@ -124,6 +133,26 @@ describe('Setup and View panels', () => {
     await userEvent.clear(seed); await userEvent.type(seed, '11{Enter}');
     fireEvent.keyDown(seed, { key: 'Enter', ctrlKey: true });
     expect(onApply).toHaveBeenCalledWith({ seed: 11 });
+  });
+  it('applies the value a Ctrl ⏎ commits, with or without an earlier staged change', async () => {
+    const onApply = vi.fn();
+    render(<MediumSetup onLive={() => undefined} onApply={onApply}/>);
+    const seed = screen.getByRole('textbox', { name: /^Seed/ });
+    await userEvent.clear(seed); await userEvent.type(seed, '7{Enter}');
+    await userEvent.clear(seed); await userEvent.type(seed, '11');
+    fireEvent.keyDown(seed, { key: 'Enter', ctrlKey: true });
+    expect(onApply).toHaveBeenLastCalledWith({ seed: 11 });
+    await userEvent.clear(seed); await userEvent.type(seed, '9');
+    fireEvent.keyDown(seed, { key: 'Enter', ctrlKey: true });
+    expect(onApply).toHaveBeenLastCalledWith({ seed: 9 });
+  });
+  it('keeps staged changes when switching inspector tabs', async () => {
+    render(<Inspector setup={<MediumSetup onLive={() => undefined} onApply={() => undefined}/>} view={<p>view</p>}/>);
+    const seed = screen.getByRole('textbox', { name: /^Seed/ });
+    await userEvent.clear(seed); await userEvent.type(seed, '5{Enter}');
+    await userEvent.click(screen.getByRole('tab', { name: 'View' }));
+    await userEvent.click(screen.getByRole('tab', { name: 'Setup' }));
+    expect(screen.getByRole('status').textContent).toContain('1 change needs restart');
   });
   it('shows only the controls a scenario uses, with choices as segmented controls', () => {
     const { rerender } = render(<SetupPanel definition={electronDefinition} scenario="stationary" params={electronDefinition.defaultParams} onLive={() => undefined} onApply={() => undefined}/>);
@@ -161,6 +190,24 @@ describe('Setup and View panels', () => {
 });
 
 describe('Dock, Rail and StatusBar', () => {
+  it('switches dock tabs when the caller does not control them', async () => {
+    render(<Dock readouts={[]} tabs={[{ id: 'plots', label: 'Plots', content: <p>plot</p> }, { id: 'events', label: 'Events', content: <p>event</p> }]}/>);
+    await userEvent.click(screen.getByRole('tab', { name: 'Events' }));
+    expect(screen.getByText('event')).toBeTruthy();
+    expect(screen.queryByText('plot')).toBeNull();
+  });
+  it('falls back to in-memory layout storage when browser storage throws', () => {
+    const spy = vi.spyOn(globalThis, 'localStorage', 'get').mockImplementation(() => { throw new DOMException('blocked', 'SecurityError'); });
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.resetModules();
+    return import('../../src/workbench/Shell').then(({ layoutStorage: fresh }) => {
+      const store = fresh();
+      store.setItem('k', 'v');
+      expect(store.getItem('k')).toBe('v');
+      spy.mockRestore(); vi.mocked(console.warn).mockRestore();
+      expect(layoutStorage()).toBeTruthy();
+    });
+  });
   it('keeps the readout strip when the dock collapses', async () => {
     const onCollapsed = vi.fn();
     const { rerender } = render(<Dock readouts={[{ label: 'Active', value: '1,575' }, { label: 'Time', value: '2.433', unit: 'τ' }]} tabs={[{ id: 'plots', label: 'Plots', content: <p>plot</p> }]} onCollapsedChange={onCollapsed}/>);

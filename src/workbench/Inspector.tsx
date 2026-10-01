@@ -1,6 +1,6 @@
 import * as Tabs from '@radix-ui/react-tabs';
 import { Dices } from 'lucide-react';
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { InfoTip } from '../ui/InfoTip';
 import { LayerList, type LayerGroup } from '../ui/LayerList';
 import { ParamRow } from '../ui/ParamRow';
@@ -21,7 +21,10 @@ export interface InspectorProps {
   onTab?(tab: InspectorTab): void;
 }
 
-/** The inspector (§05 F): Setup, View and Selection tabs whose bodies scroll while the tab list stays put. */
+/**
+ * The inspector (§05 F): Setup, View and Selection tabs whose bodies scroll while the tab list stays put. Every tab stays
+ * mounted (hidden while inactive), so state such as Setup's staged changes survives switching tabs.
+ */
 export function Inspector({ setup, view, selection, tab, onTab }: InspectorProps) {
   return (
     <Tabs.Root className="wb-inspector" value={tab} defaultValue="setup" onValueChange={v => onTab?.(v as InspectorTab)}>
@@ -30,9 +33,9 @@ export function Inspector({ setup, view, selection, tab, onTab }: InspectorProps
         <Tabs.Trigger value="view" data-testid="inspector-view">View</Tabs.Trigger>
         <Tabs.Trigger value="selection" data-testid="inspector-selection">Selection</Tabs.Trigger>
       </Tabs.List>
-      <Tabs.Content className="inspector-body" value="setup">{setup}</Tabs.Content>
-      <Tabs.Content className="inspector-body" value="view">{view}</Tabs.Content>
-      <Tabs.Content className="inspector-body" value="selection">{selection ?? <p className="inspector-empty">Click something in the viewport to inspect it.</p>}</Tabs.Content>
+      <Tabs.Content className="inspector-body" value="setup" forceMount>{setup}</Tabs.Content>
+      <Tabs.Content className="inspector-body" value="view" forceMount>{view}</Tabs.Content>
+      <Tabs.Content className="inspector-body" value="selection" forceMount>{selection ?? <p className="inspector-empty">Click something in the viewport to inspect it.</p>}</Tabs.Content>
     </Tabs.Root>
   );
 }
@@ -98,28 +101,32 @@ export interface SetupPanelProps<P extends object> {
  * with an amber outline until the pending bar's Apply (Ctrl ⏎); Esc reverts them.
  */
 export function SetupPanel<P extends object>({ definition, scenario, params, onLive, onApply, onReset }: SetupPanelProps<P>) {
+  // The draft is mirrored in a ref, updated synchronously, so a Ctrl ⏎ that also commits a field's typed text applies
+  // that new value (the field commits first, in the same event, before React re-renders).
   const [draft, setDraft] = useState<Record<string, unknown>>({});
+  const draftRef = useRef(draft);
+  const stage = (key: string, value: unknown) => { draftRef.current = { ...draftRef.current, [key]: value }; setDraft(draftRef.current); };
+  const revert = () => { draftRef.current = {}; setDraft({}); };
+  const pendingOf = (staged: Record<string, unknown>) => Object.entries(staged).filter(([key, value]) => differs(value, getPath(params, key)));
   const specs = definition.params.filter(spec => appliesTo(spec, scenario));
-  const pending = Object.entries(draft).filter(([key, value]) => differs(value, getPath(params, key)));
-  const apply = () => { if (pending.length) onApply(Object.fromEntries(pending)); setDraft({}); };
-  const revert = () => setDraft({});
+  const pending = pendingOf(draft);
+  const apply = () => { const changes = pendingOf(draftRef.current); if (changes.length) onApply(Object.fromEntries(changes)); revert(); };
 
   /** Ctrl ⏎ applies and Esc reverts while focus is inside the panel. */
   const onKeyDown = (event: KeyboardEvent) => {
-    if (!pending.length) return;
-    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); apply(); }
-    else if (event.key === 'Escape' && !event.defaultPrevented) revert();
+    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { if (pendingOf(draftRef.current).length) { event.preventDefault(); apply(); } }
+    else if (event.key === 'Escape' && !event.defaultPrevented && pendingOf(draftRef.current).length) revert();
   };
 
   return (
     <div className="setup-panel" onKeyDown={onKeyDown}>
       {grouped(specs).map(([group, items], i) => (
         <section key={group} className="inspector-group" aria-label={group}>
-          <header className="inspector-group-head"><h3>{group}</h3>{i === 0 && onReset && <button type="button" className="inspector-link" onClick={() => { setDraft({}); onReset(); }}>Reset to scenario</button>}</header>
+          <header className="inspector-group-head"><h3>{group}</h3>{i === 0 && onReset && <button type="button" className="inspector-link" onClick={() => { revert(); onReset(); }}>Reset to scenario</button>}</header>
           {items.map(spec => {
             const current = getPath(params, spec.key), staged = spec.key in draft ? draft[spec.key] : current;
             return <Control key={spec.key} spec={spec} value={staged} dirty={spec.apply === 'restart' && differs(staged, current)}
-              onChange={value => (spec.apply === 'live' ? onLive(spec.key, value) : setDraft(d => ({ ...d, [spec.key]: value })))}/>;
+              onChange={value => (spec.apply === 'live' ? onLive(spec.key, value) : stage(spec.key, value))}/>;
           })}
         </section>
       ))}

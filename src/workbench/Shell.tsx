@@ -18,8 +18,27 @@ export interface ShellProps {
 /** Whether a key event comes from a text field, where the panel shortcuts must not fire. */
 const typing = (target: EventTarget | null) => target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 
-/** localStorage when available (it is absent in some test and privacy contexts). */
-const storage = typeof localStorage === 'undefined' ? undefined : localStorage;
+/** Layout persistence: localStorage when it works, otherwise an in-memory store for this session. */
+type LayoutStore = Pick<Storage, 'getItem' | 'setItem'>;
+let layoutStore: LayoutStore | null = null;
+
+/**
+ * The layout store, chosen on first use rather than at module load: reading localStorage can throw (a SecurityError
+ * when browser policy blocks storage), and that must degrade to unsaved sizes, not stop the app from loading.
+ */
+export function layoutStorage(): LayoutStore {
+  if (layoutStore) return layoutStore;
+  try {
+    const probe = '__zeropoint_layout__', storage = globalThis.localStorage;
+    storage.setItem(probe, probe); storage.removeItem(probe);
+    layoutStore = storage;
+  } catch (error) {
+    console.warn('Panel sizes will not be saved: browser storage is unavailable.', error);
+    const memory = new Map<string, string>();
+    layoutStore = { getItem: key => memory.get(key) ?? null, setItem: (key, value) => { memory.set(key, value); } };
+  }
+  return layoutStore;
+}
 
 /**
  * The workbench shell (§05): header, a resizable rail (160–280 px, collapsing to 44 px), the viewport with the
@@ -29,6 +48,7 @@ const storage = typeof localStorage === 'undefined' ? undefined : localStorage;
  */
 export function Shell({ id, header, rail, viewport, timeline, dock, inspector, status }: ShellProps) {
   const railRef = usePanelRef(), inspectorRef = usePanelRef(), dockRef = usePanelRef();
+  const storage = layoutStorage();
   const outer = useDefaultLayout({ id: `zeropoint-shell-${id}`, storage });
   const inner = useDefaultLayout({ id: `zeropoint-shell-${id}-centre`, storage });
   const beforeFocus = useRef<string[] | null>(null);
