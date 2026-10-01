@@ -11,6 +11,18 @@ function stylesheets(dir = join(root, 'src')): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? stylesheets(join(dir, entry.name)) : entry.name.endsWith('.css') ? [join(dir, entry.name)] : []);
 }
 
+/** Split a selector at characters matching `at`, but only outside parentheses and brackets (:is(.a, .b), [x="a b"]). */
+function splitTopLevel(text: string, at: RegExp): string[] {
+  const parts: string[] = [];
+  let depth = 0, current = '';
+  for (const ch of text) {
+    if (ch === '(' || ch === '[') depth++;
+    else if ((ch === ')' || ch === ']') && depth > 0) depth--;
+    if (depth === 0 && at.test(ch)) { parts.push(current); current = ''; } else current += ch;
+  }
+  return [...parts, current].map(p => p.trim()).filter(Boolean);
+}
+
 /**
  * Selectors of rules that colour text with --text-4. Only svg selectors are exempt, and a rule qualifies only when every
  * selector in its (possibly multi-line) selector list ends in svg.
@@ -23,7 +35,7 @@ function text4Offenders(css: string): string[] {
     else if (trimmed.endsWith(',')) pending.push(trimmed);
     else pending = [];
     // The last compound of each selector must be the svg type selector (svg, svg.icon, svg:hover), not .caption-svg.
-    const svgOnly = selector.split(',').every(part => /^svg(?![\w-])/.test(part.trim().split(/[\s>+~]+/).pop() ?? ''));
+    const svgOnly = splitTopLevel(selector, /,/).every(part => /^svg(?![\w-])/.test(splitTopLevel(part, /[\s>+~]/).pop() ?? ''));
     return /^\s*color:\s*var\(--text-4\)/.test(line) && !svgOnly ? [selector] : [];
   });
 }
@@ -51,6 +63,8 @@ describe('colour tokens', () => {
     expect(text4Offenders('.caption-svg {\n  color: var(--text-4);\n}\n')).toEqual(['.caption-svg']);
     expect(text4Offenders('.svg {\n  color: var(--text-4);\n}\n')).toEqual(['.svg']);
     expect(text4Offenders('.panel > svg.icon {\n  color: var(--text-4);\n}\n')).toEqual([]);
+    expect(text4Offenders('svg:is(.icon, .active) {\n  color: var(--text-4);\n}\n')).toEqual([]);
+    expect(text4Offenders('.caption:is(.a, svg) {\n  color: var(--text-4);\n}\n')).toEqual(['.caption:is(.a, svg)']);
   });
   // Type scale (UI 01g): nothing below 11 px, and every size up to 15 px comes from a --fs-* token. Literal sizes of
   // 16 px and above are legacy page headings that the shell replaces.

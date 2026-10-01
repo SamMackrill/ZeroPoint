@@ -81,7 +81,7 @@ export function Plot({ label, x, series, caption, xUnit, yUnit, xScale = 'linear
     if (!hasData) return;
     const box = event.currentTarget.getBoundingClientRect(), t = (event.clientX - box.left) / Math.max(1, box.width);
     const target = xScale === 'log' ? 10 ** (Math.log10(xd[0]) + t * (Math.log10(xd[1]) - Math.log10(xd[0]))) : xd[0] + t * (xd[1] - xd[0]);
-    setHover(nearestIndex(x, target));
+    setHover(nearestIndex(x, target, xScale));
   };
 
   /** Arrow keys step the crosshair through samples; Home and End jump to the ends, Esc hides it. */
@@ -120,7 +120,7 @@ export function Plot({ label, x, series, caption, xUnit, yUnit, xScale = 'linear
           <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
             {yt.map(t => <line key={t} className="plot-grid" x1="0" x2={W} y1={py(t)} y2={py(t)}/>)}
             {reference !== undefined && <line className="plot-reference" x1="0" x2={W} y1={py(reference)} y2={py(reference)}/>}
-            {hasData && series.filter(s => s.area).map(s => <path key={`${s.key}-area`} d={areaPath(x, s.values, px, py, H)} fill={s.color} fillOpacity="0.1" stroke="none"/>)}
+            {hasData && series.filter(s => s.area).map(s => <path key={`${s.key}-area`} d={areaPath(x, s.values, px, py, H, { x: xScale, y: yScale })} fill={s.color} fillOpacity="0.1" stroke="none"/>)}
             {hasData && series.map(s => <path key={s.key} d={linePath(x, s.values, px, py, { x: xScale, y: yScale })} className="plot-line" stroke={s.color} strokeDasharray={s.dashed ? '6 4' : undefined}/>)}
             {markers.filter(m => m.y === undefined && drawable(m.x, xScale)).map(m => <line key={m.label} className="plot-marker" x1={px(m.x)} x2={px(m.x)} y1="0" y2={H}/>)}
             {playhead !== undefined && drawable(playhead, xScale) && <line className="plot-playhead" x1={px(playhead)} x2={px(playhead)} y1="0" y2={H}/>}
