@@ -36,7 +36,9 @@ export function nudgeValue(value: number, direction: 1 | -1, step: number, min: 
   return normalizeValue(value + direction * step * scale, min, max, step);
 }
 
-/** Format a value at the step's precision. */
+/** Format a value at the step's precision, with one more place when it has one (after an Alt ×0.1 nudge). */
 export function formatValue(value: number, step: number): string {
-  return value.toFixed(stepDecimals(step));
+  const places = stepDecimals(step);
+  const finer = Number(value.toFixed(places + 1)) !== Number(value.toFixed(places));
+  return value.toFixed(finer ? places + 1 : places);
 }

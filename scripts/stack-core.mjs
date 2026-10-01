@@ -143,8 +143,9 @@ export function mergeReady(pr) {
 
 /**
  * Choose the PR to review next: the lowest queued layer, because merges and fixes flow bottom-up. A lower layer that is
- * only waiting for CI holds the queue (its CI finishes within minutes and the slot should go to it); held, failing and
- * draft layers are skipped.
+ * only waiting for CI holds the queue (its CI finishes within minutes and the slot should go to it); failing and draft
+ * layers are skipped. A hold blocks merging, not reviewing: a held visual layer is reviewed while it awaits the owner,
+ * so it queues (and holds the queue while waiting for CI) like any other layer.
  */
 export function pickNext(prs) {
   for (const pr of sortStack(prs)) {

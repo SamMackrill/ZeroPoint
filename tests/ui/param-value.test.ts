@@ -7,6 +7,8 @@ describe('ParamRow values', () => {
     expect([1, 0.5, 0.05, 0.001, 1e-7, 10].map(stepDecimals)).toEqual([0, 1, 2, 3, 7, 0]);
     expect(formatValue(625, 1)).toBe('625');
     expect(formatValue(0.1 + 0.2, 0.01)).toBe('0.30');
+    expect(formatValue(5.1, 1)).toBe('5.1');
+    expect(formatValue(0.55, 0.1)).toBe('0.55');
   });
   it('parses typed values with units, signs, commas and exponents', () => {
     expect(parseValue('625 nm')).toBe(625);

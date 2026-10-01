@@ -22,7 +22,8 @@ function text4Offenders(css: string): string[] {
     if (trimmed.endsWith('{')) { selector = [...pending, trimmed.slice(0, -1).trim()].join(' '); pending = []; }
     else if (trimmed.endsWith(',')) pending.push(trimmed);
     else pending = [];
-    const svgOnly = selector.split(',').every(part => /\bsvg$/.test(part.trim()));
+    // The last compound of each selector must be the svg type selector (svg, svg.icon, svg:hover), not .caption-svg.
+    const svgOnly = selector.split(',').every(part => /^svg(?![\w-])/.test(part.trim().split(/[\s>+~]+/).pop() ?? ''));
     return /^\s*color:\s*var\(--text-4\)/.test(line) && !svgOnly ? [selector] : [];
   });
 }
@@ -47,6 +48,9 @@ describe('colour tokens', () => {
     expect(text4Offenders('.caption, svg {\n  color: var(--text-4);\n}\n')).toEqual(['.caption, svg']);
     expect(text4Offenders('.caption,\nsvg {\n  color: var(--text-4);\n}\n')).toEqual(['.caption, svg']);
     expect(text4Offenders('.a svg,\n.b svg {\n  color: var(--text-4);\n}\n')).toEqual([]);
+    expect(text4Offenders('.caption-svg {\n  color: var(--text-4);\n}\n')).toEqual(['.caption-svg']);
+    expect(text4Offenders('.svg {\n  color: var(--text-4);\n}\n')).toEqual(['.svg']);
+    expect(text4Offenders('.panel > svg.icon {\n  color: var(--text-4);\n}\n')).toEqual([]);
   });
   // Type scale (UI 01g): nothing below 11 px, and every size up to 15 px comes from a --fs-* token. Literal sizes of
   // 16 px and above are legacy page headings that the shell replaces.
