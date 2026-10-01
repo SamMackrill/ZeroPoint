@@ -18,10 +18,10 @@ export const mediumDefinition: ExperimentDefinition<MediumParams, ViewSettings> 
   defaultParams: { ...DEFAULT_PARAMETERS, seed: 2026 },
   defaultView: DEFAULT_VIEW,
   params: [
-    { kind: 'range', key: 'birthRate', label: 'Creation rate', group: 'Medium', apply: 'live', min: 0, max: 10000, step: 50, unit: '/ τ' },
-    { kind: 'range', key: 'frequency', label: 'Frequency centre', group: 'Medium', apply: 'live', min: 0.25, max: 3, step: 0.05, unit: 'f₀' },
-    { kind: 'range', key: 'separation', label: 'Peak pair separation', group: 'Medium', apply: 'live', min: 0, max: 0.8, step: 0.01, unit: 'L₀' },
-    { kind: 'range', key: 'seed', label: 'Seed', group: 'Run', apply: 'restart', min: 0, max: 4294967295, step: 1, integer: true },
+    { kind: 'range', key: 'birthRate', label: 'Creation rate', group: 'Medium', apply: 'live', min: 0, max: 10000, step: 50, unit: '/ τ', info: 'Poisson arrivals into the finite cell.' },
+    { kind: 'range', key: 'frequency', label: 'Frequency centre', group: 'Medium', apply: 'live', min: 0.25, max: 3, step: 0.05, unit: 'f₀', info: 'New dipoles sample 0.5–1.5× this value.' },
+    { kind: 'range', key: 'separation', label: 'Peak pair separation', group: 'Medium', apply: 'live', min: 0, max: 0.8, step: 0.01, unit: 'L₀', info: 'Lobe-centre distance at midlife. The pair centre stays fixed.' },
+    { kind: 'range', key: 'seed', label: 'Random seed', group: 'Run', apply: 'restart', min: 0, max: 4294967295, step: 1, integer: true, info: 'Reproducible initial state. Applied when you reset.' },
   ],
   viewControls: [
     { kind: 'choice', key: 'representation', label: 'Representation', group: 'Display', apply: 'live', options: [{ value: 'dipoles', label: 'Dipoles' }, { value: 'points', label: 'Points' }] },
@@ -30,7 +30,7 @@ export const mediumDefinition: ExperimentDefinition<MediumParams, ViewSettings> 
   layers: [
     { key: 'medium', label: 'Dipole medium', group: 'Medium' },
     { key: 'bounds', label: 'Cell boundaries', group: 'Guides' },
-    { key: 'slice', label: 'Energy density slice', group: 'Clipping' },
+    { key: 'slice', label: 'Energy density slice', group: 'Clipping', info: '0.5 L₀ slab · binned energy, not pressure' },
   ],
   cameras: [{ id: 'perspective', label: 'Perspective' }, { id: 'top', label: 'Top' }, { id: 'front', label: 'Front' }],
   speeds: SPEEDS,

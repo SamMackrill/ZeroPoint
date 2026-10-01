@@ -1,5 +1,6 @@
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Popover from '@radix-ui/react-popover';
-import { Atom, ChevronRight, CircleHelp, FlaskConical, Info, Lightbulb, Magnet, PanelLeftClose, PanelLeftOpen, Waves } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, Atom, ChevronDown, ChevronRight, CircleHelp, FlaskConical, Info, Lightbulb, Magnet, PanelLeftClose, PanelLeftOpen, Waves } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { BrandMark } from '../app/BrandMark';
 import { RepositoryLink } from '../app/RepositoryLink';
@@ -118,7 +119,7 @@ export function Rail({ experiments, planned, experiment, scenario, onExperiment,
 export interface StatusBarProps {
   running: boolean;
   /** Short state items: seed or configuration, tick. */
-  items?: readonly string[];
+  items?: readonly ReactNode[];
 }
 
 /** The status bar (§05): run state, configuration and tick, and the model disclaimer. Debug telemetry lives in Settings. */
@@ -126,8 +127,45 @@ export function StatusBar({ running, items = [] }: StatusBarProps) {
   return (
     <footer className="workbench-status">
       <span className={`status-state${running ? ' is-running' : ''}`}><i aria-hidden="true"/>{running ? 'Running' : 'Paused'}</span>
-      {items.map(item => <span key={item}>{item}</span>)}
+      {items.map((item, i) => <span key={i}>{item}</span>)}
       <span className="status-disclaimer">Illustrative model</span>
     </footer>
+  );
+}
+
+/** One Export ▾ entry, e.g. PNG image or CSV. */
+export interface ExportItem { id: string; label: string; onSelect(): void; disabled?: boolean }
+
+/** Props for FileActions. */
+export interface FileActionsProps {
+  /** The experiment's file input accepts its own format (`accept`); the load button opens it. */
+  onFile(file: File): void;
+  onSave(): void;
+  exports: readonly ExportItem[];
+  accept?: string;
+  disabled?: boolean;
+}
+
+/**
+ * The unified file buttons (§05 H): Load, Save and Export ▾ with the same labels in every experiment; the format is
+ * chosen by the experiment. Test ids: file-load, file-save, file-input and export-<id>.
+ */
+export function FileActions({ onFile, onSave, exports, accept = '.json,application/json', disabled }: FileActionsProps) {
+  return (
+    <div className="file-actions">
+      <label className={`file-button${disabled ? ' is-disabled' : ''}`} data-testid="file-load" title="Load"><ArrowUpFromLine size={14} aria-hidden="true"/><span className="file-label">Load</span>
+        <input className="visually-hidden" type="file" data-testid="file-input" aria-label="Load experiment file" accept={accept} disabled={disabled}
+          onChange={event => { const file = event.target.files?.[0]; if (file) onFile(file); event.target.value = ''; }}/>
+      </label>
+      <button type="button" className="file-button" data-testid="file-save" disabled={disabled} onClick={onSave} aria-label="Save" title="Save"><ArrowDownToLine size={14} aria-hidden="true"/><span className="file-label">Save</span></button>
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger className="file-button" data-testid="export-menu" disabled={disabled || !exports.length}>Export<ChevronDown size={13} aria-hidden="true"/></DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content className="file-menu" align="end" sideOffset={6}>
+            {exports.map(item => <DropdownMenu.Item key={item.id} className="file-menu-item" data-testid={`export-${item.id}`} disabled={item.disabled} onSelect={item.onSelect}>{item.label}</DropdownMenu.Item>)}
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+    </div>
   );
 }

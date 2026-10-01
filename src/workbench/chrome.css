@@ -352,3 +352,74 @@
 .status-disclaimer {
   margin-left: auto;
 }
+
+.file-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.file-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  cursor: pointer;
+}
+
+.file-button:hover:not(:disabled):not(.is-disabled) {
+  background: var(--bg-2);
+  color: var(--text);
+}
+
+.file-button:disabled,
+.file-button.is-disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.file-button:focus-visible,
+.file-button:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.file-menu {
+  z-index: 50;
+  min-width: 170px;
+  padding: 4px;
+  background: var(--bg-3);
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--shadow) 45%, transparent);
+}
+
+.file-menu-item {
+  padding: 6px 10px;
+  color: var(--text-2);
+  border-radius: 4px;
+  font-size: var(--fs-ui);
+  cursor: pointer;
+  outline: none;
+}
+
+.file-menu-item[data-highlighted] {
+  background: var(--bg-2);
+  color: var(--text);
+}
+
+.file-menu-item[data-disabled] {
+  opacity: .45;
+  cursor: default;
+}
+
+.workbench.is-narrow .file-button {
+  padding: 0 6px;
+}

@@ -50,7 +50,7 @@ export function LayerList({ groups, visible, onChange, onReset, testId }: LayerL
               return (
                 <li key={layer.key} className={`layer-row${on ? ' is-on' : ''}`}>
                   <div className="layer-row-main">
-                    <button type="button" className="layer-toggle" aria-pressed={on} onClick={event => onToggle(event, layer.key)} title="Alt-click to solo">
+                    <button type="button" className="layer-toggle" data-testid={`layer-${layer.key}`} aria-pressed={on} onClick={event => onToggle(event, layer.key)} title="Alt-click to solo">
                       {on ? <Eye size={14} aria-hidden="true"/> : <EyeOff size={14} aria-hidden="true"/>}
                       <span>{layer.label}</span>
                     </button>

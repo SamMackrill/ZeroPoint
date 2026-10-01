@@ -1,30 +1,14 @@
-import { BrandMark } from './BrandMark';
-import { RepositoryLink } from './RepositoryLink';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Activity, ArrowDownToLine, ArrowUpFromLine, Atom, Box, Check, ChevronDown, ChevronRight, CircleHelp, Crosshair, Download, Expand, Eye, FlaskConical, Grid3X3, Info, Layers, Menu, Microscope, MoreHorizontal, Pause, Play, RotateCcw, Save, ScanLine, Settings2, SkipForward, SlidersHorizontal, Sparkles, Timer, Waves, X } from 'lucide-react';
-import { DEFAULT_PARAMETERS, DEFAULT_VIEW, ENERGY_UNIT, FREQUENCY_UNIT, MODEL_VERSION, DT, validateSeed } from '../model/types';
-import type { Checkpoint, Diagnostics, ExperimentFile, Parameters, ViewSettings } from '../model/types';
-import { downloadFile, parseExperiment } from '../persistence/experiment';
-import type { FieldRenderer } from '../rendering/FieldRenderer';
-import type { PickedDipole } from '../rendering/FieldRenderer';
-import { useSimulation } from '../simulation/useSimulation';
+import { useCallback, useState } from 'react';
 import { LightExperiment } from '../light/LightExperiment';
 import { ElectronExperiment } from '../electron/ElectronExperiment';
 import { VanDerWaalsExperiment } from '../van-der-waals/VanDerWaalsExperiment';
 import { CasimirExperiment } from '../casimir/CasimirExperiment';
 import { DevProfiler } from './DevProfiler';
-import { palette } from '../ui/palette';
 import { EXPERIMENTS, mediumDefinition } from '../experiments';
+import { MediumWorkbench } from '../experiments/medium/MediumWorkbench';
 import { Header, Rail, type PlannedExperiment } from '../workbench/Chrome';
 import { HostedLayout } from '../workbench/Shell';
-import { Plot } from '../ui/Plot';
 
-const presets = [
-  { id: 'balanced', title: 'Balanced medium', description: 'Explore the fluctuation lifecycle', icon: Waves, params: DEFAULT_PARAMETERS },
-  { id: 'sparse', title: 'Sparse fluctuations', description: 'Follow individual dipoles', icon: Sparkles, params: { birthRate: 200, frequency: .6, separation: .3 } },
-  { id: 'dense', title: 'Dense medium', description: 'A closer look at collective activity', icon: Grid3X3, params: { birthRate: 6500, frequency: 1, separation: .24 } },
-  { id: 'slow', title: 'Slow oscillations', description: 'Inspect longer-lived fluctuations', icon: Timer, params: { birthRate: 450, frequency: .3, separation: .4 } },
-];
 /** Planned experiments: greyed in the rail, each opening a one-line summary and its plan. */
 const PLANNED: PlannedExperiment[] = [
   { id: 'casimir-plates', title: 'Casimir plates (3D)', summary: 'A full parallel-plate boundary model beyond the analytic comparison.', href: './docs/planned-experiments/casimir-effect.md' },
@@ -32,163 +16,36 @@ const PLANNED: PlannedExperiment[] = [
   { id: 'lamb-shift', title: 'Lamb shift', summary: 'Unshifted reference levels beside the small Lamb shift.', href: './docs/planned-experiments/lamb-shift.md' },
   { id: 'particle-shells', title: 'Particle shells', summary: 'Requires spectral cutoffs and shell-energy rules.' },
 ];
-const fmt = (n: number) => n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
-/** Render an accessible boolean scene-layer control. */
-function Toggle({ label, checked, onChange, icon: Icon, testId }: { label: string; checked: boolean; onChange: (value: boolean) => void; icon: typeof Eye; testId?: string }) {
-  return <label className="toggle-row"><span><Icon size={15} />{label}</span><input type="checkbox" data-testid={testId} checked={checked} onChange={e => onChange(e.target.checked)} /><span className="switch" aria-hidden="true" /></label>;
-}
-/** Plot recent medium population or energy diagnostics. */
-function DiagnosticsPlot({ rows, mode }: { rows: Diagnostics[]; mode: 'population' | 'energy' }) {
-  const values = rows.map(r => mode === 'population' ? r.active : r.fieldEnergy);
-  return <Plot label={`${mode === 'population' ? 'Active dipole count' : 'Field energy in E₀'} over recent model time`} x={rows.map(r => r.time)}
-    series={[{ key: mode, label: mode === 'population' ? 'Active dipoles' : 'Field energy', color: palette.dataShell3, values, area: true }]}
-    xUnit="τ" yUnit={mode === 'energy' ? 'E₀' : undefined} yDomain={[0, Math.max(1, ...values) * 1.15]} formatX={t => t.toFixed(2)} formatY={fmt}
-    empty="Run or step the experiment to collect samples" height={104} testId="medium-plot"/>;
-}
 
-/** Coordinate navigation between the independent laboratories. */
+type ExperimentId = 'medium' | 'light' | 'electron' | 'casimir' | 'vdw';
+
+/**
+ * Coordinate navigation between the independent laboratories. Medium runs in the full workbench (UI 07); the other labs
+ * are hosted in the shell's header and rail until they migrate. Every lab stays mounted after its first visit, so
+ * switching preserves its state.
+ */
 export function App() {
-  const [experiment, setExperiment] = useState<'medium' | 'light' | 'electron' | 'casimir' | 'vdw'>('medium');
-  const [visitedLight, setVisitedLight] = useState(false), [visitedElectron, setVisitedElectron] = useState(false);
-  const [visitedCasimir, setVisitedCasimir] = useState(false);
-  const [visitedVdw, setVisitedVdw] = useState(false);
-  const openLight = () => { setVisitedLight(true); setExperiment('light'); };
-  const openElectron = () => { setVisitedElectron(true); setExperiment('electron'); };
-  const openCasimir = () => { setVisitedCasimir(true); setExperiment('casimir'); };
-  const openVdw = () => { setVisitedVdw(true); setExperiment('vdw'); };
-  const open: Record<typeof experiment, () => void> = { medium: () => setExperiment('medium'), light: openLight, electron: openElectron, casimir: openCasimir, vdw: openVdw };
-  // Medium's scenarios move to the rail (its own library sidebar is hidden on desktop); other labs keep theirs in-page until they migrate.
-  const [mediumPreset, setMediumPreset] = useState('balanced'), [mediumScenario, setMediumScenario] = useState('balanced');
-  const [scenarioRequest, setScenarioRequest] = useState<{ id: string; at: number } | null>(null), [helpRequest, setHelpRequest] = useState(0);
-  const onPresetChange = useCallback((id: string) => { setMediumPreset(id); if (id !== 'custom') setMediumScenario(id); }, []);
+  const [experiment, setExperiment] = useState<ExperimentId>('medium');
+  const [visited, setVisited] = useState<Record<ExperimentId, boolean>>({ medium: true, light: false, electron: false, casimir: false, vdw: false });
+  const open = useCallback((id: ExperimentId) => { setVisited(v => (v[id] ? v : { ...v, [id]: true })); setExperiment(id); }, []);
+  const [mediumPreset, setMediumPreset] = useState('balanced');
+  const [scenarioRequest, setScenarioRequest] = useState<{ id: string; at: number } | null>(null);
+  const onPresetChange = useCallback((id: string) => setMediumPreset(id), []);
   const definition = EXPERIMENTS.find(d => d.id === experiment)!;
-  const scenarioTitle = experiment === 'medium' ? mediumDefinition.scenarios.find(s => s.id === mediumScenario)?.title : undefined;
-  const header = <Header experiment={definition.title} scenario={scenarioTitle} modified={experiment === 'medium' && mediumPreset === 'custom'} onHelp={experiment === 'medium' ? () => setHelpRequest(n => n + 1) : undefined}/>;
   const rail = <Rail experiments={EXPERIMENTS.map(d => ({ id: d.id, title: d.title, scenarios: d.id === 'medium' ? d.scenarios : undefined }))} planned={PLANNED} experiment={experiment}
-    scenario={experiment === 'medium' && mediumPreset !== 'custom' ? mediumPreset : undefined} onExperiment={id => open[id as typeof experiment]()} onScenario={(_e, id) => setScenarioRequest({ id, at: performance.now() })}/>;
+    scenario={experiment === 'medium' && mediumPreset !== 'custom' ? mediumPreset : undefined} onExperiment={id => open(id as ExperimentId)} onScenario={(_e, id) => setScenarioRequest({ id, at: performance.now() })}/>;
+  const back = () => setExperiment('medium');
   // Each lab is profiled separately in development so the render budget can catch one lab re-rendering another.
-  return <HostedLayout header={header} rail={rail}><DevProfiler id="medium"><MediumApp active={experiment === 'medium'} onOpenLight={openLight} onOpenElectron={openElectron} onOpenCasimir={openCasimir} onOpenVdw={openVdw} scenarioRequest={scenarioRequest} onPresetChange={onPresetChange} helpRequest={helpRequest}/></DevProfiler>{visitedLight && <DevProfiler id="light"><LightExperiment active={experiment === 'light'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedElectron && <DevProfiler id="electron"><ElectronExperiment active={experiment === 'electron'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedCasimir && <DevProfiler id="casimir"><CasimirExperiment active={experiment === 'casimir'} onBack={() => setExperiment('medium')}/></DevProfiler>} {visitedVdw && <DevProfiler id="vdw"><VanDerWaalsExperiment active={experiment === 'vdw'} onBack={() => setExperiment('medium')}/></DevProfiler>}</HostedLayout>;
-}
-
-/** Render and coordinate the medium lifecycle laboratory. */
-function MediumApp({ active, onOpenLight, onOpenElectron, onOpenCasimir, onOpenVdw, scenarioRequest, onPresetChange, helpRequest }: { active: boolean; onOpenLight: () => void; onOpenElectron: () => void; onOpenCasimir: () => void; onOpenVdw: () => void; scenarioRequest?: { id: string; at: number } | null; onPresetChange?: (id: string) => void; helpRequest?: number }) {
-  const sim = useSimulation(), { state, latest, sink, send, checkpoint } = sim;
-  const host = useRef<HTMLDivElement>(null), viewport = useRef<FieldRenderer | null>(null), fileInput = useRef<HTMLInputElement>(null), dialog = useRef<HTMLDialogElement>(null);
-  const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
-  const viewRef = useRef(view);
-  useEffect(() => { viewRef.current = view; }, [view]);
-  const [graphicsError, setGraphicsError] = useState<string | null>(null), [renderRevision, setRenderRevision] = useState(0);
-  const [picked, setPicked] = useState<PickedDipole | null>(null), [metrics, setMetrics] = useState({ fps: 0, calls: 0 });
-  const [parameters, setParameters] = useState(DEFAULT_PARAMETERS), [seed, setSeed] = useState('2026'), [preset, setPreset] = useState('balanced');
-  const [tab, setTab] = useState<'parameters' | 'dipole'>('parameters'), [plot, setPlot] = useState<'population' | 'energy' | 'events'>('population');
-  const [rows, setRows] = useState<Diagnostics[]>([]), [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
-  const [notice, setNotice] = useState(''), [busy, setBusy] = useState(false), [showSidebar, setShowSidebar] = useState(false), [showInspector, setShowInspector] = useState(false);
-  const [helpTopic, setHelpTopic] = useState<'model' | 'roadmap'>('model');
-  const d = state?.diagnostics, ready = !!state && !sim.error, running = state?.running ?? false;
-  const selectedPreset = presets.find(p => p.id === preset);
-  const onPick = useCallback((value: PickedDipole | null) => { setPicked(value); }, []);
-  useEffect(() => {
-    if (!active || !host.current) return;
-    let disposed = false, renderer: FieldRenderer | null = null;
-    import('../rendering/FieldRenderer').then(module => {
-      if (disposed || !host.current) return;
-      renderer = new module.FieldRenderer(host.current, viewRef.current, onPick, (fps, calls) => setMetrics({ fps, calls }), message => { setGraphicsError(message); send({ type: 'running', value: false }); });
-      viewport.current = renderer; sink.current = snapshot => renderer?.update(snapshot.data);
-      if (latest.current) renderer.update(latest.current.data);
-    }).catch(error => { if (!disposed) setGraphicsError(`3D view unavailable: ${error instanceof Error ? error.message : String(error)}. Controls, diagnostics and experiment files remain available.`); });
-    return () => { disposed = true; sink.current = null; viewport.current = null; renderer?.dispose(); };
-  }, [active, onPick, renderRevision, send, sink, latest]);
-  useEffect(() => { if (!active) send({ type: 'running', value: false }); }, [active, send]);
-  useEffect(() => { viewport.current?.setOptions(view); }, [view]);
-  useEffect(() => { if (state) { setParameters(state.parameters); setSeed(String(state.seed)); } }, [state?.diagnostics.parameterVersion, state?.seed]);
-  useEffect(() => {
-    if (!d) return;
-    setRows(previous => { if (previous.at(-1)?.tick === d.tick) return previous; return d.tick < (previous.at(-1)?.tick ?? 0) ? [d] : [...previous, d].slice(-240); });
-  }, [d?.tick]);
-  useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 5000); return () => clearTimeout(timer); }, [notice]);
-  useEffect(() => {
-    const keyboard = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName) || target.isContentEditable || dialog.current?.open || !ready || !active) return;
-      if (e.code === 'Space') { e.preventDefault(); if (!graphicsError) send({ type: 'running', value: !latest.current?.running }); }
-      if (e.code === 'ArrowRight') { e.preventDefault(); send({ type: 'step' }); }
-    };
-    window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
-  }, [active, ready, graphicsError, latest, send]);
-  const setOption = <K extends keyof ViewSettings>(key: K, value: ViewSettings[K]) => setView(v => ({ ...v, [key]: value }));
-  /** Apply a medium parameter change and mark the preset as custom. */
-  function updateParameter(key: keyof Parameters, value: number) { const next = { ...parameters, [key]: value }; setParameters(next); send({ type: 'parameters', value: next }); setPreset('custom'); }
-  /** Reset the medium with validated seed and parameter values. */
-  useEffect(() => { onPresetChange?.(preset); }, [preset, onPresetChange]);
-  // A scenario chosen in the shell's rail applies the preset as the library button does.
-  const resetRef = useRef<(params: Parameters, id: string) => void>(() => undefined);
-  useEffect(() => { const p = scenarioRequest && presets.find(x => x.id === scenarioRequest.id); if (p) resetRef.current(p.params, p.id); }, [scenarioRequest]);
-  // The shell header's ? button opens the same About dialog as the lab's own (hidden on desktop) help button.
-  const showHelpRef = useRef<(topic: 'model' | 'roadmap') => void>(() => undefined);
-  useEffect(() => { if (helpRequest) showHelpRef.current('model'); }, [helpRequest]);
-  resetRef.current = (params, id) => reset(params, id);
-  function reset(params = parameters, id = preset) {
-    try { const n = validateSeed(Number(seed)); if (seed.trim() === '') throw new Error('Enter a numeric seed.'); send({ type: 'reset', seed: n, parameters: params }); setParameters(params); setPreset(id); setRows([]); viewport.current?.select(null); setNotice('Experiment reset to tick 0.'); setShowSidebar(false); } catch (error) { setNotice(String(error)); }
-  }
-  /** Capture the worker state as an in-memory checkpoint or downloaded file. */
-  async function save(kind: 'file' | 'checkpoint') {
-    setBusy(true);
-    try {
-      const c = await checkpoint();
-      if (kind === 'checkpoint') { setCheckpoints(old => [...old, c].slice(-6)); setNotice(`Checkpoint captured at tick ${c.tick}.`); }
-      else { const file: ExperimentFile = { format: 'zeropoint-experiment', version: 1, savedAt: new Date().toISOString(), checkpoint: c, view: viewRef.current }; downloadFile(`zeropoint-${c.seed}-tick-${c.tick}.json`, JSON.stringify(file), 'application/json'); setNotice('Experiment saved with exact simulation state.'); }
-    } catch (error) { setNotice(String(error)); } finally { setBusy(false); }
-  }
-  /** Validate and restore a medium experiment file selected by the user. */
-  async function importFile(file?: File) {
-    if (!file) return; setBusy(true);
-    try { if (file.size > 8 * 1024 * 1024) throw new Error('Experiment files must be smaller than 8 MB.'); const experiment = parseExperiment(await file.text()); send({ type: 'restore', checkpoint: experiment.checkpoint }); setParameters(experiment.checkpoint.parameters); setSeed(String(experiment.checkpoint.seed)); setView(experiment.view); setRows([]); setPreset('custom'); viewport.current?.select(null); setNotice(`Loaded tick ${experiment.checkpoint.tick}. The experiment is paused.`); }
-    catch (error) { setNotice(`Could not load file: ${error instanceof Error ? error.message : String(error)}`); } finally { setBusy(false); if (fileInput.current) fileInput.current.value = ''; }
-  }
-  /** Restore a captured medium checkpoint and synchronize the controls. */
-  function restore(c: Checkpoint) { send({ type: 'restore', checkpoint: c }); setParameters(c.parameters); setSeed(String(c.seed)); setRows([]); setPreset('custom'); viewport.current?.select(null); setNotice(`Restored checkpoint at tick ${c.tick}.`); }
-  /** Export the collected medium diagnostic samples as CSV. */
-  function exportCSV() { const heading = 'tick,time_tau,physical_time_s,active,births,deaths,rejected,field_energy_E0,reservoir_E0,residual_E0,parameter_version'; downloadFile('zeropoint-diagnostics.csv', heading + '\n' + rows.map(r => [r.tick, r.time, r.time / FREQUENCY_UNIT, r.active, r.births, r.deaths, r.rejected, r.fieldEnergy, r.reservoir, r.residual, r.parameterVersion].join(',')).join('\n'), 'text/csv'); setNotice('Recent diagnostic samples exported.'); }
-  /** Open the requested model or roadmap help content. */
-  showHelpRef.current = topic => showHelp(topic);
-  function showHelp(topic: 'model' | 'roadmap') { setHelpTopic(topic); dialog.current?.showModal(); }
-
-  return <div className="app-shell" style={{ display: active ? undefined : 'none' }}>
-    <header className="topbar"><div className="identity"><BrandMark/><span>ZeroPoint<span className="brand-period">.</span></span><span className="brand-divider"/><span className="lab-label">FIELD LABORATORY</span><span className="version">v0.1</span></div><div className="header-actions"><RepositoryLink/><a href="./docs/simulation-plan.html" target="_blank" rel="noreferrer">Development plan <ChevronRight size={13}/></a><button className="icon-button" aria-label="About the model" onClick={() => showHelp('model')}><CircleHelp size={18}/></button><div className="local-badge"><span className="dot"/> Runs locally</div></div></header>
-    <div className="workspace">
-      <aside className={`sidebar ${showSidebar ? 'mobile-open' : ''}`} aria-label="Experiment library"><div className="panel-heading"><span>WORKSPACE</span><button className="mobile-only icon-button" aria-label="Close experiment library" onClick={() => setShowSidebar(false)}><X size={17}/></button><FlaskConical className="desktop-only" size={14}/></div><div className="section-name"><Microscope size={17}/>Experiments<span className="count">8</span></div><div className="scenario-section"><span className="micro-label">01 / MEDIUM LIFECYCLE</span>{presets.map(p => <button key={p.id} data-testid={`scenario-${p.id}`} className={`preset ${preset === p.id ? 'selected' : ''}`} disabled={!ready} onClick={() => reset(p.params, p.id)}><p.icon size={17}/><span><strong>{p.title}</strong><small>{p.description}</small></span>{preset === p.id && <span className="preset-dot"/>}</button>)}</div>
-        <button className="preset light-entry" data-testid="lab-light" onClick={() => { setShowSidebar(false); onOpenLight(); }}><Waves size={17}/><span><strong>Light through the zero-point field</strong><small>Explore successive induction</small></span><ChevronRight size={14}/></button>
-        <button className="preset light-entry electron-entry" data-testid="lab-electron" onClick={() => { setShowSidebar(false); onOpenElectron(); }}><Atom size={17}/><span><strong>Electron in the zero-point field</strong><small>Polarization, spin & motion</small></span><ChevronRight size={14}/></button>
-        <button className="preset light-entry" data-testid="lab-casimir" onClick={() => { setShowSidebar(false); onOpenCasimir(); }}><Waves size={17}/><span><strong>Extended Casimir effect</strong><small>Zepton lifetimes & charge pressure</small></span><ChevronRight size={14}/></button>
-        <button className="preset light-entry" data-testid="lab-vdw" onClick={() => { setShowSidebar(false); onOpenVdw(); }}><Layers size={17}/><span><strong>Van der Waals & vacuum pressure</strong><small>From induced dipoles to ZPE pressure</small></span><ChevronRight size={14}/></button>
-        <button className="roadmap-link" onClick={() => showHelp('roadmap')}><Box size={15}/><span>Beyond the medium<small>Casimir, fields & shells</small></span><ChevronRight size={14}/></button>
-        <div className="sidebar-rule"/><div className="panel-heading"><span>SCENE LAYERS</span><Layers size={14}/></div><Toggle label="Dipole medium" testId="layer-medium" icon={Eye} checked={view.medium} onChange={v => setOption('medium', v)}/><Toggle label="Cell boundaries" testId="layer-bounds" icon={Box} checked={view.bounds} onChange={v => setOption('bounds', v)}/><Toggle label="Energy density slice" testId="layer-slice" icon={ScanLine} checked={view.slice} onChange={v => setOption('slice', v)}/>{view.slice && <label className="slice-slider">Slice Z <output>{view.sliceZ.toFixed(1)} L₀</output><input aria-label="Slice Z" type="range" min="-4" max="4" step=".1" value={view.sliceZ} onChange={e => setOption('sliceZ', +e.target.value)}/><small>0.5 L₀ slab · binned energy, not pressure</small></label>}
-        <div className="sidebar-bottom"><div className="model-card"><div><span className="tiny-dot"/> MODEL NOTE</div><p>A finite window into a proposed field.</p><small>Reduced lifecycle model. Physical scales are mapped to an observable clock.</small><button onClick={() => showHelp('model')}>Read the assumptions <ChevronRight size={13}/></button></div><span className="sidebar-footer">A space to observe. A model to question.</span></div>
-      </aside>
-
-      <main className="main-area"><div className="page-heading"><div><div className="breadcrumbs"><button className="mobile-only icon-button" data-testid="nav-open" aria-label="Open experiment library" onClick={() => setShowSidebar(true)}><Menu size={17}/></button><span>Experiments</span><ChevronRight size={12}/><span>Medium lifecycle</span></div><h1>{selectedPreset?.title ?? 'Custom experiment'}</h1><p>Observe pairs rotate, separate and collapse around fixed centres.</p></div><button className="assumption-pill" onClick={() => showHelp('model')}><Info size={13}/> Reduced model</button></div>
-        <div className="run-toolbar"><div className="transport"><button data-testid="transport-run" className={`play-button ${running ? 'is-running' : ''}`} disabled={!ready || !!graphicsError} onClick={() => send({ type: 'running', value: !running })}>{running ? <Pause size={15} fill="currentColor"/> : <Play size={15} fill="currentColor"/>}{running ? 'Pause' : 'Run'}<kbd>Space</kbd></button><button className="tool-button" disabled={!ready} onClick={() => send({ type: 'step' })} data-testid="transport-step" title="Advance one fixed step (Right arrow)"><SkipForward size={16}/><span>Step</span></button><button className="tool-button" disabled={!ready} onClick={() => reset()} data-testid="transport-reset" title="Reset with the current seed and parameters"><RotateCcw size={15}/><span>Reset</span></button><span className="toolbar-divider"/><label className="speed-label"><Timer size={14}/><select data-testid="transport-speed" aria-label="Playback speed" value={state?.speed ?? 1} disabled={!ready} onChange={e => send({ type: 'speed', value: +e.target.value })}>{[.25,.5,1,2,4].map(v => <option key={v} value={v}>{v}×</option>)}</select></label></div><div className="file-controls"><button className="tool-button" disabled={!ready || busy} onClick={() => fileInput.current?.click()} data-testid="file-load" title="Load experiment"><ArrowUpFromLine size={15}/><span>Load</span></button><button data-testid="file-save" className="tool-button save-button" disabled={!ready || busy} onClick={() => save('file')}><ArrowDownToLine size={15}/><span>Save experiment</span></button><input ref={fileInput} className="visually-hidden" type="file" data-testid="file-input" aria-label="Import experiment file" accept=".json,application/json" onChange={e => importFile(e.target.files?.[0])}/><button className="mobile-only icon-button" aria-label="Open inspector" onClick={() => setShowInspector(true)}><SlidersHorizontal size={18}/></button></div></div>
-        {sim.error && <div className="error-banner" role="alert">{sim.error}<button onClick={sim.restart}>Restart worker</button></div>}
-        <section className="viewport-shell" aria-label="Field visualization"><div ref={host} className="viewport"/><div className="view-top"><div className="view-label"><span className={`dot ${running ? '' : 'paused'}`}/><span>{ready ? running ? 'LIVE FIELD' : 'PAUSED' : 'INITIALIZING'}</span><span className="view-label-divider"/>Periodic cell</div><div className="view-buttons"><button className={view.representation === 'dipoles' ? 'active' : ''} aria-pressed={view.representation === 'dipoles'} onClick={() => setOption('representation', 'dipoles')}>Dipoles</button><button className={view.representation === 'points' ? 'active' : ''} aria-pressed={view.representation === 'points'} onClick={() => setOption('representation', 'points')}>Points</button></div></div>
-          <div className="view-axis" aria-hidden="true"><svg viewBox="0 0 60 60"><path d="M28 34V8M28 34L51 45M28 34L8 46" fill="none" strokeWidth="1.5" stroke={palette.text4}/><text x="24" y="7" fill={palette.dataShell3}>Y</text><text x="50" y="56" fill={palette.dataPos}>X</text><text x="0" y="55" fill={palette.text3}>Z</text><circle cx="28" cy="34" r="3" fill={palette.text2}/></svg></div>
-          <div className="camera-tools"><button className="icon-button" aria-label="Perspective camera" title="Perspective camera" onClick={() => viewport.current?.cameraPreset('perspective')}><Box size={17}/></button><button className="icon-button" aria-label="Top camera" title="Top camera" onClick={() => viewport.current?.cameraPreset('top')}><Grid3X3 size={17}/></button><button className="icon-button" aria-label="Front camera" title="Front camera" onClick={() => viewport.current?.cameraPreset('front')}><ScanLine size={17}/></button><span/><button className="icon-button" data-testid="export-png" aria-label="Export field image" title="Export labelled PNG" disabled={!ready || !!graphicsError} onClick={() => viewport.current?.exportPNG(`Seed ${state?.seed} | Tick ${d?.tick} | t = ${d?.time.toFixed(3)} tau | L0 = 1e-13 m | Illustrative reduced model`)}><Download size={16}/></button></div>
-          <div className="view-bottom"><div className="charge-legend">{view.representation === 'dipoles' ? <><span><i className="charge positive"/>+ Positive lobe</span><span><i className="charge negative"/>− Negative lobe</span></> : <span><i className="charge negative"/>Dipole samples · orientation hidden</span>}</div><span className="cell-scale"><i/>8 L₀ · periodic cell</span></div><div className="orbit-hint">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> Click to inspect</div>
-          {view.slice && <div className="slice-legend"><span>Energy / L₀³</span><i/><span>0 — {viewport.current?.getSliceMax().toFixed(1) ?? '0'} E₀</span></div>}
-          {graphicsError && <div className="graphics-error" role="alert"><Box size={30}/><h3>Viewport needs attention</h3><p>{graphicsError}</p><button onClick={() => { setGraphicsError(null); setRenderRevision(n => n + 1); }}>Recover viewport</button></div>}
-        </section>
-        <section className="metric-strip" aria-label="Live diagnostics"><div><span>ACTIVE DIPOLES</span><strong data-testid="active-count">{fmt(d?.active ?? 0)}<small>/ 10,000</small></strong><em><span className="tiny-dot"/>Represented fluctuations</em></div><div><span>MODEL TIME</span><strong data-testid="model-time">{(d?.time ?? 0).toFixed(3)}<small>τ</small></strong><em>{((d?.time ?? 0) / FREQUENCY_UNIT).toExponential(2)} s physical time</em></div><div><span>FIELD ENERGY</span><strong>{(d?.fieldEnergy ?? 0).toFixed(1)}<small>E₀</small></strong><em>{((d?.fieldEnergy ?? 0) * ENERGY_UNIT).toExponential(2)} J represented energy</em></div><div><span>LEDGER RESIDUAL</span><strong className="mint">{Math.abs(d?.residual ?? 0).toExponential(1)}<small>E₀</small></strong><em><Check size={11}/>Particle + reservoir balance</em></div></section>
-        <section className="diagnostics-panel"><div className="diagnostic-heading"><div className="diagnostic-tabs"><button className={plot === 'population' ? 'active' : ''} onClick={() => setPlot('population')}><Activity size={14}/>Population</button><button className={plot === 'energy' ? 'active' : ''} onClick={() => setPlot('energy')}>Field energy</button><button className={plot === 'events' ? 'active' : ''} onClick={() => setPlot('events')}>Event log</button></div><button className="text-button" data-testid="export-csv" disabled={!rows.length} onClick={exportCSV}><Download size={12}/>Export CSV</button></div>{plot === 'events' ? <div className="event-list">{state?.events.slice().reverse().map((event, index) => <div key={`${event.tick}-${index}`}><span>tick {event.tick}</span><p>{event.text}</p></div>)}</div> : <><div className="chart-caption"><span><i/>{plot === 'population' ? 'Active dipoles' : 'Field energy / E₀'}</span><small>Recent samples · model time τ</small></div><DiagnosticsPlot rows={rows} mode={plot}/></>}
-          <div className="checkpoint-bar"><span><Timer size={13}/>Checkpoints</span><div className="checkpoint-items">{checkpoints.length ? checkpoints.map((c, i) => <button key={i} disabled={!ready} title="Restore this exact state and pause" onClick={() => restore(c)}>t {c.tick * DT < 100 ? (c.tick * DT).toFixed(2) : Math.round(c.tick * DT)} τ</button>) : <small>Capture a state to return to it.</small>}</div><button className="text-button" disabled={!ready || busy} data-testid="capture" onClick={() => save('checkpoint')}><Save size={13}/>Capture</button></div>
-        </section>
-      </main>
-
-      <aside className={`inspector ${showInspector ? 'mobile-open' : ''}`} aria-label="Simulation inspector"><div className="panel-heading"><span>INSPECTOR</span><button className="mobile-only icon-button" aria-label="Close inspector" onClick={() => setShowInspector(false)}><X size={17}/></button><SlidersHorizontal className="desktop-only" size={14}/></div><div className="inspector-tabs"><button className={tab === 'parameters' ? 'active' : ''} onClick={() => setTab('parameters')}><Settings2 size={13}/>Parameters</button><button className={tab === 'dipole' ? 'active' : ''} onClick={() => setTab('dipole')}><Crosshair size={13}/>Dipole{picked && <i/>}</button></div>
-        {tab === 'parameters' ? <><div className="inspector-intro"><h2>Medium properties</h2><p>Changes apply at the next available model tick.</p></div><div className="parameter"><label htmlFor="birth-rate">Creation rate <output>{fmt(parameters.birthRate)}<span> / τ</span></output></label><input id="birth-rate" type="range" min="0" max="10000" step="50" disabled={!ready} value={parameters.birthRate} onChange={e => updateParameter('birthRate', +e.target.value)}/><div className="range-labels"><span>0</span><span>10,000</span></div><p>Poisson arrivals into the finite cell.</p></div><div className="parameter"><label htmlFor="frequency">Frequency centre <output>{parameters.frequency.toFixed(2)}<span> f₀</span></output></label><input id="frequency" type="range" min=".25" max="3" step=".05" disabled={!ready} value={parameters.frequency} onChange={e => updateParameter('frequency', +e.target.value)}/><div className="range-labels"><span>0.25</span><span>3.00</span></div><p>New dipoles sample 0.5–1.5× this value.</p></div><div className="parameter"><label htmlFor="separation">Peak pair separation <output>{parameters.separation.toFixed(2)}<span> L₀</span></output></label><input id="separation" type="range" min="0" max=".8" step=".01" disabled={!ready} value={parameters.separation} onChange={e => updateParameter('separation', +e.target.value)}/><div className="range-labels"><span>0</span><span>0.80</span></div><p>Lobe-centre distance at midlife. The pair centre stays fixed.</p></div><div className="seed-control"><label htmlFor="seed">Random seed<small>Reproducible initial state</small></label><div><input id="seed" type="number" min="0" max="4294967295" step="1" value={seed} onChange={e => setSeed(e.target.value)} aria-describedby="seed-help"/><button className="icon-button" disabled={!ready} data-testid="params-apply" aria-label="Apply seed and reset" title="Apply seed and reset" onClick={() => reset()}><RotateCcw size={15}/></button></div><small id="seed-help">Applied when you reset.</small></div><div className="inspector-divider"/><Toggle label="Reduce visual flashing" testId="setting-reduced-motion" icon={Eye} checked={view.reducedMotion} onChange={v => setOption('reducedMotion', v)}/><small className="reduced-help">Keeps lobe size constant; rotation and pair separation still follow the lifecycle. Step while paused for still inspection.</small></> : <div className="dipole-inspector"><div className="inspector-intro"><h2>{picked ? `Dipole ${picked.slot}:${picked.generation}` : 'Look a little closer'}</h2><p>{picked ? 'Live measurements from the selected fluctuation.' : 'Pause and click a dipole in the field, or select one here.'}</p></div><button className="inspect-first" disabled={!ready || !d?.active} onClick={() => viewport.current?.inspectFirst()}><Crosshair size={15}/>Inspect first active dipole</button>{picked ? <><div className="dipole-glyph"><span className="glyph-positive">+</span><i/><span className="glyph-negative">−</span></div><dl className="readout-list"><div><dt>Frequency</dt><dd>{picked.frequency.toFixed(3)} f₀</dd></div><div><dt>Energy E = hf / 2</dt><dd>{(picked.frequency / 2).toFixed(4)} E₀</dd></div><div><dt>Age</dt><dd>{picked.age.toFixed(4)} τ</dd></div><div><dt>Lifetime 1 / f</dt><dd>{picked.lifetime.toFixed(4)} τ</dd></div><div><dt>Pair separation</dt><dd>{picked.separation.toFixed(4)} L₀</dd></div><div><dt>Life elapsed</dt><dd>{(picked.age / picked.lifetime * 100).toFixed(1)}%</dd></div><div><dt>Fixed centre / L₀</dt><dd>{picked.position.map(v => v.toFixed(2)).join(', ')}</dd></div></dl><div className="life-track"><i style={{ width: `${Math.min(100, picked.age / picked.lifetime * 100)}%` }}/></div><p className="reduced-help">Selection follows this generation only. When it vanishes, its energy returns to the reservoir.</p><button className="text-button" onClick={() => viewport.current?.select(null)}>Clear selection</button></> : <div className="empty-inspector"><Crosshair size={35}/><p>No active selection</p><small>Inspection does not change the simulation.</small></div>}</div>}
-        <div className="constants-card"><div className="micro-label">SCALE & CONVENTIONS <button className="icon-button" aria-label="Explain model units" onClick={() => showHelp('model')}><Info size={13}/></button></div><dl><div><dt>Length · L₀</dt><dd>10⁻¹³ m</dd></div><div><dt>Frequency · f₀</dt><dd>10²⁰ Hz</dd></div><div><dt>Time · τ</dt><dd>10⁻²⁰ s</dd></div><div><dt>Energy · E₀</dt><dd>hf₀</dd></div><div><dt>Fixed step</dt><dd>1/120 τ</dd></div></dl><div className="formula">E = ½hf <span>·</span> Δt = 1/f</div></div><div className="reservoir-readout"><span>Reservoir energy</span><strong>{(d?.reservoir ?? 0).toFixed(2)} E₀</strong><small>Rejected births: {fmt(d?.rejected ?? 0)}<br/>Parameter revision: {d?.parameterVersion ?? 0}</small></div>
-      </aside>
+  return <>
+    <DevProfiler id="medium"><MediumWorkbench active={experiment === 'medium'} rail={rail} header={{ experiment: mediumDefinition.title }} scenarioRequest={scenarioRequest}
+      onPresetChange={onPresetChange} onOpenLight={() => open('light')} onOpenElectron={() => open('electron')} onOpenVdw={() => open('vdw')}/></DevProfiler>
+    <div style={{ display: experiment === 'medium' ? 'none' : undefined }}>
+      <HostedLayout header={<Header experiment={definition.title}/>} rail={rail}>
+        {visited.light && <DevProfiler id="light"><LightExperiment active={experiment === 'light'} onBack={back}/></DevProfiler>}
+        {visited.electron && <DevProfiler id="electron"><ElectronExperiment active={experiment === 'electron'} onBack={back}/></DevProfiler>}
+        {visited.casimir && <DevProfiler id="casimir"><CasimirExperiment active={experiment === 'casimir'} onBack={back}/></DevProfiler>}
+        {visited.vdw && <DevProfiler id="vdw"><VanDerWaalsExperiment active={experiment === 'vdw'} onBack={back}/></DevProfiler>}
+      </HostedLayout>
     </div>
-    <footer className="statusbar"><span><span className={`dot ${sim.error ? 'error' : ''}`}/>{sim.error ? 'Simulation error' : ready ? 'Simulation ready' : 'Starting worker'}<i/>Seed {state?.seed ?? '—'}<i/><span data-testid="tick">Tick {d?.tick ?? 0}</span></span><span><span className="desktop-only">Worker {state?.stepMs.toFixed(2) ?? '0.00'} ms / step<i/></span>{graphicsError ? '3D unavailable' : 'WebGL 2'}<i/>{metrics.fps ? `${metrics.fps} FPS` : 'FPS —'}<i/>{MODEL_VERSION}</span></footer>
-    {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
-    <dialog ref={dialog} className="model-dialog" onClick={e => { if (e.target === dialog.current) dialog.current.close(); }}><button className="dialog-close icon-button" aria-label="Close model information" onClick={() => dialog.current?.close()}><X size={20}/></button><div className="dialog-eyebrow"><Atom size={18}/>ZEROPOINT / MODEL NOTES</div><h2>{helpTopic === 'model' ? 'What you are observing' : 'Beyond the medium'}</h2>{helpTopic === 'model' ? <><p>This is a reproducible, reduced visualization of the blueprint’s fluctuation lifecycle. It is not a complete ZPF force solver or experimental validation of the hypothesis.</p><div className="model-equations"><span>E = hf/2</span><span>Δt = 1/f</span><span>Efield + Ereservoir = constant</span></div><h3>The choices made in this version</h3><ul><li>A periodic 8 L₀ cube, at most 10,000 representative dipoles. The population is a finite sample, not a literal Planck-resolved medium.</li><li>Seeded Poisson births; frequencies uniform from 0.5–1.5 times the frequency centre. Existing dipoles keep their assigned frequency.</li><li>We identify ΔE with E and use the blueprint’s equality ΔE Δt = h/2, giving lifetime 1/f. This is an explicit model convention.</li><li>Every birth debits E from a bookkeeping reservoir; every death credits E. Each pair has a fixed centre. Its lobes rotate in opposite positions, separate smoothly to a maximum at midlife, and collapse together before disappearance. The chosen rotation rate and separation envelope are illustrative; no kinetic-energy law is asserted.</li><li>The energy slice bins live dipole energy in a 0.5 L₀ slab. It is not pressure or an emergent force.</li><li>At 1× playback, one wall-clock second represents one τ = 10⁻²⁰ physical seconds. Fixed ticks are 1/120 τ. Runs pause when the tab is hidden.</li></ul><p className="model-limits">Torque, emergent constants, stable shells, force propagation, exchange events and cosmology need additional equations and are not implemented in this release.</p></> : <><p>The medium laboratory, light induction sequence and electron polarization experiment are available. Further experiments and calculated force responses remain planned.</p><div className="roadmap-item"><span>02</span><div><h3>Electron polarization · available</h3><p>Explore a stationary electron, local spin rotation and a moving electron’s magnetic response. Calculated torque and pressure forces remain future work.</p><button className="text-button" onClick={() => { dialog.current?.close(); onOpenElectron(); }}>Open electron experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>03</span><div><h3>Van der Waals / Casimir pressure · available</h3><p>Induce and correlate dipoles, then explore adjustable plates and the ideal Casimir pressure, force and energy. The microscopic zepton boundary model remains planned.</p><a className="text-button" href="./docs/planned-experiments/casimir-effect.md" target="_blank" rel="noreferrer">Read experiment plan <ChevronRight size={13}/></a><button className="text-button" onClick={() => { dialog.current?.close(); onOpenVdw(); }}>Open van der Waals experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>04</span><div><h3>Light through the zero-point field · available</h3><p>Follow an energy wave through successive induced, counter-rotating electron–positron pairs. Inspect fixed pair centres, local separation and collapse, surrounding field response and each induction handoff.</p><a className="text-button" href="./docs/planned-experiments/light-through-zero-point.md" target="_blank" rel="noreferrer">Read light experiment plan <ChevronRight size={13}/></a><button className="text-button" onClick={() => { dialog.current?.close(); onOpenLight(); }}>Open light experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>05</span><div><h3>Particle shells</h3><p>Requires spectral cutoffs and shell-energy rules.</p></div></div><div className="roadmap-item"><span>06</span><div><h3>Exchange & cosmology</h3><p>Requires event maps, complete conservation ledgers and a tired-light loss law.</p></div></div></>}<div className="dialog-links"><a href="./docs/model-specification.md" target="_blank" rel="noreferrer">Read model specification <ChevronRight size={14}/></a><a href="./docs/simulation-plan.html" target="_blank" rel="noreferrer">Full development plan <ChevronRight size={14}/></a></div></dialog>
-  </div>;
+  </>;
 }

@@ -45,6 +45,95 @@
   background: var(--accent-line);
 }
 
+/* Narrow screens: a stacked, scrolling page with drawers (UI 18 refines phones). */
+.workbench.is-narrow {
+  height: auto;
+  min-height: 100dvh;
+  overflow: visible;
+}
+
+.workbench.is-narrow .workbench-chip,
+.workbench.is-narrow .workbench-breadcrumb > span:first-child,
+.workbench.is-narrow .workbench-breadcrumb > svg,
+.workbench.is-narrow .repository-label {
+  display: none;
+}
+
+.workbench.is-narrow .workbench-header {
+  gap: 10px;
+  overflow: hidden;
+}
+
+.workbench.is-narrow .workbench-brand > span,
+.workbench.is-narrow .file-label {
+  display: none;
+}
+
+.workbench.is-narrow .workbench-breadcrumb {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workbench.is-narrow .workbench-status {
+  overflow: hidden;
+}
+
+.workbench.is-narrow .status-disclaimer {
+  display: none;
+}
+
+.workbench-narrow-bar {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--line);
+}
+
+.workbench-narrow-stage .workbench-viewport {
+  height: 46vh;
+  min-height: 300px;
+}
+
+.workbench-narrow-stage .timeline-bar {
+  flex-wrap: wrap;
+  height: auto;
+  padding: 6px 8px;
+}
+
+.workbench-narrow-dock .dock {
+  height: auto;
+}
+
+.workbench-narrow-dock .dock-head {
+  flex-wrap: wrap;
+  padding: 8px 10px;
+}
+
+.workbench-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 40;
+  width: min(320px, 88vw);
+  overflow: auto;
+  background: var(--bg-1);
+  border-right: 1px solid var(--line-2);
+  box-shadow: 15px 0 60px color-mix(in srgb, var(--shadow) 60%, transparent);
+}
+
+.workbench-drawer.is-inspector {
+  inset: 0 0 0 auto;
+  border-right: 0;
+  border-left: 1px solid var(--line-2);
+}
+
+.workbench-drawer-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+}
+
 /* Transitional hosting (UI 06): the shell header and rail around a lab's own scrolling page, on desktop only. */
 .workbench-hosted-body {
   display: grid;

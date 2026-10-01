@@ -1,4 +1,5 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { Menu, SlidersHorizontal, X } from 'lucide-react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Group, Panel, Separator, useDefaultLayout, usePanelRef } from 'react-resizable-panels';
 import './shell.css';
 
@@ -17,6 +18,22 @@ export interface ShellProps {
 
 /** Whether a key event comes from a text field, where the panel shortcuts must not fire. */
 const typing = (target: EventTarget | null) => target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
+
+/** Whether a media query matches, following changes (false where matchMedia is unavailable). */
+export function useMediaQuery(query: string): boolean {
+  const [matches, setMatches] = useState(() => typeof matchMedia !== 'undefined' && matchMedia(query).matches);
+  useEffect(() => {
+    if (typeof matchMedia === 'undefined') return;
+    const list = matchMedia(query), update = () => setMatches(list.matches);
+    update(); list.addEventListener('change', update);
+    return () => list.removeEventListener('change', update);
+  }, [query]);
+  return matches;
+}
+
+/** Below this width the shell stacks its panels and opens the rail and inspector as drawers (UI 18 refines phones). */
+export const NARROW_QUERY = '(max-width: 850px)';
+
 
 /** Layout persistence: localStorage when it works, otherwise an in-memory store for this session. */
 type LayoutStore = Pick<Storage, 'getItem' | 'setItem'>;
@@ -46,7 +63,12 @@ export function layoutStorage(): LayoutStore {
  * scrolls; only the inspector and dock bodies do. Ctrl B, Ctrl I and Ctrl J toggle the rail, inspector and dock, and
  * Ctrl . (focus mode) collapses all three and restores them. Sizes persist per experiment.
  */
-export function Shell({ id, header, rail, viewport, timeline, dock, inspector, status }: ShellProps) {
+export function Shell(props: ShellProps) {
+  return useMediaQuery(NARROW_QUERY) ? <NarrowShell {...props}/> : <WideShell {...props}/>;
+}
+
+/** The desktop shell: resizable panels with keyboard toggles. */
+function WideShell({ id, header, rail, viewport, timeline, dock, inspector, status }: ShellProps) {
   const railRef = usePanelRef(), inspectorRef = usePanelRef(), dockRef = usePanelRef();
   const storage = layoutStorage();
   const outer = useDefaultLayout({ id: `zeropoint-shell-${id}`, storage });
@@ -98,6 +120,33 @@ export function Shell({ id, header, rail, viewport, timeline, dock, inspector, s
         </>}
       </Group>
       {status}
+    </div>
+  );
+}
+
+/**
+ * The narrow shell: header, viewport, timeline and dock stacked in a scrolling page, with the rail and inspector opening
+ * as drawers. Choosing an experiment or scenario in the rail closes its drawer.
+ */
+function NarrowShell({ header, rail, viewport, timeline, dock, inspector, status }: ShellProps) {
+  const [drawer, setDrawer] = useState<'rail' | 'inspector' | null>(null);
+  return (
+    <div className="workbench is-narrow">
+      {header}
+      <div className="workbench-narrow-bar">
+        <button type="button" className="workbench-icon-button" data-testid="nav-open" aria-label="Open experiment library" onClick={() => setDrawer('rail')}><Menu size={17} aria-hidden="true"/></button>
+        {inspector && <button type="button" className="workbench-icon-button" aria-label="Open inspector" onClick={() => setDrawer('inspector')}><SlidersHorizontal size={17} aria-hidden="true"/></button>}
+      </div>
+      <div className="workbench-narrow-stage"><div className="workbench-viewport">{viewport}</div>{timeline}</div>
+      {dock && <div className="workbench-narrow-dock">{dock}</div>}
+      {status}
+      {drawer && (
+        <div className={`workbench-drawer is-${drawer}`} role="dialog" aria-modal="true" aria-label={drawer === 'rail' ? 'Experiment library' : 'Inspector'}
+          onClickCapture={event => { if (drawer === 'rail' && (event.target as HTMLElement).closest('[data-testid^="scenario-"], [data-testid^="lab-"]')) setTimeout(() => setDrawer(null)); }}>
+          <button type="button" className="workbench-icon-button workbench-drawer-close" aria-label={drawer === 'rail' ? 'Close experiment library' : 'Close inspector'} onClick={() => setDrawer(null)}><X size={17} aria-hidden="true"/></button>
+          {drawer === 'rail' ? rail : inspector}
+        </div>
+      )}
     </div>
   );
 }

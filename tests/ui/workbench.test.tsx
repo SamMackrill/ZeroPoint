@@ -115,7 +115,7 @@ describe('Setup and View panels', () => {
     await userEvent.clear(rate); await userEvent.type(rate, '2000{Enter}');
     expect(onLive).toHaveBeenCalledWith('birthRate', 2000);
     expect(screen.queryByRole('status')).toBeNull();
-    const seed = screen.getByRole('textbox', { name: /^Seed/ });
+    const seed = screen.getByRole('textbox', { name: /^Random seed/ });
     await userEvent.clear(seed); await userEvent.type(seed, '7{Enter}');
     expect(screen.getByRole('status').textContent).toContain('1 change needs restart');
     expect(onApply).not.toHaveBeenCalled();
@@ -126,7 +126,7 @@ describe('Setup and View panels', () => {
   it('reverts staged changes with Esc and applies with Ctrl ⏎', async () => {
     const onApply = vi.fn();
     render(<MediumSetup onLive={() => undefined} onApply={onApply}/>);
-    const seed = screen.getByRole('textbox', { name: /^Seed/ });
+    const seed = screen.getByRole('textbox', { name: /^Random seed/ });
     await userEvent.clear(seed); await userEvent.type(seed, '9{Enter}');
     fireEvent.keyDown(seed, { key: 'Escape' });
     expect(screen.queryByRole('status')).toBeNull();
@@ -137,7 +137,7 @@ describe('Setup and View panels', () => {
   it('applies the value a Ctrl ⏎ commits, with or without an earlier staged change', async () => {
     const onApply = vi.fn();
     render(<MediumSetup onLive={() => undefined} onApply={onApply}/>);
-    const seed = screen.getByRole('textbox', { name: /^Seed/ });
+    const seed = screen.getByRole('textbox', { name: /^Random seed/ });
     await userEvent.clear(seed); await userEvent.type(seed, '7{Enter}');
     await userEvent.clear(seed); await userEvent.type(seed, '11');
     fireEvent.keyDown(seed, { key: 'Enter', ctrlKey: true });
@@ -148,7 +148,7 @@ describe('Setup and View panels', () => {
   });
   it('keeps staged changes when switching inspector tabs', async () => {
     render(<Inspector setup={<MediumSetup onLive={() => undefined} onApply={() => undefined}/>} view={<p>view</p>}/>);
-    const seed = screen.getByRole('textbox', { name: /^Seed/ });
+    const seed = screen.getByRole('textbox', { name: /^Random seed/ });
     await userEvent.clear(seed); await userEvent.type(seed, '5{Enter}');
     await userEvent.click(screen.getByRole('tab', { name: 'View' }));
     await userEvent.click(screen.getByRole('tab', { name: 'Setup' }));

@@ -1,0 +1,244 @@
+import { Atom, Box, Check, ChevronRight, Crosshair, Info, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { DEFAULT_VIEW, DT, ENERGY_UNIT, FREQUENCY_UNIT, MODEL_VERSION, validateSeed, type Checkpoint, type Diagnostics, type ExperimentFile, type Parameters, type ViewSettings } from '../../model/types';
+import { downloadFile, parseExperiment } from '../../persistence/experiment';
+import type { FieldRenderer, PickedDipole } from '../../rendering/FieldRenderer';
+import { useSimulation } from '../../simulation/useSimulation';
+import { palette } from '../../ui/palette';
+import { Plot } from '../../ui/Plot';
+import { Readouts } from '../../ui/Readouts';
+import { Segmented } from '../../ui/Segmented';
+import { FileActions, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
+import { scenarioState, withPaths } from '../../workbench/definition';
+import { Dock } from '../../workbench/Dock';
+import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
+import { mediumRuntime, SPEEDS } from '../../workbench/runtime';
+import { Shell } from '../../workbench/Shell';
+import { TimelineBar } from '../../workbench/TimelineBar';
+import { mediumDefinition, type MediumParams } from './definition';
+import './medium-workbench.css';
+
+/** At most this many ◆ checkpoints are kept, for every experiment (§09). */
+export const CHECKPOINT_LIMIT = 8;
+
+/** Whole numbers with thousands separators. */
+const fmt = (n: number) => n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
+
+/** Plot recent medium population or energy diagnostics. */
+function DiagnosticsPlot({ rows, mode }: { rows: Diagnostics[]; mode: 'population' | 'energy' }) {
+  const values = rows.map(r => mode === 'population' ? r.active : r.fieldEnergy);
+  return <Plot label={`${mode === 'population' ? 'Active dipole count' : 'Field energy in E₀'} over recent model time`} x={rows.map(r => r.time)}
+    series={[{ key: mode, label: mode === 'population' ? 'Active dipoles' : 'Field energy', color: palette.dataShell3, values, area: true }]}
+    xUnit="τ" yUnit={mode === 'energy' ? 'E₀' : undefined} yDomain={[0, Math.max(1, ...values) * 1.15]} formatX={t => t.toFixed(2)} formatY={fmt}
+    empty="Run or step the experiment to collect samples" height={96} testId={`medium-plot-${mode}`}/>;
+}
+
+/** Props for MediumWorkbench. */
+export interface MediumWorkbenchProps {
+  active: boolean;
+  rail: ReactNode;
+  /** Breadcrumb fields; the workbench adds its file actions and help. */
+  header: Pick<HeaderProps, 'experiment'>;
+  scenarioRequest?: { id: string; at: number } | null;
+  onPresetChange?(id: string): void;
+  onOpenLight(): void;
+  onOpenElectron(): void;
+  onOpenVdw(): void;
+}
+
+/**
+ * The Medium lifecycle laboratory in the workbench (UI 07): the field viewport with its overlays, the open timeline,
+ * the dock (readouts; plots, ledger and events), the inspector (Setup, View, Selection) and the header's file actions.
+ * The worker protocol and renderer are unchanged; per-tick data reaches the renderer through the runtime subscription.
+ */
+export function MediumWorkbench({ active, rail, header, scenarioRequest, onPresetChange, onOpenLight, onOpenElectron, onOpenVdw }: MediumWorkbenchProps) {
+  const sim = useSimulation(), { state, latest, sink, send, checkpoint } = sim;
+  const runtime = useMemo(() => mediumRuntime({ send, latest, sink, checkpoint }), [send, latest, sink, checkpoint]);
+  useEffect(() => () => runtime.dispose(), [runtime]);
+  const host = useRef<HTMLDivElement>(null), viewport = useRef<FieldRenderer | null>(null), dialog = useRef<HTMLDialogElement>(null);
+  const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
+  const viewRef = useRef(view);
+  useEffect(() => { viewRef.current = view; }, [view]);
+  const [graphicsError, setGraphicsError] = useState<string | null>(null), [renderRevision, setRenderRevision] = useState(0);
+  const [picked, setPicked] = useState<PickedDipole | null>(null);
+  const [parameters, setParameters] = useState<Parameters>(mediumDefinition.defaultParams), [seed, setSeed] = useState(2026);
+  const [preset, setPreset] = useState('balanced'), [scenario, setScenario] = useState('balanced');
+  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
+  const [rows, setRows] = useState<Diagnostics[]>([]), [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
+  const [notice, setNotice] = useState(''), [busy, setBusy] = useState(false), [showHint, setShowHint] = useState(true);
+  const [helpTopic, setHelpTopic] = useState<'model' | 'roadmap'>('model');
+  const d = state?.diagnostics, ready = !!state && !sim.error, running = state?.running ?? false;
+
+  /** A pick selects the dipole and opens the Selection tab (§07: selection changes auto-open it). */
+  const onPick = useCallback((value: PickedDipole | null) => { setPicked(value); if (value) setTab('selection'); }, []);
+  useEffect(() => {
+    if (!active || !host.current) return;
+    let disposed = false, renderer: FieldRenderer | null = null, off = () => undefined as void;
+    import('../../rendering/FieldRenderer').then(module => {
+      if (disposed || !host.current) return;
+      renderer = new module.FieldRenderer(host.current, viewRef.current, onPick, () => undefined, message => { setGraphicsError(message); runtime.run(false); });
+      viewport.current = renderer;
+      off = runtime.subscribe(snapshot => renderer?.update(snapshot.data));
+      if (latest.current) renderer.update(latest.current.data);
+    }).catch(error => { if (!disposed) setGraphicsError(`3D view unavailable: ${error instanceof Error ? error.message : String(error)}. Controls, diagnostics and experiment files remain available.`); });
+    return () => { disposed = true; off(); viewport.current = null; renderer?.dispose(); };
+  }, [active, onPick, renderRevision, runtime, latest]);
+  useEffect(() => { if (!active) runtime.run(false); }, [active, runtime]);
+  useEffect(() => { viewport.current?.setOptions(view); }, [view]);
+  useEffect(() => { if (state) { setParameters(state.parameters); setSeed(state.seed); } }, [state?.diagnostics.parameterVersion, state?.seed]);
+  useEffect(() => {
+    if (!d) return;
+    setRows(previous => { if (previous.at(-1)?.tick === d.tick) return previous; return d.tick < (previous.at(-1)?.tick ?? 0) ? [d] : [...previous, d].slice(-240); });
+  }, [d?.tick]);
+  useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 5000); return () => clearTimeout(timer); }, [notice]);
+  useEffect(() => { onPresetChange?.(preset); }, [preset, onPresetChange]);
+  useEffect(() => {
+    const keyboard = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName) || target.isContentEditable || dialog.current?.open || !ready || !active) return;
+      if (e.code === 'Space') { e.preventDefault(); if (!graphicsError) runtime.run(!latest.current?.running); }
+      if (e.code === 'ArrowRight') { e.preventDefault(); runtime.step(); }
+    };
+    window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
+  }, [active, ready, graphicsError, latest, runtime]);
+
+  const setOption = (key: string, value: unknown) => setView(v => withPaths(v, { [key]: value }));
+  /** Apply a live parameter change; the scenario label becomes "modified". */
+  function updateParameter(key: string, value: unknown) { const next = { ...parameters, [key]: value }; setParameters(next); runtime.setLive(next); setPreset('custom'); }
+  /** Restart with a seed and parameters (Reset, scenario changes, and applying a new seed). */
+  function restart(params: Parameters, nextSeed: number, id: string, message = 'Experiment reset to tick 0.') {
+    try { runtime.configure({ seed: validateSeed(nextSeed), parameters: params }); setParameters(params); setSeed(nextSeed); setPreset(id); setRows([]); viewport.current?.select(null); setNotice(message); } catch (error) { setNotice(String(error)); }
+  }
+  /** Start a scenario from its preset parameters, keeping the seed. */
+  const startScenario = (id: string) => { const { params } = scenarioState(mediumDefinition, id); const { seed: _ignored, ...physical } = params; restart(physical, seed, id); setScenario(id); };
+  const startRef = useRef(startScenario);
+  startRef.current = startScenario;
+  useEffect(() => { if (scenarioRequest) startRef.current(scenarioRequest.id); }, [scenarioRequest]);
+
+  /** Capture the worker state as a ◆ checkpoint or a downloaded file. */
+  async function save(kind: 'file' | 'checkpoint') {
+    setBusy(true);
+    try {
+      const c = await runtime.checkpoint();
+      if (kind === 'checkpoint') { setCheckpoints(old => [...old, c].slice(-CHECKPOINT_LIMIT)); setNotice(`Checkpoint captured at tick ${c.tick}.`); }
+      else { const file: ExperimentFile = { format: 'zeropoint-experiment', version: 1, savedAt: new Date().toISOString(), checkpoint: c, view: viewRef.current }; downloadFile(`zeropoint-${c.seed}-tick-${c.tick}.json`, JSON.stringify(file), 'application/json'); setNotice('Experiment saved with exact simulation state.'); }
+    } catch (error) { setNotice(String(error)); } finally { setBusy(false); }
+  }
+  /** Validate and restore a medium experiment file selected by the user. */
+  async function importFile(file: File) {
+    setBusy(true);
+    try { if (file.size > 8 * 1024 * 1024) throw new Error('Experiment files must be smaller than 8 MB.'); const experiment = parseExperiment(await file.text()); runtime.restore(experiment.checkpoint); setParameters(experiment.checkpoint.parameters); setSeed(experiment.checkpoint.seed); setView(experiment.view); setRows([]); setPreset('custom'); viewport.current?.select(null); setNotice(`Loaded tick ${experiment.checkpoint.tick}. The experiment is paused.`); }
+    catch (error) { setNotice(`Could not load file: ${error instanceof Error ? error.message : String(error)}`); } finally { setBusy(false); }
+  }
+  /** Restore a captured medium checkpoint and synchronize the controls. */
+  function restore(c: Checkpoint) { runtime.restore(c); setParameters(c.parameters); setSeed(c.seed); setRows([]); setPreset('custom'); viewport.current?.select(null); setNotice(`Restored checkpoint at tick ${c.tick}.`); }
+  /** Export the collected medium diagnostic samples as CSV. */
+  function exportCSV() { const heading = 'tick,time_tau,physical_time_s,active,births,deaths,rejected,field_energy_E0,reservoir_E0,residual_E0,parameter_version'; downloadFile('zeropoint-diagnostics.csv', heading + '\n' + rows.map(r => [r.tick, r.time, r.time / FREQUENCY_UNIT, r.active, r.births, r.deaths, r.rejected, r.fieldEnergy, r.reservoir, r.residual, r.parameterVersion].join(',')).join('\n'), 'text/csv'); setNotice('Recent diagnostic samples exported.'); }
+  /** Open the requested model or roadmap help content. */
+  function showHelp(topic: 'model' | 'roadmap') { setHelpTopic(topic); dialog.current?.showModal(); }
+  const exportPNG = () => viewport.current?.exportPNG(`Seed ${state?.seed} | Tick ${d?.tick} | t = ${d?.time.toFixed(3)} tau | L0 = 1e-13 m | Illustrative reduced model`);
+
+  const params: MediumParams = { ...parameters, seed };
+  const scenarioTitle = mediumDefinition.scenarios.find(s => s.id === scenario)?.title;
+  const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle} modified={preset === 'custom'} onHelp={() => showHelp('model')}
+    actions={<FileActions disabled={!ready || busy} onFile={importFile} onSave={() => save('file')}
+      exports={[{ id: 'png', label: 'PNG image', onSelect: exportPNG, disabled: !!graphicsError }, { id: 'csv', label: 'CSV (diagnostics)', onSelect: exportCSV, disabled: !rows.length }]}/>}/>;
+
+  const viewportNode = (
+    <section className="viewport-shell medium-stage" aria-label="Field visualization">
+      <div ref={host} className="viewport" onPointerDown={() => setShowHint(false)}/>
+      {sim.error && <div className="error-banner" role="alert">{sim.error}<button onClick={sim.restart}>Restart worker</button></div>}
+      <div className="view-top">
+        <div className="view-label"><span className={`dot ${running ? '' : 'paused'}`}/><span>{ready ? running ? 'LIVE FIELD' : 'PAUSED' : 'INITIALIZING'}</span><span className="view-label-divider"/>{fmt(d?.active ?? 0)} dipoles · periodic 8 L₀ cell</div>
+        <Segmented label="Camera" options={[{ value: 'perspective', label: 'Perspective' }, { value: 'top', label: 'Top' }, { value: 'front', label: 'Front' }]} value="perspective" testId="camera"
+          onChange={preset => viewport.current?.cameraPreset(preset as 'perspective' | 'top' | 'front')}/>
+      </div>
+      <div className="view-axis" aria-hidden="true"><svg viewBox="0 0 60 60"><path d="M28 34V8M28 34L51 45M28 34L8 46" fill="none" strokeWidth="1.5" stroke={palette.text4}/><text x="24" y="7" fill={palette.dataShell3}>Y</text><text x="50" y="56" fill={palette.dataPos}>X</text><text x="0" y="55" fill={palette.text3}>Z</text><circle cx="28" cy="34" r="3" fill={palette.text2}/></svg></div>
+      <div className="view-bottom"><div className="charge-legend">{view.representation === 'dipoles' ? <><span><i className="charge positive"/>+ Positive lobe</span><span><i className="charge negative"/>− Negative lobe</span></> : <span><i className="charge negative"/>Dipole samples · orientation hidden</span>}</div><span className="cell-scale"><i/>8 L₀ · periodic cell</span></div>
+      {showHint && <div className="orbit-hint">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> Click to inspect</div>}
+      {view.slice && <div className="slice-legend"><span>Energy / L₀³</span><i/><span>0 — {viewport.current?.getSliceMax().toFixed(1) ?? '0'} E₀</span></div>}
+      {graphicsError && <div className="graphics-error" role="alert"><Box size={30}/><h3>Viewport needs attention</h3><p>{graphicsError}</p><button onClick={() => { setGraphicsError(null); setRenderRevision(n => n + 1); }}>Recover viewport</button></div>}
+    </section>
+  );
+
+  const dockNode = (
+    <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={dockTab} onTab={setDockTab}
+      readouts={[
+        { label: 'Active', value: fmt(d?.active ?? 0) },
+        { label: 'Time', value: (d?.time ?? 0).toFixed(3), unit: 'τ' },
+        { label: 'Energy', value: (d?.fieldEnergy ?? 0).toFixed(1), unit: 'E₀' },
+        { label: 'Residual', value: Math.abs(d?.residual ?? 0).toExponential(1), unit: 'E₀' },
+      ]}
+      tabs={[
+        { id: 'plots', label: 'Plots', content: <div className="medium-plots"><div><h4>Active dipoles</h4><DiagnosticsPlot rows={rows} mode="population"/></div><div><h4>Field energy · E₀</h4><DiagnosticsPlot rows={rows} mode="energy"/></div></div> },
+        { id: 'ledger', label: 'Ledger', content: <div className="medium-ledger">
+          <Readouts testId="medium-ledger" items={[
+            { label: 'Reservoir energy', value: (d?.reservoir ?? 0).toFixed(2), unit: 'E₀' },
+            { label: 'Field energy', value: (d?.fieldEnergy ?? 0).toFixed(1), unit: 'E₀' },
+            { label: 'Ledger residual', value: Math.abs(d?.residual ?? 0).toExponential(1), unit: 'E₀' },
+            { label: 'Rejected births', value: fmt(d?.rejected ?? 0) },
+            { label: 'Parameter revision', value: String(d?.parameterVersion ?? 0) },
+            { label: 'Physical time', value: ((d?.time ?? 0) / FREQUENCY_UNIT).toExponential(2), unit: 's' },
+            { label: 'Represented energy', value: ((d?.fieldEnergy ?? 0) * ENERGY_UNIT).toExponential(2), unit: 'J' },
+          ]}/>
+          <p className="medium-note"><Check size={11}/>Particle + reservoir balance</p>
+        </div> },
+        { id: 'events', label: 'Events', content: <div className="event-list">{state?.events.slice().reverse().map((event, index) => <div key={`${event.tick}-${index}`}><span>tick {event.tick}</span><p>{event.text}</p></div>)}</div> },
+      ]}/>
+  );
+
+  const selectionNode = (
+    <div className="dipole-inspector">
+      <div className="inspector-intro"><h2>{picked ? `Dipole ${picked.slot}:${picked.generation}` : 'Look a little closer'}</h2><p>{picked ? 'Live measurements from the selected fluctuation.' : 'Pause and click a dipole in the field, or select one here.'}</p></div>
+      <button className="inspect-first" disabled={!ready || !d?.active} onClick={() => viewport.current?.inspectFirst()}><Crosshair size={15}/>Select first active dipole</button>
+      {picked ? <>
+        <Readouts copyable testId="dipole-readouts" items={[
+          { label: 'Frequency', value: picked.frequency.toFixed(3), unit: 'f₀' },
+          { label: 'Energy E = hf / 2', value: (picked.frequency / 2).toFixed(4), unit: 'E₀' },
+          { label: 'Age', value: picked.age.toFixed(4), unit: 'τ' },
+          { label: 'Lifetime 1 / f', value: picked.lifetime.toFixed(4), unit: 'τ' },
+          { label: 'Pair separation', value: picked.separation.toFixed(4), unit: 'L₀' },
+          { label: 'Life elapsed', value: `${(picked.age / picked.lifetime * 100).toFixed(1)}%` },
+          { label: 'Fixed centre', value: picked.position.map(v => v.toFixed(2)).join(', '), unit: 'L₀' },
+        ]}/>
+        <div className="life-track"><i style={{ width: `${Math.min(100, picked.age / picked.lifetime * 100)}%` }}/></div>
+        <p className="reduced-help">Selection follows this generation only. When it vanishes, its energy returns to the reservoir.</p>
+        <button className="text-button" onClick={() => viewport.current?.select(null)}>Clear selection</button>
+      </> : <div className="empty-inspector"><Crosshair size={35}/><p>No active selection</p><small>Inspection does not change the simulation.</small></div>}
+    </div>
+  );
+
+  const inspectorNode = (
+    <Inspector tab={tab} onTab={setTab} selection={selectionNode}
+      setup={<SetupPanel definition={mediumDefinition} scenario={scenario} params={params}
+        onLive={updateParameter} onApply={changes => restart(parameters, Number(changes.seed ?? seed), preset)} onReset={() => startScenario(scenario)}/>}
+      view={<>
+        <ViewPanel definition={mediumDefinition} scenario={scenario} view={view} onView={setOption}/>
+        <section className="inspector-group" aria-label="Settings">
+          <header className="inspector-group-head"><h3>Settings</h3></header>
+          <label className="medium-setting"><input type="checkbox" data-testid="setting-reduced-motion" checked={view.reducedMotion} onChange={e => setOption('reducedMotion', e.target.checked)}/>Reduce visual flashing</label>
+          <small className="reduced-help">Keeps lobe size constant; rotation and pair separation still follow the lifecycle. Step while paused for still inspection.</small>
+        </section>
+        <section className="inspector-group" aria-label="Scale and conventions">
+          <header className="inspector-group-head"><h3>Scale &amp; conventions</h3><button className="inspector-link" aria-label="Explain model units" onClick={() => showHelp('model')}><Info size={12}/></button></header>
+          <dl className="medium-constants"><div><dt>Length · L₀</dt><dd>10⁻¹³ m</dd></div><div><dt>Frequency · f₀</dt><dd>10²⁰ Hz</dd></div><div><dt>Time · τ</dt><dd>10⁻²⁰ s</dd></div><div><dt>Energy · E₀</dt><dd>hf₀</dd></div><div><dt>Fixed step</dt><dd>1/120 τ</dd></div></dl>
+          <div className="formula">E = ½hf <span>·</span> Δt = 1/f</div>
+        </section>
+      </>}/>
+  );
+
+  const timelineNode = state && (
+    <TimelineBar runtime={runtime} timeline={mediumDefinition.timeline(scenario, params)} speeds={SPEEDS}
+      markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `t ${c.tick * DT < 100 ? (c.tick * DT).toFixed(2) : Math.round(c.tick * DT)} τ` }))}
+      onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) restore(c); }} onCapture={() => save('checkpoint')}/>
+  );
+
+  return (
+    <div className="medium-workbench" style={{ display: active ? undefined : 'none' }}>
+      <Shell id="medium" header={headerNode} rail={rail} viewport={viewportNode} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+        status={<StatusBar running={running} items={[sim.error ? 'Simulation error' : ready ? 'Simulation ready' : 'Starting worker', `Seed ${state?.seed ?? '—'}`, <span data-testid="tick">Tick {d?.tick ?? 0}</span>, MODEL_VERSION]}/>}/>
+      {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
+      <dialog ref={dialog} className="model-dialog" onClick={e => { if (e.target === dialog.current) dialog.current.close(); }}><button className="dialog-close icon-button" aria-label="Close model information" onClick={() => dialog.current?.close()}><X size={20}/></button><div className="dialog-eyebrow"><Atom size={18}/>ZEROPOINT / MODEL NOTES</div><h2>{helpTopic === 'model' ? 'What you are observing' : 'Beyond the medium'}</h2>{helpTopic === 'model' ? <><p className="model-lede">Observe pairs rotate, separate and collapse around fixed centres. Changes apply at the next available model tick.</p><p>This is a reproducible, reduced visualization of the blueprint’s fluctuation lifecycle. It is not a complete ZPF force solver or experimental validation of the hypothesis.</p><div className="model-equations"><span>E = hf/2</span><span>Δt = 1/f</span><span>Efield + Ereservoir = constant</span></div><h3>The choices made in this version</h3><ul><li>A periodic 8 L₀ cube, at most 10,000 representative dipoles. The population is a finite sample, not a literal Planck-resolved medium.</li><li>Seeded Poisson births; frequencies uniform from 0.5–1.5 times the frequency centre. Existing dipoles keep their assigned frequency.</li><li>We identify ΔE with E and use the blueprint’s equality ΔE Δt = h/2, giving lifetime 1/f. This is an explicit model convention.</li><li>Every birth debits E from a bookkeeping reservoir; every death credits E. Each pair has a fixed centre. Its lobes rotate in opposite positions, separate smoothly to a maximum at midlife, and collapse together before disappearance. The chosen rotation rate and separation envelope are illustrative; no kinetic-energy law is asserted.</li><li>The energy slice bins live dipole energy in a 0.5 L₀ slab. It is not pressure or an emergent force.</li><li>At 1× playback, one wall-clock second represents one τ = 10⁻²⁰ physical seconds. Fixed ticks are 1/120 τ. Runs pause when the tab is hidden.</li></ul><p className="model-limits">Torque, emergent constants, stable shells, force propagation, exchange events and cosmology need additional equations and are not implemented in this release.</p><p className="model-note-card"><strong>A finite window into a proposed field.</strong> Reduced lifecycle model. Physical scales are mapped to an observable clock. A space to observe. A model to question.</p><button className="text-button" onClick={() => setHelpTopic('roadmap')}>Beyond the medium <ChevronRight size={13}/></button></> : <><p>The medium laboratory, light induction sequence and electron polarization experiment are available. Further experiments and calculated force responses remain planned.</p><div className="roadmap-item"><span>02</span><div><h3>Electron polarization · available</h3><p>Explore a stationary electron, local spin rotation and a moving electron’s magnetic response. Calculated torque and pressure forces remain future work.</p><button className="text-button" onClick={() => { dialog.current?.close(); onOpenElectron(); }}>Open electron experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>03</span><div><h3>Van der Waals / Casimir pressure · available</h3><p>Induce and correlate dipoles, then explore adjustable plates and the ideal Casimir pressure, force and energy. The microscopic zepton boundary model remains planned.</p><a className="text-button" href="./docs/planned-experiments/casimir-effect.md" target="_blank" rel="noreferrer">Read experiment plan <ChevronRight size={13}/></a><button className="text-button" onClick={() => { dialog.current?.close(); onOpenVdw(); }}>Open van der Waals experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>04</span><div><h3>Light through the zero-point field · available</h3><p>Follow an energy wave through successive induced, counter-rotating electron–positron pairs. Inspect fixed pair centres, local separation and collapse, surrounding field response and each induction handoff.</p><a className="text-button" href="./docs/planned-experiments/light-through-zero-point.md" target="_blank" rel="noreferrer">Read light experiment plan <ChevronRight size={13}/></a><button className="text-button" onClick={() => { dialog.current?.close(); onOpenLight(); }}>Open light experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>05</span><div><h3>Particle shells</h3><p>Requires spectral cutoffs and shell-energy rules.</p></div></div><div className="roadmap-item"><span>06</span><div><h3>Exchange & cosmology</h3><p>Requires event maps, complete conservation ledgers and a tired-light loss law.</p></div></div></>}<div className="dialog-links"><a href="./docs/model-specification.md" target="_blank" rel="noreferrer">Read model specification <ChevronRight size={14}/></a><a href="./docs/simulation-plan.html" target="_blank" rel="noreferrer">Full development plan <ChevronRight size={14}/></a></div></dialog>
+    </div>
+  );
+}

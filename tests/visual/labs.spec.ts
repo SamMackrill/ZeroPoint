@@ -37,7 +37,7 @@ test('medium lifecycle', async ({ page }) => {
   await openLab(page);
   await snapshot(page, 'medium-balanced');
   await tid(page, 'scenario-sparse').click();
-  await expect(page.locator('h1')).toHaveText('Sparse fluctuations');
+  await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toHaveText('Sparse fluctuations');
   await snapshot(page, 'medium-sparse');
 });
 

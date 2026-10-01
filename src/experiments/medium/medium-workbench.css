@@ -1,0 +1,103 @@
+.medium-workbench .viewport-shell.medium-stage {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+.medium-workbench .view-top .segmented {
+  pointer-events: auto;
+  background: color-mix(in srgb, var(--bg-2) 80%, transparent);
+}
+
+.medium-workbench .view-top .segmented-item {
+  padding: 0 10px;
+  font-size: var(--fs-ui);
+}
+
+.medium-workbench .error-banner {
+  position: absolute;
+  top: 56px;
+  left: 18px;
+  right: 18px;
+  z-index: 3;
+}
+
+.medium-plots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.medium-plots h4 {
+  margin: 0 0 2px 46px;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+}
+
+.medium-ledger {
+  display: grid;
+  grid-template-columns: minmax(0, 420px);
+  gap: 6px;
+}
+
+.medium-note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+}
+
+.medium-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  color: var(--text-2);
+  font-size: var(--fs-ui);
+  cursor: pointer;
+}
+
+.medium-setting input {
+  accent-color: var(--accent);
+}
+
+.medium-constants {
+  display: grid;
+  gap: 4px;
+  margin: 4px 0 8px;
+}
+
+.medium-constants div {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--fs-ui);
+}
+
+.medium-constants dt {
+  color: var(--text-2);
+}
+
+.medium-constants dd {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--mono);
+}
+
+.medium-workbench .dipole-inspector .readouts {
+  margin: 8px 0;
+}
+
+@media(max-width:850px) {
+  .medium-plots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media(max-width:850px) {
+  .medium-workbench .view-top .segmented {
+    display: none;
+  }
+}
