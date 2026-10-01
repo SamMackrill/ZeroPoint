@@ -41,7 +41,7 @@ describe('TimelineBar', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Next event' }));
     await userEvent.click(screen.getByRole('button', { name: 'Reset' }));
     await userEvent.click(screen.getByRole('radio', { name: '2× speed' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Pair 3 induced · 3.00 τ' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Pair 4 induced · 3.00 τ' }));
     await userEvent.click(screen.getByTestId('capture'));
     expect(rt.calls).toEqual([['run', true], ['step'], ['nextEvent'], ['reset'], ['speed', 2], ['seek', 360], ['capture']]);
     expect(screen.getByText('2.40 / 12 τ')).toBeTruthy();
@@ -73,6 +73,7 @@ describe('TimelineBar', () => {
     expect(trackLength({ kind: 'open', dt: 0.01, events: [] }, status)).toBe(50);
     expect(trackLength(light, status)).toBe(1440);
     expect(timeText({ kind: 'loop', dt: 0.05, end: 120, events: [] }, status)).toBe('0.500 τ · tick 50');
+    expect(trackLength({ kind: 'open', dt: 0.01, events: [] }, status, [{ tick: 180 }])).toBe(180);
   });
 });
 

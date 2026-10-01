@@ -27,9 +27,10 @@ describe('experiment definitions', () => {
   it('gives each scenario its timeline kind and events', () => {
     const light = lightDefinition.timeline('induction', DEFAULT_LIGHT);
     expect(light).toMatchObject({ kind: 'bounded', end: 1440, next: 'event' });
-    expect(light.events).toHaveLength(12);
-    expect(light.events[2]).toEqual({ tick: 360, label: 'Pair 3 induced' });
-    expect(inductionEvents({ ...DEFAULT_LIGHT, wavelength: 4 }).map(e => e.tick)).toEqual([240, 480, 720, 960, 1200, 1440]);
+    expect(light.events).toHaveLength(11);
+    expect(light.events[0]).toEqual({ tick: 120, label: 'Pair 2 induced' });
+    expect(light.events[1]).toEqual({ tick: 240, label: 'Pair 3 induced' });
+    expect(inductionEvents({ ...DEFAULT_LIGHT, wavelength: 4 }).map(e => e.tick)).toEqual([240, 480, 720, 960, 1200]);
     expect(electronDefinition.timeline('stationary', electronDefinition.defaultParams).events.map(e => e.tick)).toEqual([42, 360]);
     expect(electronDefinition.timeline('spin', electronDefinition.defaultParams)).toMatchObject({ kind: 'bounded', next: 'jump', events: [] });
     expect(electronDefinition.timeline('radius-limit', electronDefinition.defaultParams).kind).toBe('static');

@@ -37,8 +37,12 @@ export interface TimelineBarProps {
 /** Speed labels: fractions as glyphs, as in the plan (¼ ½ 1× 2× 4×). */
 export const speedLabel = (speed: number) => (speed === 0.25 ? '¼' : speed === 0.5 ? '½' : `${speed}×`);
 
-/** The scrubber's length in ticks: the end of a bounded or looping timeline, or the elapsed ticks of an open one. */
-export const trackLength = (timeline: TimelineSpec, status: RuntimeStatus) => Math.max(1, timeline.end ?? Math.max(status.tick, ...(timeline.events.map(e => e.tick))));
+/**
+ * The scrubber's length in ticks: the end of a bounded or looping timeline; on an open one, the furthest of the current
+ * tick, its events and its ◆ markers, so markers keep their places after restoring an earlier one.
+ */
+export const trackLength = (timeline: TimelineSpec, status: RuntimeStatus, markers: readonly { tick: number }[] = []) =>
+  Math.max(1, timeline.end ?? Math.max(status.tick, ...timeline.events.map(e => e.tick), ...markers.map(m => m.tick)));
 
 /** Time readout: "2.40 / 12 τ" on bounded timelines, "2.433 τ · tick 292" on open and looping ones. */
 export function timeText(timeline: TimelineSpec, status: RuntimeStatus): string {
@@ -54,7 +58,7 @@ export function timeText(timeline: TimelineSpec, status: RuntimeStatus): string 
 export function TimelineBar({ runtime, timeline, speeds, markers = [], onMarker, onCapture, runDisabled }: TimelineBarProps) {
   const status = useRuntimeStatus(runtime);
   if (!status || timeline.kind === 'static') return null;
-  const can = runtime.capabilities, length = trackLength(timeline, status);
+  const can = runtime.capabilities, length = trackLength(timeline, status, markers);
   const nextIsEvent = timeline.next !== 'jump' && can.nextEvent;
   const pct = (tick: number) => `${Math.min(100, Math.max(0, (tick / length) * 100))}%`;
   const event = (e: TimelineEvent) => `${e.label} · ${(e.tick * timeline.dt).toFixed(2)} τ`;

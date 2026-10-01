@@ -91,3 +91,13 @@ test('plot keys do not step the model, cameras stay selected, recovery holds Run
   await page.keyboard.press('Escape'); await expect(page.getByRole('dialog', { name: 'Inspector' })).not.toBeVisible();
   await expect(page.getByRole('button', { name: 'Open inspector' })).toBeFocused();
 });
+
+test('a selected dipole does not pull the inspector back to Selection while the model runs', async ({ page }) => {
+  await page.goto('/'); await expect(tid(page, 'transport-run')).toBeEnabled();
+  await page.getByRole('tab', { name: 'Selection', exact: true }).click(); await page.getByRole('button', { name: 'Select first active dipole' }).click();
+  await expect(page.locator('.dipole-inspector h2')).toContainText('Dipole ');
+  await page.getByRole('tab', { name: 'Setup', exact: true }).click();
+  for (let i = 0; i < 3; i++) await tid(page, 'transport-step').click();
+  await expect(page.getByTestId('tick')).toHaveText('Tick 3');
+  await expect(page.getByRole('tab', { name: 'Setup', exact: true })).toHaveAttribute('aria-selected', 'true');
+});

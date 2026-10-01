@@ -76,7 +76,14 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const d = state?.diagnostics, ready = !!state && !sim.error, running = state?.running ?? false;
 
   /** A pick selects the dipole and opens the Selection tab (§07: selection changes auto-open it). */
-  const onPick = useCallback((value: PickedDipole | null) => { setPicked(value); if (value) setTab('selection'); }, []);
+  // The renderer reports the selection again on every snapshot; only a newly picked dipole opens the Selection tab.
+  const pickedId = useRef<string | null>(null);
+  const onPick = useCallback((value: PickedDipole | null) => {
+    setPicked(value);
+    const id = value ? `${value.slot}:${value.generation}` : null;
+    if (id && id !== pickedId.current) setTab('selection');
+    pickedId.current = id;
+  }, []);
   useEffect(() => {
     if (!active || !host) return;
     let disposed = false, renderer: FieldRenderer | null = null, off = () => undefined as void;
