@@ -94,13 +94,15 @@ export interface SetupPanelProps<P extends object> {
   onApply(changes: Record<string, unknown>): void;
   /** Restore the scenario's starting parameters. */
   onReset?(): void;
+  /** Derived readouts shown under the parameters (Light's frequency). */
+  children?: ReactNode;
 }
 
 /**
  * Setup (§07): the scenario's parameters by group. Live parameters apply at once. Restart (↻) parameters are staged
  * with an amber outline until the pending bar's Apply (Ctrl ⏎); Esc reverts them.
  */
-export function SetupPanel<P extends object>({ definition, scenario, params, onLive, onApply, onReset }: SetupPanelProps<P>) {
+export function SetupPanel<P extends object>({ definition, scenario, params, onLive, onApply, onReset, children }: SetupPanelProps<P>) {
   // The draft is mirrored in a ref, updated synchronously, so a Ctrl ⏎ that also commits a field's typed text applies
   // that new value (the field commits first, in the same event, before React re-renders).
   const [draft, setDraft] = useState<Record<string, unknown>>({});
@@ -131,6 +133,7 @@ export function SetupPanel<P extends object>({ definition, scenario, params, onL
         </section>
       ))}
       {!specs.length && <p className="inspector-empty">This scenario has no parameters.</p>}
+      {children}
       {pending.length > 0 && <PendingBar count={pending.length} onApply={apply} onRevert={revert}/>}
     </div>
   );

@@ -264,6 +264,46 @@
     "text": "Compare with Fleming’s Fig. 2 & §3 ↗"
   },
   {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "Parameters applied. The light sequence is paused at its start."
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "Light files must be smaller than 100 KB."
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "Exported the complete prescribed sequence, including future timeline samples."
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "Electric projection at the fixed probe over elapsed time"
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "Assigned energy bookkeeping. Field energy and angular momentum are not calculated from a force solver. Wave, field response and energy partition are prescribed illustrations of Fleming’s mechanism."
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "is induced at its own fixed centre, with the opposite rotation sense."
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "τ. Step or scrub to inspect its separation and collapse."
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "Successive dipoles make half-turns over half-wavelength intervals. The surrounding response and finite pulse shape are visual conventions. Follow an energy wave through successive, locally rotating pairs."
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "Paused stepping is available. At 1×, one second of playback represents $"
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "Fixed centres · prescribed c · local worker"
+  },
+  {
     "file": "src/experiments/medium/MediumWorkbench.tsx",
     "text": "Run or step the experiment to collect samples"
   },
@@ -330,54 +370,6 @@
   {
     "file": "src/experiments/medium/MediumWorkbench.tsx",
     "text": "Requires event maps, complete conservation ledgers and a tired-light loss law."
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "Parameters applied. The light sequence is paused at its start."
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "Light files must be smaller than 100 KB."
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "Exported the complete prescribed sequence, including future timeline samples."
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "Follow an energy wave through successive, locally rotating pairs."
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "is induced at its own fixed centre, with the opposite rotation sense."
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "τ. Step or scrub to inspect its separation and collapse."
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "Electric projection at the fixed probe over elapsed time"
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "Wave, field response and energy partition are prescribed illustrations of Fleming’s mechanism."
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "Assigned energy bookkeeping. Field energy and angular momentum are not calculated from a force solver."
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "Successive dipoles make half-turns over half-wavelength intervals. The surrounding response and finite pulse shape are visual conventions."
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "Paused stepping is available. At 1×, one second of playback represents $"
-  },
-  {
-    "file": "src/light/LightExperiment.tsx",
-    "text": "Fixed centres · prescribed c · local worker"
   },
   {
     "file": "src/ui/Plot.tsx",

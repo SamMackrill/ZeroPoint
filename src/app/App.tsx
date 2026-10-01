@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
-import { LightExperiment } from '../light/LightExperiment';
 import { ElectronExperiment } from '../electron/ElectronExperiment';
 import { VanDerWaalsExperiment } from '../van-der-waals/VanDerWaalsExperiment';
 import { CasimirExperiment } from '../casimir/CasimirExperiment';
 import { DevProfiler } from './DevProfiler';
-import { EXPERIMENTS, mediumDefinition } from '../experiments';
+import { EXPERIMENTS, lightDefinition, mediumDefinition } from '../experiments';
 import { MediumWorkbench } from '../experiments/medium/MediumWorkbench';
+import { LightWorkbench } from '../experiments/light/LightWorkbench';
 import { Header, Rail, type PlannedExperiment } from '../workbench/Chrome';
 import { HostedLayout } from '../workbench/Shell';
 
@@ -20,8 +20,8 @@ const PLANNED: PlannedExperiment[] = [
 type ExperimentId = 'medium' | 'light' | 'electron' | 'casimir' | 'vdw';
 
 /**
- * Coordinate navigation between the independent laboratories. Medium runs in the full workbench (UI 07); the other labs
- * are hosted in the shell's header and rail until they migrate. Every lab stays mounted after its first visit, so
+ * Coordinate navigation between the independent laboratories. Medium (UI 07) and Light (UI 08) run in the full
+ * workbench; the other labs are hosted in the shell's header and rail until they migrate. Every lab stays mounted after its first visit, so
  * switching preserves its state.
  */
 export function App() {
@@ -39,9 +39,9 @@ export function App() {
   return <>
     <DevProfiler id="medium"><MediumWorkbench active={experiment === 'medium'} rail={rail} header={{ experiment: mediumDefinition.title }} scenarioRequest={scenarioRequest}
       onPresetChange={onPresetChange} onOpenLight={() => open('light')} onOpenElectron={() => open('electron')} onOpenVdw={() => open('vdw')}/></DevProfiler>
-    <div style={{ display: experiment === 'medium' ? 'none' : undefined }}>
+    {visited.light && <DevProfiler id="light"><LightWorkbench active={experiment === 'light'} rail={rail} header={{ experiment: lightDefinition.title }}/></DevProfiler>}
+    <div style={{ display: experiment === 'medium' || experiment === 'light' ? 'none' : undefined }}>
       <HostedLayout header={<Header experiment={definition.title}/>} rail={rail}>
-        {visited.light && <DevProfiler id="light"><LightExperiment active={experiment === 'light'} onBack={back}/></DevProfiler>}
         {visited.electron && <DevProfiler id="electron"><ElectronExperiment active={experiment === 'electron'} onBack={back}/></DevProfiler>}
         {visited.casimir && <DevProfiler id="casimir"><CasimirExperiment active={experiment === 'casimir'} onBack={back}/></DevProfiler>}
         {visited.vdw && <DevProfiler id="vdw"><VanDerWaalsExperiment active={experiment === 'vdw'} onBack={back}/></DevProfiler>}

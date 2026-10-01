@@ -1,0 +1,120 @@
+.light-workbench-root .light-viewport-shell.light-stage {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+.light-workbench-root .light-view-top .segmented {
+  pointer-events: auto;
+  background: color-mix(in srgb, var(--bg-2) 80%, transparent);
+}
+
+.light-workbench-root .light-view-top .segmented-item {
+  padding: 0 10px;
+  font-size: var(--fs-ui);
+}
+
+.light-workbench-root .light-view-top b {
+  margin-left: 8px;
+}
+
+.light-workbench-root .error-banner {
+  position: absolute;
+  top: 56px;
+  left: 18px;
+  right: 18px;
+  z-index: 3;
+}
+
+.light-dock-plots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.light-dock-plots h4 {
+  margin: 0 0 2px 46px;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+}
+
+.light-ledger {
+  display: grid;
+  grid-template-columns: minmax(0, 420px);
+  gap: 6px;
+}
+
+.light-event-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.light-event-list button {
+  display: grid;
+  grid-template-columns: 18px 70px 1fr;
+  align-items: baseline;
+  width: 100%;
+  max-width: 320px;
+  padding: 3px 8px;
+  background: transparent;
+  color: var(--text-2);
+  border: 0;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  text-align: left;
+  cursor: pointer;
+}
+
+.light-event-list button:hover:not(:disabled) {
+  background: var(--bg-2);
+  color: var(--text);
+}
+
+.light-event-list .is-current button {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.light-event-list small {
+  color: var(--text-3);
+  font-family: var(--mono);
+}
+
+.light-event-list p {
+  margin: 2px 0 6px 26px;
+  color: var(--text-3);
+  font-size: var(--fs-ui);
+}
+
+.light-selection-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.light-selection-head h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--fs-title);
+}
+
+.light-selection .light-pair-glyph {
+  display: block;
+  width: 100%;
+  max-width: 240px;
+  margin: 8px auto;
+}
+
+@media(max-width:850px) {
+  .light-dock-plots {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .light-workbench-root .light-view-top .segmented {
+    display: none;
+  }
+}

@@ -21,7 +21,7 @@ export const lightDefinition: ExperimentDefinition<LightParameters, LightView> =
   defaultView: DEFAULT_LIGHT_VIEW,
   params: [
     { kind: 'range', key: 'wavelength', label: 'Wavelength', group: 'Wave', apply: 'restart', min: 1, max: 4, step: 0.1, display: { unit: 'nm', toDisplay: v => v * NM_PER_L, fromDisplay: v => v / NM_PER_L } },
-    { kind: 'range', key: 'polarization', label: 'Polarization', group: 'Wave', apply: 'restart', min: 0, max: 180, step: 5, unit: '°' },
+    { kind: 'range', key: 'polarization', label: 'Polarization angle', group: 'Wave', apply: 'restart', min: 0, max: 180, step: 5, unit: '°' },
     { kind: 'range', key: 'phase', label: 'Initial phase', group: 'Wave', apply: 'restart', min: 0, max: 360, step: 15, unit: '°' },
     { kind: 'choice', key: 'direction', label: 'Direction', group: 'Wave', apply: 'restart', options: [{ value: 1, label: '+X' }, { value: -1, label: '−X' }] },
     { kind: 'range', key: 'offset', label: 'Launch offset', group: 'Wave', apply: 'restart', min: -2, max: 2, step: 0.1, unit: 'L' },
