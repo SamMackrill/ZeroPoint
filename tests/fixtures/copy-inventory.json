@@ -384,6 +384,10 @@
     "text": "Fixed centres · prescribed c · local worker"
   },
   {
+    "file": "src/ui/Plot.tsx",
+    "text": ". Use the arrow keys to read values."
+  },
+  {
     "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
     "text": "Neutral atom and induced dipole: an applied electric field displaces the negative charge cloud opposite to the field"
   },

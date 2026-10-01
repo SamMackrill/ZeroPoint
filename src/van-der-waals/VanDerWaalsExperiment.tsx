@@ -6,6 +6,7 @@ import { downloadFile } from '../persistence/experiment';
 import { casimir, GAP_MAX_NM, GAP_MIN_NM, london, pressureCSV, pressureSweep } from './model';
 import './van-der-waals.css';
 import { palette } from '../ui/palette';
+import { Plot } from '../ui/Plot';
 
 const BOOK = './docs/papers/Book%20-%20the-zero-point-universe.pdf';
 const stages = [
@@ -83,15 +84,11 @@ function PlateDiagram({ gap, modes }: { gap: number; modes: boolean }) {
 
 /** Plot the ideal Casimir pressure sweep and expose common gap presets. */
 function PressurePlot({ gap, onGap }: { gap: number; onGap: (value: number) => void }) {
-  const x = (d: number) => 62 + Math.log10(d / 100) * 620;
-  const y = (p: number) => 28 + (Math.log10(Math.abs(casimir(100, 1).pressure)) - Math.log10(Math.abs(p))) * 36;
-  return <div className="vdw-plot"><svg viewBox="0 0 760 226" role="img" aria-label="Logarithmic plot of attractive pressure magnitude versus plate gap. Doubling the gap reduces pressure magnitude sixteenfold.">
-    {[100, 200, 500, 1000].map(d => <g key={d}><line x1={x(d)} x2={x(d)} y1="20" y2="178" stroke={palette.line} strokeDasharray="3 5"/><text x={x(d)} y="201" textAnchor="middle">{d}</text></g>)}
-    {[10, 1, .1, .01].map(p => <g key={p}><line x1="62" x2="682" y1={y(p)} y2={y(p)} stroke={palette.line} strokeDasharray="3 5"/><text x="49" y={y(p) + 5} textAnchor="end">{p}</text></g>)}
-    <polyline points={pressureSweep(1).map(r => `${x(r.gapNm)},${y(r.pressure)}`).join(' ')} fill="none" stroke={palette.dataE} strokeWidth="2.5"/>
-    <circle cx={x(gap)} cy={y(casimir(gap, 1).pressure)} r="6" fill={palette.warn} stroke={palette.bg2} strokeWidth="2"/>
-    <text x="65" y="14">|P| / Pa</text><text x="682" y="222" textAnchor="end">Gap / nm · log axes</text>
-  </svg><div className="vdw-gap-presets">{[100, 200, 500, 1000].map(d => <button key={d} aria-pressed={gap === d} onClick={() => onGap(d)}>{d} nm</button>)}</div></div>;
+  const sweep = pressureSweep(1);
+  return <div className="vdw-plot"><Plot label="Logarithmic plot of attractive pressure magnitude versus plate gap. Doubling the gap reduces pressure magnitude sixteenfold." x={sweep.map(r => r.gapNm)}
+    series={[{ key: 'pressure', label: '|P|', color: palette.dataE, values: sweep.map(r => Math.abs(r.pressure)) }]} xScale="log" yScale="log"
+    xTicks={[100, 200, 500, 1000]} yTicks={[10, 1, .1, .01]} xUnit="nm" yUnit="Pa" markers={[{ x: gap, y: Math.abs(casimir(gap, 1).pressure), label: `Selected gap ${gap} nm` }]}
+    caption="Pressure magnitude versus gap · log axes" height={170} testId="vdw-pressure-plot"/><div className="vdw-gap-presets">{[100, 200, 500, 1000].map(d => <button key={d} aria-pressed={gap === d} onClick={() => onGap(d)}>{d} nm</button>)}</div></div>;
 }
 
 /** Coordinate the three-stage van der Waals and vacuum-pressure experiment. */

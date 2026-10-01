@@ -9,6 +9,19 @@ import { chromium } from '@playwright/test';
 import { createServer } from 'vite';
 import { SCREENS } from './tokens-preview.mjs';
 
+/**
+ * Close-ups of one part of each lab, for layers that change something below the fold (`--set plots`). `focus` is a
+ * Playwright selector matching the same section before and after; `steps` advances the lab first so it has data.
+ */
+export const PLOT_SCREENS = [
+  { name: 'medium-plot', title: 'Medium · Population plot', steps: 40, focus: '.diagnostics-panel' },
+  { name: 'light-plots', title: 'Light · Spatial profile and probe trace', lab: 'lab-light', steps: 12, focus: '.light-plots' },
+  { name: 'electron-plot', title: 'Electron · Fixed probe field history', lab: 'lab-electron', scenario: 'scenario-spin', steps: 30, focus: 'section.light-card:has-text("Fixed probe · field history")' },
+  { name: 'casimir-plot', title: 'Extended Casimir · Pressure history', lab: 'lab-casimir', steps: 40, focus: '.casimir-chart' },
+  { name: 'vdw-plot', title: 'Van der Waals · Pressure versus gap', lab: 'lab-vdw', scenario: 'scenario-pressure', focus: '.vdw-plot' },
+];
+const SETS = { screens: SCREENS, plots: PLOT_SCREENS };
+
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
 
@@ -19,16 +32,21 @@ async function serve(worktree, port) {
   return { server, url: `http://127.0.0.1:${port}/` };
 }
 
-/** Open one screen (lab and scenario by test id) and capture the viewport as a JPEG. */
+/** Open one screen (lab and scenario by test id), optionally step it, and capture the viewport or its focus section. */
 async function capture(browser, url, screen, path) {
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await page.goto(url);
   await page.getByTestId('transport-run').filter({ visible: true }).first().waitFor();
   if (screen.lab) await page.getByTestId(screen.lab).filter({ visible: true }).click();
   if (screen.scenario) await page.getByTestId(screen.scenario).filter({ visible: true }).click();
+  for (let i = 0; i < (screen.steps ?? 0); i++) await page.getByTestId('transport-step').filter({ visible: true }).first().click();
   await page.waitForTimeout(1200);
   await page.evaluate(() => document.fonts.ready);
-  await page.screenshot({ path, type: 'jpeg', quality: 82 });
+  if (screen.focus) {
+    const section = page.locator(screen.focus).filter({ visible: true }).first();
+    await section.scrollIntoViewIfNeeded();
+    await section.screenshot({ path, type: 'jpeg', quality: 82 });
+  } else await page.screenshot({ path, type: 'jpeg', quality: 82 });
   await page.close();
 }
 
@@ -44,7 +62,9 @@ ${screens.map(s => `<h2>${s.title}</h2><div class="pair"><figure><a href="${s.na
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const before = option('--before'), out = option('--out'), title = option('--title') ?? 'Change', description = option('--description') ?? '';
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--title T] [--description D]');
+  const screens = SETS[option('--set') ?? 'screens'];
+  if (!screens) throw new Error(`--set must be one of: ${Object.keys(SETS).join(', ')}`);
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.
@@ -54,7 +74,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     try {
       const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
       try {
-        for (const screen of SCREENS) {
+        for (const screen of screens) {
           await capture(browser, a.url, screen, join(target, `${screen.name}-before.jpg`));
           await capture(browser, b.url, screen, join(target, `${screen.name}-after.jpg`));
           console.log(`compared: ${screen.name}`);
@@ -62,6 +82,6 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       } finally { await browser.close(); }
     } finally { await b.server.close(); }
   } finally { await a.server.close(); }
-  writeFileSync(join(target, 'index.html'), reviewPage(title, description, SCREENS));
+  writeFileSync(join(target, 'index.html'), reviewPage(title, description, screens));
   console.log(`Review page: ${relative(root, join(target, 'index.html'))}`);
 }
