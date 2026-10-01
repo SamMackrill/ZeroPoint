@@ -39,15 +39,19 @@ export function useToast(): ToastApi {
 
 /** One toast: closes itself after its duration unless the pointer or focus is on it. */
 function ToastView({ toast, onDismiss }: { toast: ToastItem; onDismiss(id: number): void }) {
-  const [paused, setPaused] = useState(false);
+  // Hover and focus pause independently: leaving with the pointer must not resume while focus is still inside.
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const paused = hovered || focused;
   useEffect(() => {
     if (paused) return;
     const timer = setTimeout(() => onDismiss(toast.id), toast.duration ?? TOAST_DURATION_MS);
     return () => clearTimeout(timer);
   }, [paused, toast, onDismiss]);
   return (
-    <div className="toast" onPointerEnter={() => setPaused(true)} onPointerLeave={() => setPaused(false)}
-      onFocus={() => setPaused(true)} onBlur={() => setPaused(false)}>
+    <div className="toast" onPointerEnter={() => setHovered(true)} onPointerLeave={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false); }}>
       <span className="toast-message">{toast.message}</span>
       {toast.action && (
         <button type="button" className="toast-action" onClick={() => { toast.action?.run(); onDismiss(toast.id); }}>{toast.action.label}</button>

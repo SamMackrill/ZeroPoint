@@ -47,6 +47,17 @@ describe('ParamRow', () => {
     await userEvent.keyboard('{Shift>}{ArrowDown}{/Shift}');
     expect(onChange).toHaveBeenLastCalledWith(616);
   });
+  it('shows the extra place an Alt nudge adds, so editing keeps it', async () => {
+    const onChange = vi.fn();
+    render(<Wavelength onChange={onChange}/>);
+    const field = screen.getByRole('textbox', { name: 'Wavelength' });
+    field.focus();
+    await userEvent.keyboard('{Alt>}{ArrowUp}{/Alt}');
+    expect(onChange).toHaveBeenLastCalledWith(625.1);
+    expect(field).toHaveProperty('value', '625.1');
+    await userEvent.keyboard('{Enter}');
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
   it('resets to the scenario value on a double-click of the label', async () => {
     const onChange = vi.fn();
     render(<Wavelength onChange={onChange}/>);
@@ -150,6 +161,25 @@ describe('Toast', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Switch' }));
       fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
       expect(onUndo).toHaveBeenCalledOnce();
+      expect(screen.queryByText('Switched to Moving')).toBeNull();
+    } finally { vi.useRealTimers(); }
+  });
+  it('stays open while focus is inside, even after the pointer leaves', () => {
+    vi.useFakeTimers();
+    try {
+      render(<ToastProvider><Switcher onUndo={() => undefined}/></ToastProvider>);
+      fireEvent.click(screen.getByRole('button', { name: 'Switch' }));
+      const toast = screen.getByText('Switched to Moving').parentElement as HTMLElement;
+      fireEvent.pointerEnter(toast);
+      fireEvent.focus(screen.getByRole('button', { name: 'Undo' }));
+      fireEvent.pointerLeave(toast);
+      act(() => { vi.advanceTimersByTime(6000); });
+      expect(screen.getByText('Switched to Moving')).toBeTruthy();
+      fireEvent.blur(screen.getByRole('button', { name: 'Undo' }), { relatedTarget: screen.getByRole('button', { name: 'Dismiss' }) });
+      act(() => { vi.advanceTimersByTime(6000); });
+      expect(screen.getByText('Switched to Moving')).toBeTruthy();
+      fireEvent.blur(screen.getByRole('button', { name: 'Dismiss' }), { relatedTarget: null });
+      act(() => { vi.advanceTimersByTime(5100); });
       expect(screen.queryByText('Switched to Moving')).toBeNull();
     } finally { vi.useRealTimers(); }
   });

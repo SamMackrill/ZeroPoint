@@ -114,6 +114,10 @@ describe('review queue', () => {
     expect(pickNext([pr('ui/01-tokens', { checks: 'none' }), pr('ui/02-primitives')])).toBeNull();
     expect(pickNext([pr('ui/01-tokens', { checks: 'fail' }), pr('ui/02-primitives')])?.branch).toBe('ui/02-primitives');
   });
+  it('reviews held layers: a hold blocks merging, not reviewing', () => {
+    expect(pickNext([pr('ui/01-tokens', { hold: 'awaiting owner', checks: 'pending' }), pr('ui/02-primitives')])).toBeNull();
+    expect(pickNext([pr('ui/01-tokens', { hold: 'awaiting owner' }), pr('ui/02-primitives')])?.branch).toBe('ui/01-tokens');
+  });
   it('treats a head with only CodeRabbit status as not yet having CI', () => {
     const coderabbit = { name: 'CodeRabbit', bucket: 'pass' };
     expect(summariseChecks([])).toBe('none');
