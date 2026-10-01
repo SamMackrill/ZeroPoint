@@ -10,7 +10,7 @@ export interface CasimirView { pressure: boolean; interactions: boolean; zeptons
 /** The extended Casimir laboratory: an open-ended main-thread timeline offering 0.1–2× playback. */
 export const casimirDefinition: ExperimentDefinition<CasimirParams, CasimirView> = {
   id: 'casimir',
-  title: 'Extended Casimir',
+  title: 'Extended Casimir effect',
   scenarios: [
     { id: 'electron-electron', title: 'Electron / electron', description: 'Deflection & gap filling · repulsion', params: { pair: 'electron-electron' } },
     { id: 'electron-proton', title: 'Electron / proton', description: 'Aligned contraction · attraction', params: { pair: 'electron-proton' } },

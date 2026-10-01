@@ -1,0 +1,96 @@
+.workbench {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bg-0);
+}
+
+.workbench-body {
+  flex: 1;
+  min-height: 0;
+}
+
+.workbench-centre {
+  height: 100%;
+}
+
+.workbench-stage {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.workbench-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.workbench-separator {
+  width: 1px;
+  background: var(--line);
+  outline: none;
+}
+
+.workbench-separator.is-horizontal {
+  width: auto;
+  height: 1px;
+}
+
+.workbench-separator:hover,
+.workbench-separator[data-separator=active],
+.workbench-separator:focus-visible {
+  background: var(--accent-line);
+}
+
+/* Transitional hosting (UI 06): the shell header and rail around a lab's own scrolling page, on desktop only. */
+.workbench-hosted-body {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: start;
+}
+
+.workbench-hosted-rail {
+  position: sticky;
+  top: 40px;
+  height: calc(100dvh - 40px);
+}
+
+.workbench-host {
+  min-width: 0;
+}
+
+@media(min-width:851px) {
+  .workbench-host .topbar,
+  .workbench-host .sidebar > .panel-heading:first-child,
+  .workbench-host .sidebar .section-name,
+  .workbench-host .sidebar .scenario-section,
+  .workbench-host .sidebar .sidebar-rule,
+  .workbench-host .sidebar .light-entry,
+  .workbench-host .page-heading .breadcrumbs,
+  .workbench-host .casimir-breadcrumb [data-testid=lab-medium],
+  .workbench-host .vdw-nav [data-testid=lab-medium] {
+    display: none;
+  }
+  .workbench-host .workspace {
+    min-height: calc(100vh - 40px);
+  }
+}
+
+@media(min-width:851px) and (max-width:1180px) {
+  .workbench-host .inspector {
+    top: 40px;
+  }
+}
+
+@media(max-width:850px) {
+  .workbench-hosted > .workbench-header,
+  .workbench-hosted-rail {
+    display: none;
+  }
+  .workbench-hosted-body {
+    display: block;
+  }
+}

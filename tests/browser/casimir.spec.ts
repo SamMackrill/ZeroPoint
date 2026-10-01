@@ -43,7 +43,7 @@ test('charge modes, pressure, transport and retained paused navigation', async (
   await app.getByRole('button', { name: 'Hold charges' }).click();
   const time = await page.getByTestId('casimir-time').innerText();
   await app.getByTestId('transport-run').click();
-  await app.getByTestId('lab-medium').click();
+  await tid(page, 'lab-medium').click();
   await tid(page, 'lab-casimir').click();
   await expect(app.getByTestId('transport-run')).toContainText('Run');
   const held = await page.getByTestId('casimir-time').innerText();

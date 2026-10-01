@@ -23,6 +23,8 @@ interface ControlBase {
   info?: string;
   /** Scenario ids this control applies to; all scenarios when omitted (rule 3: show only what applies). */
   scenarios?: readonly string[];
+  /** For a view control: the layer it belongs to, shown indented under that layer while it is visible (Slice Z). */
+  layer?: string;
 }
 
 /** A continuous parameter: a ParamRow. */

@@ -25,7 +25,7 @@ export const mediumDefinition: ExperimentDefinition<MediumParams, ViewSettings> 
   ],
   viewControls: [
     { kind: 'choice', key: 'representation', label: 'Representation', group: 'Display', apply: 'live', options: [{ value: 'dipoles', label: 'Dipoles' }, { value: 'points', label: 'Points' }] },
-    { kind: 'range', key: 'sliceZ', label: 'Slice Z', group: 'Display', apply: 'live', min: -4, max: 4, step: 0.1, unit: 'L₀' },
+    { kind: 'range', key: 'sliceZ', label: 'Slice Z', group: 'Display', apply: 'live', min: -4, max: 4, step: 0.1, unit: 'L₀', layer: 'slice' },
   ],
   layers: [
     { key: 'medium', label: 'Dipole medium', group: 'Medium' },

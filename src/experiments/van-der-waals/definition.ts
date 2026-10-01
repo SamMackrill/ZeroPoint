@@ -11,7 +11,7 @@ export interface VdwView { modes: boolean }
 /** The van der Waals laboratory: two static studies around a looping correlated-dipole stage. All parameters are live. */
 export const vanDerWaalsDefinition: ExperimentDefinition<VdwParams, VdwView> = {
   id: 'vdw',
-  title: 'Van der Waals',
+  title: 'Van der Waals & vacuum pressure',
   scenarios: [
     { id: 'induced', title: 'Induce a dipole', description: 'A neutral atom can polarize', static: true },
     { id: 'correlated', title: 'Correlate the fluctuations', description: 'From dipoles to attraction' },
