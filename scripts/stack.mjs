@@ -402,9 +402,13 @@ function waive() {
  */
 function snapshots() {
   const branch = git(['branch', '--show-current']), top = git(['rev-parse', '--show-toplevel']);
-  const [latest] = ghJson(['run', 'list', '--branch', branch, '--workflow', 'CI', '--limit', '1', '--json', 'databaseId,headSha,status']);
-  if (!latest) throw new Error(`No CI run found for ${branch}.`);
-  if (latest.status !== 'completed') throw new Error(`CI run ${latest.databaseId} for ${branch} is still ${latest.status}.`);
+  // A retarget or a quick second push leaves a cancelled run beside the real one, so pick the newest run that finished
+  // (success or failure: a failed visual test still uploads what it recorded), preferring runs for HEAD.
+  const runs = ghJson(['run', 'list', '--branch', branch, '--workflow', 'CI', '--limit', '10', '--json', 'databaseId,headSha,status,conclusion']) ?? [];
+  if (!runs.length) throw new Error(`No CI run found for ${branch}.`);
+  const finished = runs.filter(r => r.status === 'completed' && r.conclusion !== 'cancelled' && r.conclusion !== 'skipped');
+  const latest = finished.find(r => r.headSha === sha('HEAD')) ?? finished[0];
+  if (!latest) throw new Error(`No finished CI run for ${branch} yet (newest is ${runs[0].databaseId}, ${runs[0].status}).`);
   if (latest.headSha !== sha('HEAD')) say(`Warning: run ${latest.databaseId} is for ${latest.headSha.slice(0, 7)}, not HEAD.`);
   say(`${dryRun ? '[dry run] ' : ''}Downloading visual-snapshots from run ${latest.databaseId}.`);
   if (dryRun) return;
