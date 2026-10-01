@@ -101,6 +101,18 @@ export function nextSlot({ lastTriggerAt = 0, rateLimitUntil = 0 }) {
 }
 
 /**
+ * Summarise `gh pr checks` rows ({ name, bucket }) as pass | fail | pending | none. CodeRabbit's own status appears the
+ * moment a head is pushed, before GitHub Actions registers the CI run, so until a CI check exists the answer is `none`
+ * (waiting), not `pass`. Once CI exists, a failing CodeRabbit status still counts as a failure.
+ */
+export function summariseChecks(rows) {
+  if (!rows.some(row => row.name !== 'CodeRabbit')) return 'none';
+  const buckets = rows.map(row => row.bucket);
+  if (buckets.some(b => b === 'fail' || b === 'cancel')) return 'fail';
+  return buckets.some(b => b === 'pending') ? 'pending' : 'pass';
+}
+
+/**
  * Classify one PR for the review queue.
  * `reviewed`: CodeRabbit reviewed this diff. Evidence is the patch id of each reviewed head, recorded when the review
  *   is first seen, so a review of an older head with an identical diff (a restack mid-review) still counts, while a
@@ -116,7 +128,8 @@ export function reviewState(pr) {
   const reviewed = pr.patchId && evidence.length ? evidence.includes(pr.patchId) : Boolean(pr.reviewedShas?.includes(pr.head));
   if (reviewed) return pr.openThreads > 0 || pr.outsideFindings > 0 ? 'reviewed' : 'clean';
   if (pr.lastTriggerAt && pr.lastTriggerAt > (pr.headCommittedAt ?? 0)) return 'triggered';
-  if (pr.checks === 'pending') return 'waiting-ci';
+  // 'none' means GitHub has not registered the checks for a fresh push yet, not that the PR has no CI.
+  if (pr.checks === 'pending' || pr.checks === 'none') return 'waiting-ci';
   return 'queued';
 }
 
@@ -128,9 +141,18 @@ export function mergeReady(pr) {
   return pr.base === 'main' && !pr.draft && !pr.hold && pr.checks === 'pass' && reviewState(pr) === 'clean';
 }
 
-/** Choose the PR to review next: the lowest queued layer, because merges and fixes flow bottom-up. */
+/**
+ * Choose the PR to review next: the lowest queued layer, because merges and fixes flow bottom-up. A lower layer that is
+ * only waiting for CI holds the queue (its CI finishes within minutes and the slot should go to it); held, failing and
+ * draft layers are skipped.
+ */
 export function pickNext(prs) {
-  return sortStack(prs).find(pr => reviewState(pr) === 'queued') ?? null;
+  for (const pr of sortStack(prs)) {
+    const state = reviewState(pr);
+    if (state === 'queued') return pr;
+    if (state === 'waiting-ci') return null;
+  }
+  return null;
 }
 
 /**
@@ -175,6 +197,11 @@ export function mergeState(base = {}, ours = {}, theirs = {}) {
     if (key === 'layers' || same(base[key], ours[key])) continue;
     if (key === 'lastTriggerAt' || key === 'rateLimitUntil') out[key] = Math.max(out[key] ?? 0, ours[key] ?? 0);
     else if (ours[key] === undefined) delete out[key];
+    else if (key === 'watch' && (theirs.watch?.stackNumbers || ours.watch.stackNumbers)) {
+      // Stack numbers only ever grow; a concurrent watcher's additions must survive this save.
+      const numbers = [...new Set([...(theirs.watch?.stackNumbers ?? []), ...(ours.watch.stackNumbers ?? [])])].sort((a, b) => a - b);
+      out.watch = { ...structuredClone(ours.watch), stackNumbers: numbers };
+    }
     else out[key] = structuredClone(ours[key]);
   }
   const baseLayers = base.layers ?? {}, ourLayers = ours.layers ?? {};

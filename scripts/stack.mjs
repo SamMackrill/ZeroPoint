@@ -5,7 +5,7 @@ import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFile
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { withLock } from './state-lock.mjs';
-import { REVIEWER, diffSnapshots, mergeState, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort, reviewInProgress } from './stack-core.mjs';
+import { REVIEWER, diffSnapshots, mergeState, isReviewBody, isTrustedTrigger, outsideDiffFindings, reviewedHeadsInSummary, mergeReady, nextSlot, rateLimitDeadline, parseStackBranch, pickNext, renderNav, replaceNav, reviewState, sortStack, stackPort, reviewInProgress, summariseChecks } from './stack-core.mjs';
 
 const args = process.argv.slice(2), command = args[0], flags = new Set(args.filter(a => a.startsWith('--')));
 const option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -29,6 +29,9 @@ const say = (...text) => { if (!flags.has('--json')) console.log(...text); };
 
 const statePath = join(git(['rev-parse', '--path-format=absolute', '--git-common-dir']), 'ui-stack', 'state.json');
 const lockPath = `${statePath}.lock`, loaded = new WeakMap();
+// Operation lock, separate from the state-write lock: it serialises a merge decision (re-read hold, squash-merge) with
+// hold and release, so a hold saved while `merge` is gathering is always seen before the PR is merged.
+const opLockPath = `${statePath}.op.lock`;
 
 /** Read the state file; a missing file is a fresh state, but an unreadable one is an error (never silently reset). */
 function readState() {
@@ -46,6 +49,11 @@ function loadState() {
 function withStateLock(fn) {
   mkdirSync(dirname(statePath), { recursive: true });
   return withLock(lockPath, fn);
+}
+/** Run fn while holding the operation lock (merge decisions, hold and release); waits up to a minute for a merge. */
+function withOpLock(fn) {
+  mkdirSync(dirname(statePath), { recursive: true });
+  return withLock(opLockPath, fn, { timeoutMs: 60_000 });
 }
 /**
  * Persist this process's changes unless this is a dry run. Under the lock, merge only what changed since this state was
@@ -83,14 +91,10 @@ function patchId(base, branch) {
   return diff ? run('git', ['patch-id', '--stable'], { input: diff }).split(' ')[0] || null : null;
 }
 
-/** Summarise CI buckets from `gh pr checks` as pass | fail | pending | none. */
+/** Summarise a PR's checks from `gh pr checks` as pass | fail | pending | none (see summariseChecks). */
 function checksFor(number) {
-  const result = run('gh', ['pr', 'checks', String(number), '--json', 'bucket'], { allowFail: true });
-  let buckets = [];
-  try { buckets = JSON.parse(result.out || '[]').map(c => c.bucket); } catch { return 'none'; }
-  if (!buckets.length) return 'none';
-  if (buckets.some(b => b === 'fail' || b === 'cancel')) return 'fail';
-  return buckets.some(b => b === 'pending') ? 'pending' : 'pass';
+  const result = run('gh', ['pr', 'checks', String(number), '--json', 'name,bucket'], { allowFail: true });
+  try { return summariseChecks(JSON.parse(result.out || '[]')); } catch { return 'none'; }
 }
 
 /** Count unresolved review threads opened by CodeRabbit, across every page (an unseen page must never read as clean). */
@@ -274,7 +278,13 @@ function merge() {
   if (!mergeReady(bottom)) { say(`#${bottom.number} is not merge-ready (state ${bottom.state}, CI ${bottom.checks}${bottom.hold ? `, held: ${bottom.hold}` : ''}).`); return; }
   say(`${dryRun ? '[dry run] ' : ''}Squash-merging #${bottom.number} (${bottom.branch}).`);
   if (dryRun) return;
-  run('gh', ['pr', 'merge', String(bottom.number), '--squash', '--match-head-commit', bottom.head]);
+  // Decide and merge under the operation lock, re-reading the hold: gather() ran without it, so a hold may have landed.
+  const held = withOpLock(() => {
+    const hold = readState().layers?.[bottom.branch]?.hold;
+    if (!hold) run('gh', ['pr', 'merge', String(bottom.number), '--squash', '--match-head-commit', bottom.head]);
+    return hold;
+  });
+  if (held) { say(`#${bottom.number} was held while merging was being decided (${held}); not merged.`); return; }
   retarget();
   const path = worktrees().map.get(bottom.branch), steps = [];
   if (path) steps.push(run('git', ['worktree', 'remove', path], { allowFail: true }));
@@ -304,7 +314,9 @@ function snapshot(state) {
  */
 function notificationsSince(repo, since, stackNumbers) {
   const onStack = n => stackNumbers.has(Number(/\/pulls\/(\d+)$/.exec(n.subject?.url ?? '')?.[1])) || /\bfor ui\/\d{2}[a-z]?-/.test(n.subject?.title ?? '');
-  const items = ghJson(['api', 'notifications', '--paginate', '--slurp']).flat().filter(n => n.repository?.full_name === repo && n.updated_at > (since ?? '') && !onStack(n));
+  // One repository-scoped page from `since`: paginating the account-wide feed fails with HTTP 502 on long histories.
+  const query = `per_page=50${since ? `&since=${encodeURIComponent(since)}` : ''}`;
+  const items = (ghJson(['api', `repos/${repo}/notifications?${query}`]) ?? []).filter(n => n.updated_at > (since ?? '') && !onStack(n));
   return items.map(n => ({ at: n.updated_at, line: `GitHub ${n.reason.replaceAll('_', ' ')}: ${n.subject?.title ?? ''}` }));
 }
 
@@ -357,10 +369,13 @@ function hold() {
   if (!pr) throw new Error(`#${number} is not an open stack PR.`);
   say(`${dryRun ? '[dry run] ' : ''}${release ? 'Releasing' : 'Holding'} #${number}: ${note}`);
   if (dryRun) return;
+  // Save the hold under the operation lock, so it lands either before a concurrent merge decision or after its merge.
+  withOpLock(() => {
+    const state = loadState(), record = layer(state, pr.headRefName);
+    if (release) delete record.hold; else record.hold = note;
+    saveState(state);
+  });
   run('gh', ['pr', 'comment', String(number), '--body', release ? `Merge hold released: ${note}` : `Merge hold: ${note}`]);
-  const state = loadState(), record = layer(state, pr.headRefName);
-  if (release) delete record.hold; else record.hold = note;
-  saveState(state);
 }
 
 /** Waive a review's outside-diff findings after answering them on the PR: stack.mjs waive <pr> <reviewId> <reason…>. */

@@ -1123,7 +1123,7 @@ details>div{padding:0 18px 12px}
   </table>
   <ul>
     <li><b>Judgement first.</b> When in doubt, a finding is blocking. A deferral must be safe: nothing on <code>main</code> may depend on a deferred fix to be correct.</li>
-    <li><b>The remedial layer</b> is an ordinary stack layer named <code>ui/NN&lt;x&gt;-remedial-&lt;topic&gt;</code> (e.g. <code>ui/01h-remedial-tooling</code>), opened at the <b>top</b> of the stack. It never forces a restack of reviewed layers. Its PR body keeps the checklist, with a link to each deferred thread. It is reviewed and merged in turn like any other layer, and a new one is opened when the next batch of deferrals starts.</li>
+    <li><b>The remedial layer</b> is an ordinary stack layer named <code>ui/NN&lt;x&gt;-remedial-&lt;topic&gt;</code> (e.g. <code>ui/05b-remedial-tooling</code>), opened at the <b>top</b> of the stack. It never forces a restack of reviewed layers. Its PR body keeps the checklist, with a link to each deferred thread. It is reviewed and merged in turn like any other layer, and a new one is opened when the next batch of deferrals starts.</li>
     <li><b>Freeze reviewed layers.</b> Improvements to the stack tooling that no finding asked for also go into the topmost unreviewed layer, never into a layer under review. <code>stack.mjs</code> runs from that layer's worktree, whose copy is the newest.</li>
   </ul>
 

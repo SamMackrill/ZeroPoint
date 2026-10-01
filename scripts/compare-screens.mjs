@@ -47,15 +47,21 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
-  const [a, b] = [await serve(resolve(root, before), port), await serve(root, port + 1)];
-  const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.
+  const a = await serve(resolve(root, before), port);
   try {
-    for (const screen of SCREENS) {
-      await capture(browser, a.url, screen, join(target, `${screen.name}-before.jpg`));
-      await capture(browser, b.url, screen, join(target, `${screen.name}-after.jpg`));
-      console.log(`compared: ${screen.name}`);
-    }
-  } finally { await browser.close(); await a.server.close(); await b.server.close(); }
+    const b = await serve(root, port + 1);
+    try {
+      const browser = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+      try {
+        for (const screen of SCREENS) {
+          await capture(browser, a.url, screen, join(target, `${screen.name}-before.jpg`));
+          await capture(browser, b.url, screen, join(target, `${screen.name}-after.jpg`));
+          console.log(`compared: ${screen.name}`);
+        }
+      } finally { await browser.close(); }
+    } finally { await b.server.close(); }
+  } finally { await a.server.close(); }
   writeFileSync(join(target, 'index.html'), reviewPage(title, description, SCREENS));
   console.log(`Review page: ${relative(root, join(target, 'index.html'))}`);
 }

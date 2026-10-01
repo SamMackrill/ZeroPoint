@@ -110,7 +110,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const bands = [[2, 'imperceptible'], [5, 'subtle'], [10, 'noticeable'], [Infinity, 'large']];
   const band = d => bands.find(([limit]) => d <= limit)[1];
   const text = tokens.filter(t => t.group.startsWith('Text')), surfaces = tokens.filter(t => t.group.startsWith('Surface'));
-  const row = c => `<tr class="${band(c.d)}"><td>${swatch(c.rgba, c.key)}<code>${c.key}</code></td><td>${swatch(c.token.rgba, c.token.name)}<code>${c.token.name}</code>${c.rgba[3] < 1 ? ` <small>at ${Math.round(c.rgba[3] * 100)}%</small>` : ''}</td><td class="num">${c.d.toFixed(1)}</td><td>${band(c.d)}</td><td class="num">${c.uses.length}</td><td><small>${[...new Set(c.uses.map(u => `${u.property} · ${relative('src', u.file).replaceAll('\\', '/')}`))].slice(0, 3).join('<br>')}</small></td></tr>`;
+  const row = c => `<tr class="${band(c.d)}"><td>${swatch(c.rgba, c.key)}<code>${c.key}</code></td><td>${swatch([...c.token.rgba.slice(0, 3), c.rgba[3]], c.token.name)}<code>${c.token.name}</code>${c.rgba[3] < 1 ? ` <small>at ${Math.round(c.rgba[3] * 100)}%</small>` : ''}</td><td class="num">${c.d.toFixed(1)}</td><td>${band(c.d)}</td><td class="num">${c.uses.length}</td><td><small>${[...new Set(c.uses.map(u => `${u.property} · ${relative('src', u.file).replaceAll('\\', '/')}`))].slice(0, 3).join('<br>')}</small></td></tr>`;
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ZeroPoint · Proposed colour tokens</title>
 <style>
