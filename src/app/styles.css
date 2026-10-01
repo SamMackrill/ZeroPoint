@@ -1036,39 +1036,6 @@ p {
   color: var(--text-3);
 }
 
-.plot {
-  height: 133px;
-  padding: 8px 17px 21px 43px;
-  position: relative;
-}
-
-.plot>svg {
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  display: block;
-}
-
-.plot-scale {
-  position: absolute;
-  left: 14px;
-  top: 10px;
-  bottom: 28px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  font: var(--fs-micro) var(--mono);
-  color: var(--text-3);
-}
-
-.plot-times {
-  display: flex;
-  justify-content: space-between;
-  font: var(--fs-micro) var(--mono);
-  color: var(--text-3);
-  padding-top: 5px;
-}
-
 .checkpoint-bar {
   border-top: 1px solid var(--line);
   min-height: 43px;

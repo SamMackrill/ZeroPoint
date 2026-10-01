@@ -9,14 +9,13 @@ import type { LightRenderer } from './LightRenderer';
 import { useLight } from './useLight';
 import './light.css';
 import { palette } from '../ui/palette';
+import { Plot } from '../ui/Plot';
 
-/** Render a compact normalized trace with an optional timeline marker. */
-function WavePlot({ values, label, start, end, marker }: { values: number[]; label: string; start: string; end: string; marker?: number }) {
-  return <div className="light-plot"><svg viewBox="0 0 480 90" preserveAspectRatio="none" role="img" aria-label={label}>
-    {[20, 45, 70].map(y => <line key={y} x1="0" y1={y} x2="480" y2={y} stroke={palette.line} strokeDasharray="3 5"/>)}
-    <polyline points={values.map((v, i) => `${i / (values.length - 1) * 480},${45 - v * 32}`).join(' ')} fill="none" stroke={palette.accent} strokeWidth="1.8" vectorEffect="non-scaling-stroke"/>
-    {marker !== undefined && <line x1={marker * 480} x2={marker * 480} y1="5" y2="85" stroke={palette.dataShell1} strokeDasharray="3 3"/>}
-  </svg><div><span>{start}</span><span>Normalized E projection</span><span>{end}</span></div></div>;
+/** Render a normalized electric-projection trace with the shared Plot, with an optional probe marker. */
+function WavePlot({ x, values, label, unit, domain, marker }: { x: number[]; values: number[]; label: string; unit: 'L' | 'τ'; domain: [number, number]; marker?: number }) {
+  return <Plot label={label} x={x} series={[{ key: 'e', label: 'E projection', color: palette.dataE, values }]} xUnit={unit} xDomain={domain}
+    yDomain={[-1.4, 1.4]} yTicks={[-1, 0, 1]} formatX={v => v.toFixed(unit === 'τ' ? 2 : 1)} caption="Normalized E projection"
+    markers={marker === undefined ? [] : [{ x: marker, label: 'Probe' }]} height={88}/>;
 }
 
 /** Render and coordinate the light induction laboratory. */
@@ -90,6 +89,7 @@ export function LightExperiment({ active, onBack }: { active: boolean; onBack: (
   const layers: [keyof LightView, string][] = [['background', 'Background pairs'], ['pairs', 'Induced pair'], ['response', 'Surrounding dipole response'], ['fields', 'E / B wave and arrows'], ['envelope', 'Energy envelope'], ['centres', 'Fixed pair centres'], ['reducedMotion', 'Reduced flashing & camera motion']];
   const spatial = Array.from({ length: 161 }, (_, i) => waveAt(p, d.time, p.offset - 6 + i * 12 / 160).electric);
   const history = Array.from({ length: 161 }, (_, i) => waveAt(p, d.time * i / 160, p.probe).electric);
+  const spatialX = Array.from({ length: 161 }, (_, i) => p.offset - 6 + i * 12 / 160), historyX = Array.from({ length: 161 }, (_, i) => d.time * i / 160);
   const pairX = 100 + Math.sin(inspected.angle) * inspected.separation * 140, pairY = 66 - Math.cos(inspected.angle) * inspected.separation * 140;
 
   return <div className="light-app" style={{ display: active ? undefined : 'none' }}>
@@ -125,7 +125,7 @@ export function LightExperiment({ active, onBack }: { active: boolean; onBack: (
           <p>{d.finished ? 'The packet crossed the window boundary. Its budget is now recorded as departed energy; this is not an absorption event.' : s.tick > 0 && s.tick % hopTicks(p) === 0 ? `Pair ${d.index} has collapsed; pair ${d.index + 1} is induced at its own fixed centre, with the opposite rotation sense.` : `Pair ${d.index + 1} rotates through 180° during ${(hopTicks(p) * LIGHT_DT).toFixed(2)} τ. Step or scrub to inspect its separation and collapse.`}</p>
           <div className="light-checkpoints"><button data-testid="capture" disabled={!ready} onClick={() => { const current = latest.current; if (current) setCheckpoints(old => [...old, { model: current.model, tick: current.tick, parameters: { ...current.parameters } }].slice(-4)); }}><Save size={13}/>Capture checkpoint</button>{checkpoints.map((c, i) => <button key={i} onClick={() => { send({ type: 'restore', state: c }); setDraft(c.parameters); setSelected(null); }}>Restore tick {c.tick}</button>)}</div>
         </section>
-        <div className="light-plots"><section className="light-card"><div className="light-card-heading"><h2>Spatial wave profile</h2><span>Current instant</span></div><WavePlot values={spatial} label="Spatial electric wave projection" start={`${(p.offset - 6).toFixed(1)} L`} end={`${(p.offset + 6).toFixed(1)} L`} marker={(p.probe - p.offset + 6) / 12}/></section><section className="light-card"><div className="light-card-heading"><h2>Probe time trace</h2><span>x = {p.probe.toFixed(1)} L</span></div><WavePlot values={history} label="Electric projection at the fixed probe over elapsed time" start="0 τ" end={`${d.time.toFixed(2)} τ`}/></section></div>
+        <div className="light-plots"><section className="light-card"><div className="light-card-heading"><h2>Spatial wave profile</h2><span>Current instant</span></div><WavePlot x={spatialX} values={spatial} label="Spatial electric wave projection" unit="L" domain={[p.offset - 6, p.offset + 6]} marker={p.probe}/></section><section className="light-card"><div className="light-card-heading"><h2>Probe time trace</h2><span>x = {p.probe.toFixed(1)} L</span></div><WavePlot x={historyX} values={history} label="Electric projection at the fixed probe over elapsed time" unit="τ" domain={[0, Math.max(d.time, 0.01)]}/></section></div>
         <div className="light-footnote"><span>Wave, field response and energy partition are prescribed illustrations of Fleming’s mechanism.</span><button data-testid="export-csv" disabled={!ready} onClick={exportCSV}><Download size={13}/>Export sequence CSV</button></div>
       </div><aside className="light-controls" aria-label="Light controls">
         <section className="light-card"><div className="light-card-heading"><h2><Waves size={16}/>Wave parameters</h2><span>c = 299,792,458 m/s</span></div>

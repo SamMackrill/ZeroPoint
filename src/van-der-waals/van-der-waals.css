@@ -365,17 +365,6 @@
   margin-top: 14px;
 }
 
-.vdw-plot svg {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-.vdw-plot text {
-  font: var(--fs-ui) var(--mono);
-  fill: var(--accent-2);
-}
-
 .vdw-gap-presets {
   display: flex;
   gap: 7px;

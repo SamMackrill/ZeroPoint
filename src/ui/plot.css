@@ -1,0 +1,241 @@
+.plot-figure {
+  margin: 0;
+  min-width: 0;
+}
+
+.plot-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.plot-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-2);
+  font-size: var(--fs-micro);
+}
+
+.plot-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plot-csv {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 3px 8px;
+  background: transparent;
+  color: var(--text-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: var(--fs-micro);
+  cursor: pointer;
+}
+
+.plot-csv:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.plot-csv:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.plot-body {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  padding: 10px 14px 6px 0;
+}
+
+.plot-y {
+  position: relative;
+}
+
+.plot-y span {
+  position: absolute;
+  right: 8px;
+  transform: translateY(-50%);
+  color: var(--text-3);
+  font: var(--fs-micro) var(--mono);
+  white-space: nowrap;
+}
+
+.plot-area {
+  position: relative;
+  min-width: 0;
+  cursor: crosshair;
+}
+
+.plot-area:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.plot-area svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.plot-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.plot-reference {
+  stroke: var(--line-2);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.plot-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.plot-marker {
+  stroke: var(--data-mark);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.plot-playhead {
+  stroke: var(--text-3);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.plot-crosshair {
+  stroke: var(--text-2);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+
+.plot-point,
+.plot-hover-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border: 2px solid var(--bg-2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.plot-point {
+  width: 12px;
+  height: 12px;
+  background: var(--data-mark);
+}
+
+.plot-tooltip {
+  position: absolute;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+  min-width: 120px;
+  margin-left: 10px;
+  padding: 6px 8px;
+  background: var(--bg-3);
+  color: var(--text-2);
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--shadow) 40%, transparent);
+  font-size: var(--fs-micro);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.plot-tooltip.is-left {
+  margin-left: 0;
+  transform: translateX(calc(-100% - 10px));
+}
+
+.plot-tooltip strong {
+  color: var(--text-3);
+  font: var(--fs-micro) var(--mono);
+}
+
+.plot-tooltip span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plot-tooltip b {
+  color: var(--text);
+  font: 600 var(--fs-value) var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.plot-tooltip small {
+  color: var(--text-3);
+  font-weight: 400;
+}
+
+.plot-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-ui);
+}
+
+.plot-x {
+  position: relative;
+  height: 16px;
+  margin: 0 14px 0 46px;
+}
+
+.plot-x span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  color: var(--text-3);
+  font: var(--fs-micro) var(--mono);
+  white-space: nowrap;
+}
+
+.plot-x .is-first {
+  transform: none;
+}
+
+.plot-x .is-last {
+  transform: translateX(-100%);
+}
+
+.plot-figure figcaption {
+  margin: 2px 14px 0 46px;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  text-align: center;
+}
+
+.plot-readout {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
