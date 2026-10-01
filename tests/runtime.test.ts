@@ -150,6 +150,8 @@ describe('MainThreadRuntime', () => {
 describe('main-thread models', () => {
   it('Casimir restarts with new parameters and resets to them', () => {
     const s = fakeScheduler(), rt = new MainThreadRuntime(casimirModel(), s, undefined);
+    rt.speed(0.1);
+    expect(() => rt.speed(4)).toThrow('Invalid playback speed 4; use one of 0.1, 0.25, 0.5, 1, 2.');
     rt.jump(1);
     expect(rt.status().tick).toBe(30);
     rt.configure({ pair: 'electron-proton', separation: 6 });

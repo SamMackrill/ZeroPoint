@@ -4,6 +4,9 @@
 import { CasimirModel, STEP, type ChargePair } from '../casimir/model';
 import type { MainThreadModel } from './main-thread-runtime';
 
+/** Casimir's playback speeds, as the lab offers them today (0.1–2×). */
+export const CASIMIR_SPEEDS = [0.1, 0.25, 0.5, 1, 2] as const;
+
 /** Casimir's restart parameters: the charge pairing and initial separation. */
 export interface CasimirConfig { pair: ChargePair; separation: number }
 
@@ -12,6 +15,7 @@ export function casimirModel(initial: CasimirConfig = { pair: 'electron-electron
   let config = { ...initial }, model = new CasimirModel(config.pair, config.separation);
   return {
     dt: STEP,
+    speeds: CASIMIR_SPEEDS,
     step: () => model.step(),
     reset: () => { model = new CasimirModel(config.pair, config.separation); },
     tick: () => model.tick,

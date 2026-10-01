@@ -6,7 +6,7 @@ import { DT, type Checkpoint, type Command, type Parameters, type Snapshot } fro
 import { LIGHT_DT, LIGHT_END_TICK, type LightCommand, type LightParameters, type LightSnapshot, type LightState } from '../light/model';
 import { ELECTRON_DT, ELECTRON_END, type ElectronCommand, type ElectronParameters, type ElectronSnapshot, type ElectronState } from '../electron/model';
 
-/** Playback speeds every runtime accepts (the timeline bar's ¼ ½ 1× 2× 4×). */
+/** The standard playback speeds (the timeline bar's ¼ ½ 1× 2× 4×); a definition may set its own (Casimir 0.1–2×). */
 export const SPEEDS = [0.25, 0.5, 1, 2, 4] as const;
 
 /** Which commands a runtime supports; drives which timeline-bar controls are enabled. */
@@ -69,9 +69,9 @@ export class UnsupportedCommand extends Error {
   constructor(command: string) { super(`This experiment does not support ${command}.`); this.name = 'UnsupportedCommand'; }
 }
 
-/** Validate a playback speed. */
-export function checkSpeed(value: number): number {
-  if (!(SPEEDS as readonly number[]).includes(value)) throw new Error(`Invalid playback speed ${value}; use one of ${SPEEDS.join(', ')}.`);
+/** Validate a playback speed against the experiment's speed set (the standard set unless the definition says otherwise). */
+export function checkSpeed(value: number, speeds: readonly number[] = SPEEDS): number {
+  if (!speeds.includes(value)) throw new Error(`Invalid playback speed ${value}; use one of ${speeds.join(', ')}.`);
   return value;
 }
 

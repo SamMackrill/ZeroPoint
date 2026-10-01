@@ -1,7 +1,7 @@
 // MainThreadRuntime (docs/ui-redesign-plan.html §14): Casimir and van der Waals simulate on the main thread, so this
 // driver gives them what the workers already have — a fixed-step accumulator with bounded catch-up, playback speed and
 // a hidden-tab pause — behind the same Runtime interface.
-import { checkSpeed, UnsupportedCommand, type Capabilities, type Runtime, type RuntimeStatus } from './runtime';
+import { checkSpeed, SPEEDS, UnsupportedCommand, type Capabilities, type Runtime, type RuntimeStatus } from './runtime';
 
 /** A main-thread model: fixed steps of `dt` τ, a tick count and a snapshot for subscribers. */
 export interface MainThreadModel<S, P = never, C = never> {
@@ -13,6 +13,8 @@ export interface MainThreadModel<S, P = never, C = never> {
   snapshot(): S;
   /** Last tick of a bounded timeline; playback pauses there. */
   readonly end?: number;
+  /** Playback speeds this experiment offers; the standard set when omitted. */
+  readonly speeds?: readonly number[];
   /** Restart with new parameters (↻). */
   configure?(parameters: P): void;
   checkpoint?(): C;
@@ -99,7 +101,7 @@ export class MainThreadRuntime<S, P = never, C = never> implements Runtime<S, ne
   nextEvent(): never { throw new UnsupportedCommand('next event'); }
   seek(): never { throw new UnsupportedCommand('seek'); }
   reset() { this.run(false); this.model.reset(); this.emit(); }
-  speed(value: number) { this.rate = checkSpeed(value); this.emit(); }
+  speed(value: number) { this.rate = checkSpeed(value, this.model.speeds ?? SPEEDS); this.emit(); }
   setLive(): never { throw new UnsupportedCommand('live parameters'); }
 
   configure(parameters: P) {
