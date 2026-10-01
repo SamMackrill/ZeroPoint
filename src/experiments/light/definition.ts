@@ -5,10 +5,10 @@ import type { ExperimentDefinition, TimelineEvent } from '../../workbench/defini
 /** One length unit L is 250 nm, so wavelengths are shown in nm. */
 const NM_PER_L = 250;
 
-/** The ticks at which each pair is induced: one hop apart, up to the end of the sequence. */
+/** The ticks at which each later pair is induced (pair 1 starts the sequence at tick 0), one hop apart, before the end. */
 export function inductionEvents(params: LightParameters): TimelineEvent[] {
   const hop = hopTicks(params), events: TimelineEvent[] = [];
-  for (let tick = hop, n = 1; tick <= LIGHT_END_TICK; tick += hop, n++) events.push({ tick, label: `Pair ${n} induced` });
+  for (let tick = hop, n = 2; tick < LIGHT_END_TICK; tick += hop, n++) events.push({ tick, label: `Pair ${n} induced` });
   return events;
 }
 

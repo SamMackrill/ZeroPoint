@@ -75,7 +75,7 @@ function RangeControl({ spec, value, onChange, dirty, info }: { spec: RangeSpec;
   return (
     <div className="inspector-range">
       <ParamRow label={spec.label} value={show(value)} min={show(spec.min)} max={show(spec.max)} step={step} unit={d?.unit ?? spec.unit}
-        restart={spec.apply === 'restart'} dirty={dirty} info={info} testId={`param-${spec.key}`} onChange={v => onChange(store(spec.integer ? Math.round(v) : v))}/>
+        restart={spec.apply === 'restart'} dirty={dirty} info={info} slider={!spec.integer} testId={`param-${spec.key}`} onChange={v => onChange(store(spec.integer ? Math.round(v) : v))}/>
       {spec.integer && <button type="button" className="inspector-dice" aria-label={`Random ${spec.label.toLowerCase()}`} title="Random" onClick={() => onChange(Math.floor(Math.random() * (spec.max - spec.min + 1)) + spec.min)}><Dices size={14} aria-hidden="true"/></button>}
       {spec.quick && <div className="inspector-quick">{spec.quick.map(q => <button type="button" key={q} aria-pressed={value === q} onClick={() => onChange(q)}>{q} {spec.unit}</button>)}</div>}
     </div>

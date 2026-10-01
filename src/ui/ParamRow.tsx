@@ -25,6 +25,8 @@ export interface ParamRowProps {
   format?(value: number): string;
   /** An InfoTip placed after the label. */
   info?: ReactNode;
+  /** Show the slider (off for identifiers such as a seed, where only the typed value means anything). */
+  slider?: boolean;
   testId?: string;
 }
 
@@ -33,7 +35,7 @@ export interface ParamRowProps {
  * with Shift for ×10 and Alt for ×0.1; Enter or leaving the field commits and Esc reverts. Double-click the label to
  * reset to the scenario value.
  */
-export function ParamRow({ label, value, onChange, min, max, step, unit, defaultValue, restart, dirty, disabled, format, info, testId }: ParamRowProps) {
+export function ParamRow({ label, value, onChange, min, max, step, unit, defaultValue, restart, dirty, disabled, format, info, slider = true, testId }: ParamRowProps) {
   const id = useId();
   const [draft, setDraft] = useState<string | null>(null);
   const shown = format ? format(value) : formatValue(value, step);
@@ -76,11 +78,11 @@ export function ParamRow({ label, value, onChange, min, max, step, unit, default
           {unit && <span id={`${id}-unit`} className="param-row-unit">{unit}</span>}
         </span>
       </div>
-      <Slider.Root className="param-row-slider" min={min} max={max} step={step} value={[value]} disabled={disabled}
+      {slider && <Slider.Root className="param-row-slider" min={min} max={max} step={step} value={[value]} disabled={disabled}
         onValueChange={([next]) => commit(next)} aria-label={label}>
         <Slider.Track className="param-row-track"><Slider.Range className="param-row-range"/></Slider.Track>
         <Slider.Thumb className="param-row-thumb" aria-label={label}/>
-      </Slider.Root>
+      </Slider.Root>}
     </div>
   );
 }
