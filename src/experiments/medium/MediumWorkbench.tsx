@@ -55,11 +55,17 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const sim = useSimulation(), { state, latest, sink, send, checkpoint } = sim;
   const runtime = useMemo(() => mediumRuntime({ send, latest, sink, checkpoint }), [send, latest, sink, checkpoint]);
   useEffect(() => () => runtime.dispose(), [runtime]);
-  const host = useRef<HTMLDivElement>(null), viewport = useRef<FieldRenderer | null>(null), dialog = useRef<HTMLDialogElement>(null);
+  // The host is held in state (a callback ref), so the renderer follows the element itself: the shell remounts the viewport
+  // when it switches between its wide and narrow layouts.
+  const [host, setHost] = useState<HTMLDivElement | null>(null), viewport = useRef<FieldRenderer | null>(null), dialog = useRef<HTMLDialogElement>(null);
+  const [camera, setCamera] = useState<'perspective' | 'top' | 'front'>('perspective'), cameraRef = useRef(camera);
+  cameraRef.current = camera;
   const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
   const viewRef = useRef(view);
   useEffect(() => { viewRef.current = view; }, [view]);
   const [graphicsError, setGraphicsError] = useState<string | null>(null), [renderRevision, setRenderRevision] = useState(0);
+  // A lost graphics context holds playback until the viewport recovers; a renderer that never loaded leaves controls usable.
+  const [contextLost, setContextLost] = useState(false);
   const [picked, setPicked] = useState<PickedDipole | null>(null);
   const [parameters, setParameters] = useState<Parameters>(mediumDefinition.defaultParams), [seed, setSeed] = useState(2026);
   const [preset, setPreset] = useState('balanced'), [scenario, setScenario] = useState('balanced');
@@ -72,17 +78,18 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   /** A pick selects the dipole and opens the Selection tab (§07: selection changes auto-open it). */
   const onPick = useCallback((value: PickedDipole | null) => { setPicked(value); if (value) setTab('selection'); }, []);
   useEffect(() => {
-    if (!active || !host.current) return;
+    if (!active || !host) return;
     let disposed = false, renderer: FieldRenderer | null = null, off = () => undefined as void;
     import('../../rendering/FieldRenderer').then(module => {
-      if (disposed || !host.current) return;
-      renderer = new module.FieldRenderer(host.current, viewRef.current, onPick, () => undefined, message => { setGraphicsError(message); runtime.run(false); });
-      viewport.current = renderer;
+      if (disposed) return;
+      renderer = new module.FieldRenderer(host, viewRef.current, onPick, () => undefined, message => { setGraphicsError(message); setContextLost(true); runtime.run(false); });
+      viewport.current = renderer; renderer.cameraPreset(cameraRef.current);
       off = runtime.subscribe(snapshot => renderer?.update(snapshot.data));
       if (latest.current) renderer.update(latest.current.data);
     }).catch(error => { if (!disposed) setGraphicsError(`3D view unavailable: ${error instanceof Error ? error.message : String(error)}. Controls, diagnostics and experiment files remain available.`); });
     return () => { disposed = true; off(); viewport.current = null; renderer?.dispose(); };
-  }, [active, onPick, renderRevision, runtime, latest]);
+  }, [active, host, onPick, renderRevision, runtime, latest]);
+  useEffect(() => { viewport.current?.cameraPreset(camera); }, [camera]);
   useEffect(() => { if (!active) runtime.run(false); }, [active, runtime]);
   useEffect(() => { viewport.current?.setOptions(view); }, [view]);
   useEffect(() => { if (state) { setParameters(state.parameters); setSeed(state.seed); } }, [state?.diagnostics.parameterVersion, state?.seed]);
@@ -95,12 +102,13 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   useEffect(() => {
     const keyboard = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName) || target.isContentEditable || dialog.current?.open || !ready || !active) return;
-      if (e.code === 'Space') { e.preventDefault(); if (!graphicsError) runtime.run(!latest.current?.running); }
+      // Keys another control already handled (a plot's crosshair uses the arrows) are not transport shortcuts.
+      if (e.defaultPrevented || ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName) || target.isContentEditable || dialog.current?.open || !ready || !active) return;
+      if (e.code === 'Space') { e.preventDefault(); if (!contextLost) runtime.run(!latest.current?.running); }
       if (e.code === 'ArrowRight') { e.preventDefault(); runtime.step(); }
     };
     window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
-  }, [active, ready, graphicsError, latest, runtime]);
+  }, [active, ready, contextLost, latest, runtime]);
 
   const setOption = (key: string, value: unknown) => setView(v => withPaths(v, { [key]: value }));
   /** Apply a live parameter change; the scenario label becomes "modified". */
@@ -146,18 +154,18 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
 
   const viewportNode = (
     <section className="viewport-shell medium-stage" aria-label="Field visualization">
-      <div ref={host} className="viewport" onPointerDown={() => setShowHint(false)}/>
+      <div ref={setHost} className="viewport" onPointerDown={() => setShowHint(false)}/>
       {sim.error && <div className="error-banner" role="alert">{sim.error}<button onClick={sim.restart}>Restart worker</button></div>}
       <div className="view-top">
         <div className="view-label"><span className={`dot ${running ? '' : 'paused'}`}/><span>{ready ? running ? 'LIVE FIELD' : 'PAUSED' : 'INITIALIZING'}</span><span className="view-label-divider"/>{fmt(d?.active ?? 0)} dipoles · periodic 8 L₀ cell</div>
-        <Segmented label="Camera" options={[{ value: 'perspective', label: 'Perspective' }, { value: 'top', label: 'Top' }, { value: 'front', label: 'Front' }]} value="perspective" testId="camera"
-          onChange={preset => viewport.current?.cameraPreset(preset as 'perspective' | 'top' | 'front')}/>
+        <Segmented label="Camera" options={[{ value: 'perspective', label: 'Perspective' }, { value: 'top', label: 'Top' }, { value: 'front', label: 'Front' }]} value={camera} testId="camera"
+          onChange={preset => setCamera(preset as typeof camera)}/>
       </div>
       <div className="view-axis" aria-hidden="true"><svg viewBox="0 0 60 60"><path d="M28 34V8M28 34L51 45M28 34L8 46" fill="none" strokeWidth="1.5" stroke={palette.text4}/><text x="24" y="7" fill={palette.dataShell3}>Y</text><text x="50" y="56" fill={palette.dataPos}>X</text><text x="0" y="55" fill={palette.text3}>Z</text><circle cx="28" cy="34" r="3" fill={palette.text2}/></svg></div>
       <div className="view-bottom"><div className="charge-legend">{view.representation === 'dipoles' ? <><span><i className="charge positive"/>+ Positive lobe</span><span><i className="charge negative"/>− Negative lobe</span></> : <span><i className="charge negative"/>Dipole samples · orientation hidden</span>}</div><span className="cell-scale"><i/>8 L₀ · periodic cell</span></div>
       {showHint && <div className="orbit-hint">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> Click to inspect</div>}
       {view.slice && <div className="slice-legend"><span>Energy / L₀³</span><i/><span>0 — {viewport.current?.getSliceMax().toFixed(1) ?? '0'} E₀</span></div>}
-      {graphicsError && <div className="graphics-error" role="alert"><Box size={30}/><h3>Viewport needs attention</h3><p>{graphicsError}</p><button onClick={() => { setGraphicsError(null); setRenderRevision(n => n + 1); }}>Recover viewport</button></div>}
+      {graphicsError && <div className="graphics-error" role="alert"><Box size={30}/><h3>Viewport needs attention</h3><p>{graphicsError}</p><button onClick={() => { setGraphicsError(null); setContextLost(false); setRenderRevision(n => n + 1); }}>Recover viewport</button></div>}
     </section>
   );
 
@@ -230,7 +238,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const timelineNode = state && (
     <TimelineBar runtime={runtime} timeline={mediumDefinition.timeline(scenario, params)} speeds={SPEEDS}
       markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `t ${c.tick * DT < 100 ? (c.tick * DT).toFixed(2) : Math.round(c.tick * DT)} τ` }))}
-      onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) restore(c); }} onCapture={() => save('checkpoint')}/>
+      onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) restore(c); }} onCapture={() => save('checkpoint')} runDisabled={contextLost}/>
   );
 
   return (

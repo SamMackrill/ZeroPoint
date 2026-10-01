@@ -30,6 +30,8 @@ export interface TimelineBarProps {
   onMarker?(marker: TimelineMarker): void;
   /** Capture a checkpoint (shows "◆ Capture"). */
   onCapture?(): void;
+  /** Hold playback, e.g. while the viewport recovers a lost graphics context. */
+  runDisabled?: boolean;
 }
 
 /** Speed labels: fractions as glyphs, as in the plan (¼ ½ 1× 2× 4×). */
@@ -49,7 +51,7 @@ export function timeText(timeline: TimelineSpec, status: RuntimeStatus): string 
  * Run/Pause, Step, Next (the next event, or +1 τ), speed, a scrubber with event ticks and ◆ checkpoint markers, the
  * time and Capture. Controls follow the runtime's capabilities. Static scenarios have no timeline bar.
  */
-export function TimelineBar({ runtime, timeline, speeds, markers = [], onMarker, onCapture }: TimelineBarProps) {
+export function TimelineBar({ runtime, timeline, speeds, markers = [], onMarker, onCapture, runDisabled }: TimelineBarProps) {
   const status = useRuntimeStatus(runtime);
   if (!status || timeline.kind === 'static') return null;
   const can = runtime.capabilities, length = trackLength(timeline, status);
@@ -59,7 +61,7 @@ export function TimelineBar({ runtime, timeline, speeds, markers = [], onMarker,
   return (
     <div className="timeline-bar" role="toolbar" aria-label="Timeline">
       <button type="button" className="timeline-button" data-testid="transport-reset" disabled={!can.reset} onClick={() => runtime.reset()} title="Reset" aria-label="Reset"><RotateCcw size={15} aria-hidden="true"/></button>
-      <button type="button" className={`timeline-run${status.running ? ' is-running' : ''}`} data-testid="transport-run" disabled={!can.run || (status.finished && !status.running)} onClick={() => runtime.run(!status.running)}>
+      <button type="button" className={`timeline-run${status.running ? ' is-running' : ''}`} data-testid="transport-run" disabled={!can.run || (status.finished && !status.running) || (runDisabled && !status.running)} onClick={() => runtime.run(!status.running)}>
         {status.running ? <Pause size={14} aria-hidden="true"/> : <Play size={14} aria-hidden="true"/>}{status.running ? 'Pause' : 'Run'}
       </button>
       <button type="button" className="timeline-button" data-testid="transport-step" disabled={!can.step || status.finished} onClick={() => runtime.step()} title="Step" aria-label="Step"><StepForward size={15} aria-hidden="true"/></button>

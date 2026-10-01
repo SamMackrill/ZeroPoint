@@ -121,6 +121,17 @@
   box-shadow: 15px 0 60px color-mix(in srgb, var(--shadow) 60%, transparent);
 }
 
+.workbench-drawer[data-state=closed] {
+  display: none;
+}
+
+.workbench-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  background: color-mix(in srgb, var(--shadow) 45%, transparent);
+}
+
 .workbench-drawer.is-inspector {
   inset: 0 0 0 auto;
   border-right: 0;

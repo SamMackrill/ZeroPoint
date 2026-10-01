@@ -70,3 +70,24 @@ test('parameter edits are acknowledged, hidden tabs pause, and a lost viewport r
   await expect(page.locator('canvas')).toHaveCount(1); await expect(page.getByTestId('tick')).toHaveText(before);
   await tid(page, 'export-menu').click(); const image = page.waitForEvent('download'); await tid(page, 'export-png').click(); expect((await image).suggestedFilename()).toBe('zeropoint-field.png');
 });
+
+test('plot keys do not step the model, cameras stay selected, recovery holds Run, and the view survives a layout switch', async ({ page }) => {
+  await page.goto('/'); await expect(tid(page, 'transport-run')).toBeEnabled(); await expect(page.locator('canvas')).toHaveCount(1);
+  for (let i = 0; i < 3; i++) await tid(page, 'transport-step').click();
+  await expect(page.getByTestId('tick')).toHaveText('Tick 3');
+  const plot = page.getByTestId('medium-plot-population').getByRole('img');
+  await plot.focus(); await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowRight');
+  await page.waitForTimeout(200); await expect(page.getByTestId('tick')).toHaveText('Tick 3');
+  await page.getByRole('radio', { name: 'Top', exact: true }).click(); await expect(page.getByRole('radio', { name: 'Top', exact: true })).toHaveAttribute('aria-checked', 'true');
+  await page.getByRole('radio', { name: 'Perspective', exact: true }).click(); await expect(page.getByRole('radio', { name: 'Perspective', exact: true })).toHaveAttribute('aria-checked', 'true');
+  await page.evaluate(() => { const gl = document.querySelector('canvas')!.getContext('webgl2')!; gl.getExtension('WEBGL_lose_context')!.loseContext(); });
+  await expect(page.getByRole('heading', { name: 'Viewport needs attention' })).toBeVisible();
+  await expect(tid(page, 'transport-run')).toBeDisabled();
+  await page.getByRole('button', { name: 'Recover viewport' }).click(); await expect(tid(page, 'transport-run')).toBeEnabled();
+  await page.setViewportSize({ width: 390, height: 844 }); await expect(page.locator('.workbench-viewport canvas').filter({ visible: true })).toHaveCount(1);
+  await page.setViewportSize({ width: 1440, height: 900 }); await expect(page.locator('.workbench-viewport canvas').filter({ visible: true })).toHaveCount(1);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Open inspector' }).click(); await expect(page.getByRole('dialog', { name: 'Inspector' })).toBeVisible();
+  await page.keyboard.press('Escape'); await expect(page.getByRole('dialog', { name: 'Inspector' })).not.toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open inspector' })).toBeFocused();
+});

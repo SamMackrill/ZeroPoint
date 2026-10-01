@@ -1,5 +1,6 @@
+import * as Dialog from '@radix-ui/react-dialog';
 import { Menu, SlidersHorizontal, X } from 'lucide-react';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { Group, Panel, Separator, useDefaultLayout, usePanelRef } from 'react-resizable-panels';
 import './shell.css';
 
@@ -124,29 +125,49 @@ function WideShell({ id, header, rail, viewport, timeline, dock, inspector, stat
   );
 }
 
+/** One narrow-layout drawer: a Radix modal dialog (focus moves in and is trapped, Esc closes, focus returns to its trigger). */
+function Drawer({ side, label, closeLabel, trigger, open, onOpenChange, onClickCapture, children }: { side: 'rail' | 'inspector'; label: string; closeLabel: string; trigger: ReactNode; open: boolean; onOpenChange(open: boolean): void; onClickCapture?(event: MouseEvent<HTMLDivElement>): void; children: ReactNode }) {
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Trigger asChild>{trigger}</Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="workbench-drawer-overlay"/>
+        <Dialog.Content className={`workbench-drawer is-${side}`} aria-describedby={undefined} onClickCapture={onClickCapture}>
+          <Dialog.Title className="visually-hidden">{label}</Dialog.Title>
+          <Dialog.Close asChild><button type="button" className="workbench-icon-button workbench-drawer-close" aria-label={closeLabel}><X size={17} aria-hidden="true"/></button></Dialog.Close>
+          {children}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
 /**
  * The narrow shell: header, viewport, timeline and dock stacked in a scrolling page, with the rail and inspector opening
- * as drawers. Choosing an experiment or scenario in the rail closes its drawer.
+ * as modal drawers. Choosing an experiment or scenario in the rail closes its drawer.
  */
 function NarrowShell({ header, rail, viewport, timeline, dock, inspector, status }: ShellProps) {
   const [drawer, setDrawer] = useState<'rail' | 'inspector' | null>(null);
+  const openChange = (which: 'rail' | 'inspector') => (open: boolean) => setDrawer(open ? which : null);
   return (
     <div className="workbench is-narrow">
       {header}
       <div className="workbench-narrow-bar">
-        <button type="button" className="workbench-icon-button" data-testid="nav-open" aria-label="Open experiment library" onClick={() => setDrawer('rail')}><Menu size={17} aria-hidden="true"/></button>
-        {inspector && <button type="button" className="workbench-icon-button" aria-label="Open inspector" onClick={() => setDrawer('inspector')}><SlidersHorizontal size={17} aria-hidden="true"/></button>}
+        <Drawer side="rail" label="Experiment library" closeLabel="Close experiment library" open={drawer === 'rail'} onOpenChange={openChange('rail')}
+          trigger={<button type="button" className="workbench-icon-button" data-testid="nav-open" aria-label="Open experiment library"><Menu size={17} aria-hidden="true"/></button>}
+          onClickCapture={event => { if ((event.target as HTMLElement).closest('[data-testid^="scenario-"], [data-testid^="lab-"]')) setTimeout(() => setDrawer(null)); }}>
+          {rail}
+        </Drawer>
+        {inspector && (
+          <Drawer side="inspector" label="Inspector" closeLabel="Close inspector" open={drawer === 'inspector'} onOpenChange={openChange('inspector')}
+            trigger={<button type="button" className="workbench-icon-button" aria-label="Open inspector"><SlidersHorizontal size={17} aria-hidden="true"/></button>}>
+            {inspector}
+          </Drawer>
+        )}
       </div>
       <div className="workbench-narrow-stage"><div className="workbench-viewport">{viewport}</div>{timeline}</div>
       {dock && <div className="workbench-narrow-dock">{dock}</div>}
       {status}
-      {drawer && (
-        <div className={`workbench-drawer is-${drawer}`} role="dialog" aria-modal="true" aria-label={drawer === 'rail' ? 'Experiment library' : 'Inspector'}
-          onClickCapture={event => { if (drawer === 'rail' && (event.target as HTMLElement).closest('[data-testid^="scenario-"], [data-testid^="lab-"]')) setTimeout(() => setDrawer(null)); }}>
-          <button type="button" className="workbench-icon-button workbench-drawer-close" aria-label={drawer === 'rail' ? 'Close experiment library' : 'Close inspector'} onClick={() => setDrawer(null)}><X size={17} aria-hidden="true"/></button>
-          {drawer === 'rail' ? rail : inspector}
-        </div>
-      )}
     </div>
   );
 }
