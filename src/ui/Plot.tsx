@@ -138,7 +138,7 @@ export function Plot({ label, x, series, caption, xUnit, yUnit, xScale = 'linear
         </div>
       </div>
       <div className="plot-x" aria-hidden="true">
-        {xt.map((t, i) => <span key={t} className={i === 0 ? 'is-first' : i === xt.length - 1 ? 'is-last' : undefined} style={{ left: `${pct(t, 'x')}%` }}>{formatX(t)}{xUnit && ` ${xUnit}`}</span>)}
+        {hasData && xt.map((t, i) => <span key={t} className={i === 0 ? 'is-first' : i === xt.length - 1 ? 'is-last' : undefined} style={{ left: `${pct(t, 'x')}%` }}>{formatX(t)}{xUnit && ` ${xUnit}`}</span>)}
       </div>
       {caption && <figcaption>{caption}</figcaption>}
       <p id={readoutId} className="plot-readout" aria-live="polite">{readout}</p>

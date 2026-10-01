@@ -256,6 +256,7 @@ details>div{padding:0 18px 12px}
       <tr><td></td><td>Defaults adopted</td><td>A visual baseline, stable test IDs and a caveat inventory land <i>before</i> any visual change. The palette needs your approval (via a tokens preview) before it is applied. Casimir and van der Waals gain Save/Load in their migration layers. Per-tick data bypasses React state.</td></tr>
       <tr><td>9 · During delivery</td><td>Findings on reviewed layers</td><td><b>Fix blocking findings in place; defer the rest to a remedial PR.</b> Each fix pushed to a layer under review costs another hourly slot, so valid but non-blocking findings are answered, waived and fixed later in a dedicated remedial layer, using judgement case by case (29 Sep). See <a href="#remedial">Deferring findings</a>.</td></tr>
       <tr><td>10 · During delivery</td><td>Visual layers</td><td><b>Every layer that visibly changes the UI waits for the owner's OK before it merges.</b> Its PR carries a before/after page of real screens (<code>scripts/compare-screens.mjs</code>), <code>stack.mjs hold</code> blocks the merge, and the approval is asked with the chat's question tool rather than inside a status update (30 Sep).</td></tr>
+      <tr><td>11 · During delivery</td><td>Chart colours</td><td><b>Keep the approved pastel data palette in charts.</b> The <code>dataviz</code> validator (UI 03) finds every multi-series plot separable for normal and colour-blind vision, but the palette sits above its dark-mode lightness band and below its chroma floor. That is the approved look, so it stays. Electron's spin trace uses <code>--data-bspin-hi</code>, the only shade separable from <code>--data-b</code> (1 Oct)</td></tr>
     </tbody>
   </table>
 </section>
@@ -838,7 +839,7 @@ details>div{padding:0 18px 12px}
     <div class="sw"><i style="background:#b39cf0"></i><div>Electron core<code>--data-core</code></div></div>
     <div class="sw"><i style="background:#f2c46e"></i><div>Shell 1–4<code>--data-shell-n</code></div></div>
   </div>
-  <p class="muted">Rule: the <b>accent means "live or selected"</b> and nothing else. Amber means "paused or pending". Data colours never appear in chrome, and chrome colours never appear in data. Before this lands, the <code>dataviz</code> palette validator should check that series colours are distinguishable in plot overlays, including A/B dashed lines.</p>
+  <p class="muted">Rule: the <b>accent means "live or selected"</b> and nothing else. Amber means "paused or pending". Data colours never appear in chrome, and chrome colours never appear in data. The <code>dataviz</code> palette validator checks that series colours are distinguishable in plot overlays (UI 03); A/B dashed lines are checked again in UI 17. The pastel palette's lightness and chroma deviation is accepted (decision 11).</p>
 
   <div class="grid2">
     <div><h3>Type scale (min 11 px)</h3><table><tbody>

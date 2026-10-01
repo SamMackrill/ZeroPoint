@@ -58,6 +58,7 @@ describe('Plot', () => {
     render(<Plot label="Population" x={[0]} series={[{ key: 'a', label: 'A', color: '#000000', values: [1] }]} empty="Run or step the experiment to collect samples"/>);
     expect(screen.getByText('Run or step the experiment to collect samples')).toBeTruthy();
     expect(screen.getByRole('img', { name: 'Population' }).getAttribute('tabindex')).toBe('-1');
+    expect(document.querySelectorAll('.plot-x span')).toHaveLength(0);
   });
   it('reads every series at the crosshair with the keyboard, including gaps', () => {
     render(<Plot label="Fields" x={x} series={series} xUnit="τ"/>);
