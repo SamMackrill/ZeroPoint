@@ -13,7 +13,6 @@ import { dipoleClockModel, type DipoleClock } from '../../workbench/main-thread-
 import { MainThreadRuntime } from '../../workbench/main-thread-runtime';
 import { SPEEDS } from '../../workbench/runtime';
 import { Shell } from '../../workbench/Shell';
-import { useRuntimeStatus } from '../../workbench/useRuntimeStatus';
 import { TimelineBar } from '../../workbench/TimelineBar';
 import { vanDerWaalsDefinition, type VdwParams, type VdwView } from './definition';
 import '../../van-der-waals/van-der-waals.css';
@@ -33,10 +32,11 @@ function PairStage({ runtime, distance }: { runtime: MainThreadRuntime<DipoleClo
   return <><PairDiagram distance={distance} tick={tick}/><p className="vdw-phase" data-testid="vdw-phase">Phase {(tick * 3).toFixed(0)}° · illustrative clock</p></>;
 }
 
-/** The status bar's run state, following the dipole clock without re-rendering the workbench each tick. */
+/** The status bar's run state: it re-renders only when playback starts or stops, not on every clock tick. */
 function VdwStatus({ runtime, stage }: { runtime: MainThreadRuntime<DipoleClock>; stage: string }) {
-  const status = useRuntimeStatus(runtime);
-  return <StatusBar running={status?.running ?? false} items={[stage, 'Illustrative experiment · ideal analytic reference']}/>;
+  const [running, setRunning] = useState(() => runtime.status().running);
+  useEffect(() => runtime.subscribe(() => setRunning(runtime.status().running)), [runtime]);
+  return <StatusBar running={running} items={[stage, 'Illustrative experiment · ideal analytic reference']}/>;
 }
 
 /** Props for VdwWorkbench. */
