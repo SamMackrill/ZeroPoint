@@ -57,6 +57,14 @@ test('plate gap and area change pressure and force, with source figures, CSV and
   await openExperiment(page);
   await stage(page, 'pressure');
   await expect(value(page, 'vdw-pressure')).toHaveText('-0.8126 Pa');
+  // Plate pressure can set Fleming's figures beside the diagram; \ toggles the split.
+  const root = page.locator('.vdw-workbench-root'), figure = root.locator('.vdw-figure-pane img');
+  await root.getByTestId('split-toggle').click();
+  await expect(figure).toHaveAttribute('src', /figure-3-3\.jpeg$/);
+  await expect.poll(() => figure.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
+  await page.getByRole('radio', { name: 'Fig. 3-4', exact: true }).click();
+  await expect(figure).toHaveAttribute('src', /figure-3-4\.jpeg$/);
+  await page.keyboard.press('Backslash'); await expect(figure).toHaveCount(0);
   await page.getByRole('button', { name: '100 nm', exact: true }).click();
   await expect(value(page, 'vdw-pressure')).toHaveText('-13.00 Pa');
   await set(page, 'Plate area', '2');

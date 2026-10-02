@@ -20,7 +20,22 @@ export const PLOT_SCREENS = [
   { name: 'casimir-plot', title: 'Extended Casimir · Pressure history', lab: 'lab-casimir', steps: 40, focus: '.casimir-chart' },
   { name: 'vdw-plot', title: 'Van der Waals · Pressure versus gap', lab: 'lab-vdw', scenario: 'scenario-pressure', focus: '.vdw-plot' },
 ];
-const SETS = { screens: SCREENS, plots: PLOT_SCREENS };
+/**
+ * The split view (`--set split`): each lab with its second pane open. `prepare` runs on both sides; before the split view
+ * exists, its \ key does nothing, so "before" shows the layer below's layout for the same state.
+ */
+const selectFirstDipole = async page => {
+  await page.getByRole('tab', { name: 'Selection', exact: true }).filter({ visible: true }).click();
+  await page.getByRole('button', { name: 'Select first active dipole' }).filter({ visible: true }).click();
+};
+export const SPLIT_SCREENS = [
+  { name: 'medium-split', title: 'Medium · Dipole close-up', steps: 40, prepare: async page => { await selectFirstDipole(page); await page.keyboard.press('Backslash'); } },
+  { name: 'light-split', title: 'Light · Pair close-up', lab: 'lab-light', steps: 12, prepare: page => page.keyboard.press('Backslash') },
+  { name: 'electron-spin', title: 'Electron · Spin: equatorial section (opens 2-up)', lab: 'lab-electron', scenario: 'scenario-spin', steps: 6 },
+  { name: 'casimir', title: 'Extended Casimir · Lifetime loupe (opens 2-up)', lab: 'lab-casimir', steps: 40 },
+  { name: 'vdw-pressure-split', title: 'Van der Waals · Plate pressure beside Fig. 3-3', lab: 'lab-vdw', scenario: 'scenario-pressure', prepare: page => page.keyboard.press('Backslash') },
+];
+const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -40,6 +55,7 @@ async function capture(browser, url, screen, path) {
   if (screen.lab) await page.getByTestId(screen.lab).filter({ visible: true }).click();
   if (screen.scenario) await page.getByTestId(screen.scenario).filter({ visible: true }).click();
   for (let i = 0; i < (screen.steps ?? 0); i++) await page.getByTestId('transport-step').filter({ visible: true }).first().click();
+  if (screen.prepare) await screen.prepare(page);
   await page.waitForTimeout(1200);
   await page.evaluate(() => document.fonts.ready);
   if (screen.focus) {
@@ -64,7 +80,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const before = option('--before'), out = option('--out'), title = option('--title') ?? 'Change', description = option('--description') ?? '';
   const screens = SETS[option('--set') ?? 'screens'];
   if (!screens) throw new Error(`--set must be one of: ${Object.keys(SETS).join(', ')}`);
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.

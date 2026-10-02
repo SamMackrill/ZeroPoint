@@ -292,6 +292,14 @@
     "text": "Fixed centres · prescribed c · local worker"
   },
   {
+    "file": "src/experiments/medium/DipoleCloseUp.tsx",
+    "text": "Select a dipole (click the field, or Select first in the Selection tab) to see it here."
+  },
+  {
+    "file": "src/experiments/medium/DipoleCloseUp.tsx",
+    "text": "Fixed centre · separation drawn to scale of the 0.8 L₀ maximum"
+  },
+  {
     "file": "src/experiments/medium/MediumWorkbench.tsx",
     "text": "Run or step the experiment to collect samples"
   },
@@ -369,18 +377,6 @@
   },
   {
     "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
-    "text": "Van der Waals files must be smaller than 20 KB."
-  },
-  {
-    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
-    "text": "Fleming treats vacuum fluctuations as interacting electric dipoles. The numerical plate result here is the standard ideal Casimir reference, evaluated separately from that illustration. A microscopic pressure law for Fleming’s medium is not derived by these diagrams."
-  },
-  {
-    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
-    "text": ". Page numbers below are PDF page positions. Interactive diagrams above are adaptations."
-  },
-  {
-    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
     "text": "Opposed and aligned dipoles, with changes in electric moment."
   },
   {
@@ -394,6 +390,18 @@
   {
     "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
     "text": "Nearly balanced opposing stresses leave a net inward force."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "Van der Waals files must be smaller than 20 KB."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "Fleming treats vacuum fluctuations as interacting electric dipoles. The numerical plate result here is the standard ideal Casimir reference, evaluated separately from that illustration. A microscopic pressure law for Fleming’s medium is not derived by these diagrams."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": ". Page numbers below are PDF page positions. Interactive diagrams above are adaptations."
   },
   {
     "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",

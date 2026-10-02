@@ -1,0 +1,100 @@
+.split-view {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  height: 100%;
+}
+
+.split-view.is-split {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+.split-primary {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Top-right, beside the camera presets (plan §07 C); each lab's top overlay bar ends clear of it. */
+.split-toggle {
+  position: absolute;
+  top: 18px;
+  right: 14px;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: color-mix(in srgb, var(--bg-2) 85%, transparent);
+  color: var(--text-2);
+  border: 1px solid var(--line-2);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.split-primary:has(> .split-toggle) :is(.view-top, .light-view-top, .casimir-scene-top) {
+  padding-right: 34px;
+}
+
+.split-primary:has(> .split-toggle) .vdw-stage>.vdw-card-heading {
+  padding-right: 56px;
+}
+
+.split-toggle:hover,
+.split-toggle[aria-pressed=true] {
+  color: var(--accent);
+  border-color: var(--accent-line);
+}
+
+.split-toggle:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.split-secondary {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg-1);
+  border-left: 1px solid var(--line);
+}
+
+.split-head {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 12px;
+  color: var(--text-3);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.split-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+@media(max-width:850px) {
+  /* The narrow stage is a fixed 46vh; while split it grows so the stacked second pane shows below the viewport. */
+  .workbench-viewport:has(.split-view.is-split) {
+    height: auto;
+    overflow: visible;
+  }
+  .split-view.is-split {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+  .split-view.is-split .split-primary {
+    height: 46vh;
+  }
+  .split-secondary {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}

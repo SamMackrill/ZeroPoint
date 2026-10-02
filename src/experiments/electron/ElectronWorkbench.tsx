@@ -24,6 +24,7 @@ import '../../light/light.css';
 import '../../electron/electron.css';
 import './electron-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { SplitView, type SplitPane } from '../../workbench/SplitView';
 
 /** Scenario id ↔ worker mode for the three timed scenarios. */
 const MODE_OF: Record<string, ElectronMode> = { stationary: 'electric', spin: 'spin', moving: 'moving' };
@@ -51,7 +52,7 @@ export interface ElectronWorkbenchProps {
 /**
  * The electron laboratory in the workbench (UI 09): three timed scenarios (stationary, spin, moving) over a bounded
  * 0–48 τ timeline with named milestones, and two static studies from the property investigations. The spin scenario
- * shows the 3D shells beside the linked equatorial section; the charge-motion close-up follows the selection. The worker
+ * opens 2-up: the 3D shells beside the linked equatorial section or the selected pair's charge motion. The worker
  * protocol and renderer are unchanged.
  */
 export function ElectronWorkbench({ active, rail, header, scenarioRequest, onScenarioChange }: ElectronWorkbenchProps) {
@@ -64,6 +65,8 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const [selected, setSelected] = useState<number | null>(null), [camera, setCamera] = useState<Camera>('orbit');
   const [graphicsError, setGraphicsError] = useState(''), [contextLost, setContextLost] = useState(false), [revision, setRevision] = useState(0), [notice, setNotice] = useState('');
   const [checkpoints, setCheckpoints] = useState<ElectronState[]>([]);
+  // Spin's split state is the saved Linked 2D section flag (2-up by default); this picks which linked view it shows.
+  const [pane, setPane] = useState<'section' | 'motion'>('section');
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('probe'), [dockCollapsed, setDockCollapsed] = useState(false);
   const [host, setHost] = useState<HTMLDivElement | null>(null), renderer = useRef<ElectronRenderer | null>(null);
   const viewRef = useRef(view), selectedRef = useRef(selected), cameraRef = useRef(camera); viewRef.current = view; selectedRef.current = selected; cameraRef.current = camera;
@@ -141,7 +144,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   /** Select the displayed sample nearest to the configured probe. */
   function inspectProbe() { const shell = view.shells && p.mode === 'spin'; let best = shell ? LATTICE_SAMPLES : 0, distance = Infinity; for (let i = best; i < (shell ? LATTICE_SAMPLES + view.spinDisplay.count * SAMPLES_PER_SHELL : LATTICE_SAMPLES); i++) { const c = shellCentre(i, p.axis), r = Math.hypot(c[0] - p.probeX, c[1] - p.probeY, c[2] - p.probeZ); if (r < distance) { best = i; distance = r; } } setSelected(best); }
   /** The saved view the video's coordination explanation at 4:44 describes. */
-  function sharedRotation() { setView(v => ({ ...v, shells: true, inspect: true, spinDisplay: { ...v.spinDisplay, alternating: false, section: true } })); setSelected(LATTICE_SAMPLES + 34); setCamera('shell'); setNotice('Shared local preference selected, following the video’s coordination explanation at 4:44.'); }
+  function sharedRotation() { setView(v => ({ ...v, shells: true, inspect: true, spinDisplay: { ...v.spinDisplay, alternating: false, section: true } })); setPane('motion'); setSelected(LATTICE_SAMPLES + 34); setCamera('shell'); setNotice('Shared local preference selected, following the video’s coordination explanation at 4:44.'); }
   /** Capture the current state as a ◆ checkpoint. */
   function capture() { const st = latest.current; if (st) setCheckpoints(old => [...old, { model: st.model, tick: st.tick, parameters: { ...st.parameters } }].slice(-CHECKPOINT_LIMIT)); }
 
@@ -150,7 +153,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const traceTimes = Array.from({ length: 161 }, (_, i) => time * i / 160);
   const stageNote = p.mode === 'electric' ? (s.tick === 0 ? 'Unpolarized ZPF · electron not yet introduced' : electronPresence(s) < 1 ? 'Introducing the negative electron' : '+ ends align toward the electron') : p.mode === 'spin' ? 'Local turns around a stationary core' : 'The electron moves; the medium responds';
   const stageLabel = p.mode === 'electric' ? `Alignment ${(alignmentProgress(s) * 100).toFixed(0)}%` : p.mode === 'spin' ? '3D shells' : `${velocity(p).toFixed(2)} c along X`;
-  const linked = p.mode === 'spin' && view.shells && view.spinDisplay.section;
+  const setSplit = useCallback((on: boolean) => setView(v => ({ ...v, spinDisplay: { ...v.spinDisplay, section: on } })), []);
   const scenarioTitle = electronDefinition.scenarios.find(x => x.id === scenario)?.title;
 
   const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle}
@@ -176,7 +179,13 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   );
   const viewportNode = study
     ? <div className="electron-study"><ElectronProperties study={study}/></div>
-    : <div className={linked ? 'electron-linked-views electron-split' : 'electron-single'}>{scene}{linked && <SpinSection state={s} view={view} selected={selected} onPick={id => { setSelected(id); setTab('selection'); }}/>}</div>;
+    : <div className="electron-single">{scene}</div>;
+  // Spin links the equatorial section and the selected pair's charge motion. Stationary and Moving have no local turns
+  // for the charge-motion close-up to show, so they stay 1-up.
+  const panes: SplitPane[] = p.mode === 'spin' && view.shells && !study ? [
+    { id: 'section', label: 'Equatorial section', content: <SpinSection state={s} view={view} selected={selected} onPick={id => { setSelected(id); setTab('selection'); }}/> },
+    { id: 'motion', label: 'Charge motion', content: <ChargeMotion state={s} index={shellIndex} display={view.spinDisplay}/> },
+  ] : [];
 
   const dockNode = study ? undefined : (
     <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={dockTab} onTab={setDockTab}
@@ -223,7 +232,6 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
         {!picked.field.valid && <p className="light-small">This sample is currently inside the electron’s numerical mask.</p>}
         <div className="electron-selection-actions"><button type="button" className="light-focus" onClick={focusSelection}><Focus size={14}/>Focus this fixed centre <kbd>F</kbd></button><button type="button" className="inspector-link" onClick={clearSelection}>Clear <kbd>Esc</kbd></button></div>
       </> : <p className="light-small">Click a pair to inspect its fixed centre, in the field or the section, or choose Nearest to probe. Selection pins a fixed sampling location across successive pair generations.</p>}
-      {p.mode === 'spin' && !study && <ChargeMotion state={s} index={shellIndex} display={view.spinDisplay}/>}
     </div>
   );
 
@@ -241,7 +249,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
         <ViewPanel definition={{ ...electronDefinition, viewControls: [] }} scenario={scenario} view={view} onView={(k, v) => setView(old => withPaths(old, { [k]: v }))}/>
         {p.mode === 'spin' && <section className="inspector-group" aria-label="Spin view">
           <header className="inspector-group-head"><h3>Spin view</h3></header>
-          <label className="medium-setting"><input type="checkbox" checked={view.spinDisplay.section} onChange={e => setView(v => ({ ...v, spinDisplay: { ...v.spinDisplay, section: e.target.checked } }))}/>Linked 2D section</label>
+          <label className="medium-setting"><input type="checkbox" checked={view.spinDisplay.section} onChange={e => { setPane('section'); setSplit(e.target.checked); }}/>Linked 2D section</label>
           <label className="medium-setting"><input type="checkbox" checked={view.spinDisplay.guides} onChange={e => setView(v => ({ ...v, spinDisplay: { ...v.spinDisplay, guides: e.target.checked } }))}/>Shell guides</label>
           {!view.shells && <p className="light-small">Shell sampling is hidden. Choose Shell close-up to restore the linked views.</p>}
         </section>}
@@ -262,7 +270,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
 
   return (
     <div className={`electron-workbench-root ${p.mode === 'spin' ? 'electron-spin-view' : ''}`} style={{ display: active ? undefined : 'none' }}>
-      <Shell id="electron" header={headerNode} rail={rail} viewport={viewportNode} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+      <Shell id="electron" header={headerNode} rail={rail} viewport={<SplitView active={active && !study} primary={viewportNode} panes={panes} split={view.spinDisplay.section} onSplit={setSplit} pane={pane} onPane={id => setPane(id as 'section' | 'motion')}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={s.running} items={[ELECTRON_MODEL, <span data-testid="electron-tick">Tick {s.tick} · {(time * TAU).toExponential(2)} s</span>, 'τ = R/c', 'Fixed zepton centres · local worker · source-linked model']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
     </div>

@@ -113,8 +113,14 @@ test('Esc clears and F focuses the selection, and a click on the field selects',
   await page.getByRole('button', { name: 'Select first active dipole' }).click();
   await page.keyboard.press('f');
   await expect(page.locator('.dipole-inspector h2')).toContainText('Dipole ');
+  // The split pane (\) follows the same selection.
+  await page.keyboard.press('Backslash');
+  const pane = page.getByRole('region', { name: 'Dipole close-up' });
+  await expect(pane.locator('figcaption strong')).toContainText('Dipole ');
   await page.keyboard.press('Escape');
   await expect(page.getByText('No active selection')).toBeVisible();
+  await expect(pane).toContainText('Select a dipole');
+  await page.locator('.medium-workbench').getByTestId('split-toggle').click(); await expect(pane).toHaveCount(0);
   const canvas = page.locator('canvas'), box = (await canvas.boundingBox())!;
   for (let x = 0.3; x <= 0.7 && await page.getByText('No active selection').isVisible(); x += 0.02) await canvas.click({ position: { x: box.width * x, y: box.height * 0.5 } });
   await expect(page.locator('.dipole-inspector h2')).toContainText('Dipole ');

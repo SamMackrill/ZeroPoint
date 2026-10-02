@@ -1,11 +1,5 @@
-.electron-workbench-root .electron-single,
-.electron-workbench-root .electron-split {
+.electron-workbench-root .electron-single {
   height: 100%;
-}
-
-.electron-workbench-root .electron-split {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
 }
 
 .electron-workbench-root .light-viewport-shell.electron-stage {
@@ -14,13 +8,13 @@
   border-radius: 0;
 }
 
-.electron-workbench-root .electron-split .electron-section {
-  height: 100%;
-  overflow: auto;
+.electron-workbench-root .split-body .electron-section,
+.electron-workbench-root .split-body .electron-charge-motion {
   margin: 0;
   border: 0;
-  border-left: 1px solid var(--line);
   border-radius: 0;
+  padding: 0;
+  background: none;
 }
 
 .electron-workbench-root .light-view-top .segmented {
@@ -113,13 +107,6 @@
 }
 
 @media(max-width:850px) {
-  .electron-workbench-root .electron-split {
-    grid-template-columns: minmax(0, 1fr);
-    height: auto;
-  }
-  .electron-workbench-root .electron-split .light-viewport-shell {
-    height: 46vh;
-  }
   .electron-workbench-root .light-view-top .segmented {
     display: none;
   }

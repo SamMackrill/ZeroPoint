@@ -23,6 +23,13 @@ test('light handoffs, fixed-centre inspection, replay, files and switching prese
   await expect(page.getByTestId('light-pair-centre')).toHaveText(centre);
   await expect(page.getByTestId('light-rotation')).toHaveText('-1.5° / -180°');
   await page.keyboard.press('f'); await expect(page.getByRole('radio', { name: 'Pair close-up', exact: true })).toHaveAttribute('aria-checked', 'true');
+  // The split pane shows the glyph enlarged, which then leaves the Selection tab.
+  const root = page.locator('.light-workbench-root');
+  await root.getByTestId('split-toggle').click();
+  await expect(root.locator('.light-pair-pane .light-pair-glyph')).toBeVisible();
+  await expect(root.locator('.light-selection .light-pair-glyph')).toHaveCount(0);
+  await root.getByTestId('split-toggle').click();
+  await expect(root.locator('.light-selection .light-pair-glyph')).toBeVisible();
   await page.keyboard.press('Escape'); await expect(page.getByRole('button', { name: 'Pin pair', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'Pin pair', exact: true }).click();
   await tid(page, 'capture').click();

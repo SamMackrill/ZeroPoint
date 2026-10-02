@@ -20,6 +20,7 @@ import { lightDefinition } from './definition';
 import '../../light/light.css';
 import './light-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { SplitView } from '../../workbench/SplitView';
 
 /** Render a normalized electric-projection trace with the shared Plot, with an optional probe marker. */
 function WavePlot({ x, values, label, unit, domain, marker }: { x: number[]; values: number[]; label: string; unit: 'L' | 'τ'; domain: [number, number]; marker?: number }) {
@@ -48,6 +49,8 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   const [selected, setSelected] = useState<number | null>(null), [camera, setCamera] = useState<'orbit' | 'side' | 'pair'>('orbit');
   const [graphicsError, setGraphicsError] = useState(''), [revision, setRevision] = useState(0), [notice, setNotice] = useState('');
   const [checkpoints, setCheckpoints] = useState<LightState[]>([]);
+  // Light opens 1-up; the split pane shows the pair close-up glyph enlarged, which then leaves the Selection tab.
+  const [split, setSplit] = useState(false);
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
   // The host is a callback ref held in state, so the renderer follows the element when the shell changes layout.
   const [host, setHost] = useState<HTMLDivElement | null>(null), renderer = useRef<LightRenderer | null>(null);
@@ -179,10 +182,13 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
       ]}/>
   );
 
+  const glyph = (
+    <svg className="light-pair-glyph" viewBox="0 0 200 135" role="img" aria-label="Selected pair in its rotation plane; fixed midpoint and opposite charge lobes"><circle cx="100" cy="66" r="59" fill="none" stroke={palette.line2} strokeDasharray="3 5"/><path d="M93 66H107M100 59V73" stroke={palette.dataShell3}/><line x1={pairX} y1={pairY} x2={200 - pairX} y2={132 - pairY} stroke={palette.text4}/>{inspected.active && <><circle cx={pairX} cy={pairY} r="10" fill={palette.danger}/><text x={pairX} y={pairY + 4} textAnchor="middle" fill={palette.bg2} fontSize="14">+</text><circle cx={200 - pairX} cy={132 - pairY} r="10" fill={palette.dataNeg}/><text x={200 - pairX} y={136 - pairY} textAnchor="middle" fill={palette.bg2} fontSize="14">−</text></>}<text x="100" y="130" textAnchor="middle" fill={palette.accent2} fontSize="9">Rotation plane · geometry exaggerated</text></svg>
+  );
   const selectionNode = (
     <div className="light-selection">
       <div className="light-selection-head"><h3>Pair {inspected.index + 1}</h3><button type="button" className="inspector-link" onClick={() => setSelected(selected === null ? d.index : null)}>{selected === null ? 'Pin pair' : 'Follow active'}</button></div>
-      <svg className="light-pair-glyph" viewBox="0 0 200 135" role="img" aria-label="Selected pair in its rotation plane; fixed midpoint and opposite charge lobes"><circle cx="100" cy="66" r="59" fill="none" stroke={palette.line2} strokeDasharray="3 5"/><path d="M93 66H107M100 59V73" stroke={palette.dataShell3}/><line x1={pairX} y1={pairY} x2={200 - pairX} y2={132 - pairY} stroke={palette.text4}/>{inspected.active && <><circle cx={pairX} cy={pairY} r="10" fill={palette.danger}/><text x={pairX} y={pairY + 4} textAnchor="middle" fill={palette.bg2} fontSize="14">+</text><circle cx={200 - pairX} cy={132 - pairY} r="10" fill={palette.dataNeg}/><text x={200 - pairX} y={136 - pairY} textAnchor="middle" fill={palette.bg2} fontSize="14">−</text></>}<text x="100" y="130" textAnchor="middle" fill={palette.accent2} fontSize="9">Rotation plane · geometry exaggerated</text></svg>
+      {!split && glyph}
       <dl className="light-readouts">
         <div><dt>State</dt><dd>{inspected.active ? 'Induced' : s.tick < inspected.index * hopTicks(p) ? 'Awaiting induction' : inspected.progress < 1 ? 'Window exited' : 'Collapsed / retired'}</dd></div>
         <div><dt>Fixed centre</dt><dd data-testid="light-pair-centre">{inspected.centre.toFixed(3)} L</dd></div>
@@ -218,7 +224,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
 
   return (
     <div className="light-workbench-root" style={{ display: active ? undefined : 'none' }}>
-      <Shell id="light" header={headerNode} rail={rail} viewport={viewportNode} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+      <Shell id="light" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'pair', label: `Pair ${inspected.index + 1} close-up`, content: <div className="light-pair-pane">{glyph}</div> }]} split={split} onSplit={setSplit} pane="pair" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={s.running} items={[LIGHT_MODEL, <span data-testid="light-tick">Tick {s.tick} · Δt = τ/120</span>, `start x = ${sourceX(p).toFixed(1)} L`, 'Fixed centres · prescribed c · local worker']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
     </div>

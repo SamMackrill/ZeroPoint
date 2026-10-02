@@ -71,9 +71,16 @@
   border: 0;
 }
 
-.casimir-selection .casimir-loupe {
+.casimir-selection .casimir-loupe,
+.casimir-loupe-pane .casimir-loupe {
   display: block;
   width: 100%;
+}
+
+/* The pane reads at a glance: the loupe grows to the pane width, up to twice the inspector's. */
+.casimir-loupe-pane {
+  max-width: 560px;
+  margin: 0 auto;
 }
 
 @media(max-width:850px) {

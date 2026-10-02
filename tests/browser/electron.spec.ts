@@ -70,14 +70,16 @@ test('the static studies compare flux and rate limits, and the spin scenario lin
   await tid(page, 'dock-shells').click();
   await page.getByRole('button', { name: 'Explore the video’s shared rotation', exact: true }).click();
   await inspector(page, 'Setup'); await expect(page.getByRole('radio', { name: 'Shared', exact: true })).toHaveAttribute('aria-checked', 'true');
-  await inspector(page, 'Selection');
+  // The shared rotation opens the split's Charge motion pane; the picker swaps it for the equatorial section.
   const closeup = page.getByLabel('Local charge motion close-up', { exact: true });
   await expect(closeup).toContainText('Sample 2231');
   await page.getByRole('button', { name: 'Conventional current qv', exact: true }).click();
   await expect(page.getByTestId('charge-motion-explanation')).toContainText('point together');
   await tid(page, 'transport-next').click();
   await expect(closeup).toContainText('tick 120');
+  await choose(page, 'Equatorial section');
   await page.getByRole('button', { name: 'Inspect section pair 2229', exact: true }).click();
+  await choose(page, 'Charge motion');
   await expect(closeup).toContainText('Sample 2229');
   await closeup.screenshot({ path: 'test-results/electron-charge-current.png' });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -104,7 +106,7 @@ test('spin shells link 2D and 3D, alternate local turns and preserve display con
   const centre = await page.getByTestId('electron-pair-centre').innerText();
   await tid(page, 'transport-next').click();
   await expect(page.getByTestId('electron-pair-centre')).toHaveText(centre);
-  await page.locator('.electron-linked-views').screenshot({ path: 'test-results/spin-linked-views.png' });
+  await page.locator('.electron-workbench-root .split-view').screenshot({ path: 'test-results/spin-linked-views.png' });
   await inspector(page, 'View'); await tid(page, 'layer-cutaway').click();
   await page.locator('.light-viewport-shell').screenshot({ path: 'test-results/spin-shells-cutaway.png' });
   await inspector(page, 'Setup'); await choose(page, '4');
@@ -123,7 +125,13 @@ test('spin shells link 2D and 3D, alternate local turns and preserve display con
   await expect(page.locator('.electron-section header')).toContainText('Looking from +X');
   await inspector(page, 'View'); await page.getByLabel('Linked 2D section', { exact: true }).uncheck();
   await expect(page.getByLabel('Linked 2D spin section')).toHaveCount(0);
+  const toggle = page.locator('.electron-workbench-root').getByTestId('split-toggle');
+  await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+  await toggle.click(); // the split toggle and the View checkbox are one setting
+  await expect(page.getByLabel('Linked 2D section', { exact: true })).toBeChecked();
+  await page.keyboard.press('Backslash'); await expect(page.getByLabel('Linked 2D spin section')).toHaveCount(0);
   await page.getByLabel('Linked 2D section', { exact: true }).check();
+  await expect(page.getByLabel('Linked 2D spin section')).toBeVisible();
   const download = page.waitForEvent('download'); await tid(page, 'file-save').click();
   const saved = JSON.parse(await readFile((await (await download).path())!, 'utf8'));
   expect(saved.view.spinDisplay).toEqual({ count: 4, gain: 1, alternating: false, section: true, guides: true });
@@ -134,7 +142,7 @@ test('spin shells link 2D and 3D, alternate local turns and preserve display con
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const close = await inspector(page, 'Setup'); await choose(page, '2'); await close();
-  await page.locator('.electron-linked-views').screenshot({ path: 'test-results/spin-shells-mobile.png' });
+  await page.locator('.electron-workbench-root .split-view').screenshot({ path: 'test-results/spin-shells-mobile.png' });
   const closeView = await inspector(page, 'View'); await tid(page, 'layer-rotation').click(); await expect(tid(page, 'layer-rotation')).toHaveAttribute('aria-pressed', 'false'); await closeView();
   expect(errors).toEqual([]);
 });

@@ -13,6 +13,7 @@ import { dipoleClockModel, type DipoleClock } from '../../workbench/main-thread-
 import { MainThreadRuntime } from '../../workbench/main-thread-runtime';
 import { SPEEDS } from '../../workbench/runtime';
 import { Shell } from '../../workbench/Shell';
+import { SplitView } from '../../workbench/SplitView';
 import { TimelineBar } from '../../workbench/TimelineBar';
 import { vanDerWaalsDefinition, type VdwParams, type VdwView } from './definition';
 import '../../van-der-waals/van-der-waals.css';
@@ -24,6 +25,20 @@ const EXPLANATIONS = [
   ['Zero mean dipoles can still attract', 'A fluctuating dipole couples to its neighbour. Their correlated fluctuations lower the pair’s interaction energy, producing London dispersion attraction. Run the schematic to see both moments reverse while the mean attraction remains inward. Fleming extends this dipole picture to the zero-point field.'],
   ['The difference is the pressure', 'In Fleming’s picture, the surrounding fluctuations press on both faces of each plate. Boundaries change the field between them, leaving a small inward imbalance. The standard calculation obtains this force per area from the change in the field–plate interaction energy as the gap changes.'],
 ] as const;
+
+/** Chapter 3's embedded figures: title, caption and PDF page. */
+const SOURCE_FIGURES = [
+  ['Dipole orientations', 'Opposed and aligned dipoles, with changes in electric moment.', 28],
+  ['Induced polarization', 'A neutral hydrogen atom and its polarized charge distribution.', 28],
+  ['A cavity in the field', 'Fleming’s schematic of fluctuations outside and between plates.', 29],
+  ['A pressure imbalance', 'Nearly balanced opposing stresses leave a net inward force.', 30],
+] as const;
+
+/** One of Fleming's Chapter 3 figures, linked to its page in the book. */
+function SourceFigure({ index }: { index: number }) {
+  const [title, caption, page] = SOURCE_FIGURES[index];
+  return <figure><a href={`${BOOK}#page=${page}`} target="_blank" rel="noreferrer"><img src={`./docs/figures/van-der-waals/figure-3-${index + 1}.jpeg`} alt={`Fleming Figure 3-${index + 1}: ${caption}`} loading="lazy"/></a><figcaption><strong>Fig. 3-{index + 1} · {title}</strong><span>{caption} PDF p. {page}.</span></figcaption></figure>;
+}
 
 /** The correlated-dipole diagram and its phase, the only parts that change each clock tick (so only they re-render). */
 function PairStage({ runtime, distance }: { runtime: MainThreadRuntime<DipoleClock>; distance: number }) {
@@ -61,6 +76,8 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
   const [params, setParams] = useState<VdwParams>(vanDerWaalsDefinition.defaultParams);
   const [view, setView] = useState<VdwView>(vanDerWaalsDefinition.defaultView);
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('chapter'), [dockCollapsed, setDockCollapsed] = useState(false);
+  // Plate pressure can set Fleming's Figure 3-3 or 3-4 beside the diagram for comparison; it opens 1-up.
+  const [split, setSplit] = useState(false), [figure, setFigure] = useState('fig-3-3');
   const stage = stages.findIndex(s => s.id === scenario), current = stages[stage];
   useEffect(() => { if (!active || scenario !== 'correlated') runtime.run(false); }, [active, scenario, runtime]);
   useEffect(() => { onScenarioChange?.(scenario); }, [scenario, onScenarioChange]);
@@ -115,17 +132,13 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
   const chapter = (
     <div className="vdw-dock-chapter">
       <section className="vdw-context"><div><span className="micro-label">READING CHAPTER 3</span><h2>From molecular attraction to a field pressure</h2></div><p>Keesom forces involve permanent dipoles; Debye forces involve a permanent and an induced dipole; London dispersion involves fluctuating, induced dipoles. This experiment follows the London branch into Fleming’s account of the Casimir effect. Follow an induced dipole into a collective force — and a measurable pressure difference.</p><p>Fleming treats vacuum fluctuations as interacting electric dipoles. The numerical plate result here is the standard ideal Casimir reference, evaluated separately from that illustration. A microscopic pressure law for Fleming’s medium is not derived by these diagrams.</p><a href={`${BOOK}#page=27`} target="_blank" rel="noreferrer"><BookOpen size={14}/> Chapter 3 ↗</a></section>
-      <details className="vdw-sources"><summary><BookOpen size={17}/>Source figures & model notes<span>Chapter 3 · Figures 3-1–3-4</span></summary><div className="vdw-source-content"><p>Original embedded figures extracted from Ray Fleming’s <em>The Zero-Point Universe</em>. Page numbers below are PDF page positions. Interactive diagrams above are adaptations.</p><div className="vdw-source-grid">{[
-        ['Dipole orientations', 'Opposed and aligned dipoles, with changes in electric moment.', 28],
-        ['Induced polarization', 'A neutral hydrogen atom and its polarized charge distribution.', 28],
-        ['A cavity in the field', 'Fleming’s schematic of fluctuations outside and between plates.', 29],
-        ['A pressure imbalance', 'Nearly balanced opposing stresses leave a net inward force.', 30],
-      ].map(([title, caption, page], i) => <figure key={i}><a href={`${BOOK}#page=${page}`} target="_blank" rel="noreferrer"><img src={`./docs/figures/van-der-waals/figure-3-${i + 1}.jpeg`} alt={`Fleming Figure 3-${i + 1}: ${caption}`} loading="lazy"/></a><figcaption><strong>Fig. 3-{i + 1} · {title}</strong><span>{caption} PDF p. {page}.</span></figcaption></figure>)}</div><p>Figure 3-1 shows an opposed, repulsive configuration (I) and an aligned, attractive one (II). The surrounding text calls both repulsive; the interactive explanation uses the charge geometry. The prescribed in-phase motion is a teaching aid, not a quantum dispersion calculation.</p><p>Retardation concerns finite electromagnetic propagation time. Figure 3-3’s “excluded fluctuations” are a heuristic; actual conductor boundary conditions constrain a full electromagnetic spectrum. Neither counting drawn dipoles nor cancelling two arbitrary pressures derives the reference result.</p><p>The ideal reference excludes material dispersion, temperature, surface roughness, edge effects and short-range overlap repulsion. Observing Casimir attraction does not uniquely establish a dipolar vacuum or determine absolute vacuum energy; see <a href="https://arxiv.org/abs/hep-th/0503158" target="_blank" rel="noreferrer">Jaffe’s discussion</a>.</p><div className="vdw-reference-links"><a href="./docs/van-der-waals-model.md" target="_blank" rel="noreferrer">Model & source notes ↗</a><a href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.73.360" target="_blank" rel="noreferrer">Casimir & Polder (1948) ↗</a><a href="https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=906575" target="_blank" rel="noreferrer">NIST-hosted Casimir review ↗</a></div></div></details>
+      <details className="vdw-sources"><summary><BookOpen size={17}/>Source figures & model notes<span>Chapter 3 · Figures 3-1–3-4</span></summary><div className="vdw-source-content"><p>Original embedded figures extracted from Ray Fleming’s <em>The Zero-Point Universe</em>. Page numbers below are PDF page positions. Interactive diagrams above are adaptations.</p><div className="vdw-source-grid">{SOURCE_FIGURES.map((_, i) => <SourceFigure key={i} index={i}/>)}</div><p>Figure 3-1 shows an opposed, repulsive configuration (I) and an aligned, attractive one (II). The surrounding text calls both repulsive; the interactive explanation uses the charge geometry. The prescribed in-phase motion is a teaching aid, not a quantum dispersion calculation.</p><p>Retardation concerns finite electromagnetic propagation time. Figure 3-3’s “excluded fluctuations” are a heuristic; actual conductor boundary conditions constrain a full electromagnetic spectrum. Neither counting drawn dipoles nor cancelling two arbitrary pressures derives the reference result.</p><p>The ideal reference excludes material dispersion, temperature, surface roughness, edge effects and short-range overlap repulsion. Observing Casimir attraction does not uniquely establish a dipolar vacuum or determine absolute vacuum energy; see <a href="https://arxiv.org/abs/hep-th/0503158" target="_blank" rel="noreferrer">Jaffe’s discussion</a>.</p><div className="vdw-reference-links"><a href="./docs/van-der-waals-model.md" target="_blank" rel="noreferrer">Model & source notes ↗</a><a href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.73.360" target="_blank" rel="noreferrer">Casimir & Polder (1948) ↗</a><a href="https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=906575" target="_blank" rel="noreferrer">NIST-hosted Casimir review ↗</a></div></div></details>
     </div>
   );
 
   const dockNode = (
-    <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={dockTab} onTab={setDockTab} readouts={readouts}
+    // Plots and Stress exist only on the plate-pressure stage; elsewhere (after a stage change or a Load) show Chapter 3.
+    <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={stage === 2 ? dockTab : 'chapter'} onTab={setDockTab} readouts={readouts}
       tabs={[
         ...(stage === 2 ? [
           { id: 'plots', label: 'Plots', content: <div className="vdw-dock-plot"><h4>Gap sweep · ideal reference</h4><PressurePlot gap={params.gap}/><p>Double the gap → <strong>1/16 of the pressure</strong>. Double the area → twice the force, at the same pressure.</p></div> },
@@ -153,7 +166,7 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
 
   return (
     <div className="vdw-workbench-root" style={{ display: active ? undefined : 'none' }}>
-      <Shell id="vdw" header={headerNode} rail={rail} viewport={viewportNode} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+      <Shell id="vdw" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={stage === 2 ? [2, 3].map(i => ({ id: `fig-3-${i + 1}`, label: `Fig. 3-${i + 1}`, content: <div className="vdw-figure-pane"><SourceFigure index={i}/></div> })) : []} split={split} onSplit={setSplit} pane={figure} onPane={setFigure}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<VdwStatus runtime={runtime} stage={current.title}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
     </div>
