@@ -114,6 +114,10 @@
 }
 
 /* About sheet: Chapter 3's context and the source gallery, two figures to a row. */
+.about-body .vdw-source-content {
+  padding: 0;
+}
+
 .about-body .vdw-source-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 16px 0;

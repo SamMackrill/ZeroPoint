@@ -36,7 +36,25 @@ export const SPLIT_SCREENS = [
   { name: 'electron-spin-phone', title: 'Electron · Spin on a phone (390 px): the second pane stacks below', lab: 'lab-electron', scenario: 'scenario-spin', viewport: { width: 390, height: 844 }, fullPage: true },
   { name: 'vdw-pressure-split', title: 'Van der Waals · Plate pressure beside Fig. 3-3', lab: 'lab-vdw', scenario: 'scenario-pressure', prepare: page => page.keyboard.press('Backslash') },
 ];
-const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS };
+/**
+ * The About sheet (`--set about`). Each screen opens it the way a user would — the header chip, else the ? button — and
+ * may then pick a tab by the first visible test id in `tab`. Before the sheet existed, the same clicks show where that
+ * content lived: Medium's model dialog, Casimir's Notes and van der Waals' Chapter 3 dock tabs, Electron's Sources tab.
+ */
+const openAbout = tab => async page => {
+  const chip = page.getByRole('button', { name: 'Illustrative model' }).filter({ visible: true });
+  const help = page.getByRole('button', { name: /^About (the model|this scenario)$/ }).filter({ visible: true });
+  if (await chip.count()) await chip.click(); else if (await help.count()) await help.click();
+  for (const id of tab ?? []) { const target = page.getByTestId(id).filter({ visible: true }); if (await target.count()) { await target.click(); break; } }
+};
+export const ABOUT_SCREENS = [
+  { name: 'medium-about', title: 'Medium · About › This scenario (was the model dialog)', prepare: openAbout() },
+  { name: 'light-about', title: 'Light · About › This scenario (was a note at the foot of Setup)', lab: 'lab-light', prepare: openAbout() },
+  { name: 'electron-about-units', title: 'Electron · About › Units & constants (was in the Sources dock tab)', lab: 'lab-electron', scenario: 'scenario-spin', prepare: openAbout(['about-units', 'dock-sources']) },
+  { name: 'casimir-about', title: 'Extended Casimir · About › This scenario (was the Notes dock tab)', lab: 'lab-casimir', prepare: openAbout() },
+  { name: 'vdw-about-sources', title: 'Van der Waals · About › Sources (was the Chapter 3 dock tab)', lab: 'lab-vdw', prepare: openAbout(['about-sources']) },
+];
+const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -84,7 +102,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const before = option('--before'), out = option('--out'), title = option('--title') ?? 'Change', description = option('--description') ?? '';
   const screens = SETS[option('--set') ?? 'screens'];
   if (!screens) throw new Error(`--set must be one of: ${Object.keys(SETS).join(', ')}`);
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.
