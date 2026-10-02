@@ -107,7 +107,8 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const s = state ?? { model: ELECTRON_MODEL, tick: 0, parameters: electronDefinition.defaultParams, running: false, speed: 1 };
   const p = s.parameters, time = s.tick * ELECTRON_DT, ready = !!state && !error;
   const field = referenceFields(s, probePosition(p)), picked = selected === null ? null : displayedDipole(s, selected, view.spinDisplay), flux = enclosedCharge(s, 2);
-  const shellIndex = selected !== null && selected >= LATTICE_SAMPLES && selected < LATTICE_SAMPLES + view.spinDisplay.count * SAMPLES_PER_SHELL ? selected : LATTICE_SAMPLES + 34;
+  // The charge-motion pane follows the selected shell pair; with none selected it says so rather than showing a stand-in.
+  const shellIndex = selected !== null && selected >= LATTICE_SAMPLES && selected < LATTICE_SAMPLES + view.spinDisplay.count * SAMPLES_PER_SHELL ? selected : null;
 
   /** Switch scenario: timed ones restart the worker in their mode, with the view suited to it; static ones pause it. */
   function startScenario(id: string) {
@@ -184,7 +185,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   // for the charge-motion close-up to show, so they stay 1-up.
   const panes: SplitPane[] = p.mode === 'spin' && view.shells && !study ? [
     { id: 'section', label: 'Equatorial section', content: <SpinSection state={s} view={view} selected={selected} onPick={id => { setSelected(id); setTab('selection'); }}/> },
-    { id: 'motion', label: 'Charge motion', content: <ChargeMotion state={s} index={shellIndex} display={view.spinDisplay}/> },
+    { id: 'motion', label: 'Charge motion', content: shellIndex === null ? <p className="split-empty">Select a pair on a shell (click the field or the section) to see its charge motion.</p> : <ChargeMotion state={s} index={shellIndex} display={view.spinDisplay}/> },
   ] : [];
 
   const dockNode = study ? undefined : (

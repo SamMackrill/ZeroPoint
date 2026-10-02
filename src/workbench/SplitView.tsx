@@ -21,7 +21,7 @@ export interface SplitViewProps {
 }
 
 /** Whether a key event comes from a text field or a dialog, where \ must not toggle the split. */
-const typing = (event: KeyboardEvent) => event.target instanceof HTMLElement && (event.target.isContentEditable || !!event.target.closest('input, textarea, select, [role=dialog]'));
+const typing = (event: KeyboardEvent) => event.target instanceof HTMLElement && (event.target.isContentEditable || !!event.target.closest('input, textarea, select, [role=dialog], dialog[open]'));
 
 /**
  * Split view (docs/ui-redesign-plan.html §07): the ▢ / ▢▢ toggle (or \) shows a second pane beside the viewport, with a

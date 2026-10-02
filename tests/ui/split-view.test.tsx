@@ -9,7 +9,7 @@ const PANES: SplitPane[] = [{ id: 'a', label: 'Section', content: <p>section bod
 /** A SplitView holding its own split and pane state, as the labs do. */
 function Harness({ panes = PANES, active = true, initial = false }: { panes?: SplitPane[]; active?: boolean; initial?: boolean }) {
   const [split, setSplit] = useState(initial), [pane, setPane] = useState('a');
-  return <><SplitView primary={<p>viewport</p>} panes={panes} split={split} onSplit={setSplit} pane={pane} onPane={setPane} active={active}/><input aria-label="field"/></>;
+  return <><SplitView primary={<p>viewport</p>} panes={panes} split={split} onSplit={setSplit} pane={pane} onPane={setPane} active={active}/><input aria-label="field"/><dialog open><button type="button">in dialog</button></dialog></>;
 }
 
 describe('SplitView', () => {
@@ -27,9 +27,10 @@ describe('SplitView', () => {
     expect(view.getByText('motion body')).toBeTruthy();
   });
 
-  it('ignores \\ from fields, with modifiers and while inactive', () => {
+  it('ignores \\ from fields, open dialogs, with modifiers and while inactive', () => {
     const view = render(<Harness/>);
     fireEvent.keyDown(view.getByLabelText('field'), { key: '\\' });
+    fireEvent.keyDown(view.getByText('in dialog'), { key: '\\' });
     fireEvent.keyDown(window, { key: '\\', ctrlKey: true });
     expect(view.queryByText('section body')).toBeNull();
     view.rerender(<Harness active={false}/>);

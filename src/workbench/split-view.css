@@ -80,6 +80,13 @@
   padding: 12px;
 }
 
+/* A pane's one-line empty state, when it follows a selection and nothing is selected. */
+.split-empty {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-ui);
+}
+
 @media(max-width:850px) {
   /* The narrow stage is a fixed 46vh; while split it grows so the stacked second pane shows below the viewport. */
   .workbench-viewport:has(.split-view.is-split) {

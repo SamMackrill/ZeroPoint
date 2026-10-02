@@ -6,8 +6,8 @@ import { palette } from '../../ui/palette';
  * and how far through its lifetime it is. Geometry is schematic; separation is drawn relative to the model's maximum.
  */
 export function DipoleCloseUp({ picked }: { picked: PickedDipole | null }) {
-  if (!picked) return <p className="close-up-empty">Select a dipole (click the field, or Select first in the Selection tab) to see it here.</p>;
-  const life = Math.min(1, picked.age / picked.lifetime), half = 20 + Math.min(1, picked.separation / 0.8) * 90;
+  if (!picked) return <p className="split-empty">Select a dipole (click the field, or Select first in the Selection tab) to see it here.</p>;
+  const life = Math.min(1, picked.age / picked.lifetime), half = Math.min(1, picked.separation / 0.8) * 110;
   return (
     <figure className="dipole-close-up" aria-label={`Dipole ${picked.slot}:${picked.generation} close-up`}>
       <svg viewBox="0 0 320 200" role="img" aria-label={`Lobes ${picked.separation.toFixed(3)} L₀ apart about a fixed centre, ${Math.round(life * 100)} percent of the lifetime elapsed`}>

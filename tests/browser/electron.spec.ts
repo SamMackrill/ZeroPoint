@@ -82,6 +82,9 @@ test('the static studies compare flux and rate limits, and the spin scenario lin
   await choose(page, 'Charge motion');
   await expect(closeup).toContainText('Sample 2229');
   await closeup.screenshot({ path: 'test-results/electron-charge-current.png' });
+  await page.keyboard.press('Escape'); // clearing the selection empties the pane rather than showing a stand-in pair
+  await expect(closeup).toHaveCount(0);
+  await expect(page.getByText('Select a pair on a shell', { exact: false })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   await scenario(page, 'charge-flux');
   await page.getByLabel('Electron property investigations', { exact: true }).screenshot({ path: 'test-results/electron-property-mobile.png' });

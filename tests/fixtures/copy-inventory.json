@@ -193,6 +193,10 @@
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Select a pair on a shell (click the field or the section) to see its charge motion."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Electric Y, motion magnetic Z, and intrinsic magnetic Z reference components at the fixed probe"
   },
   {

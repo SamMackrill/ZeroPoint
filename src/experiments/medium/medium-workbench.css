@@ -121,8 +121,3 @@
 .dipole-close-up strong {
   color: var(--text);
 }
-
-.close-up-empty {
-  color: var(--text-3);
-  font-size: var(--fs-ui);
-}
