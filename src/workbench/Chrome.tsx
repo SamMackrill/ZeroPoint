@@ -1,9 +1,10 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Popover from '@radix-ui/react-popover';
-import { ArrowDownToLine, ArrowUpFromLine, Atom, ChevronDown, ChevronRight, CircleHelp, FlaskConical, Info, Lightbulb, Magnet, PanelLeftClose, PanelLeftOpen, Waves } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, Atom, ChevronDown, ChevronRight, CircleHelp, FlaskConical, Info, Lightbulb, Magnet, PanelLeftClose, PanelLeftOpen, Settings, Waves } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { BrandMark } from '../app/BrandMark';
 import { RepositoryLink } from '../app/RepositoryLink';
+import { updateSettings, useSettings } from './settings';
 import './chrome.css';
 
 /** Props for Header. */
@@ -32,8 +33,27 @@ export function Header({ experiment, scenario, modified, actions, onHelp, onChip
       {onChip
         ? <button type="button" className="workbench-chip" onClick={onChip}><Info size={12} aria-hidden="true"/>Illustrative model</button>
         : <span className="workbench-chip"><Info size={12} aria-hidden="true"/>Illustrative model</span>}
-      <div className="workbench-actions">{actions}<RepositoryLink/>{onHelp && <button type="button" className="workbench-icon-button" aria-label="About this scenario" title="About this scenario (Shift ?)" onClick={onHelp}><CircleHelp size={16} aria-hidden="true"/></button>}</div>
+      <div className="workbench-actions">{actions}<RepositoryLink/><SettingsMenu/>{onHelp && <button type="button" className="workbench-icon-button" aria-label="About this scenario" title="About this scenario (Shift ?)" onClick={onHelp}><CircleHelp size={16} aria-hidden="true"/></button>}</div>
     </header>
+  );
+}
+
+/** The global Settings popover (plan §05 A): reduced motion and debug telemetry, shared by every lab. */
+export function SettingsMenu() {
+  const { reducedMotion, telemetry } = useSettings();
+  return (
+    <Popover.Root>
+      <Popover.Trigger className="workbench-icon-button" aria-label="Settings" title="Settings" data-testid="settings"><Settings size={16} aria-hidden="true"/></Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content className="settings-popover" align="end" sideOffset={6} collisionPadding={8}>
+          <h3>Settings</h3>
+          <label><input type="checkbox" data-testid="setting-reduced-motion" checked={reducedMotion} onChange={e => updateSettings({ reducedMotion: e.target.checked })}/>Reduce flashing &amp; camera motion</label>
+          <p>Keeps lobe size constant; rotation and pair separation still follow the lifecycle. Step while paused for still inspection. Defaults to your system’s reduce-motion setting.</p>
+          <label><input type="checkbox" data-testid="setting-telemetry" checked={telemetry} onChange={e => updateSettings({ telemetry: e.target.checked })}/>Show debug telemetry</label>
+          <p>Model IDs and parameter revisions in the status bar.</p>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }
 
@@ -124,14 +144,18 @@ export interface StatusBarProps {
   running: boolean;
   /** Short state items: seed or configuration, tick. */
   items?: readonly ReactNode[];
+  /** Model ID and similar diagnostics, shown only with Settings › Show debug telemetry. */
+  telemetry?: readonly ReactNode[];
 }
 
 /** The status bar (§05): run state, configuration and tick, and the model disclaimer. Debug telemetry lives in Settings. */
-export function StatusBar({ running, items = [] }: StatusBarProps) {
+export function StatusBar({ running, items = [], telemetry = [] }: StatusBarProps) {
+  const settings = useSettings();
   return (
     <footer className="workbench-status">
       <span className={`status-state${running ? ' is-running' : ''}`}><i aria-hidden="true"/>{running ? 'Running' : 'Paused'}</span>
       {items.map((item, i) => <span key={i}>{item}</span>)}
+      {settings.telemetry && telemetry.map((item, i) => <span key={`t${i}`} className="status-telemetry" data-testid="status-telemetry">{item}</span>)}
       <span className="status-disclaimer">Illustrative model</span>
     </footer>
   );

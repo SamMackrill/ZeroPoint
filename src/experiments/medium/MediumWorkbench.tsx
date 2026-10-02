@@ -18,6 +18,7 @@ import { TimelineBar } from '../../workbench/TimelineBar';
 import { mediumDefinition, type MediumParams } from './definition';
 import './medium-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { getSettings, useSettings } from '../../workbench/settings';
 import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
 import { SplitView } from '../../workbench/SplitView';
 import { DipoleCloseUp } from './DipoleCloseUp';
@@ -64,7 +65,10 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const [host, setHost] = useState<HTMLDivElement | null>(null), viewport = useRef<FieldRenderer | null>(null);
   const [camera, setCamera] = useState<'perspective' | 'top' | 'front'>('perspective'), cameraRef = useRef(camera);
   cameraRef.current = camera;
-  const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
+  const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: getSettings().reducedMotion }));
+  // Reduced motion is a global setting (header › Settings); the view follows it, including after a Load replaces it.
+  const { reducedMotion } = useSettings();
+  useEffect(() => { if (view.reducedMotion !== reducedMotion) setView(v => ({ ...v, reducedMotion })); }, [reducedMotion, view.reducedMotion]);
   const viewRef = useRef(view);
   useEffect(() => { viewRef.current = view; }, [view]);
   const [graphicsError, setGraphicsError] = useState<string | null>(null), [renderRevision, setRenderRevision] = useState(0);
@@ -200,7 +204,6 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
             { label: 'Field energy', value: (d?.fieldEnergy ?? 0).toFixed(1), unit: 'E₀' },
             { label: 'Ledger residual', value: Math.abs(d?.residual ?? 0).toExponential(1), unit: 'E₀' },
             { label: 'Rejected births', value: fmt(d?.rejected ?? 0) },
-            { label: 'Parameter revision', value: String(d?.parameterVersion ?? 0) },
             { label: 'Physical time', value: ((d?.time ?? 0) / FREQUENCY_UNIT).toExponential(2), unit: 's' },
             { label: 'Represented energy', value: ((d?.fieldEnergy ?? 0) * ENERGY_UNIT).toExponential(2), unit: 'J' },
           ]}/>
@@ -237,11 +240,6 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
         onLive={updateParameter} onApply={changes => restart(parameters, Number(changes.seed ?? seed), preset)} onReset={() => startScenario(scenario)}/>}
       view={<>
         <ViewPanel definition={mediumDefinition} scenario={scenario} view={view} onView={setOption}/>
-        <section className="inspector-group" aria-label="Settings">
-          <header className="inspector-group-head"><h3>Settings</h3></header>
-          <label className="medium-setting"><input type="checkbox" data-testid="setting-reduced-motion" checked={view.reducedMotion} onChange={e => setOption('reducedMotion', e.target.checked)}/>Reduce visual flashing</label>
-          <small className="reduced-help">Keeps lobe size constant; rotation and pair separation still follow the lifecycle. Step while paused for still inspection.</small>
-        </section>
       </>}/>
   );
 
@@ -263,7 +261,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   return (
     <div className="medium-workbench" style={{ display: active ? undefined : 'none' }}>
       <Shell id="medium" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'dipole', label: 'Dipole close-up', content: <DipoleCloseUp picked={picked}/> }]} split={split} onSplit={setSplit} pane="dipole" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
-        status={<StatusBar running={running} items={[sim.error ? 'Simulation error' : ready ? 'Simulation ready' : 'Starting worker', `Seed ${state?.seed ?? '—'}`, <span data-testid="tick">Tick {d?.tick ?? 0}</span>, MODEL_VERSION]}/>}/>
+        status={<StatusBar running={running} items={[sim.error ? 'Simulation error' : ready ? 'Simulation ready' : 'Starting worker', `Seed ${state?.seed ?? '—'}`, <span data-testid="tick">Tick {d?.tick ?? 0}</span>]} telemetry={[MODEL_VERSION, `Parameter revision ${d?.parameterVersion ?? 0}`]}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
     </div>
