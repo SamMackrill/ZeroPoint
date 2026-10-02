@@ -8,18 +8,19 @@ import { palette } from '../../ui/palette';
 import { Plot } from '../../ui/Plot';
 import { Readouts } from '../../ui/Readouts';
 import { Segmented } from '../../ui/Segmented';
-import { FileActions, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
+import { FileActions, fileShortcuts, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
 import { withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { lightRuntime, SPEEDS } from '../../workbench/runtime';
 import { Shell } from '../../workbench/Shell';
-import { TimelineBar } from '../../workbench/TimelineBar';
+import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
 import { CHECKPOINT_LIMIT } from '../medium/MediumWorkbench';
 import { lightDefinition } from './definition';
 import '../../light/light.css';
 import './light-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { APPLY_SHORTCUT, cameraActions, PANEL_SHORTCUTS, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView } from '../../workbench/SplitView';
 import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
@@ -57,6 +58,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   // Light opens 1-up; the split pane shows the pair close-up glyph enlarged, which then leaves the Selection tab.
   const [split, setSplit] = useState(false);
   const about = useAbout();
+  const fileInput = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
   // The host is a callback ref held in state, so the renderer follows the element when the shell changes layout.
   const [host, setHost] = useState<HTMLDivElement | null>(null), renderer = useRef<LightRenderer | null>(null);
@@ -82,17 +84,6 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   useEffect(() => { renderer.current?.select(selected); }, [selected]);
   useEffect(() => { renderer.current?.cameraPreset(camera); }, [camera]);
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 5000); return () => clearTimeout(timer); }, [notice]);
-  useEffect(() => {
-    if (!active) return;
-    const key = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      // Keys another control already handled (a plot's crosshair uses the arrows) are not transport shortcuts.
-      if (e.defaultPrevented || ['INPUT', 'SELECT', 'BUTTON', 'A', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable || about.open || error) return;
-      if (e.code === 'Space' && !contextLost) { e.preventDefault(); runtime.run(!latest.current?.running); }
-      if (e.code === 'ArrowRight') { e.preventDefault(); runtime.step(); }
-    };
-    window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
-  }, [active, runtime, latest, error, contextLost, about.open]);
 
   const clearSelection = useCallback(() => setSelected(null), []);
   // Re-apply the preset even when the camera is already on it, so F always frames the current selection.
@@ -133,8 +124,19 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   const pairX = 100 + Math.sin(inspected.angle) * inspected.separation * 140, pairY = 66 - Math.cos(inspected.angle) * inspected.separation * 140;
   const stateLine = d.finished ? 'SEQUENCE COMPLETE' : `Pair ${d.index + 1} / ${pairCount(p)} · ${d.pair.sense > 0 ? '↺ positive' : '↻ negative'}`;
 
+  const timeline = lightDefinition.timeline('induction', p);
+  // Every shortcut is an action (plan §11): the Help sheet lists them and one listener runs them.
+  const actions: Action[] = [
+    ...transportActions(runtime, timeline, SPEEDS, { onCapture: capture, runDisabled: contextLost, disabled: !ready }),
+    ...cameraActions(lightDefinition.cameras, id => setCamera(id as typeof camera)),
+    { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
+    ...fileShortcuts(save, fileInput, !ready),
+    SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
+  ];
+  useActions(active && !about.open, actions);
+
   const headerNode = <Header experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} onChip={() => about.show('scenario')} onHelp={() => about.show()}
-    actions={<FileActions disabled={!ready} onFile={load} onSave={save}
+    actions={<FileActions inputRef={fileInput} disabled={!ready} onFile={load} onSave={save}
       exports={[{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError }, { id: 'csv', label: 'CSV (full sequence)', onSelect: exportCSV }]}/>}/>;
 
   const viewportNode = (
@@ -192,7 +194,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
     <svg className="light-pair-glyph" viewBox="0 0 200 135" role="img" aria-label="Selected pair in its rotation plane; fixed midpoint and opposite charge lobes"><circle cx="100" cy="66" r="59" fill="none" stroke={palette.line2} strokeDasharray="3 5"/><path d="M93 66H107M100 59V73" stroke={palette.dataShell3}/><line x1={pairX} y1={pairY} x2={200 - pairX} y2={132 - pairY} stroke={palette.text4}/>{inspected.active && <><circle cx={pairX} cy={pairY} r="10" fill={palette.danger}/><text x={pairX} y={pairY + 4} textAnchor="middle" fill={palette.bg2} fontSize="14">+</text><circle cx={200 - pairX} cy={132 - pairY} r="10" fill={palette.dataNeg}/><text x={200 - pairX} y={136 - pairY} textAnchor="middle" fill={palette.bg2} fontSize="14">−</text></>}<text x="100" y="130" textAnchor="middle" fill={palette.accent2} fontSize="9">Rotation plane · geometry exaggerated</text></svg>
   );
   const aboutNode = (
-    <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} sections={[
+    <AboutSheet {...about} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} sections={[
       { id: 'scenario', content: <><p>Successive dipoles make half-turns over half-wavelength intervals. The surrounding response and finite pulse shape are visual conventions. Follow an energy wave through successive, locally rotating pairs.</p><p>{`Paused stepping is available. At 1×, one second of playback represents ${(TIME_SECONDS * 1e15).toFixed(3)} fs.`}</p><p>Changes start a new paused sequence.</p></> },
       { id: 'sources', content: <div className="about-links"><a href="./docs/light-model.md" target="_blank" rel="noreferrer">Model equations & limitations ↗</a><a href="./docs/papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf#page=4" target="_blank" rel="noreferrer">Fleming’s paper · self-induction, p. 4 ↗</a></div> },
     ]}/>
@@ -224,7 +226,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   );
 
   const timelineNode = state && (
-    <TimelineBar runtime={runtime} timeline={lightDefinition.timeline('induction', p)} speeds={SPEEDS}
+    <TimelineBar runtime={runtime} timeline={timeline} speeds={SPEEDS}
       markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `tick ${c.tick}` }))}
       onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) { runtime.restore(c); setSelected(null); } }} onCapture={capture} runDisabled={contextLost}/>
   );
