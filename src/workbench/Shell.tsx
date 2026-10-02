@@ -171,26 +171,3 @@ function NarrowShell({ header, rail, viewport, timeline, dock, inspector, status
     </div>
   );
 }
-
-/** Props for HostedLayout. */
-export interface HostedLayoutProps {
-  header: ReactNode;
-  rail: ReactNode;
-  children: ReactNode;
-}
-
-/**
- * The transitional layout for a lab whose workspace has not moved into the shell yet: the shell's header and rail
- * around the lab's own page, which keeps its scrolling. On phones the lab's own header and navigation stay instead.
- */
-export function HostedLayout({ header, rail, children }: HostedLayoutProps) {
-  return (
-    <div className="workbench-hosted">
-      {header}
-      <div className="workbench-hosted-body">
-        <div className="workbench-hosted-rail">{rail}</div>
-        <div className="workbench-host">{children}</div>
-      </div>
-    </div>
-  );
-}

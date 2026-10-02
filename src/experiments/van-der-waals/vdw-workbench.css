@@ -1,0 +1,87 @@
+.vdw-workbench-root .vdw-scene-card.vdw-stage {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+}
+
+.vdw-workbench-root .vdw-stage .vdw-diagram {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+
+.vdw-workbench-root .vdw-stage .vdw-diagram svg {
+  width: 100%;
+  max-height: 100%;
+}
+
+.vdw-dock-plot h4,
+.vdw-dock-text h4 {
+  margin: 0 0 4px;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+}
+
+.vdw-dock-plot p,
+.vdw-dock-text p {
+  color: var(--text-2);
+  font-size: var(--fs-ui);
+}
+
+.vdw-dock-plot {
+  max-width: 760px;
+}
+
+.vdw-dock-chapter {
+  display: grid;
+  gap: 12px;
+}
+
+.vdw-dock-chapter .vdw-context,
+.vdw-dock-chapter .vdw-sources {
+  margin: 0;
+}
+
+.vdw-setup-notes {
+  margin-top: 12px;
+}
+
+.vdw-workbench-root .vdw-explanation h2 {
+  font-size: var(--fs-title);
+}
+
+.vdw-workbench-root .vdw-explanation p {
+  font-size: var(--fs-body);
+}
+
+@media(max-width:850px) {
+  .vdw-workbench-root .workbench-narrow-stage .workbench-viewport {
+    height: auto;
+  }
+  .vdw-workbench-root .vdw-stage .vdw-diagram {
+    min-height: 220px;
+  }
+}
+
+.vdw-workbench-root .vdw-phase {
+  margin: 4px 0 0;
+  color: var(--text-3);
+  font: var(--fs-micro) var(--mono);
+  text-align: center;
+}
+
+.vdw-setup-notes .vdw-control-note {
+  font-size: var(--fs-ui);
+  line-height: 1.5;
+  color: var(--text-3);
+}
+
+.vdw-setup-notes .vdw-equation {
+  font-size: var(--fs-value);
+}
