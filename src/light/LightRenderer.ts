@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { lightReadout, pairAt, pairCount, sourceX, waveAt } from './model';
 import type { LightSnapshot, LightView } from './model';
 import { palette, scene } from '../ui/palette';
+import { isClick } from '../workbench/selection';
 
 const SAMPLES = 241, BACKGROUND = 540;
 export class LightRenderer {
@@ -74,9 +75,10 @@ export class LightRenderer {
   private contextLost = (e: Event) => { e.preventDefault(); this.onError('The graphics context was lost. The experiment is paused; recover the viewport to continue.'); };
   private pointerDown = (e: PointerEvent) => { this.down = { x: e.clientX, y: e.clientY }; };
   private pointerUp = (e: PointerEvent) => {
-    if (!this.options.centres || Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > 4) return;
+    if (!this.options.centres || !isClick(this.down, e)) return;
     const r = this.renderer.domElement.getBoundingClientRect(), ray = new THREE.Raycaster();
     ray.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, 1 - (e.clientY - r.top) / r.height * 2), this.camera);
+    this.centres.computeBoundingSphere(); // the cached bounds go stale as instances move
     const index = ray.intersectObject(this.centres)[0]?.instanceId;
     if (index !== undefined) this.onPick(index);
   };

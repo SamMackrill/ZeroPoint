@@ -42,7 +42,7 @@ test('stationary electron begins absent in a cube, resolving 3D lines, with clic
   await expect(page.getByTestId('electron-pair-centre')).toHaveCount(0);
   await page.getByRole('button', { name: 'Nearest to probe', exact: true }).click();
   await expect(page.getByTestId('electron-pair-centre')).toBeVisible();
-  await page.getByRole('button', { name: 'Clear', exact: true }).click();
+  await page.getByRole('button', { name: /^Clear/ }).click();
   await expect(page.getByTestId('electron-pair-centre')).toHaveCount(0);
   await tid(page, 'transport-reset').click();
   await expect(page.getByText('Unpolarized ZPF · electron not yet introduced', { exact: false })).toBeVisible();

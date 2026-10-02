@@ -22,6 +22,9 @@ test('light handoffs, fixed-centre inspection, replay, files and switching prese
   await tid(page, 'transport-step').click();
   await expect(page.getByTestId('light-pair-centre')).toHaveText(centre);
   await expect(page.getByTestId('light-rotation')).toHaveText('-1.5° / -180°');
+  await page.keyboard.press('f'); await expect(page.getByRole('radio', { name: 'Pair close-up', exact: true })).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Escape'); await expect(page.getByRole('button', { name: 'Pin pair', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Pin pair', exact: true }).click();
   await tid(page, 'capture').click();
   const downloadPromise = page.waitForEvent('download'); await tid(page, 'file-save').click();
   const download = await downloadPromise, path = await download.path();
