@@ -27,11 +27,12 @@ describe('SplitView', () => {
     expect(view.getByText('motion body')).toBeTruthy();
   });
 
-  it('ignores \\ from fields, open dialogs, with modifiers and while inactive', () => {
+  it('ignores \\ from fields, open dialogs, with modifiers, on key repeat and while inactive', () => {
     const view = render(<Harness/>);
     fireEvent.keyDown(view.getByLabelText('field'), { key: '\\' });
     fireEvent.keyDown(view.getByText('in dialog'), { key: '\\' });
     fireEvent.keyDown(window, { key: '\\', ctrlKey: true });
+    fireEvent.keyDown(window, { key: '\\', repeat: true }); // holding the key toggles once, on the first press
     expect(view.queryByText('section body')).toBeNull();
     view.rerender(<Harness active={false}/>);
     fireEvent.keyDown(window, { key: '\\' });

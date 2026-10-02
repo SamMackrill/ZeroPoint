@@ -33,7 +33,7 @@ export function SplitView({ primary, panes, split, onSplit, pane, onPane, active
   useEffect(() => {
     if (!active || !panes.length) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== '\\' || event.ctrlKey || event.metaKey || event.altKey || event.defaultPrevented || typing(event)) return;
+      if (event.key !== '\\' || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.defaultPrevented || typing(event)) return;
       event.preventDefault(); onSplit(!split);
     };
     window.addEventListener('keydown', onKey);
