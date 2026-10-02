@@ -21,6 +21,16 @@
   height: 100%;
 }
 
+/* A strip-only dock (no tabs) sits under the timeline at its natural height. */
+.workbench-stage > .dock {
+  flex: none;
+  height: auto;
+}
+
+.workbench-stage > .dock .dock-head {
+  border-bottom: 0;
+}
+
 .workbench-viewport {
   position: relative;
   flex: 1;
@@ -52,7 +62,7 @@
   overflow: visible;
 }
 
-.workbench.is-narrow span.workbench-chip,
+.workbench.is-narrow .workbench-chip,
 .workbench.is-narrow .workbench-breadcrumb > span:first-child,
 .workbench.is-narrow .workbench-breadcrumb > svg,
 .workbench.is-narrow .repository-label {

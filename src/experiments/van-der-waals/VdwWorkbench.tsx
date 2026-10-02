@@ -139,8 +139,9 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
   );
 
   const dockNode = (
-    // Plots and Stress exist only on the plate-pressure stage; the other stages show just the readout strip.
-    <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={stage === 2 ? dockTab : undefined} onTab={setDockTab} readouts={readouts}
+    // Plots and Stress exist only on the plate-pressure stage; the other stages show just the readout strip, fixed under
+    // the timeline (the Shell's dockStripOnly).
+    <Dock collapsed={dockCollapsed} onCollapsedChange={stage === 2 ? setDockCollapsed : undefined} tab={stage === 2 ? dockTab : undefined} onTab={setDockTab} readouts={readouts}
       tabs={[
         ...(stage === 2 ? [
           { id: 'plots', label: 'Plots', content: <div className="vdw-dock-plot"><h4>Gap sweep · ideal reference</h4><PressurePlot gap={params.gap}/><p>Double the gap → <strong>1/16 of the pressure</strong>. Double the area → twice the force, at the same pressure.</p></div> },
@@ -167,7 +168,7 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
 
   return (
     <div className="vdw-workbench-root" style={{ display: active ? undefined : 'none' }}>
-      <Shell id="vdw" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={stage === 2 ? [2, 3].map(i => ({ id: `fig-3-${i + 1}`, label: `Fig. 3-${i + 1}`, content: <div className="vdw-figure-pane"><SourceFigure index={i}/></div> })) : []} split={split} onSplit={setSplit} pane={figure} onPane={setFigure}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+      <Shell id="vdw" dockStripOnly={stage !== 2} header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={stage === 2 ? [2, 3].map(i => ({ id: `fig-3-${i + 1}`, label: `Fig. 3-${i + 1}`, content: <div className="vdw-figure-pane"><SourceFigure index={i}/></div> })) : []} split={split} onSplit={setSplit} pane={figure} onPane={setFigure}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<VdwStatus runtime={runtime} stage={current.title}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
