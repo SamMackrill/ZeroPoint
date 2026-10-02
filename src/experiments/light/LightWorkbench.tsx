@@ -86,7 +86,8 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   }, [active, runtime, latest, error, contextLost]);
 
   const clearSelection = useCallback(() => setSelected(null), []);
-  const focusSelection = useCallback(() => setCamera('pair'), []);
+  // Re-apply the preset even when the camera is already on it, so F always frames the current selection.
+  const focusSelection = useCallback(() => { setCamera('pair'); renderer.current?.cameraPreset('pair'); }, []);
   useSelectionKeys({ active, hasSelection: selected !== null, onClear: clearSelection, onFocus: focusSelection });
   const s = state ?? { model: LIGHT_MODEL, tick: 0, parameters: lightDefinition.defaultParams, running: false, speed: 1 };
   const p = s.parameters, d = lightReadout(s), inspected = pairAt(p, s.tick, selected ?? d.index);

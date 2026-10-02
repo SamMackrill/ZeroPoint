@@ -98,7 +98,8 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   }, [active, runtime, latest, error, contextLost, study]);
 
   const clearSelection = useCallback(() => setSelected(null), []);
-  const focusSelection = useCallback(() => setCamera('probe'), []);
+  // Re-apply the preset even when the camera is already on it, so F always frames the current selection.
+  const focusSelection = useCallback(() => { setCamera('probe'); renderer.current?.cameraPreset('probe'); }, []);
   useSelectionKeys({ active: active && !study, hasSelection: selected !== null, onClear: clearSelection, onFocus: focusSelection });
   const s = state ?? { model: ELECTRON_MODEL, tick: 0, parameters: electronDefinition.defaultParams, running: false, speed: 1 };
   const p = s.parameters, time = s.tick * ELECTRON_DT, ready = !!state && !error;
