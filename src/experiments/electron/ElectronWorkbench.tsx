@@ -24,6 +24,7 @@ import '../../light/light.css';
 import '../../electron/electron.css';
 import './electron-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView, type SplitPane } from '../../workbench/SplitView';
 import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
 
@@ -62,7 +63,10 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const runtime = useMemo(() => electronRuntime({ send, latest, sink }, s => electronMilestones(SCENARIO_OF[s.parameters.mode]).map(e => e.tick)), [send, latest, sink]);
   useEffect(() => () => runtime.dispose(), [runtime]);
   // Selection is always on (§09 cuts the "Zepton selector" opt-in: click selects everywhere).
-  const [view, setView] = useState<ElectronView>(() => ({ ...DEFAULT_ELECTRON_VIEW, inspect: true, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
+  const [view, setView] = useState<ElectronView>(() => ({ ...DEFAULT_ELECTRON_VIEW, inspect: true, reducedMotion: getSettings().reducedMotion }));
+  // Reduced motion is a global setting (header › Settings); the view follows it, including after a Load replaces it.
+  const { reducedMotion } = useSettings();
+  useEffect(() => { if (view.reducedMotion !== reducedMotion) setView(v => ({ ...v, reducedMotion })); }, [reducedMotion, view.reducedMotion]);
   const [selected, setSelected] = useState<number | null>(null), [camera, setCamera] = useState<Camera>('orbit');
   const [graphicsError, setGraphicsError] = useState(''), [contextLost, setContextLost] = useState(false), [revision, setRevision] = useState(0), [notice, setNotice] = useState('');
   const [checkpoints, setCheckpoints] = useState<ElectronState[]>([]);
@@ -262,10 +266,6 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
           <label className="medium-setting"><input type="checkbox" checked={view.spinDisplay.guides} onChange={e => setView(v => ({ ...v, spinDisplay: { ...v.spinDisplay, guides: e.target.checked } }))}/>Shell guides</label>
           {!view.shells && <p className="light-small">Shell sampling is hidden. Choose Shell close-up to restore the linked views.</p>}
         </section>}
-        <section className="inspector-group" aria-label="Settings">
-          <header className="inspector-group-head"><h3>Settings</h3></header>
-          <label className="medium-setting"><input type="checkbox" data-testid="setting-reduced-motion" checked={view.reducedMotion} onChange={e => setView(v => ({ ...v, reducedMotion: e.target.checked }))}/>Reduced flashing &amp; camera motion</label>
-        </section>
       </>}/>
   );
 
@@ -278,7 +278,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   return (
     <div className={`electron-workbench-root ${p.mode === 'spin' ? 'electron-spin-view' : ''}`} style={{ display: active ? undefined : 'none' }}>
       <Shell id="electron" header={headerNode} rail={rail} viewport={<SplitView active={active && !study} primary={viewportNode} panes={panes} split={view.spinDisplay.section} onSplit={setSplit} pane={pane} onPane={id => setPane(id as 'section' | 'motion')}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
-        status={<StatusBar running={s.running} items={[ELECTRON_MODEL, <span data-testid="electron-tick">Tick {s.tick} · {(time * TAU).toExponential(2)} s</span>, 'τ = R/c', 'Fixed zepton centres · local worker · source-linked model']}/>}/>
+        status={<StatusBar running={s.running} telemetry={[ELECTRON_MODEL]} items={[<span data-testid="electron-tick">Tick {s.tick} · {(time * TAU).toExponential(2)} s</span>, 'τ = R/c', 'Fixed zepton centres · local worker · source-linked model']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
     </div>
