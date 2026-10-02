@@ -2,15 +2,27 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { ACTION_GROUPS, keyLabel, type Action } from './actions';
 import './about-sheet.css';
 
-/** The About sheet's sections (plan §10). Saved views joins them with URL state (UI 16). */
-export type AboutSectionId = 'scenario' | 'units' | 'sources';
+/** The Help sheet's sections: About (plan §10) and the keyboard map (§11). Saved views joins them with URL state (UI 16). */
+export type AboutSectionId = 'scenario' | 'units' | 'sources' | 'shortcuts';
 
 /** One section of the About sheet; a lab omits the sections it has nothing for. */
 export interface AboutSection { id: AboutSectionId; content: ReactNode }
 
-const LABELS: Record<AboutSectionId, string> = { scenario: 'This scenario', units: 'Units & constants', sources: 'Sources' };
+const LABELS: Record<AboutSectionId, string> = { scenario: 'This scenario', units: 'Units & constants', sources: 'Sources', shortcuts: 'Shortcuts' };
+
+/** The lab's keyboard map, grouped as in the palette; each binding shows as keys (Ctrl S, Shift →). */
+function ShortcutList({ actions }: { actions: readonly Action[] }) {
+  return <>{ACTION_GROUPS.map(group => {
+    const rows = actions.filter(a => a.group === group && a.keys?.length);
+    return rows.length > 0 && <section key={group} className="about-shortcuts" aria-label={`${group} shortcuts`}>
+      <h3>{group}</h3>
+      <dl>{rows.map(a => <div key={a.id}><dt>{a.label}</dt><dd>{a.keys!.map((k, i) => <span key={k}>{i > 0 && ' or '}{keyLabel(k).map(part => <kbd key={part}>{part}</kbd>)}</span>)}</dd></div>)}</dl>
+    </section>;
+  })}<p className="about-shortcuts-note">Shortcuts are ignored while typing in a field or while a dialog is open.</p></>;
+}
 
 /** Whether a key event comes from a text field or a dialog, where ? must keep its usual meaning. */
 const typing = (event: KeyboardEvent) => event.target instanceof HTMLElement && (event.target.isContentEditable || !!event.target.closest('input, textarea, select, [role=dialog], dialog[open]'));
@@ -32,6 +44,8 @@ export interface AboutSheetProps {
   experiment: string;
   scenario?: string;
   sections: readonly AboutSection[];
+  /** The lab's actions, listed in a Shortcuts tab. */
+  shortcuts?: readonly Action[];
   /** Whether Shift ? opens it (the lab is visible). */
   active: boolean;
 }
@@ -40,7 +54,8 @@ export interface AboutSheetProps {
  * The About sheet (plan §10): the full context behind the workspace — what the scenario shows and assumes, units and
  * constants, and sources — in a sheet over the inspector. The header chip, ? and Shift ? open it; Esc closes it.
  */
-export function AboutSheet({ open, onOpenChange, section, onSection, experiment, scenario, sections, active }: AboutSheetProps) {
+export function AboutSheet({ open, onOpenChange, section, onSection, experiment, scenario, sections: about, shortcuts, active }: AboutSheetProps) {
+  const sections: readonly AboutSection[] = shortcuts?.length ? [...about, { id: 'shortcuts', content: <ShortcutList actions={shortcuts}/> }] : about;
   useEffect(() => {
     if (!active || open) return;
     const onKey = (event: KeyboardEvent) => {
