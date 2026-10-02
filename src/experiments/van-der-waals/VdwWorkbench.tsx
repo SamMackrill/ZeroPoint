@@ -118,10 +118,9 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
 
   const viewportNode = (
     <section className="vdw-scene-card vdw-stage" aria-label={current.title}>
-      <div className="vdw-card-heading"><span>{stage === 2 ? 'BOUNDARIES → STRESS DIFFERENCE' : 'CHARGE RESPONSE → CORRELATION'}</span><a href={`${BOOK}#page=${current.page}`} target="_blank" rel="noreferrer">After Fig. {current.figure}</a></div>
+      <div className="vdw-card-heading"><span>{stage === 2 ? 'BOUNDARIES → STRESS DIFFERENCE' : 'CHARGE RESPONSE → CORRELATION'}<b>{EXPLANATIONS[stage][0]}</b></span><a href={`${BOOK}#page=${current.page}`} target="_blank" rel="noreferrer">After Fig. {current.figure}</a></div>
       <div className="vdw-diagram">{stage === 0 ? <InductionDiagram polarization={params.polarization}/> : stage === 1 ? <PairStage runtime={runtime} distance={params.distance}/> : <PlateDiagram gap={params.gap} modes={view.modes}/>}</div>
       <div className="vdw-legend">{stage === 2 ? <span><i className="vdw-negative"/>Opposing field stresses</span> : <><span><i className="vdw-positive"/>Positive charge</span><span><i className="vdw-negative"/>Negative charge</span></>}<span><i className="vdw-mint"/>{stage === 2 ? 'Net pressure' : 'Field / mean force'}</span><small>Diagram · not to scale</small></div>
-      <div className="vdw-explanation"><h2>{EXPLANATIONS[stage][0]}</h2><p>{EXPLANATIONS[stage][1]}</p></div>
     </section>
   );
 
@@ -131,9 +130,15 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
       ? [{ label: 'Pair energy', value: number(pair.energy), unit: 'E₀', testId: 'vdw-pair-energy' }, { label: 'Mean force', value: number(pair.force), unit: 'E₀/r₀' }, { label: 'Separation', value: params.distance.toFixed(2), unit: 'r₀' }]
       : [{ label: 'Net pressure', value: `${number(reference.pressure)} Pa`, testId: 'vdw-pressure' }, { label: 'Force on each plate', value: `${number(reference.force * 1e6)} μN`, testId: 'vdw-force' }, { label: 'Energy / area', value: number(reference.energyPerArea * 1e9), unit: 'nJ/m²' }, { label: 'Gap', value: String(params.gap), unit: 'nm' }];
 
+  const stageNotes = stage === 0
+    ? <><div className="vdw-equation">p = αE</div><p className="vdw-control-note">E₀ is an arbitrary field scale. Cloud displacement is exaggerated; α is fixed. Polarizability α describes how readily a charge distribution responds to an electric field.</p></>
+    : stage === 1
+      ? <><div className="vdw-equation">U(r) = −C₆ / r⁶<br/>F(r) = −6C₆ / r⁷</div><p className="vdw-control-note">Short-range London reference. Here E₀ = C₆/r₀⁶; r₀ is an arbitrary distance scale. Doubling r weakens the energy by 64× and the force by 128×. At longer distances, retardation changes these powers.</p></>
+      : <><div className="vdw-equation">P = −π²ℏc / (240d⁴)<br/>F ≈ P × A</div><p className="vdw-control-note">Negative = attraction. Ideal perfect conductors at 0 K; finite-area force neglects edges. Values are an analytic reference.</p></>;
+
   const aboutNode = (
     <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={current.title} sections={[
-      { id: 'scenario', content: <div className="vdw-about"><div><span className="micro-label">READING CHAPTER 3</span><h2>From molecular attraction to a field pressure</h2></div><p>Keesom forces involve permanent dipoles; Debye forces involve a permanent and an induced dipole; London dispersion involves fluctuating, induced dipoles. This experiment follows the London branch into Fleming’s account of the Casimir effect. Follow an induced dipole into a collective force — and a measurable pressure difference.</p><p>Fleming treats vacuum fluctuations as interacting electric dipoles. The numerical plate result here is the standard ideal Casimir reference, evaluated separately from that illustration. A microscopic pressure law for Fleming’s medium is not derived by these diagrams.</p></div> },
+      { id: 'scenario', content: <div className="vdw-about"><h3>{EXPLANATIONS[stage][0]}</h3><p>{EXPLANATIONS[stage][1]}</p>{stageNotes}<div><span className="micro-label">READING CHAPTER 3</span><h2>From molecular attraction to a field pressure</h2></div><p>Keesom forces involve permanent dipoles; Debye forces involve a permanent and an induced dipole; London dispersion involves fluctuating, induced dipoles. This experiment follows the London branch into Fleming’s account of the Casimir effect. Follow an induced dipole into a collective force — and a measurable pressure difference.</p><p>Fleming treats vacuum fluctuations as interacting electric dipoles. The numerical plate result here is the standard ideal Casimir reference, evaluated separately from that illustration. A microscopic pressure law for Fleming’s medium is not derived by these diagrams.</p></div> },
       { id: 'sources', content: <div className="vdw-about vdw-source-content"><div className="about-links"><a href={`${BOOK}#page=27`} target="_blank" rel="noreferrer"><BookOpen size={14}/> Chapter 3 ↗</a></div><p>Original embedded figures extracted from Ray Fleming’s <em>The Zero-Point Universe</em>. Page numbers below are PDF page positions. Interactive diagrams above are adaptations.</p><div className="vdw-source-grid">{SOURCE_FIGURES.map((_, i) => <SourceFigure key={i} index={i}/>)}</div><p>Figure 3-1 shows an opposed, repulsive configuration (I) and an aligned, attractive one (II). The surrounding text calls both repulsive; the interactive explanation uses the charge geometry. The prescribed in-phase motion is a teaching aid, not a quantum dispersion calculation.</p><p>Retardation concerns finite electromagnetic propagation time. Figure 3-3’s “excluded fluctuations” are a heuristic; actual conductor boundary conditions constrain a full electromagnetic spectrum. Neither counting drawn dipoles nor cancelling two arbitrary pressures derives the reference result.</p><p>The ideal reference excludes material dispersion, temperature, surface roughness, edge effects and short-range overlap repulsion. Observing Casimir attraction does not uniquely establish a dipolar vacuum or determine absolute vacuum energy; see <a href="https://arxiv.org/abs/hep-th/0503158" target="_blank" rel="noreferrer">Jaffe’s discussion</a>.</p><div className="vdw-reference-links"><a href="./docs/van-der-waals-model.md" target="_blank" rel="noreferrer">Model & source notes ↗</a><a href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.73.360" target="_blank" rel="noreferrer">Casimir & Polder (1948) ↗</a><a href="https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=906575" target="_blank" rel="noreferrer">NIST-hosted Casimir review ↗</a></div></div> },
     ]}/>
   );
@@ -150,17 +155,9 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
       ]}/>
   );
 
-  const stageNotes = stage === 0
-    ? <><div className="vdw-equation">p = αE</div><p className="vdw-control-note">E₀ is an arbitrary field scale. Cloud displacement is exaggerated; α is fixed. Polarizability α describes how readily a charge distribution responds to an electric field.</p></>
-    : stage === 1
-      ? <><div className="vdw-equation">U(r) = −C₆ / r⁶<br/>F(r) = −6C₆ / r⁷</div><p className="vdw-control-note">Short-range London reference. Here E₀ = C₆/r₀⁶; r₀ is an arbitrary distance scale. Doubling r weakens the energy by 64× and the force by 128×. At longer distances, retardation changes these powers.</p></>
-      : <><div className="vdw-equation">P = −π²ℏc / (240d⁴)<br/>F ≈ P × A</div><p className="vdw-control-note">Negative = attraction. Ideal perfect conductors at 0 K; finite-area force neglects edges. Values are an analytic reference.</p></>;
-
   const inspectorNode = (
     <Inspector tab={tab} onTab={setTab} selection={<p className="inspector-empty">These diagrams have nothing to select.</p>}
-      setup={<SetupPanel definition={vanDerWaalsDefinition} scenario={scenario} params={params} onLive={(k, v) => setParams(p => withPaths(p, { [k]: v }))} onApply={() => undefined} onReset={resetScenario}>
-        <div className="vdw-setup-notes">{stageNotes}</div>
-      </SetupPanel>}
+      setup={<SetupPanel definition={vanDerWaalsDefinition} scenario={scenario} params={params} onLive={(k, v) => setParams(p => withPaths(p, { [k]: v }))} onApply={() => undefined} onReset={resetScenario}/>}
       view={stage === 2 ? <ViewPanel definition={vanDerWaalsDefinition} scenario={scenario} view={view} onView={(k, v) => setView(old => withPaths(old, { [k]: v }))}/> : <p className="inspector-empty">This stage has no scene layers.</p>}/>
   );
 

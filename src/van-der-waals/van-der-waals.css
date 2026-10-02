@@ -219,10 +219,6 @@
   background: var(--accent);
 }
 
-.vdw-explanation {
-  padding: 22px;
-}
-
 .vdw-app h2 {
   font-size: 18px;
   font-weight: 500;
@@ -551,7 +547,6 @@
   .vdw-legend small {
     margin-left: 0;
   }
-  .vdw-explanation,
   .vdw-card {
     padding: 18px;
   }

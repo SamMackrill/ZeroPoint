@@ -189,7 +189,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   );
   const aboutNode = (
     <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} sections={[
-      { id: 'scenario', content: <><p>Successive dipoles make half-turns over half-wavelength intervals. The surrounding response and finite pulse shape are visual conventions. Follow an energy wave through successive, locally rotating pairs.</p><p>{`Paused stepping is available. At 1×, one second of playback represents ${(TIME_SECONDS * 1e15).toFixed(3)} fs.`}</p></> },
+      { id: 'scenario', content: <><p>Successive dipoles make half-turns over half-wavelength intervals. The surrounding response and finite pulse shape are visual conventions. Follow an energy wave through successive, locally rotating pairs.</p><p>{`Paused stepping is available. At 1×, one second of playback represents ${(TIME_SECONDS * 1e15).toFixed(3)} fs.`}</p><p>Changes start a new paused sequence.</p></> },
       { id: 'sources', content: <div className="about-links"><a href="./docs/light-model.md" target="_blank" rel="noreferrer">Model equations & limitations ↗</a><a href="./docs/papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf#page=4" target="_blank" rel="noreferrer">Fleming’s paper · self-induction, p. 4 ↗</a></div> },
     ]}/>
   );
@@ -213,7 +213,6 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
     <Inspector tab={tab} onTab={setTab} selection={selectionNode}
       setup={<SetupPanel definition={lightDefinition} scenario="induction" params={p} onLive={() => undefined} onApply={configure}>
         <p className="light-derived">f = {(1 / (p.wavelength * TIME_SECONDS) / 1e12).toFixed(1)} THz · λ = c / f · c = 299,792,458 m/s</p>
-        <small className="light-form-note">Changes start a new paused sequence.</small>
       </SetupPanel>}
       view={<>
         <ViewPanel definition={lightDefinition} scenario="induction" view={view} onView={(k, v) => setView(old => withPaths(old, { [k]: v }))}/>

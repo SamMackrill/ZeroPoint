@@ -49,7 +49,9 @@ test('charge modes, pressure, transport and retained paused navigation', async (
   await expect(tid(page, 'layer-pressure')).toHaveAttribute('aria-pressed', 'false');
   await inspector(page, 'Setup');
   await page.getByRole('radio', { name: 'Released', exact: true }).click();
-  await expect(page.getByText('Charges respond to the measured pressure difference.')).toBeVisible();
+  await tid(page, 'info-charges').filter({ visible: true }).click();
+  await expect(page.getByText(/^Charges respond to the measured pressure difference\./)).toBeVisible();
+  await page.keyboard.press('Escape');
   await page.getByRole('radio', { name: 'Held', exact: true }).click();
   const held = await time(page).innerText();
   await tid(page, 'transport-run').click();
@@ -96,7 +98,7 @@ test('pinned Zepton finishes its own lifetime and does not inherit a new identit
 
 test('mobile controls and source notes fit the viewport', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  const app = await openExperiment(page);
+  await openExperiment(page);
   await pairing(page, 'electron-proton');
   await inspector(page, 'Setup');
   const separation = page.getByRole('textbox', { name: /^Initial separation/ }); await separation.fill('4'); await separation.press('Enter');
