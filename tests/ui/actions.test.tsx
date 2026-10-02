@@ -18,7 +18,7 @@ function Lab({ actions, active = true }: { actions: Action[]; active?: boolean }
 function runtime(status = { running: false, tick: 50, time: 0.5, speed: 1, finished: false }): TimelineRuntime & { calls: string[] } {
   const calls: string[] = [];
   return {
-    calls, capabilities: { run: true, step: true, jump: false, nextEvent: true, seek: true, reset: true, speed: true, live: true },
+    calls, capabilities: { run: true, step: true, jump: false, nextEvent: true, seek: true, reset: true, speed: true, live: true, configure: false, checkpoint: false, restore: false },
     status: () => status, subscribe: () => () => undefined,
     run: on => calls.push(`run ${on}`), step: () => calls.push('step'), jump: t => calls.push(`jump ${t}`), nextEvent: () => calls.push('next'),
     seek: t => calls.push(`seek ${t}`), reset: () => calls.push('reset'), speed: v => calls.push(`speed ${v}`),
