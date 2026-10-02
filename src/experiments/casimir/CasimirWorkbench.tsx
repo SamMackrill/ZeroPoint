@@ -18,6 +18,7 @@ import '../../casimir/casimir.css';
 import './casimir-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
 import { SplitView } from '../../workbench/SplitView';
+import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
 
 /** Format a pressure delta with an explicit sign and fixed precision. */
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(3)}`;
@@ -80,6 +81,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   const [params, setParams] = useState<CasimirParams>(casimirDefinition.defaultParams);
   const [view, setView] = useState<SceneLayers>(casimirDefinition.defaultView);
   const [selected, setSelected] = useState<number | null>(null), [follow, setFollow] = useState(true);
+  const about = useAbout();
   // Casimir opens 2-up with the lifetime loupe beside the scene; 1-up moves the loupe back into the Selection tab.
   const [split, setSplit] = useState(true);
   const lastSelected = useRef<Zepton | null>(null);
@@ -122,7 +124,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   const pin = (p: Zepton) => { setSelected(p.id); lastSelected.current = { ...p }; setFollow(false); setTab('selection'); };
 
   const headerNode = <Header experiment={header.experiment} scenario={casimirDefinition.scenarios.find(s => s.id === scenario)?.title}
-    onChip={() => { setDockCollapsed(false); setDockTab('notes'); }}/>;
+    onChip={() => about.show('scenario')} onHelp={() => about.show()}/>;
 
   const viewportNode = (
     <section className="casimir-scene casimir-stage" aria-label="Charge interaction visualization">
@@ -145,19 +147,6 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
       tabs={[
         { id: 'plots', label: 'Plots', content: <div className="casimir-dock-plot"><h4>Pressure builds from fleeting interactions</h4><Plot label="Inner and outer pressure history in units of ambient pressure P zero" x={model.history.map(p => p.time)} series={[{ key: 'inner', label: 'Inner', color: palette.dataShell1, values: model.history.map(p => p.inner) }, { key: 'outer', label: 'Outer', color: palette.dataShell2, values: model.history.map(p => p.outer) }]} xUnit="τ" yUnit="P₀" xDomain={[start, Math.max(end, start + 1)]} yDomain={[0.55, 1.45]} yTicks={[0.55, 1, 1.45]} reference={1} formatX={v => v.toFixed(1)} formatY={v => v.toFixed(2)} caption="Gap average along the axis · outer probes beyond each charge" height={80} testId="casimir-pressure-plot"/></div> },
         { id: 'events', label: 'Events', content: <div className="casimir-events casimir-dock-events"><div className="casimir-counts"><span><b>{model.particles.length}</b> alive</span><span><b>{model.births}</b> born</span><span><b>{model.deaths}</b> ended</span></div><p className="casimir-muted">{like ? `${model.gapBirths} extra gap births since reset` : 'Birth, expansion and contraction overlap in time'}</p><ol>{model.events.map(e => <li key={e.id}><time>{e.time.toFixed(2)} τ</time>{e.text}</li>)}</ol>{!model.events.length && <p className="casimir-muted">Run or step to see interactions.</p>}</div> },
-        { id: 'notes', label: 'Notes', content: <div className="casimir-dock-notes">
-          <div className="casimir-notes"><p>This experiment animates Fleming’s proposed mechanism in Section 4, Figures 3–4. Pressure kernels, lifetimes and motion gain are illustrative choices; this is not a validated derivation of electrostatic force. Section 5 leaves the quantitative force law unresolved. τ is an expanded observation clock, not seconds. Dipole sizes and spacing are exaggerated.</p><a href="./docs/casimir-model.md" target="_blank" rel="noreferrer">Model and source notes ↗</a><a href={paper} target="_blank" rel="noreferrer">Read Section 4 ↗</a><a href={paper} target="_blank" rel="noreferrer">Section 4 · Figures 3 & 4 ↗</a></div>
-          <section className="casimir-explanation" aria-label="Mechanism sequence">{(like ? [
-            ['01', 'Born, then aligned', 'Dipoles continually appear with random orientations and turn in the field of each electron.'],
-            ['02', 'Deflect, then refill', 'Opposing alignments deflect near the middle. Fresh dipoles fill gaps and expand against neighbours.'],
-            ['03', 'A greater inner push', 'Repeated gap births sustain higher local pressure, producing an outward motion tendency.'],
-          ] : [
-            ['01', 'A connected alignment', 'Between opposite charges, dipoles orient in a continuous chain.'],
-            ['02', 'Grow, then contract', 'New pairs push back as they grow. During collapse, adjacent pairs shift inward toward the voids.'],
-            ['03', 'A greater outer push', 'Contraction outweighs growth in this illustration. Higher outer pressure pushes the charges together.'],
-          ]).map(([n, title, text]) => <div key={n}><span>{n}</span><h2>{title}</h2><p>{text}</p></div>)}</section>
-          <p className="casimir-muted">Fleming’s proposed mechanism · qualitative pressure, arbitrary spatial units. Extended Casimir effect · short-lived Zeptons and local van der Waals pressure.</p>
-        </div> },
       ]}/>
   );
 
@@ -187,12 +176,32 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
       view={<ViewPanel definition={casimirDefinition} scenario={scenario} view={view} onView={(k, v) => setView(old => withPaths(old, { [k]: v }))}/>}/>
   );
 
+  const aboutNode = (
+    <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={casimirDefinition.scenarios.find(s => s.id === scenario)?.title} sections={[
+      { id: 'scenario', content: <div className="casimir-about">
+          <p>This experiment animates Fleming’s proposed mechanism in Section 4, Figures 3–4. Pressure kernels, lifetimes and motion gain are illustrative choices; this is not a validated derivation of electrostatic force. Section 5 leaves the quantitative force law unresolved. τ is an expanded observation clock, not seconds. Dipole sizes and spacing are exaggerated.</p>
+          <section className="casimir-explanation" aria-label="Mechanism sequence">{(like ? [
+            ['01', 'Born, then aligned', 'Dipoles continually appear with random orientations and turn in the field of each electron.'],
+            ['02', 'Deflect, then refill', 'Opposing alignments deflect near the middle. Fresh dipoles fill gaps and expand against neighbours.'],
+            ['03', 'A greater inner push', 'Repeated gap births sustain higher local pressure, producing an outward motion tendency.'],
+          ] : [
+            ['01', 'A connected alignment', 'Between opposite charges, dipoles orient in a continuous chain.'],
+            ['02', 'Grow, then contract', 'New pairs push back as they grow. During collapse, adjacent pairs shift inward toward the voids.'],
+            ['03', 'A greater outer push', 'Contraction outweighs growth in this illustration. Higher outer pressure pushes the charges together.'],
+          ]).map(([n, title, text]) => <div key={n}><span>{n}</span><h2>{title}</h2><p>{text}</p></div>)}</section>
+          <p className="casimir-muted">Fleming’s proposed mechanism · qualitative pressure, arbitrary spatial units. Extended Casimir effect · short-lived Zeptons and local van der Waals pressure.</p>
+        </div> },
+      { id: 'sources', content: <div className="about-links"><a href="./docs/casimir-model.md" target="_blank" rel="noreferrer">Model and source notes ↗</a><a href={paper} target="_blank" rel="noreferrer">Read Section 4 ↗</a><a href={paper} target="_blank" rel="noreferrer">Section 4 · Figures 3 & 4 ↗</a></div> },
+    ]}/>
+  );
+
   const timelineNode = <TimelineBar runtime={runtime} timeline={casimirDefinition.timeline(scenario, params)} speeds={CASIMIR_SPEEDS}/>;
 
   return (
     <div className="casimir-workbench-root" style={{ display: active ? undefined : 'none' }}>
       <Shell id="casimir" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'loupe', label: 'Lifetime loupe', content: <div className="casimir-loupe-pane"><Lifetime particle={displayed} expired={!inspected}/></div> }]} split={split} onSplit={setSplit} pane="loupe" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={running} items={[`Separation ${params.separation.toFixed(1)} a.u.`, `${model.particles.length} Zeptons`, 'Qualitative pressure · arbitrary spatial units']}/>}/>
+      {aboutNode}
     </div>
   );
 }

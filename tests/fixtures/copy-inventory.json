@@ -113,7 +113,15 @@
   },
   {
     "file": "src/experiments/casimir/CasimirWorkbench.tsx",
-    "text": "Section 4 · Figures 3 & 4 ↗"
+    "text": "A weak or neutral midpoint leaves new dipoles disordered. Neighbouring dipoles turn toward their local field."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Each new pair first expands and pushes back, then contracts. Dashed links show neighbouring pairs moving inward."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Charges are held so you can watch the surrounding field."
   },
   {
     "file": "src/experiments/casimir/CasimirWorkbench.tsx",
@@ -145,15 +153,7 @@
   },
   {
     "file": "src/experiments/casimir/CasimirWorkbench.tsx",
-    "text": "A weak or neutral midpoint leaves new dipoles disordered. Neighbouring dipoles turn toward their local field."
-  },
-  {
-    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
-    "text": "Each new pair first expands and pushes back, then contracts. Dashed links show neighbouring pairs moving inward."
-  },
-  {
-    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
-    "text": "Charges are held so you can watch the surrounding field."
+    "text": "Section 4 · Figures 3 & 4 ↗"
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
@@ -221,19 +221,19 @@
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
-    "text": "A bare negative polarizer aligns positive dipole ends inward. Fleming relates the surrounding polarization flux to unit charge."
-  },
-  {
-    "file": "src/experiments/electron/ElectronWorkbench.tsx",
-    "text": "Neighboring partially aligned dipoles favor a common rotation sense. Their centres and the bare core need not move."
-  },
-  {
-    "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Reference inputs, not fitted outputs. Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions."
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Read extracted source details & model decisions ↗"
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "A bare negative polarizer aligns positive dipole ends inward. Fleming relates the surrounding polarization flux to unit charge."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Neighboring partially aligned dipoles favor a common rotation sense. Their centres and the bare core need not move."
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",

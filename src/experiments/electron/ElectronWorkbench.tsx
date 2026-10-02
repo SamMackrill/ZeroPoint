@@ -25,6 +25,7 @@ import '../../electron/electron.css';
 import './electron-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
 import { SplitView, type SplitPane } from '../../workbench/SplitView';
+import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
 
 /** Scenario id ↔ worker mode for the three timed scenarios. */
 const MODE_OF: Record<string, ElectronMode> = { stationary: 'electric', spin: 'spin', moving: 'moving' };
@@ -65,6 +66,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const [selected, setSelected] = useState<number | null>(null), [camera, setCamera] = useState<Camera>('orbit');
   const [graphicsError, setGraphicsError] = useState(''), [contextLost, setContextLost] = useState(false), [revision, setRevision] = useState(0), [notice, setNotice] = useState('');
   const [checkpoints, setCheckpoints] = useState<ElectronState[]>([]);
+  const about = useAbout();
   // Spin's split state is the saved Linked 2D section flag (2-up by default); this picks which linked view it shows.
   const [pane, setPane] = useState<'section' | 'motion'>('section');
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('probe'), [dockCollapsed, setDockCollapsed] = useState(false);
@@ -157,7 +159,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const setSplit = useCallback((on: boolean) => setView(v => ({ ...v, spinDisplay: { ...v.spinDisplay, section: on } })), []);
   const scenarioTitle = electronDefinition.scenarios.find(x => x.id === scenario)?.title;
 
-  const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle}
+  const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle} onChip={() => about.show('scenario')} onHelp={() => about.show()}
     actions={<FileActions disabled={!ready} onFile={load} onSave={save}
       exports={[{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError || !!study }, { id: 'csv', label: 'CSV (reference sequence)', onSelect: csv }]}/>}/>;
 
@@ -215,13 +217,19 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
             <p className="light-small"><strong>{view.spinDisplay.alternating ? 'Alternating complete zepton shells is an illustrative extension.' : 'Shared preference illustrates the local coordination in §3.'}</strong> Fleming’s §4 counter-rotating charge shells are the inner + and outer − ends of a dipole, rather than a stated rule for successive whole zepton shells. The shell spacing, magnified turns and capped 1/r² rate are display assumptions.</p>
             <div className="electron-replay-actions"><button disabled={!ready} onClick={sharedRotation}>Explore the video’s shared rotation</button><a className="light-small" href="./docs/electron-source-notes.md#figure-2-linked-shell-views" target="_blank" rel="noreferrer">Fig. 2 interpretation & visualization choices ↗</a></div></div>
         </div> }] : []),
-        { id: 'sources', label: 'Sources', content: <div className="electron-sources">
+      ]}/>
+  );
+
+  const aboutNode = (
+    <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={scenarioTitle} sections={[
+      ...(MODE_OF[scenario] ? [{ id: 'scenario' as const, content: <p>{DESCRIPTION[MODE_OF[scenario]]} {p.mode === 'electric' ? 'The electron appears during the first 0.35 τ; nearby pairs then align before distant ones. The 3 τ introduction is an illustrative transition, not a calculated propagation time. Probe numbers are final-field analytic references.' : p.mode === 'spin' ? 'Each replacement pair starts partly aligned, turns toward the electron, and collapses. Both views show the same equatorial sites and generations. Outer pairs turn more slowly under the chosen display law; no centre orbits the electron.' : 'The path marks the prescribed electron trajectory. It is not a permanent magnetic wake; the reference field changes as the electron passes.'}</p> }] : []),
+      { id: 'units', content: <><h3>Source scale &amp; constants</h3><dl className="light-readouts"><div><dt>R = λC/2</dt><dd>{(RADIUS * 1e12).toFixed(6)} pm</dd></div><div><dt>c/(2πR)</dt><dd>{(C / (2 * Math.PI * RADIUS)).toExponential(3)} Hz</dd></div><div><dt>α</dt><dd>1 / {(1 / ALPHA).toFixed(6)}</dd></div><div><dt>μ along preferred axis</dt><dd>{(-p.spin * G_FACTOR / 2).toFixed(6)} μB</dd></div></dl><p className="light-small">Reference inputs, not fitted outputs. Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions.</p><a href="./docs/electron-source-notes.md" target="_blank" rel="noreferrer">Read extracted source details & model decisions ↗</a></> },
+      { id: 'sources', content: <div className="electron-sources electron-about-sources">
           <article><strong>Polarization → electric field</strong><p>A bare negative polarizer aligns positive dipole ends inward. Fleming relates the surrounding polarization flux to unit charge.</p><a href="./docs/papers/Electron%20Properties%20Explained%20as%20Quantum%20Field%20Effects.pdf#page=2" target="_blank" rel="noreferrer">Electron properties · §2 ↗</a></article>
           <article><strong>Preferred local rotation → spin</strong><p>Neighboring partially aligned dipoles favor a common rotation sense. Their centres and the bare core need not move.</p><a href="./docs/papers/Electron%20Properties%20Explained%20as%20Quantum%20Field%20Effects.pdf#page=3" target="_blank" rel="noreferrer">Electron properties · §§3–6 ↗</a></article>
           <article><strong>Polarization rate → radius</strong><p>R = λC/2 gives an effective rate c/(2πR) ≈ 3.933 × 10¹⁹ turns/s in Fleming’s radius argument.</p><a href="./docs/papers/Electron%20and%20proton%20radii%20are%20due%20to%20quantum%20polarization%20rate%20and%20the%20speed%20of%20light.pdf#page=3" target="_blank" rel="noreferrer">Radii paper · §4 ↗</a></article>
-          <article><strong>Source scale & constants</strong><dl className="light-readouts"><div><dt>R = λC/2</dt><dd>{(RADIUS * 1e12).toFixed(6)} pm</dd></div><div><dt>c/(2πR)</dt><dd>{(C / (2 * Math.PI * RADIUS)).toExponential(3)} Hz</dd></div><div><dt>α</dt><dd>1 / {(1 / ALPHA).toFixed(6)}</dd></div><div><dt>μ along preferred axis</dt><dd>{(-p.spin * G_FACTOR / 2).toFixed(6)} μB</dd></div></dl><p className="light-small">Reference inputs, not fitted outputs. Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions.</p><a href="./docs/electron-source-notes.md" target="_blank" rel="noreferrer">Read extracted source details & model decisions ↗</a></article>
         </div> },
-      ]}/>
+    ]}/>
   );
 
   const selectionNode = (
@@ -244,7 +252,6 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
           <header className="inspector-group-head"><h3>Shell display</h3></header>
           {spinControls.map(spec => <Control key={spec.key} spec={spec} value={getPath(view, spec.key)} onChange={v => setView(old => withPaths(old, { [spec.key]: v }))}/>)}
         </section>}
-        {MODE_OF[scenario] && <p className="light-small electron-about">{DESCRIPTION[MODE_OF[scenario]]} {p.mode === 'electric' ? 'The electron appears during the first 0.35 τ; nearby pairs then align before distant ones. The 3 τ introduction is an illustrative transition, not a calculated propagation time. Probe numbers are final-field analytic references.' : p.mode === 'spin' ? 'Each replacement pair starts partly aligned, turns toward the electron, and collapses. Both views show the same equatorial sites and generations. Outer pairs turn more slowly under the chosen display law; no centre orbits the electron.' : 'The path marks the prescribed electron trajectory. It is not a permanent magnetic wake; the reference field changes as the electron passes.'}</p>}
       </SetupPanel>}
       view={study ? <p className="inspector-empty">This study draws its own figure; it has no scene layers.</p> : <>
         <ViewPanel definition={{ ...electronDefinition, viewControls: [] }} scenario={scenario} view={view} onView={(k, v) => setView(old => withPaths(old, { [k]: v }))}/>
@@ -274,6 +281,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
       <Shell id="electron" header={headerNode} rail={rail} viewport={<SplitView active={active && !study} primary={viewportNode} panes={panes} split={view.spinDisplay.section} onSplit={setSplit} pane={pane} onPane={id => setPane(id as 'section' | 'motion')}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={s.running} items={[ELECTRON_MODEL, <span data-testid="electron-tick">Tick {s.tick} · {(time * TAU).toExponential(2)} s</span>, 'τ = R/c', 'Fixed zepton centres · local worker · source-linked model']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
+      {aboutNode}
     </div>
   );
 }

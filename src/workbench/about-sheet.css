@@ -1,0 +1,179 @@
+/* The About sheet (plan §10): slides over the inspector, below the header. Prose is 14 px / 1.6. */
+.about-overlay {
+  position: fixed;
+  inset: 40px 0 0;
+  z-index: 39;
+  background: color-mix(in srgb, var(--shadow) 35%, transparent);
+}
+
+.about-sheet {
+  position: fixed;
+  inset: 40px 0 0 auto;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  width: min(480px, 100vw);
+  background: var(--bg-1);
+  border-left: 1px solid var(--line-2);
+  box-shadow: -15px 0 60px color-mix(in srgb, var(--shadow) 60%, transparent);
+}
+
+.about-head {
+  position: relative;
+  padding: 16px 48px 12px 20px;
+}
+
+.about-eyebrow {
+  display: block;
+  color: var(--accent);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+}
+
+.about-title {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.about-experiment {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-3);
+  font-size: var(--fs-ui);
+}
+
+.about-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+.about-tabs {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.about-tab-list {
+  display: flex;
+  gap: 2px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.about-tab-list button {
+  height: 36px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--text-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-family: inherit;
+  font-size: var(--fs-ui);
+  cursor: pointer;
+}
+
+.about-tab-list button:hover,
+.about-tab-list button[data-state=active] {
+  color: var(--text);
+}
+
+.about-tab-list button[data-state=active] {
+  border-bottom-color: var(--accent);
+}
+
+.about-tab-list button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.about-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 20px 28px;
+  color: var(--text-2);
+  font-size: var(--fs-body);
+  line-height: 1.6;
+}
+
+.about-body:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.about-body h3 {
+  margin: 20px 0 6px;
+  color: var(--text);
+  font-size: var(--fs-title);
+  font-weight: 600;
+}
+
+.about-body h3:first-child {
+  margin-top: 0;
+}
+
+.about-body p,
+.about-body ul {
+  margin: 0 0 12px;
+}
+
+.about-body ul {
+  padding-left: 18px;
+}
+
+.about-body li + li {
+  margin-top: 6px;
+}
+
+.about-body a {
+  color: var(--accent);
+}
+
+.about-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 16px;
+}
+
+/* Cards appear only in popovers and this sheet (plan §12). */
+.about-card {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.about-card strong {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.about-card p {
+  margin: 4px 0 6px;
+}
+
+/* Medium's model notes, moved from its dialog. */
+.about-body .model-lede {
+  color: var(--text);
+  font-size: var(--fs-title);
+}
+
+.about-body .model-note-card {
+  padding: 12px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.about-body .model-note-card strong {
+  color: var(--text);
+}

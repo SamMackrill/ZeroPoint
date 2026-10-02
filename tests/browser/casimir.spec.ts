@@ -97,11 +97,14 @@ test('mobile controls and source notes fit the viewport', async ({ page }) => {
   await page.getByRole('button', { name: 'Close inspector' }).click();
   await tid(page, 'transport-step').click();
   await page.getByRole('button', { name: 'Illustrative model' }).click();
-  await expect(app.getByText(/Section 5 leaves the quantitative force law unresolved/)).toBeVisible();
-  const link = app.getByRole('link', { name: 'Read Section 4' });
+  const about = page.getByTestId('about-sheet');
+  await expect(about.getByText(/Section 5 leaves the quantitative force law unresolved/)).toBeVisible();
+  await about.getByRole('tab', { name: 'Sources' }).click();
+  const link = about.getByRole('link', { name: 'Read Section 4' });
   const response = await page.request.get((await link.getAttribute('href'))!.split('#')[0]);
   expect(response.ok()).toBe(true);
   expect(response.headers()['content-type']).toContain('pdf');
-  await app.screenshot({ path: 'test-results/casimir-mobile.png' });
+  await page.screenshot({ path: 'test-results/casimir-mobile.png' });
+  await page.keyboard.press('Escape'); await expect(about).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

@@ -1,4 +1,4 @@
-import { Atom, Box, Check, ChevronRight, Crosshair, Info, X } from 'lucide-react';
+import { Box, Check, ChevronRight, Crosshair, Info, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { DEFAULT_VIEW, DT, ENERGY_UNIT, FREQUENCY_UNIT, MODEL_VERSION, validateSeed, type Checkpoint, type Diagnostics, type ExperimentFile, type Parameters, type ViewSettings } from '../../model/types';
 import { downloadFile, parseExperiment } from '../../persistence/experiment';
@@ -18,6 +18,7 @@ import { TimelineBar } from '../../workbench/TimelineBar';
 import { mediumDefinition, type MediumParams } from './definition';
 import './medium-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
 import { SplitView } from '../../workbench/SplitView';
 import { DipoleCloseUp } from './DipoleCloseUp';
 
@@ -60,7 +61,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   useEffect(() => () => runtime.dispose(), [runtime]);
   // The host is held in state (a callback ref), so the renderer follows the element itself: the shell remounts the viewport
   // when it switches between its wide and narrow layouts.
-  const [host, setHost] = useState<HTMLDivElement | null>(null), viewport = useRef<FieldRenderer | null>(null), dialog = useRef<HTMLDialogElement>(null);
+  const [host, setHost] = useState<HTMLDivElement | null>(null), viewport = useRef<FieldRenderer | null>(null);
   const [camera, setCamera] = useState<'perspective' | 'top' | 'front'>('perspective'), cameraRef = useRef(camera);
   cameraRef.current = camera;
   const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
@@ -77,7 +78,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const [notice, setNotice] = useState(''), [busy, setBusy] = useState(false), [showHint, setShowHint] = useState(true);
   // Medium opens 1-up; the split pane shows the selected dipole enlarged (§07 split view).
   const [split, setSplit] = useState(false);
-  const [helpTopic, setHelpTopic] = useState<'model' | 'roadmap'>('model');
+  const about = useAbout();
   const d = state?.diagnostics, ready = !!state && !sim.error, running = state?.running ?? false;
 
   /** A pick selects the dipole and opens the Selection tab (§07: selection changes auto-open it). */
@@ -115,12 +116,12 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
     const keyboard = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       // Keys another control already handled (a plot's crosshair uses the arrows) are not transport shortcuts.
-      if (e.defaultPrevented || ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName) || target.isContentEditable || dialog.current?.open || !ready || !active) return;
+      if (e.defaultPrevented || ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName) || target.isContentEditable || about.open || !ready || !active) return;
       if (e.code === 'Space') { e.preventDefault(); if (!contextLost) runtime.run(!latest.current?.running); }
       if (e.code === 'ArrowRight') { e.preventDefault(); runtime.step(); }
     };
     window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
-  }, [active, ready, contextLost, latest, runtime]);
+  }, [active, ready, contextLost, latest, runtime, about.open]);
 
   const clearSelection = useCallback(() => viewport.current?.select(null), []);
   const focusSelection = useCallback(() => { if (picked) viewport.current?.focusOn(picked.position); }, [picked]);
@@ -158,12 +159,11 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   /** Export the collected medium diagnostic samples as CSV. */
   function exportCSV() { const heading = 'tick,time_tau,physical_time_s,active,births,deaths,rejected,field_energy_E0,reservoir_E0,residual_E0,parameter_version'; downloadFile('zeropoint-diagnostics.csv', heading + '\n' + rows.map(r => [r.tick, r.time, r.time / FREQUENCY_UNIT, r.active, r.births, r.deaths, r.rejected, r.fieldEnergy, r.reservoir, r.residual, r.parameterVersion].join(',')).join('\n'), 'text/csv'); setNotice('Recent diagnostic samples exported.'); }
   /** Open the requested model or roadmap help content. */
-  function showHelp(topic: 'model' | 'roadmap') { setHelpTopic(topic); dialog.current?.showModal(); }
   const exportPNG = () => viewport.current?.exportPNG(`Seed ${state?.seed} | Tick ${d?.tick} | t = ${d?.time.toFixed(3)} tau | L0 = 1e-13 m | Illustrative reduced model`);
 
   const params: MediumParams = { ...parameters, seed };
   const scenarioTitle = mediumDefinition.scenarios.find(s => s.id === scenario)?.title;
-  const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle} modified={preset === 'custom'} onHelp={() => showHelp('model')}
+  const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle} modified={preset === 'custom'} onHelp={() => about.show()} onChip={() => about.show('scenario')}
     actions={<FileActions disabled={!ready || busy} onFile={importFile} onSave={() => save('file')}
       exports={[{ id: 'png', label: 'PNG image', onSelect: exportPNG, disabled: !!graphicsError }, { id: 'csv', label: 'CSV (diagnostics)', onSelect: exportCSV, disabled: !rows.length }]}/>}/>;
 
@@ -242,11 +242,6 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
           <label className="medium-setting"><input type="checkbox" data-testid="setting-reduced-motion" checked={view.reducedMotion} onChange={e => setOption('reducedMotion', e.target.checked)}/>Reduce visual flashing</label>
           <small className="reduced-help">Keeps lobe size constant; rotation and pair separation still follow the lifecycle. Step while paused for still inspection.</small>
         </section>
-        <section className="inspector-group" aria-label="Scale and conventions">
-          <header className="inspector-group-head"><h3>Scale &amp; conventions</h3><button className="inspector-link" aria-label="Explain model units" onClick={() => showHelp('model')}><Info size={12}/></button></header>
-          <dl className="medium-constants"><div><dt>Length · L₀</dt><dd>10⁻¹³ m</dd></div><div><dt>Frequency · f₀</dt><dd>10²⁰ Hz</dd></div><div><dt>Time · τ</dt><dd>10⁻²⁰ s</dd></div><div><dt>Energy · E₀</dt><dd>hf₀</dd></div><div><dt>Fixed step</dt><dd>1/120 τ</dd></div></dl>
-          <div className="formula">E = ½hf <span>·</span> Δt = 1/f</div>
-        </section>
       </>}/>
   );
 
@@ -256,12 +251,21 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
       onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) restore(c); }} onCapture={() => save('checkpoint')} runDisabled={contextLost}/>
   );
 
+  const aboutNode = (
+    <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={scenarioTitle} sections={[
+      { id: 'scenario', content: <><h3>What you are observing</h3><p className="model-lede">Observe pairs rotate, separate and collapse around fixed centres. Changes apply at the next available model tick.</p><p>This is a reproducible, reduced visualization of the blueprint’s fluctuation lifecycle. It is not a complete ZPF force solver or experimental validation of the hypothesis.</p><div className="model-equations"><span>E = hf/2</span><span>Δt = 1/f</span><span>Efield + Ereservoir = constant</span></div><h3>The choices made in this version</h3><ul><li>A periodic 8 L₀ cube, at most 10,000 representative dipoles. The population is a finite sample, not a literal Planck-resolved medium.</li><li>Seeded Poisson births; frequencies uniform from 0.5–1.5 times the frequency centre. Existing dipoles keep their assigned frequency.</li><li>We identify ΔE with E and use the blueprint’s equality ΔE Δt = h/2, giving lifetime 1/f. This is an explicit model convention.</li><li>Every birth debits E from a bookkeeping reservoir; every death credits E. Each pair has a fixed centre. Its lobes rotate in opposite positions, separate smoothly to a maximum at midlife, and collapse together before disappearance. The chosen rotation rate and separation envelope are illustrative; no kinetic-energy law is asserted.</li><li>The energy slice bins live dipole energy in a 0.5 L₀ slab. It is not pressure or an emergent force.</li><li>At 1× playback, one wall-clock second represents one τ = 10⁻²⁰ physical seconds. Fixed ticks are 1/120 τ. Runs pause when the tab is hidden.</li></ul><p className="model-limits">Torque, emergent constants, stable shells, force propagation, exchange events and cosmology need additional equations and are not implemented in this release.</p><p className="model-note-card"><strong>A finite window into a proposed field.</strong> Reduced lifecycle model. Physical scales are mapped to an observable clock. A space to observe. A model to question.</p></> },
+      { id: 'units', content: <><h3>Scale &amp; conventions</h3><dl className="medium-constants"><div><dt>Length · L₀</dt><dd>10⁻¹³ m</dd></div><div><dt>Frequency · f₀</dt><dd>10²⁰ Hz</dd></div><div><dt>Time · τ</dt><dd>10⁻²⁰ s</dd></div><div><dt>Energy · E₀</dt><dd>hf₀</dd></div><div><dt>Fixed step</dt><dd>1/120 τ</dd></div></dl>
+          <div className="formula">E = ½hf <span>·</span> Δt = 1/f</div></> },
+      { id: 'sources', content: <><div className="about-links"><a href="./docs/model-specification.md" target="_blank" rel="noreferrer">Read model specification <ChevronRight size={14}/></a><a href="./docs/simulation-plan.html" target="_blank" rel="noreferrer">Full development plan <ChevronRight size={14}/></a></div><h3>Beyond the medium</h3><p>The medium laboratory, light induction sequence and electron polarization experiment are available. Further experiments and calculated force responses remain planned.</p><div className="roadmap-item"><span>02</span><div><h3>Electron polarization · available</h3><p>Explore a stationary electron, local spin rotation and a moving electron’s magnetic response. Calculated torque and pressure forces remain future work.</p><button className="text-button" onClick={() => { about.setOpen(false); onOpenElectron(); }}>Open electron experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>03</span><div><h3>Van der Waals / Casimir pressure · available</h3><p>Induce and correlate dipoles, then explore adjustable plates and the ideal Casimir pressure, force and energy. The microscopic zepton boundary model remains planned.</p><a className="text-button" href="./docs/planned-experiments/casimir-effect.md" target="_blank" rel="noreferrer">Read experiment plan <ChevronRight size={13}/></a><button className="text-button" onClick={() => { about.setOpen(false); onOpenVdw(); }}>Open van der Waals experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>04</span><div><h3>Light through the zero-point field · available</h3><p>Follow an energy wave through successive induced, counter-rotating electron–positron pairs. Inspect fixed pair centres, local separation and collapse, surrounding field response and each induction handoff.</p><a className="text-button" href="./docs/planned-experiments/light-through-zero-point.md" target="_blank" rel="noreferrer">Read light experiment plan <ChevronRight size={13}/></a><button className="text-button" onClick={() => { about.setOpen(false); onOpenLight(); }}>Open light experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>05</span><div><h3>Particle shells</h3><p>Requires spectral cutoffs and shell-energy rules.</p></div></div><div className="roadmap-item"><span>06</span><div><h3>Exchange & cosmology</h3><p>Requires event maps, complete conservation ledgers and a tired-light loss law.</p></div></div></> },
+    ]}/>
+  );
+
   return (
     <div className="medium-workbench" style={{ display: active ? undefined : 'none' }}>
       <Shell id="medium" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'dipole', label: 'Dipole close-up', content: <DipoleCloseUp picked={picked}/> }]} split={split} onSplit={setSplit} pane="dipole" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={running} items={[sim.error ? 'Simulation error' : ready ? 'Simulation ready' : 'Starting worker', `Seed ${state?.seed ?? '—'}`, <span data-testid="tick">Tick {d?.tick ?? 0}</span>, MODEL_VERSION]}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
-      <dialog ref={dialog} className="model-dialog" onClick={e => { if (e.target === dialog.current) dialog.current.close(); }}><button className="dialog-close icon-button" aria-label="Close model information" onClick={() => dialog.current?.close()}><X size={20}/></button><div className="dialog-eyebrow"><Atom size={18}/>ZEROPOINT / MODEL NOTES</div><h2>{helpTopic === 'model' ? 'What you are observing' : 'Beyond the medium'}</h2>{helpTopic === 'model' ? <><p className="model-lede">Observe pairs rotate, separate and collapse around fixed centres. Changes apply at the next available model tick.</p><p>This is a reproducible, reduced visualization of the blueprint’s fluctuation lifecycle. It is not a complete ZPF force solver or experimental validation of the hypothesis.</p><div className="model-equations"><span>E = hf/2</span><span>Δt = 1/f</span><span>Efield + Ereservoir = constant</span></div><h3>The choices made in this version</h3><ul><li>A periodic 8 L₀ cube, at most 10,000 representative dipoles. The population is a finite sample, not a literal Planck-resolved medium.</li><li>Seeded Poisson births; frequencies uniform from 0.5–1.5 times the frequency centre. Existing dipoles keep their assigned frequency.</li><li>We identify ΔE with E and use the blueprint’s equality ΔE Δt = h/2, giving lifetime 1/f. This is an explicit model convention.</li><li>Every birth debits E from a bookkeeping reservoir; every death credits E. Each pair has a fixed centre. Its lobes rotate in opposite positions, separate smoothly to a maximum at midlife, and collapse together before disappearance. The chosen rotation rate and separation envelope are illustrative; no kinetic-energy law is asserted.</li><li>The energy slice bins live dipole energy in a 0.5 L₀ slab. It is not pressure or an emergent force.</li><li>At 1× playback, one wall-clock second represents one τ = 10⁻²⁰ physical seconds. Fixed ticks are 1/120 τ. Runs pause when the tab is hidden.</li></ul><p className="model-limits">Torque, emergent constants, stable shells, force propagation, exchange events and cosmology need additional equations and are not implemented in this release.</p><p className="model-note-card"><strong>A finite window into a proposed field.</strong> Reduced lifecycle model. Physical scales are mapped to an observable clock. A space to observe. A model to question.</p><button className="text-button" onClick={() => setHelpTopic('roadmap')}>Beyond the medium <ChevronRight size={13}/></button></> : <><p>The medium laboratory, light induction sequence and electron polarization experiment are available. Further experiments and calculated force responses remain planned.</p><div className="roadmap-item"><span>02</span><div><h3>Electron polarization · available</h3><p>Explore a stationary electron, local spin rotation and a moving electron’s magnetic response. Calculated torque and pressure forces remain future work.</p><button className="text-button" onClick={() => { dialog.current?.close(); onOpenElectron(); }}>Open electron experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>03</span><div><h3>Van der Waals / Casimir pressure · available</h3><p>Induce and correlate dipoles, then explore adjustable plates and the ideal Casimir pressure, force and energy. The microscopic zepton boundary model remains planned.</p><a className="text-button" href="./docs/planned-experiments/casimir-effect.md" target="_blank" rel="noreferrer">Read experiment plan <ChevronRight size={13}/></a><button className="text-button" onClick={() => { dialog.current?.close(); onOpenVdw(); }}>Open van der Waals experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>04</span><div><h3>Light through the zero-point field · available</h3><p>Follow an energy wave through successive induced, counter-rotating electron–positron pairs. Inspect fixed pair centres, local separation and collapse, surrounding field response and each induction handoff.</p><a className="text-button" href="./docs/planned-experiments/light-through-zero-point.md" target="_blank" rel="noreferrer">Read light experiment plan <ChevronRight size={13}/></a><button className="text-button" onClick={() => { dialog.current?.close(); onOpenLight(); }}>Open light experiment <ChevronRight size={13}/></button></div></div><div className="roadmap-item"><span>05</span><div><h3>Particle shells</h3><p>Requires spectral cutoffs and shell-energy rules.</p></div></div><div className="roadmap-item"><span>06</span><div><h3>Exchange & cosmology</h3><p>Requires event maps, complete conservation ledgers and a tired-light loss law.</p></div></div></>}<div className="dialog-links"><a href="./docs/model-specification.md" target="_blank" rel="noreferrer">Read model specification <ChevronRight size={14}/></a><a href="./docs/simulation-plan.html" target="_blank" rel="noreferrer">Full development plan <ChevronRight size={14}/></a></div></dialog>
+      {aboutNode}
     </div>
   );
 }

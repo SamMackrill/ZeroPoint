@@ -85,9 +85,12 @@ test('plate gap and area change pressure and force, with source figures, CSV and
   await expect(value(page, 'vdw-force')).toHaveText('-1.625 μN');
   await tid(page, 'file-input').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"format":"zeropoint-vdw","version":1,"scenario":"pressure","params":{"gap":5}}') });
   await expect(tid(page, 'notice')).toContainText('Could not load');
-  await tid(page, 'dock-chapter').click();
-  await page.locator('.vdw-sources summary').click();
-  const figures = page.locator('.vdw-source-grid img');
+  // Chapter 3's context and source figures are in the About sheet (the header chip, ? or Shift ?).
+  await page.keyboard.press('Shift+Slash');
+  const about = page.getByTestId('about-sheet');
+  await expect(about).toContainText('From molecular attraction to a field pressure');
+  await about.getByRole('tab', { name: 'Sources' }).click();
+  const figures = about.locator('.vdw-source-grid img');
   await expect(figures).toHaveCount(4);
   for (const img of await figures.all()) { await img.scrollIntoViewIfNeeded(); await expect.poll(() => img.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0); }
   const doc = await page.request.get('/docs/van-der-waals-model.md'); expect(doc.ok()).toBe(true);
