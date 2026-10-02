@@ -52,7 +52,7 @@
   overflow: visible;
 }
 
-.workbench.is-narrow .workbench-chip,
+.workbench.is-narrow span.workbench-chip,
 .workbench.is-narrow .workbench-breadcrumb > span:first-child,
 .workbench.is-narrow .workbench-breadcrumb > svg,
 .workbench.is-narrow .repository-label {

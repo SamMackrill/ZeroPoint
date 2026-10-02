@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
 import { VanDerWaalsExperiment } from '../van-der-waals/VanDerWaalsExperiment';
-import { CasimirExperiment } from '../casimir/CasimirExperiment';
 import { DevProfiler } from './DevProfiler';
-import { EXPERIMENTS, electronDefinition, lightDefinition, mediumDefinition } from '../experiments';
+import { EXPERIMENTS, casimirDefinition, electronDefinition, lightDefinition, mediumDefinition } from '../experiments';
 import { MediumWorkbench } from '../experiments/medium/MediumWorkbench';
 import { LightWorkbench } from '../experiments/light/LightWorkbench';
 import { ElectronWorkbench } from '../experiments/electron/ElectronWorkbench';
+import { CasimirWorkbench } from '../experiments/casimir/CasimirWorkbench';
 import { Header, Rail, type PlannedExperiment } from '../workbench/Chrome';
 import { HostedLayout } from '../workbench/Shell';
 
@@ -20,8 +20,8 @@ const PLANNED: PlannedExperiment[] = [
 type ExperimentId = 'medium' | 'light' | 'electron' | 'casimir' | 'vdw';
 
 /**
- * Coordinate navigation between the independent laboratories. Medium (UI 07), Light (UI 08) and Electron (UI 09) run in
- * the full workbench; the other labs are hosted in the shell's header and rail until they migrate. Every lab stays mounted after its first visit, so
+ * Coordinate navigation between the independent laboratories. Medium (UI 07), Light (UI 08), Electron (UI 09) and
+ * Casimir (UI 10) run in the full workbench; the other labs are hosted in the shell's header and rail until they migrate. Every lab stays mounted after its first visit, so
  * switching preserves its state.
  */
 export function App() {
@@ -29,12 +29,13 @@ export function App() {
   const [visited, setVisited] = useState<Record<ExperimentId, boolean>>({ medium: true, light: false, electron: false, casimir: false, vdw: false });
   const open = useCallback((id: ExperimentId) => { setVisited(v => (v[id] ? v : { ...v, [id]: true })); setExperiment(id); }, []);
   // Labs whose scenarios the rail switches; each reports its current scenario back for the rail's highlight.
-  const [current, setCurrent] = useState<Partial<Record<ExperimentId, string>>>({ medium: 'balanced', electron: 'stationary' });
+  const [current, setCurrent] = useState<Partial<Record<ExperimentId, string>>>({ medium: 'balanced', electron: 'stationary', casimir: 'electron-electron' });
   const [requests, setRequests] = useState<Partial<Record<ExperimentId, { id: string; at: number }>>>({});
   const onPresetChange = useCallback((id: string) => setCurrent(c => ({ ...c, medium: id })), []);
   const onElectronScenario = useCallback((id: string) => setCurrent(c => ({ ...c, electron: id })), []);
+  const onCasimirScenario = useCallback((id: string) => setCurrent(c => ({ ...c, casimir: id })), []);
   const definition = EXPERIMENTS.find(d => d.id === experiment)!;
-  const railScenarios = new Set<string>(['medium', 'electron']);
+  const railScenarios = new Set<string>(['medium', 'electron', 'casimir']);
   const highlighted = current[experiment];
   const rail = <Rail experiments={EXPERIMENTS.map(d => ({ id: d.id, title: d.title, scenarios: railScenarios.has(d.id) ? d.scenarios : undefined }))} planned={PLANNED} experiment={experiment}
     scenario={highlighted !== 'custom' ? highlighted : undefined} onExperiment={id => open(id as ExperimentId)}
@@ -46,9 +47,9 @@ export function App() {
       onPresetChange={onPresetChange} onOpenLight={() => open('light')} onOpenElectron={() => open('electron')} onOpenVdw={() => open('vdw')}/></DevProfiler>
     {visited.light && <DevProfiler id="light"><LightWorkbench active={experiment === 'light'} rail={rail} header={{ experiment: lightDefinition.title }}/></DevProfiler>}
     {visited.electron && <DevProfiler id="electron"><ElectronWorkbench active={experiment === 'electron'} rail={rail} header={{ experiment: electronDefinition.title }} scenarioRequest={requests.electron} onScenarioChange={onElectronScenario}/></DevProfiler>}
-    <div style={{ display: experiment === 'casimir' || experiment === 'vdw' ? undefined : 'none' }}>
+    {visited.casimir && <DevProfiler id="casimir"><CasimirWorkbench active={experiment === 'casimir'} rail={rail} header={{ experiment: casimirDefinition.title }} scenarioRequest={requests.casimir} onScenarioChange={onCasimirScenario}/></DevProfiler>}
+    <div style={{ display: experiment === 'vdw' ? undefined : 'none' }}>
       <HostedLayout header={<Header experiment={definition.title}/>} rail={rail}>
-        {visited.casimir && <DevProfiler id="casimir"><CasimirExperiment active={experiment === 'casimir'} onBack={back}/></DevProfiler>}
         {visited.vdw && <DevProfiler id="vdw"><VanDerWaalsExperiment active={experiment === 'vdw'} onBack={back}/></DevProfiler>}
       </HostedLayout>
     </div>

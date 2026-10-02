@@ -69,7 +69,7 @@ test('extended Casimir pairings', async ({ page }) => {
   await expect(page.getByTestId('casimir-time')).toHaveText('0.00 τ');
   await snapshot(page, 'casimir-electron-electron');
   await tid(page, 'scenario-electron-proton').click();
-  await expect(tid(page, 'scenario-electron-proton')).toHaveAttribute('aria-pressed', 'true');
+  await expect(tid(page, 'scenario-electron-proton')).toHaveAttribute('aria-current', 'true');
   await snapshot(page, 'casimir-electron-proton');
 });
 

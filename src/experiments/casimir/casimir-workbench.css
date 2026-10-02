@@ -1,0 +1,83 @@
+.casimir-workbench-root .casimir-scene.casimir-stage {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+.casimir-workbench-root .casimir-stage .casimir-canvas {
+  height: 100%;
+}
+
+.casimir-workbench-root .casimir-scene-top .casimir-pair-symbol {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: var(--fs-micro) var(--mono);
+  color: var(--text-3);
+}
+
+.casimir-overlay-legend {
+  position: absolute;
+  top: 46px;
+  right: 20px;
+  display: grid;
+  grid-template-columns: auto;
+  gap: 4px;
+  width: 280px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--bg-1) 80%, transparent);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.casimir-overlay-legend > div > div {
+  gap: 12px;
+}
+
+.casimir-overlay-legend > small {
+  max-width: none;
+}
+
+.casimir-overlay-limit {
+  position: absolute;
+  top: 52px;
+  left: 20px;
+  margin: 0;
+}
+
+.casimir-dock-plot h4 {
+  margin: 0 0 2px 46px;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+}
+
+.casimir-dock-events ol {
+  max-height: none;
+}
+
+.casimir-dock-notes {
+  display: grid;
+  gap: 10px;
+}
+
+.casimir-dock-notes .casimir-notes {
+  margin: 0;
+}
+
+.casimir-dock-notes .casimir-explanation {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.casimir-selection .casimir-loupe {
+  display: block;
+  width: 100%;
+}
+
+@media(max-width:850px) {
+  .casimir-overlay-legend {
+    display: none;
+  }
+}
