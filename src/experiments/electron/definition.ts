@@ -41,15 +41,15 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
   ],
   viewControls: [
     { kind: 'choice', key: 'spinDisplay.count', label: 'Visible shells', group: 'Shell display', apply: 'live', scenarios: ['spin'], options: [1, 2, 3, 4].map(n => ({ value: n, label: String(n) })) },
-    { kind: 'choice', key: 'spinDisplay.alternating', label: 'Adjacent shells', group: 'Shell display', apply: 'live', scenarios: ['spin'], options: [{ value: false, label: 'Shared' }, { value: true, label: 'Alternate' }] },
+    { kind: 'choice', key: 'spinDisplay.alternating', label: 'Adjacent shells', group: 'Shell display', apply: 'live', scenarios: ['spin'], info: 'Shared follows Fig. 2: neighbouring shells turn the same way. Alternating whole bands is an optional extension.', options: [{ value: false, label: 'Shared' }, { value: true, label: 'Alternate' }] },
     { kind: 'choice', key: 'spinDisplay.gain', label: 'Turn gain', group: 'Shell display', apply: 'live', scenarios: ['spin'], info: 'Magnifies each local turn for visibility. Display only; does not change the model.', options: [1, 2, 4].map(n => ({ value: n, label: `${n}×` })) },
   ],
   layers: [
     { key: 'dipoles', label: 'Zepton pairs', group: 'Medium', scenarios: LIVE },
     { key: 'shells', label: 'Zepton shells', group: 'Medium', scenarios: ['spin'] },
-    { key: 'faraday', label: 'Faraday lines', group: 'Fields', scenarios: LIVE },
+    { key: 'faraday', label: 'Faraday lines', group: 'Fields', scenarios: LIVE, info: 'The neighbouring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative.' },
     { key: 'electric', label: 'Radial E reference', group: 'Fields', scenarios: LIVE },
-    { key: 'magnetic', label: 'Motion B', group: 'Fields', scenarios: LIVE },
+    { key: 'magnetic', label: 'Motion B', group: 'Fields', scenarios: LIVE, info: 'Guides follow the motion-induced rotation direction. The motion field vanishes at zero velocity.' },
     { key: 'intrinsic', label: 'Intrinsic spin B', group: 'Fields', scenarios: LIVE },
     { key: 'rotation', label: 'Local rotation sense', group: 'Guides', scenarios: LIVE },
     { key: 'radius', label: 'Half-Compton radius', group: 'Guides', scenarios: LIVE },

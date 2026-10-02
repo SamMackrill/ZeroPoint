@@ -391,14 +391,6 @@
   font-size: var(--fs-micro);
 }
 
-.light-form-note {
-  display: block;
-  color: var(--text-3);
-  font-size: var(--fs-micro);
-  margin-top: 8px;
-  text-align: center;
-}
-
 .light-scrubber {
   display: block;
   font-size: var(--fs-micro);

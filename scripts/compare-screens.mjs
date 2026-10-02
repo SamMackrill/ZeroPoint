@@ -54,7 +54,21 @@ export const ABOUT_SCREENS = [
   { name: 'casimir-about', title: 'Extended Casimir · About › This scenario (was the Notes dock tab)', lab: 'lab-casimir', prepare: openAbout() },
   { name: 'vdw-about-sources', title: 'Van der Waals · About › Sources (was the Chapter 3 dock tab)', lab: 'lab-vdw', prepare: openAbout(['about-sources']) },
 ];
-const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS };
+/**
+ * InfoTips (`--set info`): Setup with one ⓘ opened, named by its accessible name. Before the tips existed the button is
+ * missing, so "before" shows the inline paragraph the tip replaced.
+ */
+const openTip = name => async page => {
+  const tip = page.getByRole('button', { name, exact: true }).filter({ visible: true });
+  if (await tip.count()) await tip.first().click();
+};
+export const INFO_SCREENS = [
+  { name: 'light-tip', title: 'Light · Wavelength ⓘ (was a note under Setup)', lab: 'lab-light', prepare: openTip('About Wavelength') },
+  { name: 'electron-tip', title: 'Electron · Spin: Adjacent shells ⓘ', lab: 'lab-electron', scenario: 'scenario-spin', prepare: openTip('About Adjacent shells') },
+  { name: 'casimir-tip', title: 'Extended Casimir · Charges ⓘ (was two lines under Charges)', lab: 'lab-casimir', prepare: openTip('About Charges') },
+  { name: 'vdw-tip', title: 'Van der Waals · Plate gap ⓘ, with the stage heading in the card label (the equation box, note and explanation moved to About)', lab: 'lab-vdw', scenario: 'scenario-pressure', prepare: openTip('About Plate gap') },
+];
+const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -105,7 +119,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const before = option('--before'), out = option('--out'), title = option('--title') ?? 'Change', description = option('--description') ?? '';
   const screens = SETS[option('--set') ?? 'screens'];
   if (!screens) throw new Error(`--set must be one of: ${Object.keys(SETS).join(', ')}`);
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about|info] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.
