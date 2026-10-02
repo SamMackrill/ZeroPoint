@@ -69,8 +69,8 @@ export interface CasimirWorkbenchProps {
  */
 export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScenarioChange }: CasimirWorkbenchProps) {
   const runtime = useMemo(() => new MainThreadRuntime(casimirModel()), []);
-  // Pause rather than dispose on unmount: StrictMode remounts effects, and dispose would drop the hidden-tab pause for good.
-  useEffect(() => () => runtime.run(false), [runtime]);
+  // The hidden-tab pause is attached by an effect, so StrictMode's repeated effects re-attach it; unmounting pauses.
+  useEffect(() => { const detach = runtime.attach(); return () => { detach(); runtime.run(false); }; }, [runtime]);
   // The scene redraws from the live model; each published step bumps this revision (as the lab's own loop did).
   const [revision, setRevision] = useState(0);
   useEffect(() => runtime.subscribe(() => setRevision(r => r + 1)), [runtime]);

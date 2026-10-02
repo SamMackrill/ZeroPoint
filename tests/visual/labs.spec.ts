@@ -77,7 +77,7 @@ test('van der Waals stages', async ({ page }) => {
   await openLab(page, 'lab-vdw');
   for (const stage of ['induced', 'correlated', 'pressure']) {
     await tid(page, `scenario-${stage}`).click();
-    await expect(tid(page, `scenario-${stage}`)).toHaveAttribute('aria-pressed', 'true');
+    await expect(tid(page, `scenario-${stage}`)).toHaveAttribute('aria-current', 'true');
     await snapshot(page, `vdw-${stage}`);
   }
 });

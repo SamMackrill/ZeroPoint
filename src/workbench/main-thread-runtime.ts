@@ -55,7 +55,6 @@ export class MainThreadRuntime<S, P = never, C = never> implements Runtime<S, ne
   constructor(private readonly model: MainThreadModel<S, P, C>, private readonly scheduler: Scheduler = browserScheduler, private readonly doc: Document | undefined = globalThis.document) {
     this.capabilities = { run: true, step: true, jump: true, nextEvent: false, seek: false, reset: true, speed: true, live: false, configure: Boolean(model.configure), checkpoint: Boolean(model.checkpoint), restore: Boolean(model.restore) };
     this.current = model.snapshot();
-    doc?.addEventListener('visibilitychange', this.onVisibility);
   }
 
   /** Whether a bounded timeline has reached its end. */
@@ -128,6 +127,15 @@ export class MainThreadRuntime<S, P = never, C = never> implements Runtime<S, ne
   status(): RuntimeStatus {
     const tick = this.model.tick();
     return { running: this.running, tick, time: tick * this.model.dt, speed: this.rate, finished: this.finished };
+  }
+
+  /**
+   * Pause on a hidden tab while attached; returns the detach function. Construction has no side effects, so a component
+   * attaches from an effect (and StrictMode's repeated effects re-attach) rather than from useMemo.
+   */
+  attach(): () => void {
+    this.doc?.addEventListener('visibilitychange', this.onVisibility);
+    return () => this.doc?.removeEventListener('visibilitychange', this.onVisibility);
   }
 
   dispose() {

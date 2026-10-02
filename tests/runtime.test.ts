@@ -139,10 +139,14 @@ describe('MainThreadRuntime', () => {
   it('pauses when the tab is hidden', () => {
     const doc = Object.assign(new EventTarget(), { hidden: false }) as unknown as Document;
     const s = fakeScheduler(), rt = new MainThreadRuntime(counter(), s, doc);
+    const detach = rt.attach();
     rt.run(true);
     (doc as unknown as { hidden: boolean }).hidden = true;
     doc.dispatchEvent(new Event('visibilitychange'));
     expect(rt.status().running).toBe(false);
+    detach(); rt.run(true);
+    doc.dispatchEvent(new Event('visibilitychange'));
+    expect(rt.status().running).toBe(true);
     rt.dispose();
   });
 });

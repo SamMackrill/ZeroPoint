@@ -360,80 +360,76 @@
     "text": "Requires event maps, complete conservation ledgers and a tired-light loss law."
   },
   {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "A fluctuating dipole couples to its neighbour. Their correlated fluctuations lower the pair’s interaction energy, producing London dispersion attraction. Run the schematic to see both moments reverse while the mean attraction remains inward. Fleming extends this dipole picture to the zero-point field."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "In Fleming’s picture, the surrounding fluctuations press on both faces of each plate. Boundaries change the field between them, leaving a small inward imbalance. The standard calculation obtains this force per area from the change in the field–plate interaction energy as the gap changes."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "Van der Waals files must be smaller than 20 KB."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "Fleming treats vacuum fluctuations as interacting electric dipoles. The numerical plate result here is the standard ideal Casimir reference, evaluated separately from that illustration. A microscopic pressure law for Fleming’s medium is not derived by these diagrams."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": ". Page numbers below are PDF page positions. Interactive diagrams above are adaptations."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "Opposed and aligned dipoles, with changes in electric moment."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "A neutral hydrogen atom and its polarized charge distribution."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "Fleming’s schematic of fluctuations outside and between plates."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "Nearly balanced opposing stresses leave a net inward force."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": ". Double the area → twice the force, at the same pressure."
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "Each field mode has ground-state energy ½ℏω. The plates change the allowed spectrum. Subtracting the infinite-separation reference gives a finite interaction energy per area:"
+  },
+  {
+    "file": "src/experiments/van-der-waals/VdwWorkbench.tsx",
+    "text": "Pressure is the force per area associated with changing the cavity width. This is a"
+  },
+  {
     "file": "src/ui/Plot.tsx",
     "text": ". Use the arrow keys to read values."
   },
   {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "file": "src/van-der-waals/diagrams.tsx",
     "text": "Neutral atom and induced dipole: an applied electric field displaces the negative charge cloud opposite to the field"
   },
   {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "file": "src/van-der-waals/diagrams.tsx",
     "text": "Net charge stays zero. The charge distribution changes."
   },
   {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "file": "src/van-der-waals/diagrams.tsx",
     "text": "Two correlated fluctuating dipoles with fixed centres and inward arrows showing their average London attraction"
   },
   {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "file": "src/van-der-waals/diagrams.tsx",
     "text": "nanometres apart, with balanced background stress and an inward net pressure difference. Mode shapes and arrow scales are illustrative."
   },
   {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
+    "file": "src/van-der-waals/diagrams.tsx",
     "text": "Logarithmic plot of attractive pressure magnitude versus plate gap. Doubling the gap reduces pressure magnitude sixteenfold."
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": "Follow an induced dipole into a collective force — and a measurable pressure difference."
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": "A fluctuating dipole couples to its neighbour. Their correlated fluctuations lower the pair’s interaction energy, producing London dispersion attraction. Run the schematic to see both moments reverse while the mean attraction remains inward. Fleming extends this dipole picture to the zero-point field."
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": "In Fleming’s picture, the surrounding fluctuations press on both faces of each plate. Boundaries change the field between them, leaving a small inward imbalance. The standard calculation obtains this force per area from the change in the field–plate interaction energy as the gap changes."
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": "Polarizability α describes how readily a charge distribution responds to an electric field."
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": ". Double the area → twice the force, at the same pressure."
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": "Each field mode has ground-state energy ½ℏω. The plates change the allowed spectrum. Subtracting the infinite-separation reference gives a finite interaction energy per area:"
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": "Pressure is the force per area associated with changing the cavity width. This is a"
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": "Fleming treats vacuum fluctuations as interacting electric dipoles. The numerical plate result here is the standard ideal Casimir reference, evaluated separately from that illustration. A microscopic pressure law for Fleming’s medium is not derived by these diagrams."
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": ". Page numbers below are PDF page positions. Interactive diagrams above are adaptations."
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": "Opposed and aligned dipoles, with changes in electric moment."
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": "A neutral hydrogen atom and its polarized charge distribution."
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": "Fleming’s schematic of fluctuations outside and between plates."
-  },
-  {
-    "file": "src/van-der-waals/VanDerWaalsExperiment.tsx",
-    "text": "Nearly balanced opposing stresses leave a net inward force."
   },
   {
     "file": "src/workbench/Inspector.tsx",

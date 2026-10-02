@@ -14,13 +14,13 @@
     "medium": 0
   },
   "casimir": {
-    "casimir": 10,
-    "app": 10,
+    "casimir": 18,
+    "app": 18,
     "medium": 0
   },
   "vdw": {
-    "vdw": 10,
-    "app": 10,
+    "vdw": 16,
+    "app": 16,
     "medium": 0
   }
 }

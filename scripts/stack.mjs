@@ -267,7 +267,21 @@ function retarget() {
     run('gh', ['pr', 'edit', String(pr.number), '--base', 'main']);
     layer(state, pr.headRefName).base = 'origin/main';
     saveState(state);
+    ensureCi(pr.number, pr.headRefName);
   }
+}
+
+/**
+ * A push that lands while its PR is being retargeted sometimes starts no CI run (seen on #25 and #27). Wait briefly for
+ * a run on the new head; if none appears, close and reopen the PR, which fires a pull_request event without a commit.
+ */
+function ensureCi(number, branch) {
+  const head = sha(`origin/${branch}`) ?? sha(branch);
+  const hasRun = () => (ghJson(['run', 'list', '--branch', branch, '--limit', '5', '--json', 'headSha']) ?? []).some(r => r.headSha === head);
+  for (let i = 0; i < 6; i++) { if (hasRun()) return; Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 5000); }
+  say(`No CI run started for #${number} at ${head?.slice(0, 7)}; closing and reopening it to trigger one.`);
+  run('gh', ['pr', 'close', String(number)]);
+  run('gh', ['pr', 'reopen', String(number)]);
 }
 
 /** Squash-merge the bottom PR when it is merge-ready, then retarget the next layer and remove the merged branch and worktree. */
