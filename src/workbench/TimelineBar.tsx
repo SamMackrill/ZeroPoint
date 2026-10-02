@@ -82,7 +82,7 @@ export function TimelineBar({ runtime, timeline, speeds, markers = [], onMarker,
           ? <input type="range" data-testid="timeline" aria-label="Timeline" min={0} max={length} step={1} value={Math.min(status.tick, length)} onChange={e => runtime.seek(Number(e.target.value))}/>
           : <div className="timeline-progress" role="progressbar" aria-label="Elapsed time" aria-valuemin={0} aria-valuemax={length} aria-valuenow={status.tick}><i style={{ width: pct(status.tick) }}/></div>}
         {timeline.events.map(e => (
-          <button type="button" key={`${e.tick}-${e.label}`} className="timeline-tick" style={{ left: pct(e.tick) }} title={event(e)} aria-label={event(e)} disabled={!can.seek} onClick={() => runtime.seek(e.tick)}/>
+          <button type="button" key={`${e.tick}-${e.label}`} data-testid={e.id ? `event-${e.id}` : undefined} className="timeline-tick" style={{ left: pct(e.tick) }} title={event(e)} aria-label={event(e)} disabled={!can.seek} onClick={() => runtime.seek(e.tick)}/>
         ))}
         {markers.map(m => (
           <button type="button" key={m.id} className="timeline-marker" style={{ left: pct(m.tick) }} title={`${m.label} · tick ${m.tick}`} aria-label={`Restore ${m.label}`} onClick={() => onMarker?.(m)}><Diamond size={10} aria-hidden="true"/></button>

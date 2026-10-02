@@ -2,17 +2,21 @@ import { useState } from 'react';
 import { effectiveShellScale, fluxAtRadius } from './propertyGeometry';
 import { palette } from '../ui/palette';
 
-/** Independent reference investigations prompted by the electron-properties video. */
-export function ElectronProperties() {
-  const [topic, setTopic] = useState<'flux' | 'radius'>('flux');
+/**
+ * Independent reference investigations prompted by the electron-properties video. With `study` set (the workbench's
+ * static scenarios) it shows that one study; without it, a choice between the two.
+ */
+export function ElectronProperties({ study }: { study?: 'flux' | 'radius' } = {}) {
+  const [chosen, setTopic] = useState<'flux' | 'radius'>('flux');
+  const topic = study ?? chosen;
   const [radius, setRadius] = useState(1), [trialRadius, setTrialRadius] = useState(1), [rate, setRate] = useState(1);
   const flux = fluxAtRadius(radius), shell = effectiveShellScale(trialRadius, rate);
   return <section className="light-card electron-properties" aria-label="Electron property investigations">
     <div className="light-card-heading"><h2>Explore the electron’s properties</h2><span>Independent reference experiments</span></div>
-    <div className="electron-property-choices" aria-label="Property investigation">
+    {!study && <div className="electron-property-choices" aria-label="Property investigation">
       <button aria-pressed={topic === 'flux'} onClick={() => setTopic('flux')}>Charge & flux</button>
       <button aria-pressed={topic === 'radius'} onClick={() => setTopic('radius')}>Radius & rate limit</button>
-    </div>
+    </div>}
     {topic === 'flux' ? <div className="electron-property-layout">
       <svg viewBox="0 0 320 260" role="img" aria-label="Cross-section of a variable Gauss sphere around a stationary negative electron">
         <circle cx="160" cy="128" r="35" stroke={palette.text4} fill="none" strokeDasharray="4 5"/>

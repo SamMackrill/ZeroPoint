@@ -1,0 +1,162 @@
+.electron-workbench-root .electron-single,
+.electron-workbench-root .electron-split {
+  height: 100%;
+}
+
+.electron-workbench-root .electron-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+.electron-workbench-root .light-viewport-shell.electron-stage {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+.electron-workbench-root .electron-split .electron-section {
+  height: 100%;
+  overflow: auto;
+  margin: 0;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+}
+
+.electron-workbench-root .light-view-top .segmented {
+  pointer-events: auto;
+  background: color-mix(in srgb, var(--bg-2) 80%, transparent);
+}
+
+.electron-workbench-root .light-view-top .segmented-item {
+  padding: 0 10px;
+  font-size: var(--fs-ui);
+}
+
+.electron-workbench-root .light-view-top b {
+  margin-left: 8px;
+  font-weight: 400;
+}
+
+.electron-workbench-root .error-banner {
+  position: absolute;
+  top: 56px;
+  left: 18px;
+  right: 18px;
+  z-index: 3;
+}
+
+.electron-study {
+  height: 100%;
+  overflow: auto;
+  padding: 16px;
+}
+
+.electron-study .electron-properties {
+  margin: 0;
+}
+
+.electron-probe {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.electron-probe h4 {
+  margin: 0 0 2px 46px;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+}
+
+.electron-shell-rates {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 18px;
+}
+
+.electron-sources {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.electron-sources strong {
+  color: var(--text);
+  font-size: var(--fs-ui);
+}
+
+.electron-sources p {
+  margin: 4px 0;
+  color: var(--text-3);
+  font-size: var(--fs-ui);
+}
+
+.electron-sources a {
+  color: var(--accent);
+  font-size: var(--fs-ui);
+}
+
+.electron-selection .electron-pair-signs {
+  margin: 8px 0;
+}
+
+.electron-selection-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0;
+}
+
+.electron-about {
+  margin-top: 12px;
+}
+
+@media(max-width:850px) {
+  .electron-workbench-root .electron-split {
+    grid-template-columns: minmax(0, 1fr);
+    height: auto;
+  }
+  .electron-workbench-root .electron-split .light-viewport-shell {
+    height: 46vh;
+  }
+  .electron-workbench-root .light-view-top .segmented {
+    display: none;
+  }
+  .electron-probe,
+  .electron-shell-rates,
+  .electron-sources {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.electron-overlay-bottom {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 16px;
+  pointer-events: none;
+}
+
+.electron-overlay-bottom .light-view-legend,
+.electron-overlay-bottom .light-scale {
+  position: static;
+  flex-wrap: wrap;
+}
+
+.electron-hint {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+}
+
+.electron-workbench-root .light-view-top {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}

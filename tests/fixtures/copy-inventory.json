@@ -116,110 +116,6 @@
     "text": "Arrows show direction, not speed. This is a local current comparison, not an integrated magnetic moment or a calculation of g ≈ 2. Separation and collapse velocities are omitted. The main timeline drives this pair."
   },
   {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Start with an unpolarized cubic medium. The electron appears, and nearby pairs align first as a three-dimensional electric pattern resolves."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Following Fig. 2: neighboring zeptons turn locally as they polarize around the stationary electron. Compare the spherical field and equatorial section, then inspect how opposite charge motions contribute to current. Alternating whole bands is an optional extension."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "As the electron passes, nearby pairs turn locally. Reverse its velocity to reverse the motion-induced magnetic field."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "View changed. The sequence is paused at its start."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Updated an older experiment to the cubic medium and revised polarization sequence."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Exported the full analytic reference sequence, including future samples and the separate intrinsic-dipole reference."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Curled arrows turn at each pair · shaded plane links to 2D"
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Faraday lines follow dipoles · field arrows are references"
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Click a pair to inspect its fixed centre"
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Selection off · drag to orbit the volume"
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Shell sampling is hidden. Choose Shell close-up to restore the linked views."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "toward the core. Reverse the spin projection in Electron & probe controls to reverse every shell. Playback, step and timeline control both views together."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Alternating complete zepton shells is an illustrative extension."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Shared preference illustrates the local coordination in §3."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Fleming’s §4 counter-rotating charge shells are the inner + and outer − ends of a dipole, rather than a stated rule for successive whole zepton shells. The shell spacing, magnified turns and capped 1/r² rate are display assumptions."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Shared local preference selected, following the video’s coordination explanation at 4:44."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Electric Y, motion magnetic Z, and intrinsic magnetic Z reference components at the fixed probe"
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "A bare negative polarizer aligns positive dipole ends inward. Fleming relates the surrounding polarization flux to unit charge."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Neighboring partially aligned dipoles favor a common rotation sense. Their centres and the bare core need not move."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Read extracted source details & model decisions ↗"
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Probe lies inside the 0.3 R numerical mask. Field values are excluded."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "This sample is currently inside the electron’s numerical mask."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Enable the zepton selector, then click a pair or choose Nearest to probe. Selection pins a fixed sampling location across successive pair generations."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Faraday lines trace the neighboring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative. Magnetic guides follow the motion-induced rotation direction."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions."
-  },
-  {
-    "file": "src/electron/ElectronExperiment.tsx",
-    "text": "Fixed zepton centres · local worker · source-linked model"
-  },
-  {
     "file": "src/electron/ElectronProperties.tsx",
     "text": "Cross-section of a variable Gauss sphere around a stationary negative electron"
   },
@@ -262,6 +158,102 @@
   {
     "file": "src/electron/SpinSection.tsx",
     "text": "Compare with Fleming’s Fig. 2 & §3 ↗"
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Start with an unpolarized cubic medium. The electron appears, and nearby pairs align first as a three-dimensional electric pattern resolves."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Following Fig. 2: neighboring zeptons turn locally as they polarize around the stationary electron. Compare the spherical field and equatorial section, then inspect how opposite charge motions contribute to current. Alternating whole bands is an optional extension."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "As the electron passes, nearby pairs turn locally. Reverse its velocity to reverse the motion-induced magnetic field."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "View changed. The sequence is paused at its start."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Updated an older experiment to the cubic medium and revised polarization sequence."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Exported the full analytic reference sequence, including future samples and the separate intrinsic-dipole reference."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Shared local preference selected, following the video’s coordination explanation at 4:44."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Curled arrows turn at each pair · shaded plane links to 2D"
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Faraday lines follow dipoles · field arrows are references"
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Electric Y, motion magnetic Z, and intrinsic magnetic Z reference components at the fixed probe"
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Probe lies inside the 0.3 R numerical mask. Field values are excluded."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "toward the core. Reverse the spin projection in Setup to reverse every shell. Playback, step and timeline control both views together."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Alternating complete zepton shells is an illustrative extension."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Shared preference illustrates the local coordination in §3."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Fleming’s §4 counter-rotating charge shells are the inner + and outer − ends of a dipole, rather than a stated rule for successive whole zepton shells. The shell spacing, magnified turns and capped 1/r² rate are display assumptions."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "A bare negative polarizer aligns positive dipole ends inward. Fleming relates the surrounding polarization flux to unit charge."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Neighboring partially aligned dipoles favor a common rotation sense. Their centres and the bare core need not move."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Reference inputs, not fitted outputs. Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Read extracted source details & model decisions ↗"
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "This sample is currently inside the electron’s numerical mask."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Click a pair to inspect its fixed centre, in the field or the section, or choose Nearest to probe. Selection pins a fixed sampling location across successive pair generations."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Shell sampling is hidden. Choose Shell close-up to restore the linked views."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Faraday lines trace the neighboring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative. Magnetic guides follow the motion-induced rotation direction."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Fixed zepton centres · local worker · source-linked model"
   },
   {
     "file": "src/experiments/light/LightWorkbench.tsx",

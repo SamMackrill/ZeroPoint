@@ -28,7 +28,7 @@ export function Dock({ readouts, tabs, tab, onTab, collapsed = false, onCollapse
       <div className="dock-head">
         <dl className="dock-strip" aria-label="Key readouts">
           {readouts.slice(0, 4).map(r => (
-            <div key={r.label}><dt>{r.label}</dt><dd>{r.value}{r.unit && <small> {r.unit}</small>}</dd></div>
+            <div key={r.label}><dt>{r.label}</dt><dd><span data-testid={r.testId}>{r.value}</span>{r.unit && <small> {r.unit}</small>}</dd></div>
           ))}
         </dl>
         {tabs.length > 0 && (

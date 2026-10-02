@@ -59,7 +59,7 @@ test('electron scenarios', async ({ page }) => {
   await snapshot(page, 'electron-stationary');
   for (const [scenario, name] of [['scenario-spin', 'electron-spin'], ['scenario-moving', 'electron-moving']] as const) {
     await tid(page, scenario).click();
-    await expect(tid(page, scenario)).toHaveAttribute('aria-pressed', 'true');
+    await expect(tid(page, scenario)).toHaveAttribute('aria-current', 'true');
     await snapshot(page, name);
   }
 });
