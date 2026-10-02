@@ -23,6 +23,7 @@ import { electronDefinition, electronMilestones } from './definition';
 import '../../light/light.css';
 import '../../electron/electron.css';
 import './electron-workbench.css';
+import { useSelectionKeys } from '../../workbench/selection';
 
 /** Scenario id ↔ worker mode for the three timed scenarios. */
 const MODE_OF: Record<string, ElectronMode> = { stationary: 'electric', spin: 'spin', moving: 'moving' };
@@ -96,6 +97,9 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
   }, [active, runtime, latest, error, contextLost, study]);
 
+  const clearSelection = useCallback(() => setSelected(null), []);
+  const focusSelection = useCallback(() => setCamera('probe'), []);
+  useSelectionKeys({ active: active && !study, hasSelection: selected !== null, onClear: clearSelection, onFocus: focusSelection });
   const s = state ?? { model: ELECTRON_MODEL, tick: 0, parameters: electronDefinition.defaultParams, running: false, speed: 1 };
   const p = s.parameters, time = s.tick * ELECTRON_DT, ready = !!state && !error;
   const field = referenceFields(s, probePosition(p)), picked = selected === null ? null : displayedDipole(s, selected, view.spinDisplay), flux = enclosedCharge(s, 2);
@@ -216,7 +220,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
         <div className="electron-pair-signs"><span>+</span><i/><span>−</span></div>
         <dl className="light-readouts"><div><dt>Sample / generation</dt><dd>{picked.index} / {picked.generation}</dd></div><div><dt>Fixed centre (R)</dt><dd data-testid="electron-pair-centre">{vector(picked.centre)}</dd></div><div><dt>Age / lifetime (τ)</dt><dd>{picked.age.toFixed(2)} / {picked.lifetime.toFixed(2)}</dd></div><div><dt>Full separation</dt><dd>{picked.separation.toFixed(3)} R</dd></div><div><dt>Local spin turn</dt><dd data-testid="electron-local-spin">{(picked.spinTurn * 180 / Math.PI).toFixed(2)}° / lifecycle</dd></div><div><dt>Spin rate (illustrative)</dt><dd data-testid="electron-spin-rate">{(picked.spinRate * 180 / Math.PI).toFixed(2)}° / τ</dd></div><div><dt>Motion turn</dt><dd>{(picked.motionTurn * 180 / Math.PI).toFixed(2)}° / lifecycle</dd></div></dl>
         {!picked.field.valid && <p className="light-small">This sample is currently inside the electron’s numerical mask.</p>}
-        <div className="electron-selection-actions"><button type="button" className="light-focus" onClick={() => setCamera('probe')}><Focus size={14}/>Focus this fixed centre</button><button type="button" className="inspector-link" onClick={() => setSelected(null)}>Clear</button></div>
+        <div className="electron-selection-actions"><button type="button" className="light-focus" onClick={() => setCamera('probe')}><Focus size={14}/>Focus this fixed centre <kbd>F</kbd></button><button type="button" className="inspector-link" onClick={clearSelection}>Clear <kbd>Esc</kbd></button></div>
       </> : <p className="light-small">Click a pair to inspect its fixed centre, in the field or the section, or choose Nearest to probe. Selection pins a fixed sampling location across successive pair generations.</p>}
       {p.mode === 'spin' && !study && <ChargeMotion state={s} index={shellIndex} display={view.spinDisplay}/>}
     </div>

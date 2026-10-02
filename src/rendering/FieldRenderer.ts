@@ -4,6 +4,7 @@ import { CAPACITY, SNAPSHOT_STRIDE } from '../model/types';
 import type { ViewSettings } from '../model/types';
 import { lobeScale } from '../model/pairMotion';
 import { palette, scene } from '../ui/palette';
+import { isClick } from '../workbench/selection';
 export interface PickedDipole { slot: number; generation: number; frequency: number; age: number; lifetime: number; separation: number; position: [number, number, number] }
 export class FieldRenderer {
   readonly renderer: THREE.WebGLRenderer;
@@ -53,15 +54,22 @@ export class FieldRenderer {
   private contextLost = (e: Event) => { e.preventDefault(); this.contextListener('Graphics context was lost. The experiment is paused. Recover the viewport to continue.'); };
   private pointerDown = (e: PointerEvent) => { this.down = { x: e.clientX, y: e.clientY }; };
   private pointerUp = (e: PointerEvent) => {
-    if (Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > 4 || !this.options.medium) return;
+    if (!isClick(this.down, e) || !this.options.medium) return;
     const rect = this.renderer.domElement.getBoundingClientRect(), mouse = new THREE.Vector2((e.clientX - rect.left) / rect.width * 2 - 1, -((e.clientY - rect.top) / rect.height) * 2 + 1);
     const ray = new THREE.Raycaster(); ray.params.Points.threshold = .12; ray.setFromCamera(mouse, this.camera);
+    // Instanced meshes raycast inside a cached bounding sphere that goes stale as instances move; refresh it per click.
+    this.positive.computeBoundingSphere(); this.negative.computeBoundingSphere(); this.points.geometry.computeBoundingSphere();
     // The finite 10k view is pickable directly. A spatial broad phase is deferred until profiling warrants it.
     const hits = this.options.representation === 'dipoles' ? ray.intersectObjects([this.positive, this.negative]) : ray.intersectObject(this.points);
     const index = hits[0]?.instanceId ?? hits[0]?.index;
     this.select(index === undefined ? null : this.keys[index]);
   };
   select(key: string | null) { this.selected = key; this.refreshSelection(); }
+  /** Orbit around a point (the selected dipole's fixed centre), moving in to a close-up distance along the current view. */
+  focusOn(point: readonly [number, number, number]) {
+    const target = new THREE.Vector3(...point), offset = this.camera.position.clone().sub(this.controls.target).normalize().multiplyScalar(4);
+    this.controls.target.copy(target); this.camera.position.copy(target).add(offset); this.controls.update();
+  }
   inspectFirst() { this.select(this.keys[0] ?? null); }
   private refreshSelection() {
     const index = this.selected ? this.keys.indexOf(this.selected) : -1;

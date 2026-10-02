@@ -204,3 +204,18 @@
   border: 1px solid var(--accent-line);
   font-weight: 600;
 }
+
+.selection-actions {
+  display: flex;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.wb-inspector kbd {
+  margin-left: 4px;
+  padding: 0 4px;
+  color: var(--text-3);
+  border: 1px solid var(--line-2);
+  border-radius: 3px;
+  font: var(--fs-micro) var(--mono);
+}

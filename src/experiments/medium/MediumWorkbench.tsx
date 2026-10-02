@@ -17,6 +17,7 @@ import { Shell } from '../../workbench/Shell';
 import { TimelineBar } from '../../workbench/TimelineBar';
 import { mediumDefinition, type MediumParams } from './definition';
 import './medium-workbench.css';
+import { useSelectionKeys } from '../../workbench/selection';
 
 /** At most this many ◆ checkpoints are kept, for every experiment (§09). */
 export const CHECKPOINT_LIMIT = 8;
@@ -117,6 +118,9 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
     window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
   }, [active, ready, contextLost, latest, runtime]);
 
+  const clearSelection = useCallback(() => viewport.current?.select(null), []);
+  const focusSelection = useCallback(() => { if (picked) viewport.current?.focusOn(picked.position); }, [picked]);
+  useSelectionKeys({ active, hasSelection: !!picked, onClear: clearSelection, onFocus: focusSelection });
   const setOption = (key: string, value: unknown) => setView(v => withPaths(v, { [key]: value }));
   /** Apply a live parameter change; the scenario label becomes "modified". */
   function updateParameter(key: string, value: unknown) { const next = { ...parameters, [key]: value }; setParameters(next); runtime.setLive(next); setPreset('custom'); }
@@ -218,7 +222,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
         ]}/>
         <div className="life-track"><i style={{ width: `${Math.min(100, picked.age / picked.lifetime * 100)}%` }}/></div>
         <p className="reduced-help">Selection follows this generation only. When it vanishes, its energy returns to the reservoir.</p>
-        <button className="text-button" onClick={() => viewport.current?.select(null)}>Clear selection</button>
+        <div className="selection-actions"><button className="text-button" onClick={focusSelection}>Focus <kbd>F</kbd></button><button className="text-button" onClick={clearSelection}>Clear <kbd>Esc</kbd></button></div>
       </> : <div className="empty-inspector"><Crosshair size={35}/><p>No active selection</p><small>Inspection does not change the simulation.</small></div>}
     </div>
   );

@@ -5,6 +5,7 @@ import type { ElectronSnapshot, ElectronView, Vec } from './model';
 import { faradayLines } from './fieldLines';
 import { displayedDipole, localTurnArrow, sectionFrame, SHELL_COLOURS, shellBand, shellCentre } from './spinGeometry';
 import { palette, scene } from '../ui/palette';
+import { isClick } from '../workbench/selection';
 
 export class ElectronRenderer {
   private scene = new THREE.Scene();
@@ -100,8 +101,9 @@ export class ElectronRenderer {
   private contextLost = (e: Event) => { e.preventDefault(); this.fail('Graphics context lost. The electron experiment is paused. Recover the viewport to continue.'); };
   private pointerDown = (e: PointerEvent) => { this.down = { x: e.clientX, y: e.clientY }; };
   private pointerUp = (e: PointerEvent) => {
-    if (!this.view.inspect || !this.view.dipoles || Math.hypot(e.clientX - this.down.x, e.clientY - this.down.y) > 4) return;
+    if (!this.view.dipoles || !isClick(this.down, e)) return;
     const r = this.renderer.domElement.getBoundingClientRect(), ray = new THREE.Raycaster(); ray.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, 1 - (e.clientY - r.top) / r.height * 2), this.camera);
+    this.positive.computeBoundingSphere(); this.negative.computeBoundingSphere(); // the cached bounds go stale as instances move
     const i = ray.intersectObjects([this.positive, this.negative])[0]?.instanceId; if (i !== undefined) this.pick(this.keys[i]);
   };
   update(s: ElectronSnapshot) {

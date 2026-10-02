@@ -101,3 +101,22 @@ test('a selected dipole does not pull the inspector back to Selection while the 
   await expect(page.getByTestId('tick')).toHaveText('Tick 3');
   await expect(page.getByRole('tab', { name: 'Setup', exact: true })).toHaveAttribute('aria-selected', 'true');
 });
+
+test('Esc clears and F focuses the selection, and a click on the field selects', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/'); await expect(tid(page, 'transport-run')).toBeEnabled(); await expect(page.locator('canvas')).toBeVisible();
+  await page.getByRole('tab', { name: 'Selection', exact: true }).click();
+  await page.getByRole('button', { name: 'Select first active dipole' }).click();
+  await expect(page.locator('.dipole-inspector h2')).toContainText('Dipole ');
+  await page.locator('canvas').click({ position: { x: 5, y: 5 } }); // a click on empty space clears the selection
+  await expect(page.getByText('No active selection')).toBeVisible();
+  await page.getByRole('button', { name: 'Select first active dipole' }).click();
+  await page.keyboard.press('f');
+  await expect(page.locator('.dipole-inspector h2')).toContainText('Dipole ');
+  await page.keyboard.press('Escape');
+  await expect(page.getByText('No active selection')).toBeVisible();
+  const canvas = page.locator('canvas'), box = (await canvas.boundingBox())!;
+  for (let x = 0.3; x <= 0.7 && await page.getByText('No active selection').isVisible(); x += 0.02) await canvas.click({ position: { x: box.width * x, y: box.height * 0.5 } });
+  await expect(page.locator('.dipole-inspector h2')).toContainText('Dipole ');
+  expect(errors).toEqual([]);
+});

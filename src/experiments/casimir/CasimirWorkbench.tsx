@@ -1,5 +1,5 @@
 import { ArrowLeftRight } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { extent, lifeStage, phase, type CasimirModel, type Zepton } from '../../casimir/model';
 import { Scene, type SceneLayers } from '../../casimir/Scene';
 import { palette } from '../../ui/palette';
@@ -16,6 +16,7 @@ import { TimelineBar } from '../../workbench/TimelineBar';
 import { casimirDefinition, type CasimirParams } from './definition';
 import '../../casimir/casimir.css';
 import './casimir-workbench.css';
+import { useSelectionKeys } from '../../workbench/selection';
 
 /** Format a pressure delta with an explicit sign and fixed precision. */
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(3)}`;
@@ -107,6 +108,9 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
     if (inspected) { lastSelected.current = { ...inspected }; if (follow && selected !== inspected.id) setSelected(inspected.id); }
   }, [revision, inspected, follow, selected]);
   const displayed = inspected ?? lastSelected.current;
+  // Esc unpins: the loupe goes back to following new births.
+  const unpin = useCallback(() => { setSelected(null); lastSelected.current = null; setFollow(true); }, []);
+  useSelectionKeys({ active, hasSelection: !follow, onClear: unpin });
   const like = scenario === 'electron-electron';
   const tendency = Math.abs(model.delta) < .002 ? 'Building pressure' : model.delta > 0 ? 'Apart' : 'Together';
   const start = model.history[0]?.time ?? 0, end = model.history.at(-1)?.time ?? 0;

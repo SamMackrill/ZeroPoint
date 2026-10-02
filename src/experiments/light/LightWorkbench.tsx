@@ -19,6 +19,7 @@ import { CHECKPOINT_LIMIT } from '../medium/MediumWorkbench';
 import { lightDefinition } from './definition';
 import '../../light/light.css';
 import './light-workbench.css';
+import { useSelectionKeys } from '../../workbench/selection';
 
 /** Render a normalized electric-projection trace with the shared Plot, with an optional probe marker. */
 function WavePlot({ x, values, label, unit, domain, marker }: { x: number[]; values: number[]; label: string; unit: 'L' | 'τ'; domain: [number, number]; marker?: number }) {
@@ -84,6 +85,9 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
   }, [active, runtime, latest, error, contextLost]);
 
+  const clearSelection = useCallback(() => setSelected(null), []);
+  const focusSelection = useCallback(() => setCamera('pair'), []);
+  useSelectionKeys({ active, hasSelection: selected !== null, onClear: clearSelection, onFocus: focusSelection });
   const s = state ?? { model: LIGHT_MODEL, tick: 0, parameters: lightDefinition.defaultParams, running: false, speed: 1 };
   const p = s.parameters, d = lightReadout(s), inspected = pairAt(p, s.tick, selected ?? d.index);
   const ready = !!state && !error;
@@ -185,7 +189,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
         <div><dt>Signed rotation</dt><dd data-testid="light-rotation">{(inspected.sense * inspected.progress * 180).toFixed(1)}° / {inspected.sense * 180}°</dd></div>
         <div><dt>Full separation</dt><dd>{inspected.separation.toFixed(3)} L</dd></div>
       </dl>
-      <button type="button" className="light-focus" onClick={() => { setSelected(inspected.index); setCamera('pair'); renderer.current?.cameraPreset('pair'); }}><Focus size={14}/>Focus this fixed centre</button>
+      <button type="button" className="light-focus" onClick={() => { setSelected(inspected.index); setCamera('pair'); renderer.current?.cameraPreset('pair'); }}><Focus size={14}/>Focus this fixed centre <kbd>F</kbd></button>
     </div>
   );
 
