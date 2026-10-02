@@ -16,7 +16,7 @@ export interface HeaderProps {
   modified?: boolean;
   /** File and export buttons, identical across experiments once a lab has migrated. */
   actions?: ReactNode;
-  /** Opens the About sheet for the current scenario (the header's ? button; Shift ? does the same). */
+  /** Opens the Help sheet (About and Shortcuts) for the current scenario: the header's ? button; the ? key does the same. */
   onHelp?(): void;
   /** Makes the "Illustrative model" chip a button that opens About › This scenario. */
   onChip?(): void;
@@ -34,7 +34,7 @@ export function Header({ experiment, scenario, modified, actions, onHelp, onChip
       {onChip
         ? <button type="button" className="workbench-chip" onClick={onChip}><Info size={12} aria-hidden="true"/>Illustrative model</button>
         : <span className="workbench-chip"><Info size={12} aria-hidden="true"/>Illustrative model</span>}
-      <div className="workbench-actions">{actions}<RepositoryLink/><SettingsMenu/>{onHelp && <button type="button" className="workbench-icon-button" aria-label="About this scenario" title="About this scenario (Shift ?)" onClick={onHelp}><CircleHelp size={16} aria-hidden="true"/></button>}</div>
+      <div className="workbench-actions">{actions}<RepositoryLink/><SettingsMenu/>{onHelp && <button type="button" className="workbench-icon-button" aria-label="Help" title="Help: About and shortcuts (?)" onClick={onHelp}><CircleHelp size={16} aria-hidden="true"/></button>}</div>
     </header>
   );
 }

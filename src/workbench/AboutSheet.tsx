@@ -74,10 +74,10 @@ export function AboutSheet({ open, onOpenChange, section, onSection, experiment,
         <Dialog.Overlay className="about-overlay"/>
         <Dialog.Content className="about-sheet" data-testid="about-sheet" aria-describedby={undefined}>
           <header className="about-head">
-            <span className="about-eyebrow">About</span>
+            <span className="about-eyebrow">Help</span>
             <Dialog.Title className="about-title">{scenario ?? experiment}</Dialog.Title>
             {scenario && <span className="about-experiment">{experiment}</span>}
-            <Dialog.Close asChild><button type="button" className="workbench-icon-button about-close" aria-label="Close About"><X size={17} aria-hidden="true"/></button></Dialog.Close>
+            <Dialog.Close asChild><button type="button" className="workbench-icon-button about-close" aria-label="Close Help"><X size={17} aria-hidden="true"/></button></Dialog.Close>
           </header>
           <Tabs.Root className="about-tabs" value={current} onValueChange={id => onSection(id as AboutSectionId)}>
             <Tabs.List className="about-tab-list" aria-label="About sections">
