@@ -18,7 +18,7 @@ import { TimelineBar } from '../../workbench/TimelineBar';
 import { mediumDefinition, type MediumParams } from './definition';
 import './medium-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
-import { getSettings, useSettings } from '../../workbench/settings';
+import { getSettings, updateSettings, useSettings } from '../../workbench/settings';
 import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
 import { SplitView } from '../../workbench/SplitView';
 import { DipoleCloseUp } from './DipoleCloseUp';
@@ -67,7 +67,8 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   cameraRef.current = camera;
   const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: getSettings().reducedMotion }));
   // Reduced motion is a global setting (header › Settings); the view follows it, including after a Load replaces it.
-  const { reducedMotion } = useSettings();
+  // The orbit hint shows on the first visit only (the plan's cut list); dismissing it is remembered.
+  const { reducedMotion, orbitHintSeen } = useSettings();
   useEffect(() => { if (view.reducedMotion !== reducedMotion) setView(v => ({ ...v, reducedMotion })); }, [reducedMotion, view.reducedMotion]);
   const viewRef = useRef(view);
   useEffect(() => { viewRef.current = view; }, [view]);
@@ -79,7 +80,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const [preset, setPreset] = useState('balanced'), [scenario, setScenario] = useState('balanced');
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
   const [rows, setRows] = useState<Diagnostics[]>([]), [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
-  const [notice, setNotice] = useState(''), [busy, setBusy] = useState(false), [showHint, setShowHint] = useState(true);
+  const [notice, setNotice] = useState(''), [busy, setBusy] = useState(false);
   // Medium opens 1-up; the split pane shows the selected dipole enlarged (§07 split view).
   const [split, setSplit] = useState(false);
   const about = useAbout();
@@ -173,7 +174,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
 
   const viewportNode = (
     <section className="viewport-shell medium-stage" aria-label="Field visualization">
-      <div ref={setHost} className="viewport" onPointerDown={() => setShowHint(false)}/>
+      <div ref={setHost} className="viewport" onPointerDown={() => { if (!orbitHintSeen) updateSettings({ orbitHintSeen: true }); }}/>
       {sim.error && <div className="error-banner" role="alert">{sim.error}<button onClick={sim.restart}>Restart worker</button></div>}
       <div className="view-top">
         <div className="view-label"><span className={`dot ${running ? '' : 'paused'}`}/><span>{ready ? running ? 'LIVE FIELD' : 'PAUSED' : 'INITIALIZING'}</span><span className="view-label-divider"/>{fmt(d?.active ?? 0)} dipoles · periodic 8 L₀ cell</div>
@@ -182,7 +183,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
       </div>
       <div className="view-axis" aria-hidden="true"><svg viewBox="0 0 60 60"><path d="M28 34V8M28 34L51 45M28 34L8 46" fill="none" strokeWidth="1.5" stroke={palette.text4}/><text x="24" y="7" fill={palette.dataShell3}>Y</text><text x="50" y="56" fill={palette.dataPos}>X</text><text x="0" y="55" fill={palette.text3}>Z</text><circle cx="28" cy="34" r="3" fill={palette.text2}/></svg></div>
       <div className="view-bottom"><div className="charge-legend">{view.representation === 'dipoles' ? <><span><i className="charge positive"/>+ Positive lobe</span><span><i className="charge negative"/>− Negative lobe</span></> : <span><i className="charge negative"/>Dipole samples · orientation hidden</span>}</div><span className="cell-scale"><i/>8 L₀ · periodic cell</span></div>
-      {showHint && <div className="orbit-hint">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> Click to inspect</div>}
+      {!orbitHintSeen && <div className="orbit-hint">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> Click to inspect</div>}
       {view.slice && <div className="slice-legend"><span>Energy / L₀³</span><i/><span>0 — {viewport.current?.getSliceMax().toFixed(1) ?? '0'} E₀</span></div>}
       {graphicsError && <div className="graphics-error" role="alert"><Box size={30}/><h3>Viewport needs attention</h3><p>{graphicsError}</p><button onClick={() => { setGraphicsError(null); setContextLost(false); setRenderRevision(n => n + 1); }}>Recover viewport</button></div>}
     </section>

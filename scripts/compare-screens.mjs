@@ -68,7 +68,20 @@ export const INFO_SCREENS = [
   { name: 'casimir-tip', title: 'Extended Casimir · Charges ⓘ (was two lines under Charges)', lab: 'lab-casimir', prepare: openTip('About Charges') },
   { name: 'vdw-tip', title: 'Van der Waals · Plate gap ⓘ, with the stage heading in the card label (the equation box, note and explanation moved to About)', lab: 'lab-vdw', scenario: 'scenario-pressure', prepare: openTip('About Plate gap') },
 ];
-const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS };
+/**
+ * Global Settings (`--set settings`): the header's Settings popover with telemetry on. Before it existed, reduced motion
+ * was a per-lab checkbox in View, so "before" opens View instead.
+ */
+const openSettings = async page => {
+  const gear = page.getByTestId('settings').filter({ visible: true });
+  if (await gear.count()) { await gear.click(); await page.getByTestId('setting-telemetry').click(); }
+  else await page.getByRole('tab', { name: 'View', exact: true }).filter({ visible: true }).click();
+};
+export const SETTINGS_SCREENS = [
+  { name: 'medium-settings', title: 'Medium · Settings (header), with debug telemetry in the status bar', prepare: openSettings },
+  { name: 'electron-settings', title: 'Electron · Spin: Settings replaces the per-lab reduced-motion checkbox', lab: 'lab-electron', scenario: 'scenario-spin', prepare: openSettings },
+];
+const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -119,7 +132,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const before = option('--before'), out = option('--out'), title = option('--title') ?? 'Change', description = option('--description') ?? '';
   const screens = SETS[option('--set') ?? 'screens'];
   if (!screens) throw new Error(`--set must be one of: ${Object.keys(SETS).join(', ')}`);
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about|info] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about|info|settings] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.

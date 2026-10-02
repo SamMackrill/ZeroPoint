@@ -66,8 +66,8 @@ test('light configuration, layers, mobile layout and exports work together', asy
   await page.getByRole('tab', { name: 'View', exact: true }).click();
   await tid(page, 'layer-background').click(); await expect(tid(page, 'layer-background')).toHaveAttribute('aria-pressed', 'false');
   await tid(page, 'layer-fields').click();
-  await tid(page, 'setting-reduced-motion').check();
   await page.getByRole('button', { name: 'Close inspector' }).click();
+  await tid(page, 'settings').filter({ visible: true }).click(); await tid(page, 'setting-reduced-motion').check(); await page.keyboard.press('Escape'); // a global setting, in the header
   await tid(page, 'transport-next').click();
   await expect(page.getByTestId('light-tick')).toContainText('Tick 240');
   await page.getByRole('button', { name: 'Open inspector' }).click(); await page.getByRole('tab', { name: 'Selection', exact: true }).click();
