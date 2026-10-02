@@ -190,7 +190,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
         <div><dt>Signed rotation</dt><dd data-testid="light-rotation">{(inspected.sense * inspected.progress * 180).toFixed(1)}° / {inspected.sense * 180}°</dd></div>
         <div><dt>Full separation</dt><dd>{inspected.separation.toFixed(3)} L</dd></div>
       </dl>
-      <button type="button" className="light-focus" onClick={() => { setSelected(inspected.index); setCamera('pair'); renderer.current?.cameraPreset('pair'); }}><Focus size={14}/>Focus this fixed centre <kbd>F</kbd></button>
+      <button type="button" className="light-focus" onClick={() => { setSelected(inspected.index); focusSelection(); }}><Focus size={14}/>Focus this fixed centre <kbd>F</kbd></button>
     </div>
   );
 
