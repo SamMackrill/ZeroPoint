@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsMenu, StatusBar } from '../../src/workbench/Chrome';
 import { getSettings, resetSettingsForTests, updateSettings } from '../../src/workbench/settings';
 
@@ -18,6 +18,16 @@ describe('global settings', () => {
     localStorage.setItem('zeropoint-settings', 'not json');
     resetSettingsForTests();
     expect(getSettings().telemetry).toBe(false);
+  });
+
+  it('applies and announces changes even when storage refuses the write', () => {
+    const write = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('full', 'QuotaExceededError'); });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    render(<StatusBar running={false} telemetry={['model/1']}/>);
+    act(() => { updateSettings({ telemetry: true }); });
+    expect(getSettings().telemetry).toBe(true);
+    expect(screen.getByText('model/1')).toBeTruthy();
+    write.mockRestore(); warn.mockRestore();
   });
 
   it('toggles reduced motion and telemetry from the header popover; the status bar shows telemetry only when on', () => {
