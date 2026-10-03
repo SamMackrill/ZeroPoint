@@ -19,6 +19,7 @@ import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameter
 import { mediumDefinition, type MediumParams } from './definition';
 import './medium-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { encodeUrl, routeFor, useUrlWriter, type ScenarioRequest } from '../../workbench/urlState';
 import { getSettings, updateSettings, useSettings } from '../../workbench/settings';
 import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
 import { SplitView } from '../../workbench/SplitView';
@@ -45,7 +46,7 @@ export interface MediumWorkbenchProps {
   rail: ReactNode;
   /** Breadcrumb fields; the workbench adds its file actions and help. */
   header: Pick<HeaderProps, 'experiment'>;
-  scenarioRequest?: { id: string; at: number } | null;
+  scenarioRequest?: ScenarioRequest | null;
   onPresetChange?(id: string): void;
   onOpenLight(): void;
   onOpenElectron(): void;
@@ -130,11 +131,21 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   function restart(params: Parameters, nextSeed: number, id: string, message = 'Experiment reset to tick 0.') {
     try { runtime.configure({ seed: validateSeed(nextSeed), parameters: params }); setParameters(params); setSeed(nextSeed); setPreset(id); setRows([]); viewport.current?.select(null); setNotice(message); } catch (error) { setNotice(String(error)); }
   }
-  /** Start a scenario from its preset parameters, keeping the seed. */
-  const startScenario = (id: string) => { const { params } = scenarioState(mediumDefinition, id); const { seed: _ignored, ...physical } = params; restart(physical, seed, id); setScenario(id); };
+  /** Start a scenario from its preset parameters, keeping the seed; a link's request also brings its settings and view. */
+  const startScenario = (request: ScenarioRequest) => {
+    const { id, url } = request, linked = url && Object.keys(url.params).length > 0;
+    const { params } = scenarioState(mediumDefinition, id), { seed: linkedSeed, ...physical } = { ...params, ...url?.params } as MediumParams;
+    restart(physical, url && 'seed' in url.params ? linkedSeed : seed, linked ? 'custom' : id); setScenario(id);
+    if (url) {
+      setView(v => withPaths(v, url.view));
+      if (url.camera) setCamera(url.camera as typeof camera);
+      if (url.split) setSplit(url.split === 'dipole');
+    }
+    if (request.dropped?.length) setNotice(`Ignored link settings that don’t apply: ${request.dropped.join(', ')}.`);
+  };
   const startRef = useRef(startScenario);
   startRef.current = startScenario;
-  useEffect(() => { if (scenarioRequest) startRef.current(scenarioRequest.id); }, [scenarioRequest]);
+  useEffect(() => { if (scenarioRequest) startRef.current(scenarioRequest); }, [scenarioRequest]);
 
   /** Capture the worker state as a ◆ checkpoint or a downloaded file. */
   async function save(kind: 'file' | 'checkpoint') {
@@ -159,6 +170,8 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const exportPNG = () => viewport.current?.exportPNG(`Seed ${state?.seed} | Tick ${d?.tick} | t = ${d?.time.toFixed(3)} tau | L0 = 1e-13 m | Illustrative reduced model`);
 
   const params: MediumParams = { ...parameters, seed };
+  // The address bar follows the visible lab (plan §11): its scenario and whatever differs from the scenario's start.
+  useUrlWriter(active, running, encodeUrl(routeFor(mediumDefinition, scenario, params, view, { camera: camera === 'perspective' ? undefined : camera, split: split ? 'dipole' : undefined })));
   const scenarioTitle = mediumDefinition.scenarios.find(s => s.id === scenario)?.title;
   const exportItems: ExportItem[] = [{ id: 'png', label: 'PNG image', onSelect: exportPNG, disabled: !!graphicsError }, { id: 'csv', label: 'CSV (diagnostics)', onSelect: exportCSV, disabled: !rows.length }];
   const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle} modified={preset === 'custom'} onHelp={() => about.show()} onChip={() => about.show('scenario')}
@@ -231,7 +244,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const inspectorNode = (
     <Inspector tab={tab} onTab={setTab} selection={selectionNode}
       setup={<SetupPanel definition={mediumDefinition} scenario={scenario} params={params}
-        onLive={updateParameter} onApply={changes => restart(parameters, Number(changes.seed ?? seed), preset)} onReset={() => startScenario(scenario)}/>}
+        onLive={updateParameter} onApply={changes => restart(parameters, Number(changes.seed ?? seed), preset)} onReset={() => startScenario({ id: scenario, at: performance.now() })}/>}
       view={<>
         <ViewPanel definition={mediumDefinition} scenario={scenario} view={view} onView={setOption}/>
       </>}/>
