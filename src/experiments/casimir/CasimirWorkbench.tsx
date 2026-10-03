@@ -13,14 +13,14 @@ import { CASIMIR_SPEEDS, casimirModel, type CasimirConfig } from '../../workbenc
 import { MainThreadRuntime } from '../../workbench/main-thread-runtime';
 import { Shell } from '../../workbench/Shell';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
-import { APPLY_SHORTCUT, PANEL_SHORTCUTS, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
+import { APPLY_SHORTCUT, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { casimirDefinition, type CasimirParams } from './definition';
 import '../../casimir/casimir.css';
 import './casimir-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
 import { SplitView } from '../../workbench/SplitView';
 import { InfoTip } from '../../ui/InfoTip';
-import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
+import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
 
 /** Format a pressure delta with an explicit sign and fixed precision. */
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(3)}`;
@@ -115,11 +115,17 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   /** Pin a Zepton (stops following new births). */
   const pin = (p: Zepton) => { setSelected(p.id); lastSelected.current = { ...p }; setFollow(false); setTab('selection'); };
 
+  /** Pin the newest Zepton that bridges the charges (Selection's Inspect newest, and the palette). */
+  const inspectNewest = () => { const p = [...model.particles].reverse().find(p => model.bridge(p)); if (p) pin(p); };
   // Every shortcut is an action (plan §11): the Help sheet lists them and one listener runs them.
   const actions: Action[] = [
     ...transportActions(runtime, casimirDefinition.timeline(scenario, params), CASIMIR_SPEEDS),
     { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
     SELECTION_SHORTCUTS.clear, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
+    ...layerActions(casimirDefinition, scenario, view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
+    ...parameterActions(casimirDefinition, scenario, () => setTab('setup')),
+    { id: 'selection.newest', label: 'Inspect newest Zepton', group: 'Selection', run: inspectNewest },
+    ...helpActions(about.show),
   ];
   useActions(active && !about.open, actions);
 
@@ -154,7 +160,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
     <div className="casimir-selection">
       {!split && <Lifetime particle={displayed} expired={!inspected}/>}
       <div className="casimir-inspect-actions">
-        <button onClick={() => { const p = [...model.particles].reverse().find(p => model.bridge(p)); if (p) pin(p); }}>Inspect newest Zepton</button>
+        <button onClick={inspectNewest}>Inspect newest Zepton</button>
         <label><input type="checkbox" checked={follow} onChange={e => setFollow(e.target.checked)}/> Follow next birth after annihilation</label>
       </div>
     </div>

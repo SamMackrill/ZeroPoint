@@ -201,6 +201,11 @@ export function FileActions({ onFile, onSave, exports, accept = '.json,applicati
   );
 }
 
+/** A lab's Export ▾ entries as palette actions (Files group). */
+export function exportActions(items: readonly ExportItem[], disabled = false): Action[] {
+  return items.map(item => ({ id: `files.export.${item.id}`, label: `Export ${item.label}`, group: 'Files', disabled: disabled || item.disabled, run: item.onSelect }));
+}
+
 /** Ctrl S saves and Ctrl O opens the file picker (plan §11 keyboard map), for a lab's FileActions. */
 export function fileShortcuts(save: () => void, input: RefObject<HTMLInputElement | null>, disabled = false): Action[] {
   return [

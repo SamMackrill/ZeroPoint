@@ -8,7 +8,7 @@ import { palette } from '../../ui/palette';
 import { Plot } from '../../ui/Plot';
 import { Readouts } from '../../ui/Readouts';
 import { Segmented } from '../../ui/Segmented';
-import { FileActions, fileShortcuts, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
+import { exportActions, FileActions, fileShortcuts, Header, type ExportItem, StatusBar, type HeaderProps } from '../../workbench/Chrome';
 import { withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
@@ -20,10 +20,10 @@ import { lightDefinition } from './definition';
 import '../../light/light.css';
 import './light-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
-import { APPLY_SHORTCUT, cameraActions, PANEL_SHORTCUTS, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
+import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView } from '../../workbench/SplitView';
-import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
+import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
 
 /** Render a normalized electric-projection trace with the shared Plot, with an optional probe marker. */
 function WavePlot({ x, values, label, unit, domain, marker }: { x: number[]; values: number[]; label: string; unit: 'L' | 'τ'; domain: [number, number]; marker?: number }) {
@@ -125,6 +125,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   const stateLine = d.finished ? 'SEQUENCE COMPLETE' : `Pair ${d.index + 1} / ${pairCount(p)} · ${d.pair.sense > 0 ? '↺ positive' : '↻ negative'}`;
 
   const timeline = lightDefinition.timeline('induction', p);
+  const exportItems: ExportItem[] = [{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError }, { id: 'csv', label: 'CSV (full sequence)', onSelect: exportCSV }];
   // Every shortcut is an action (plan §11): the Help sheet lists them and one listener runs them.
   const actions: Action[] = [
     ...transportActions(runtime, timeline, SPEEDS, { onCapture: capture, runDisabled: contextLost, disabled: !ready }),
@@ -132,12 +133,16 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
     { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
     ...fileShortcuts(save, fileInput, !ready),
     SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
+    ...layerActions(lightDefinition, 'induction', view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
+    ...parameterActions(lightDefinition, 'induction', () => setTab('setup')),
+    ...exportActions(exportItems, !ready),
+    ...helpActions(about.show),
   ];
   useActions(active && !about.open, actions);
 
   const headerNode = <Header experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} onChip={() => about.show('scenario')} onHelp={() => about.show()}
     actions={<FileActions inputRef={fileInput} disabled={!ready} onFile={load} onSave={save}
-      exports={[{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError }, { id: 'csv', label: 'CSV (full sequence)', onSelect: exportCSV }]}/>}/>;
+      exports={exportItems}/>}/>;
 
   const viewportNode = (
     <section className="light-viewport-shell light-stage" aria-label="Light visualization">

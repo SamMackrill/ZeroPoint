@@ -5,7 +5,7 @@ import { downloadFile } from '../../persistence/experiment';
 import { BOOK, InductionDiagram, number, PairDiagram, PlateDiagram, PressurePlot, stages } from '../../van-der-waals/diagrams';
 import { casimir, london, pressureCSV } from '../../van-der-waals/model';
 import { parseVdwFile, vdwFile } from './file';
-import { FileActions, fileShortcuts, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
+import { exportActions, FileActions, fileShortcuts, Header, type ExportItem, StatusBar, type HeaderProps } from '../../workbench/Chrome';
 import { withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
@@ -14,9 +14,9 @@ import { MainThreadRuntime } from '../../workbench/main-thread-runtime';
 import { SPEEDS } from '../../workbench/runtime';
 import { Shell } from '../../workbench/Shell';
 import { SplitView } from '../../workbench/SplitView';
-import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
+import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
-import { PANEL_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
+import { layerActions, PANEL_SHORTCUTS, parameterActions, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { vanDerWaalsDefinition, type VdwParams, type VdwView } from './definition';
 import '../../van-der-waals/van-der-waals.css';
 import './vdw-workbench.css';
@@ -105,6 +105,7 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
     } catch (error) { setNotice(`Could not load: ${error instanceof Error ? error.message : String(error)}`); }
   }
 
+  const exportItems: ExportItem[] = [{ id: 'csv', label: 'CSV (pressure sweep)', onSelect: exportCsv }];
   // Every shortcut is an action (plan §11): the Help sheet lists them and one listener runs them. Only the correlated
   // stage has a timeline; the others are static.
   const timeline = vanDerWaalsDefinition.timeline(scenario, params);
@@ -113,11 +114,15 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
     ...(stage === 2 ? [{ id: 'view.layers', label: 'Open View › Layers', group: 'View' as const, keys: ['l'], run: () => setTab('view') }, SPLIT_SHORTCUT] : []),
     ...fileShortcuts(save, fileInput),
     ...PANEL_SHORTCUTS,
+    ...layerActions(vanDerWaalsDefinition, scenario, view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
+    ...parameterActions(vanDerWaalsDefinition, scenario, () => setTab('setup')),
+    ...exportActions(exportItems, false),
+    ...helpActions(about.show),
   ];
   useActions(active && !about.open, actions);
 
   const headerNode = <Header experiment={header.experiment} scenario={current.title} onChip={() => about.show('scenario')} onHelp={() => about.show()}
-    actions={<FileActions inputRef={fileInput} onFile={load} onSave={save} exports={[{ id: 'csv', label: 'CSV (pressure sweep)', onSelect: exportCsv }]}/>}/>;
+    actions={<FileActions inputRef={fileInput} onFile={load} onSave={save} exports={exportItems}/>}/>;
 
   const viewportNode = (
     <section className="vdw-scene-card vdw-stage" aria-label={current.title}>
