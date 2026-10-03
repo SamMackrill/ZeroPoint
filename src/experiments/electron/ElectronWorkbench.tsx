@@ -95,12 +95,12 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     if (!active) return;
     const key = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      if (e.defaultPrevented || ['INPUT', 'SELECT', 'BUTTON', 'A', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable || error || study) return;
+      if (e.defaultPrevented || ['INPUT', 'SELECT', 'BUTTON', 'A', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable || about.open || error || study) return;
       if (e.code === 'Space' && !contextLost) { e.preventDefault(); runtime.run(!latest.current?.running); }
       if (e.code === 'ArrowRight') { e.preventDefault(); runtime.step(); }
     };
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
-  }, [active, runtime, latest, error, contextLost, study]);
+  }, [active, runtime, latest, error, contextLost, study, about.open]);
 
   const clearSelection = useCallback(() => setSelected(null), []);
   // Re-apply the preset even when the camera is already on it, so F always frames the current selection.

@@ -88,12 +88,12 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
     if (!active || scenario !== 'correlated') return;
     const keyboard = (event: KeyboardEvent) => {
       const el = event.target as HTMLElement;
-      if (event.defaultPrevented || el.closest('input, select, textarea, button, a, summary, [contenteditable=true]')) return;
+      if (event.defaultPrevented || about.open || el.closest('input, select, textarea, button, a, summary, [contenteditable=true]')) return;
       if (event.code === 'Space') { event.preventDefault(); runtime.run(!runtime.status().running); }
       if (event.code === 'ArrowRight') { event.preventDefault(); runtime.step(); }
     };
     window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
-  }, [active, scenario, runtime]);
+  }, [active, scenario, runtime, about.open]);
 
   const reference = casimir(params.gap, params.area), pair = london(params.distance);
   /** Restore the stage's starting parameters (and the dipole clock). */

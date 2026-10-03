@@ -50,6 +50,8 @@ export function AboutSheet({ open, onOpenChange, section, onSection, experiment,
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [active, open, onOpenChange]);
+  // A sheet left open when its lab is hidden closes, so it does not reappear on return without a new request.
+  useEffect(() => { if (!active && open) onOpenChange(false); }, [active, open, onOpenChange]);
   const current = sections.some(s => s.id === section) ? section : sections[0]?.id;
   return (
     <Dialog.Root open={open && active} onOpenChange={onOpenChange}>

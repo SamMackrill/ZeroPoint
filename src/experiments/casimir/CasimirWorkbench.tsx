@@ -100,12 +100,12 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
     if (!active) return;
     const keyboard = (event: KeyboardEvent) => {
       const el = event.target as HTMLElement;
-      if (event.defaultPrevented || el.closest('input, select, textarea, button, a, summary, [contenteditable=true]')) return;
+      if (event.defaultPrevented || about.open || el.closest('input, select, textarea, button, a, summary, [contenteditable=true]')) return;
       if (event.code === 'Space') { event.preventDefault(); runtime.run(!runtime.status().running); }
       if (event.code === 'ArrowRight') { event.preventDefault(); runtime.step(); }
     };
     window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
-  }, [active, runtime]);
+  }, [active, runtime, about.open]);
 
   let inspected = model.particles.find(p => p.id === selected);
   if (follow && !inspected) inspected = [...model.particles].reverse().find(p => scenario === 'electron-electron' ? p.gap : model.bridge(p)) ?? model.particles.find(p => model.bridge(p));

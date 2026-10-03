@@ -79,6 +79,13 @@ test('pinned Zepton finishes its own lifetime and does not inherit a new identit
   await app.getByLabel('Follow next birth after annihilation').check();
   await expect(app.locator('.casimir-life-heading strong')).not.toHaveText(identity);
   await tid(page, 'transport-run').click();
+  // Transport keys do nothing while About is open, even with focus on one of its tab panels.
+  const paused = await time(page).innerText();
+  await page.getByRole('button', { name: 'Illustrative model' }).filter({ visible: true }).click();
+  await page.getByTestId('about-sheet').getByRole('tabpanel').focus();
+  await page.keyboard.press('Space'); await page.keyboard.press('ArrowRight');
+  await expect(time(page)).toHaveText(paused); await expect(tid(page, 'transport-run')).toContainText('Run');
+  await page.keyboard.press('Escape');
   // The loupe opens 2-up beside the scene; 1-up returns it to the Selection tab.
   await expect(app.getByRole('region', { name: 'Lifetime loupe' }).locator('.casimir-loupe')).toBeVisible();
   await expect(app.locator('.casimir-selection .casimir-loupe')).toHaveCount(0);

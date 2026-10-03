@@ -49,4 +49,13 @@ describe('AboutSheet', () => {
     fireEvent.keyDown(window, { key: '?' });
     expect(view.queryByTestId('about-sheet')).toBeNull();
   });
+
+  it('closes when its lab is hidden, so it does not reappear on return', () => {
+    const view = render(<Lab/>);
+    fireEvent.click(view.getByText('open'));
+    expect(view.getByTestId('about-sheet')).toBeTruthy();
+    view.rerender(<Lab active={false}/>);
+    view.rerender(<Lab/>);
+    expect(view.queryByTestId('about-sheet')).toBeNull();
+  });
 });

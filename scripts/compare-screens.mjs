@@ -88,11 +88,14 @@ async function capture(browser, url, screen, path) {
   await page.close();
 }
 
-/** Render the review page: each screen before and after, side by side. */
-export function reviewPage(title, description, screens) {
+/** HTML-escape text for the page (the description is already HTML). */
+const escapeHtml = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/** Render the review page: each screen before and after, side by side, and the command that regenerates it. */
+export function reviewPage(title, description, screens, command = 'node scripts/compare-screens.mjs') {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ZeroPoint · ${title}: before and after</title>
 <style>body{margin:0;background:#0c131b;color:#e3ebf1;font:14px/1.55 'DM Sans',system-ui,'Segoe UI',sans-serif}main{max-width:1400px;margin:auto;padding:36px 28px 70px}h1{font-size:30px;letter-spacing:-.8px;margin:0 0 8px}h2{font-size:16px;margin:26px 0 8px}p{color:#aebfcc;max-width:900px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}figure{margin:0}img{width:100%;display:block;border:1px solid #34495b;border-radius:8px}figcaption{font:600 11px ui-monospace,Consolas,monospace;letter-spacing:1px;text-transform:uppercase;color:#8397a8;margin-top:6px}</style></head>
-<body><main><h1>${title}: before and after</h1><p>${description}</p><p>Real screens: "before" runs the layer below, and "after" runs this layer. Click an image to open it at full size. Regenerate with <code>node scripts/compare-screens.mjs</code>.</p>
+<body><main><h1>${title}: before and after</h1><p>${description}</p><p>Real screens: "before" runs the layer below, and "after" runs this layer. Click an image to open it at full size. Regenerate with <code>${escapeHtml(command)}</code>.</p>
 ${screens.map(s => { const fit = s.viewport && s.viewport.width < 700 ? ` style="max-width:${s.viewport.width}px"` : ''; return `<h2>${s.title}</h2><div class="pair"><figure><a href="${s.name}-before.jpg"><img src="${s.name}-before.jpg" alt="${s.title}, before" loading="lazy"${fit}></a><figcaption>Before</figcaption></figure><figure><a href="${s.name}-after.jpg"><img src="${s.name}-after.jpg" alt="${s.title}, after" loading="lazy"${fit}></a><figcaption>After</figcaption></figure></div>`; }).join('\n')}
 </main></body></html>
 `;
@@ -120,6 +123,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       } finally { await browser.close(); }
     } finally { await b.server.close(); }
   } finally { await a.server.close(); }
-  writeFileSync(join(target, 'index.html'), reviewPage(title, description, screens));
+  // The command that regenerates this page, quoted for a POSIX shell (Git Bash on Windows).
+  const quote = text => `'${text.replace(/'/g, `'\\''`)}'`;
+  const command = ['node scripts/compare-screens.mjs', '--before', before, '--out', out, '--set', option('--set') ?? 'screens', '--title', quote(title), '--description', quote(description)].join(' ');
+  writeFileSync(join(target, 'index.html'), reviewPage(title, description, screens, command));
   console.log(`Review page: ${relative(root, join(target, 'index.html'))}`);
 }
