@@ -1,0 +1,96 @@
+/* The command palette (plan §11): a centred card over a dimmed workbench. Cards appear only in popovers and sheets. */
+.palette-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: color-mix(in srgb, var(--shadow) 45%, transparent);
+}
+
+.palette {
+  position: fixed;
+  top: 12vh;
+  left: 50%;
+  z-index: 61;
+  width: min(560px, calc(100vw - 32px));
+  transform: translateX(-50%);
+  overflow: hidden;
+  background: var(--bg-1);
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  box-shadow: 0 24px 80px color-mix(in srgb, var(--shadow) 70%, transparent);
+}
+
+.palette-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  background: transparent;
+  color: var(--text);
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  font: inherit;
+  font-size: var(--fs-body);
+  outline: none;
+}
+
+.palette-input::placeholder {
+  color: var(--text-3);
+}
+
+.palette-list {
+  max-height: min(420px, 60vh);
+  overflow: auto;
+  padding: 6px;
+}
+
+.palette-empty {
+  padding: 18px;
+  color: var(--text-3);
+  font-size: var(--fs-ui);
+  text-align: center;
+}
+
+.palette-group [cmdk-group-heading] {
+  padding: 8px 10px 4px;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  letter-spacing: .6px;
+  text-transform: uppercase;
+}
+
+.palette-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 32px;
+  padding: 0 10px;
+  color: var(--text-2);
+  border-radius: 6px;
+  font-size: var(--fs-ui);
+  cursor: pointer;
+}
+
+.palette-item[data-selected=true] {
+  background: var(--bg-3);
+  color: var(--text);
+}
+
+.palette-item[data-disabled=true] {
+  opacity: .45;
+  cursor: default;
+}
+
+.palette-keys kbd {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 3px;
+  padding: 1px 5px;
+  background: var(--bg-2);
+  color: var(--text);
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  font: var(--fs-micro) var(--mono);
+  text-align: center;
+}

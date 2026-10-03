@@ -1,10 +1,11 @@
 // The action registry (plan §11 "Keyboard map", roadmap P6): every keyboard shortcut is an action with a label, a group
 // and a binding. One listener per visible lab runs them, the Help sheet lists them, and the command palette (UI 15b)
-// will search them.
+// searches them.
 import { useEffect, useLayoutEffect, useRef } from 'react';
+import { appliesTo, getPath, type ExperimentDefinition } from './definition';
 
 /** Palette and Help-sheet groups, in display order. */
-export const ACTION_GROUPS = ['Transport', 'Cameras', 'Selection', 'Setup', 'View', 'Files', 'Help'] as const;
+export const ACTION_GROUPS = ['Scenarios', 'Transport', 'Layers', 'Cameras', 'Selection', 'Setup', 'Parameters', 'Files', 'View', 'Help'] as const;
 export type ActionGroup = typeof ACTION_GROUPS[number];
 
 /** One command. */
@@ -24,9 +25,11 @@ export interface Action {
   repeat?: boolean;
   /**
    * Handled by its own component (the split view, selection, the Shell's panels, the Help sheet), so the registry lists
-   * it but does not bind it.
+   * it but does not bind it; from the palette, it presses its key.
    */
   listOnly?: boolean;
+  /** Not offered in the command palette (e.g. Apply, which needs focus in Setup). */
+  palette?: false;
 }
 
 const MAC = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
@@ -71,8 +74,9 @@ function ownKey(event: KeyboardEvent): boolean {
  */
 export function useActions(active: boolean, actions: readonly Action[]) {
   // The listener reads the committed list: a layout effect updates it before any later keydown (render stays pure).
+  // The visible lab's list is also what the command palette offers.
   const current = useRef(actions);
-  useLayoutEffect(() => { current.current = actions; });
+  useLayoutEffect(() => { current.current = actions; if (active) visible = actions; });
   useEffect(() => {
     if (!active) return;
     const onKey = (event: KeyboardEvent) => {
@@ -88,8 +92,19 @@ export function useActions(active: boolean, actions: readonly Action[]) {
   }, [active]);
 }
 
+let visible: readonly Action[] = [];
+/** The visible lab's actions, for the command palette. */
+export const visibleActions = () => visible;
+
+/** Press a binding as if from the keyboard, so a component that handles its own key (listOnly) acts on it. */
+export function press(binding: string) {
+  const parts = binding.split('+'), key = parts.at(-1)!, mods = new Set(parts.slice(0, -1));
+  window.dispatchEvent(new KeyboardEvent('keydown', { key: key === 'Space' ? ' ' : key, code: key === 'Space' ? 'Space' : '', bubbles: true, cancelable: true,
+    ctrlKey: mods.has('Mod') && !MAC, metaKey: mods.has('Mod') && MAC, shiftKey: mods.has('Shift'), altKey: mods.has('Alt') }));
+}
+
 /** A shortcut its own component handles (listOnly), listed so the Help sheet and palette show the whole keyboard map. */
-const listed = (id: string, label: string, group: ActionGroup, key: string): Action => ({ id, label, group, keys: [key], run: () => undefined, listOnly: true });
+const listed = (id: string, label: string, group: ActionGroup, key: string): Action => ({ id, label, group, keys: [key], run: () => press(key), listOnly: true });
 
 /** Shortcuts every lab has: the Shell's panels and focus mode, and Help. */
 export const PANEL_SHORTCUTS: readonly Action[] = [
@@ -98,9 +113,10 @@ export const PANEL_SHORTCUTS: readonly Action[] = [
   listed('view.dock', 'Show or hide the dock', 'View', 'Mod+j'),
   listed('view.focus', 'Focus mode (hide the panels)', 'View', 'Mod+.'),
   listed('help.open', 'Help: About and shortcuts', 'Help', '?'),
+  { ...listed('help.palette', 'Command palette', 'Help', 'Mod+k'), palette: false },
 ];
 /** SetupPanel's own key, for labs with restart parameters. */
-export const APPLY_SHORTCUT = listed('setup.apply', 'Apply pending changes', 'Setup', 'Mod+Enter');
+export const APPLY_SHORTCUT: Action = { ...listed('setup.apply', 'Apply pending changes', 'Setup', 'Mod+Enter'), palette: false };
 /** The split view's own key (SplitView). */
 export const SPLIT_SHORTCUT = listed('view.split', 'Split view', 'View', '\\');
 /** Selection keys (useSelectionKeys); Focus only where the lab has a focus camera. */
@@ -112,4 +128,26 @@ export const SELECTION_SHORTCUTS = {
 /** Camera presets on 1–4, in the order the viewport's camera control lists them. */
 export function cameraActions(cameras: readonly { id: string; label: string }[], select: (id: string) => void): Action[] {
   return cameras.slice(0, 4).map((camera, i) => ({ id: `camera.${camera.id}`, label: `${camera.label} camera`, group: 'Cameras', keys: [String(i + 1)], run: () => select(camera.id) }));
+}
+
+/** Show or hide each of the scenario's layers by name (palette › Layers). */
+export function layerActions(definition: ExperimentDefinition, scenario: string, view: object, onView: (key: string, value: boolean) => void): Action[] {
+  return definition.layers.filter(l => appliesTo(l, scenario)).map(layer => {
+    const on = !!getPath(view, layer.key);
+    return { id: `layer.${layer.key}`, label: `${on ? 'Hide' : 'Show'} ${layer.label}`, group: 'Layers', run: () => onView(layer.key, !on) };
+  });
+}
+
+/** Jump to a parameter's value field (palette › Parameters): open Setup, then focus and select the visible field. */
+export function parameterActions(definition: ExperimentDefinition, scenario: string, openSetup: () => void): Action[] {
+  return definition.params.filter(p => p.kind === 'range' && appliesTo(p, scenario)).map(param => ({
+    id: `param.${param.key}`, label: param.label, group: 'Parameters', run: () => {
+      openSetup();
+      const focus = (tries: number) => {
+        const field = [...document.querySelectorAll<HTMLInputElement>(`[data-testid="param-${param.key}"] input`)].find(f => f.offsetParent !== null);
+        if (field) { field.focus(); field.select(); } else if (tries > 0) requestAnimationFrame(() => focus(tries - 1));
+      };
+      focus(10);
+    },
+  }));
 }

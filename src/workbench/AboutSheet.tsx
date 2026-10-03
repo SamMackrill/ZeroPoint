@@ -34,6 +34,14 @@ export function useAbout() {
   return { open, setOpen, section, setSection, show };
 }
 
+/** Palette › Help: open the Help sheet at About or at the keyboard map. */
+export function helpActions(show: (at?: AboutSectionId) => void): Action[] {
+  return [
+    { id: 'help.about', label: 'About this scenario', group: 'Help', run: () => show('scenario') },
+    { id: 'help.shortcuts', label: 'Keyboard shortcuts', group: 'Help', run: () => show('shortcuts') },
+  ];
+}
+
 /** Props for AboutSheet. */
 export interface AboutSheetProps {
   open: boolean;
