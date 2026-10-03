@@ -195,7 +195,8 @@ test('electron mobile layers, masked probe and exports work', async ({ page }) =
   await tid(page, 'event-aligned').click();
   let close = await inspector(page, 'View');
   await expect(tid(page, 'layer-cutaway')).toHaveAttribute('aria-pressed', 'false');
-  await tid(page, 'setting-reduced-motion').check(); await close();
+  await close();
+  await tid(page, 'settings').filter({ visible: true }).click(); await tid(page, 'setting-reduced-motion').check(); await page.keyboard.press('Escape'); // a global setting, in the header
   await expect(page.getByTestId('electron-tick')).toContainText('Tick 360');
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await tid(page, 'export-menu').click(); const image = page.waitForEvent('download'); await tid(page, 'export-png').click(); expect((await image).suggestedFilename()).toBe('zeropoint-electron.png');

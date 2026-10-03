@@ -20,6 +20,7 @@ import { lightDefinition } from './definition';
 import '../../light/light.css';
 import './light-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView } from '../../workbench/SplitView';
 import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
 
@@ -46,7 +47,10 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   const { state, latest, sink, send, error, restart } = useLight(active);
   const runtime = useMemo(() => lightRuntime({ send, latest, sink }), [send, latest, sink]);
   useEffect(() => () => runtime.dispose(), [runtime]);
-  const [view, setView] = useState<LightView>(() => ({ ...DEFAULT_LIGHT_VIEW, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
+  const [view, setView] = useState<LightView>(() => ({ ...DEFAULT_LIGHT_VIEW, reducedMotion: getSettings().reducedMotion }));
+  // Reduced motion is a global setting (header › Settings); the view follows it, including after a Load replaces it.
+  const { reducedMotion } = useSettings();
+  useEffect(() => { if (view.reducedMotion !== reducedMotion) setView(v => ({ ...v, reducedMotion })); }, [reducedMotion, view.reducedMotion]);
   const [selected, setSelected] = useState<number | null>(null), [camera, setCamera] = useState<'orbit' | 'side' | 'pair'>('orbit');
   const [graphicsError, setGraphicsError] = useState(''), [revision, setRevision] = useState(0), [notice, setNotice] = useState('');
   const [checkpoints, setCheckpoints] = useState<LightState[]>([]);
@@ -216,10 +220,6 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
       </SetupPanel>}
       view={<>
         <ViewPanel definition={lightDefinition} scenario="induction" view={view} onView={(k, v) => setView(old => withPaths(old, { [k]: v }))}/>
-        <section className="inspector-group" aria-label="Settings">
-          <header className="inspector-group-head"><h3>Settings</h3></header>
-          <label className="medium-setting"><input type="checkbox" data-testid="setting-reduced-motion" checked={view.reducedMotion} onChange={e => setView(v => ({ ...v, reducedMotion: e.target.checked }))}/>Reduced flashing &amp; camera motion</label>
-        </section>
       </>}/>
   );
 
@@ -232,7 +232,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   return (
     <div className="light-workbench-root" style={{ display: active ? undefined : 'none' }}>
       <Shell id="light" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'pair', label: `Pair ${inspected.index + 1} close-up`, content: <div className="light-pair-pane">{glyph}</div> }]} split={split} onSplit={setSplit} pane="pair" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
-        status={<StatusBar running={s.running} items={[LIGHT_MODEL, <span data-testid="light-tick">Tick {s.tick} · Δt = τ/120</span>, `start x = ${sourceX(p).toFixed(1)} L`, 'Fixed centres · prescribed c · local worker']}/>}/>
+        status={<StatusBar running={s.running} telemetry={[LIGHT_MODEL]} items={[<span data-testid="light-tick">Tick {s.tick} · Δt = τ/120</span>, `start x = ${sourceX(p).toFixed(1)} L`, 'Fixed centres · prescribed c · local worker']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
     </div>

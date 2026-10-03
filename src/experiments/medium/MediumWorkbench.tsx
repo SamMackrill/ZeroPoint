@@ -18,6 +18,7 @@ import { TimelineBar } from '../../workbench/TimelineBar';
 import { mediumDefinition, type MediumParams } from './definition';
 import './medium-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { getSettings, updateSettings, useSettings } from '../../workbench/settings';
 import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
 import { SplitView } from '../../workbench/SplitView';
 import { DipoleCloseUp } from './DipoleCloseUp';
@@ -64,7 +65,11 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const [host, setHost] = useState<HTMLDivElement | null>(null), viewport = useRef<FieldRenderer | null>(null);
   const [camera, setCamera] = useState<'perspective' | 'top' | 'front'>('perspective'), cameraRef = useRef(camera);
   cameraRef.current = camera;
-  const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches }));
+  const [view, setView] = useState<ViewSettings>(() => ({ ...DEFAULT_VIEW, reducedMotion: getSettings().reducedMotion }));
+  // Reduced motion is a global setting (header › Settings); the view follows it, including after a Load replaces it.
+  // The orbit hint shows on the first visit only (the plan's cut list); dismissing it is remembered.
+  const { reducedMotion, orbitHintSeen } = useSettings();
+  useEffect(() => { if (view.reducedMotion !== reducedMotion) setView(v => ({ ...v, reducedMotion })); }, [reducedMotion, view.reducedMotion]);
   const viewRef = useRef(view);
   useEffect(() => { viewRef.current = view; }, [view]);
   const [graphicsError, setGraphicsError] = useState<string | null>(null), [renderRevision, setRenderRevision] = useState(0);
@@ -75,7 +80,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const [preset, setPreset] = useState('balanced'), [scenario, setScenario] = useState('balanced');
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
   const [rows, setRows] = useState<Diagnostics[]>([]), [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
-  const [notice, setNotice] = useState(''), [busy, setBusy] = useState(false), [showHint, setShowHint] = useState(true);
+  const [notice, setNotice] = useState(''), [busy, setBusy] = useState(false);
   // Medium opens 1-up; the split pane shows the selected dipole enlarged (§07 split view).
   const [split, setSplit] = useState(false);
   const about = useAbout();
@@ -169,7 +174,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
 
   const viewportNode = (
     <section className="viewport-shell medium-stage" aria-label="Field visualization">
-      <div ref={setHost} className="viewport" onPointerDown={() => setShowHint(false)}/>
+      <div ref={setHost} className="viewport" onPointerDown={() => { if (!orbitHintSeen) updateSettings({ orbitHintSeen: true }); }}/>
       {sim.error && <div className="error-banner" role="alert">{sim.error}<button onClick={sim.restart}>Restart worker</button></div>}
       <div className="view-top">
         <div className="view-label"><span className={`dot ${running ? '' : 'paused'}`}/><span>{ready ? running ? 'LIVE FIELD' : 'PAUSED' : 'INITIALIZING'}</span><span className="view-label-divider"/>{fmt(d?.active ?? 0)} dipoles · periodic 8 L₀ cell</div>
@@ -178,7 +183,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
       </div>
       <div className="view-axis" aria-hidden="true"><svg viewBox="0 0 60 60"><path d="M28 34V8M28 34L51 45M28 34L8 46" fill="none" strokeWidth="1.5" stroke={palette.text4}/><text x="24" y="7" fill={palette.dataShell3}>Y</text><text x="50" y="56" fill={palette.dataPos}>X</text><text x="0" y="55" fill={palette.text3}>Z</text><circle cx="28" cy="34" r="3" fill={palette.text2}/></svg></div>
       <div className="view-bottom"><div className="charge-legend">{view.representation === 'dipoles' ? <><span><i className="charge positive"/>+ Positive lobe</span><span><i className="charge negative"/>− Negative lobe</span></> : <span><i className="charge negative"/>Dipole samples · orientation hidden</span>}</div><span className="cell-scale"><i/>8 L₀ · periodic cell</span></div>
-      {showHint && <div className="orbit-hint">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> Click to inspect</div>}
+      {!orbitHintSeen && <div className="orbit-hint">Drag to orbit <span>·</span> Scroll to zoom <span>·</span> Click to inspect</div>}
       {view.slice && <div className="slice-legend"><span>Energy / L₀³</span><i/><span>0 — {viewport.current?.getSliceMax().toFixed(1) ?? '0'} E₀</span></div>}
       {graphicsError && <div className="graphics-error" role="alert"><Box size={30}/><h3>Viewport needs attention</h3><p>{graphicsError}</p><button onClick={() => { setGraphicsError(null); setContextLost(false); setRenderRevision(n => n + 1); }}>Recover viewport</button></div>}
     </section>
@@ -200,7 +205,6 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
             { label: 'Field energy', value: (d?.fieldEnergy ?? 0).toFixed(1), unit: 'E₀' },
             { label: 'Ledger residual', value: Math.abs(d?.residual ?? 0).toExponential(1), unit: 'E₀' },
             { label: 'Rejected births', value: fmt(d?.rejected ?? 0) },
-            { label: 'Parameter revision', value: String(d?.parameterVersion ?? 0) },
             { label: 'Physical time', value: ((d?.time ?? 0) / FREQUENCY_UNIT).toExponential(2), unit: 's' },
             { label: 'Represented energy', value: ((d?.fieldEnergy ?? 0) * ENERGY_UNIT).toExponential(2), unit: 'J' },
           ]}/>
@@ -237,11 +241,6 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
         onLive={updateParameter} onApply={changes => restart(parameters, Number(changes.seed ?? seed), preset)} onReset={() => startScenario(scenario)}/>}
       view={<>
         <ViewPanel definition={mediumDefinition} scenario={scenario} view={view} onView={setOption}/>
-        <section className="inspector-group" aria-label="Settings">
-          <header className="inspector-group-head"><h3>Settings</h3></header>
-          <label className="medium-setting"><input type="checkbox" data-testid="setting-reduced-motion" checked={view.reducedMotion} onChange={e => setOption('reducedMotion', e.target.checked)}/>Reduce visual flashing</label>
-          <small className="reduced-help">Keeps lobe size constant; rotation and pair separation still follow the lifecycle. Step while paused for still inspection.</small>
-        </section>
       </>}/>
   );
 
@@ -263,7 +262,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   return (
     <div className="medium-workbench" style={{ display: active ? undefined : 'none' }}>
       <Shell id="medium" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'dipole', label: 'Dipole close-up', content: <DipoleCloseUp picked={picked}/> }]} split={split} onSplit={setSplit} pane="dipole" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
-        status={<StatusBar running={running} items={[sim.error ? 'Simulation error' : ready ? 'Simulation ready' : 'Starting worker', `Seed ${state?.seed ?? '—'}`, <span data-testid="tick">Tick {d?.tick ?? 0}</span>, MODEL_VERSION]}/>}/>
+        status={<StatusBar running={running} items={[sim.error ? 'Simulation error' : ready ? 'Simulation ready' : 'Starting worker', `Seed ${state?.seed ?? '—'}`, <span data-testid="tick">Tick {d?.tick ?? 0}</span>]} telemetry={[MODEL_VERSION, `Parameter revision ${d?.parameterVersion ?? 0}`]}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
     </div>
