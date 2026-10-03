@@ -11,19 +11,20 @@ import { useElectron } from '../../electron/useElectron';
 import { palette } from '../../ui/palette';
 import { Plot } from '../../ui/Plot';
 import { Segmented } from '../../ui/Segmented';
-import { FileActions, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
+import { FileActions, fileShortcuts, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
 import { appliesTo, getPath, withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Control, Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { electronRuntime, SPEEDS } from '../../workbench/runtime';
 import { Shell } from '../../workbench/Shell';
-import { TimelineBar } from '../../workbench/TimelineBar';
+import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
 import { CHECKPOINT_LIMIT } from '../medium/MediumWorkbench';
 import { electronDefinition, electronMilestones } from './definition';
 import '../../light/light.css';
 import '../../electron/electron.css';
 import './electron-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { APPLY_SHORTCUT, cameraActions, PANEL_SHORTCUTS, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView, type SplitPane } from '../../workbench/SplitView';
 import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
@@ -71,6 +72,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const [graphicsError, setGraphicsError] = useState(''), [contextLost, setContextLost] = useState(false), [revision, setRevision] = useState(0), [notice, setNotice] = useState('');
   const [checkpoints, setCheckpoints] = useState<ElectronState[]>([]);
   const about = useAbout();
+  const fileInput = useRef<HTMLInputElement>(null);
   // Spin's split state is the saved Linked 2D section flag (2-up by default); this picks which linked view it shows.
   const [pane, setPane] = useState<'section' | 'motion'>('section');
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('probe'), [dockCollapsed, setDockCollapsed] = useState(false);
@@ -95,16 +97,6 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   useEffect(() => { renderer.current?.cameraPreset(camera); }, [camera, view.cutaway, state?.parameters.axis]);
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 6000); return () => clearTimeout(timer); }, [notice]);
   useEffect(() => { onScenarioChange?.(scenario); }, [scenario, onScenarioChange]);
-  useEffect(() => {
-    if (!active) return;
-    const key = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (e.defaultPrevented || ['INPUT', 'SELECT', 'BUTTON', 'A', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable || about.open || error || study) return;
-      if (e.code === 'Space' && !contextLost) { e.preventDefault(); runtime.run(!latest.current?.running); }
-      if (e.code === 'ArrowRight') { e.preventDefault(); runtime.step(); }
-    };
-    window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
-  }, [active, runtime, latest, error, contextLost, study, about.open]);
 
   const clearSelection = useCallback(() => setSelected(null), []);
   // Re-apply the preset even when the camera is already on it, so F always frames the current selection.
@@ -163,8 +155,21 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const setSplit = useCallback((on: boolean) => setView(v => ({ ...v, spinDisplay: { ...v.spinDisplay, section: on } })), []);
   const scenarioTitle = electronDefinition.scenarios.find(x => x.id === scenario)?.title;
 
+  const timeline = electronDefinition.timeline(scenario, p);
+  /** Choose a camera preset; Shell close-up brings the shells back if they were hidden. */
+  const chooseCamera = (id: string) => { if (id === 'shell') setView(old => ({ ...old, shells: true })); setCamera(id as Camera); };
+  // Every shortcut is an action (plan §11): the Help sheet lists them and one listener runs them.
+  const actions: Action[] = [
+    ...transportActions(runtime, timeline, SPEEDS, { onCapture: capture, runDisabled: contextLost, disabled: !ready }),
+    ...(study ? [] : cameraActions(electronDefinition.cameras.filter(c => appliesTo(c, scenario)), chooseCamera)),
+    ...(study ? [] : [{ id: 'view.layers', label: 'Open View › Layers', group: 'View' as const, keys: ['l'], run: () => setTab('view') }]),
+    ...fileShortcuts(save, fileInput, !ready),
+    ...(study ? [] : [SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus]), APPLY_SHORTCUT, ...(p.mode === 'spin' && !study ? [SPLIT_SHORTCUT] : []), ...PANEL_SHORTCUTS,
+  ];
+  useActions(active && !about.open, actions);
+
   const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle} onChip={() => about.show('scenario')} onHelp={() => about.show()}
-    actions={<FileActions disabled={!ready} onFile={load} onSave={save}
+    actions={<FileActions inputRef={fileInput} disabled={!ready} onFile={load} onSave={save}
       exports={[{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError || !!study }, { id: 'csv', label: 'CSV (reference sequence)', onSelect: csv }]}/>}/>;
 
   const scene = (
@@ -174,7 +179,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
       <div className="light-view-top">
         <span><i className={`dot ${s.running ? '' : 'paused'}`}/>{s.running ? 'FIELD RESPONSE' : 'PAUSED'}<b>{stageLabel} · {stageNote}</b></span>
         <Segmented label="Camera" testId="camera" options={electronDefinition.cameras.filter(c => appliesTo(c, scenario)).map(c => ({ value: c.id, label: c.label }))} value={camera}
-          onChange={v => { if (v === 'shell') setView(old => ({ ...old, shells: true })); setCamera(v as Camera); }}/>
+          onChange={chooseCamera}/>
       </div>
       <div className="electron-overlay-bottom">
         <p className="electron-hint">{p.mode === 'spin' ? 'Curled arrows turn at each pair · shaded plane links to 2D' : 'Faraday lines follow dipoles · field arrows are references'}</p>
@@ -225,7 +230,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   );
 
   const aboutNode = (
-    <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={scenarioTitle} sections={[
+    <AboutSheet {...about} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={scenarioTitle} sections={[
       ...(MODE_OF[scenario] ? [{ id: 'scenario' as const, content: <><p>{DESCRIPTION[MODE_OF[scenario]]} {p.mode === 'electric' ? 'The electron appears during the first 0.35 τ; nearby pairs then align before distant ones. The 3 τ introduction is an illustrative transition, not a calculated propagation time. Probe numbers are final-field analytic references.' : p.mode === 'spin' ? 'Each replacement pair starts partly aligned, turns toward the electron, and collapses. Both views show the same equatorial sites and generations. Outer pairs turn more slowly under the chosen display law; no centre orbits the electron.' : 'The path marks the prescribed electron trajectory. It is not a permanent magnetic wake; the reference field changes as the electron passes.'}</p><h3>Reading the scene</h3><p>Faraday lines trace the neighboring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative. Magnetic guides follow the motion-induced rotation direction.</p></> }] : []),
       { id: 'units', content: <><h3>Source scale &amp; constants</h3><dl className="light-readouts"><div><dt>R = λC/2</dt><dd>{(RADIUS * 1e12).toFixed(6)} pm</dd></div><div><dt>c/(2πR)</dt><dd>{(C / (2 * Math.PI * RADIUS)).toExponential(3)} Hz</dd></div><div><dt>α</dt><dd>1 / {(1 / ALPHA).toFixed(6)}</dd></div><div><dt>μ along preferred axis</dt><dd>{(-p.spin * G_FACTOR / 2).toFixed(6)} μB</dd></div></dl><p className="light-small">Reference inputs, not fitted outputs. Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions.</p><a href="./docs/electron-source-notes.md" target="_blank" rel="noreferrer">Read extracted source details & model decisions ↗</a></> },
       { id: 'sources', content: <div className="electron-sources electron-about-sources">
@@ -270,7 +275,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   );
 
   const timelineNode = state && !study && (
-    <TimelineBar runtime={runtime} timeline={electronDefinition.timeline(scenario, p)} speeds={SPEEDS}
+    <TimelineBar runtime={runtime} timeline={timeline} speeds={SPEEDS}
       markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `electron tick ${c.tick}` }))}
       onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) runtime.restore(c); }} onCapture={capture} runDisabled={contextLost}/>
   );

@@ -1,5 +1,6 @@
 import { Diamond, Pause, Play, RotateCcw, SkipForward, StepForward } from 'lucide-react';
 import type { Capabilities, RuntimeStatus } from './runtime';
+import type { Action } from './actions';
 import type { TimelineEvent, TimelineSpec } from './definition';
 import { useRuntimeStatus, type StatusSource } from './useRuntimeStatus';
 import { Segmented } from '../ui/Segmented';
@@ -92,4 +93,49 @@ export function TimelineBar({ runtime, timeline, speeds, markers = [], onMarker,
       {onCapture && <button type="button" className="timeline-capture" data-testid="capture" onClick={onCapture}><Diamond size={12} aria-hidden="true"/>Capture</button>}
     </div>
   );
+}
+
+/** Options for transportActions: Capture, and holds on Run or on every key. */
+export interface TransportActionOptions {
+  onCapture?(): void;
+  /** Hold Run (as TimelineBar's runDisabled), e.g. while the viewport recovers a lost graphics context. */
+  runDisabled?: boolean;
+  /** No transport keys at all, e.g. while the worker starts or after an error. */
+  disabled?: boolean;
+}
+
+/**
+ * The timeline bar's commands as keyboard actions (plan §11 keyboard map): Space, →, Shift →, ] and [, Home, < and >,
+ * and C. Each follows the runtime's capabilities and the timeline's kind, as the bar's buttons do; static scenarios
+ * have none.
+ */
+export function transportActions(runtime: TimelineRuntime, timeline: TimelineSpec, speeds: readonly number[], options: TransportActionOptions = {}): Action[] {
+  if (timeline.kind === 'static') return [];
+  const can = runtime.capabilities, off = !!options.disabled;
+  const nextIsEvent = timeline.next !== 'jump' && can.nextEvent;
+  const speedBy = (delta: number) => {
+    const at = speeds.indexOf(runtime.status().speed), from = at < 0 ? Math.max(0, speeds.indexOf(1)) : at;
+    runtime.speed(speeds[Math.min(speeds.length - 1, Math.max(0, from + delta))]);
+  };
+  const previousEvent = () => {
+    const tick = runtime.status().tick;
+    runtime.seek([...timeline.events].reverse().find(e => e.tick < tick)?.tick ?? 0);
+  };
+  const actions: Action[] = [
+    { id: 'transport.run', label: 'Run / Pause', group: 'Transport', keys: ['Space'], disabled: off || !can.run, run: () => {
+      const status = runtime.status();
+      if (status.running || !(options.runDisabled || status.finished)) runtime.run(!status.running);
+    } },
+    { id: 'transport.step', label: 'Step', group: 'Transport', keys: ['ArrowRight'], repeat: true, disabled: off || !can.step, run: () => { if (!runtime.status().finished) runtime.step(); } },
+  ];
+  if (can.jump) actions.push({ id: 'transport.jump', label: 'Jump +1 τ', group: 'Transport', keys: ['Shift+ArrowRight'], disabled: off, run: () => { if (!runtime.status().finished) runtime.jump(1); } });
+  if (timeline.next && nextIsEvent) actions.push({ id: 'transport.next', label: 'Next event', group: 'Transport', keys: [']'], disabled: off, run: () => runtime.nextEvent() });
+  if (nextIsEvent && can.seek && timeline.events.length) actions.push({ id: 'transport.previous', label: 'Previous event', group: 'Transport', keys: ['['], disabled: off, run: previousEvent });
+  if (can.reset) actions.push({ id: 'transport.reset', label: 'Reset to start', group: 'Transport', keys: ['Home'], disabled: off, run: () => runtime.reset() });
+  if (can.speed && speeds.length > 1) actions.push(
+    { id: 'transport.slower', label: 'Slower', group: 'Transport', keys: ['<'], disabled: off, run: () => speedBy(-1) },
+    { id: 'transport.faster', label: 'Faster', group: 'Transport', keys: ['>'], disabled: off, run: () => speedBy(1) },
+  );
+  if (options.onCapture) actions.push({ id: 'transport.capture', label: 'Capture checkpoint', group: 'Transport', keys: ['c'], disabled: off, run: options.onCapture });
+  return actions;
 }

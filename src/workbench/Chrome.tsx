@@ -1,7 +1,8 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Popover from '@radix-ui/react-popover';
 import { ArrowDownToLine, ArrowUpFromLine, Atom, ChevronDown, ChevronRight, CircleHelp, FlaskConical, Info, Lightbulb, Magnet, PanelLeftClose, PanelLeftOpen, Settings, Waves } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { ReactNode, Ref, RefObject } from 'react';
+import type { Action } from './actions';
 import { BrandMark } from '../app/BrandMark';
 import { RepositoryLink } from '../app/RepositoryLink';
 import { updateSettings, useSettings } from './settings';
@@ -15,7 +16,7 @@ export interface HeaderProps {
   modified?: boolean;
   /** File and export buttons, identical across experiments once a lab has migrated. */
   actions?: ReactNode;
-  /** Opens the About sheet for the current scenario (the header's ? button; Shift ? does the same). */
+  /** Opens the Help sheet (About and Shortcuts) for the current scenario: the header's ? button; the ? key does the same. */
   onHelp?(): void;
   /** Makes the "Illustrative model" chip a button that opens About › This scenario. */
   onChip?(): void;
@@ -33,7 +34,7 @@ export function Header({ experiment, scenario, modified, actions, onHelp, onChip
       {onChip
         ? <button type="button" className="workbench-chip" onClick={onChip}><Info size={12} aria-hidden="true"/>Illustrative model</button>
         : <span className="workbench-chip"><Info size={12} aria-hidden="true"/>Illustrative model</span>}
-      <div className="workbench-actions">{actions}<RepositoryLink/><SettingsMenu/>{onHelp && <button type="button" className="workbench-icon-button" aria-label="About this scenario" title="About this scenario (Shift ?)" onClick={onHelp}><CircleHelp size={16} aria-hidden="true"/></button>}</div>
+      <div className="workbench-actions">{actions}<RepositoryLink/><SettingsMenu/>{onHelp && <button type="button" className="workbench-icon-button" aria-label="Help" title="Help: About and shortcuts (?)" onClick={onHelp}><CircleHelp size={16} aria-hidden="true"/></button>}</div>
     </header>
   );
 }
@@ -172,17 +173,19 @@ export interface FileActionsProps {
   exports: readonly ExportItem[];
   accept?: string;
   disabled?: boolean;
+  /** The hidden file input, so Ctrl O can open it (fileShortcuts). */
+  inputRef?: Ref<HTMLInputElement>;
 }
 
 /**
  * The unified file buttons (§05 H): Load, Save and Export ▾ with the same labels in every experiment; the format is
  * chosen by the experiment. Test ids: file-load, file-save, file-input and export-<id>.
  */
-export function FileActions({ onFile, onSave, exports, accept = '.json,application/json', disabled }: FileActionsProps) {
+export function FileActions({ onFile, onSave, exports, accept = '.json,application/json', disabled, inputRef }: FileActionsProps) {
   return (
     <div className="file-actions">
       <label className={`file-button${disabled ? ' is-disabled' : ''}`} data-testid="file-load" title="Load"><ArrowUpFromLine size={14} aria-hidden="true"/><span className="file-label">Load</span>
-        <input className="visually-hidden" type="file" data-testid="file-input" aria-label="Load experiment file" accept={accept} disabled={disabled}
+        <input ref={inputRef} className="visually-hidden" type="file" data-testid="file-input" aria-label="Load experiment file" accept={accept} disabled={disabled}
           onChange={event => { const file = event.target.files?.[0]; if (file) onFile(file); event.target.value = ''; }}/>
       </label>
       <button type="button" className="file-button" data-testid="file-save" disabled={disabled} onClick={onSave} aria-label="Save" title="Save"><ArrowDownToLine size={14} aria-hidden="true"/><span className="file-label">Save</span></button>
@@ -196,4 +199,12 @@ export function FileActions({ onFile, onSave, exports, accept = '.json,applicati
       </DropdownMenu.Root>
     </div>
   );
+}
+
+/** Ctrl S saves and Ctrl O opens the file picker (plan §11 keyboard map), for a lab's FileActions. */
+export function fileShortcuts(save: () => void, input: RefObject<HTMLInputElement | null>, disabled = false): Action[] {
+  return [
+    { id: 'files.save', label: 'Save', group: 'Files', keys: ['Mod+s'], disabled, run: save },
+    { id: 'files.load', label: 'Load', group: 'Files', keys: ['Mod+o'], disabled, run: () => input.current?.click() },
+  ];
 }

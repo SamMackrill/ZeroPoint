@@ -177,3 +177,47 @@
 .about-body .model-note-card strong {
   color: var(--text);
 }
+
+/* Help › Shortcuts: the keyboard map, one row per action. */
+.about-shortcuts dl {
+  margin: 0 0 16px;
+}
+
+.about-shortcuts dl > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.about-shortcuts dt {
+  color: var(--text-2);
+  font-size: var(--fs-ui);
+}
+
+.about-shortcuts dd {
+  margin: 0;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  white-space: nowrap;
+}
+
+.about-shortcuts kbd {
+  display: inline-block;
+  min-width: 18px;
+  margin-left: 3px;
+  padding: 1px 5px;
+  background: var(--bg-2);
+  color: var(--text);
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  font: var(--fs-micro) var(--mono);
+  text-align: center;
+}
+
+.about-shortcuts-note {
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+}

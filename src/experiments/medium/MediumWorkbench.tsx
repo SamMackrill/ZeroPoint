@@ -8,13 +8,14 @@ import { palette } from '../../ui/palette';
 import { Plot } from '../../ui/Plot';
 import { Readouts } from '../../ui/Readouts';
 import { Segmented } from '../../ui/Segmented';
-import { FileActions, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
+import { FileActions, fileShortcuts, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
 import { scenarioState, withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { mediumRuntime, SPEEDS } from '../../workbench/runtime';
 import { Shell } from '../../workbench/Shell';
-import { TimelineBar } from '../../workbench/TimelineBar';
+import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
+import { APPLY_SHORTCUT, cameraActions, PANEL_SHORTCUTS, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { mediumDefinition, type MediumParams } from './definition';
 import './medium-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
@@ -84,6 +85,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   // Medium opens 1-up; the split pane shows the selected dipole enlarged (§07 split view).
   const [split, setSplit] = useState(false);
   const about = useAbout();
+  const fileInput = useRef<HTMLInputElement>(null);
   const d = state?.diagnostics, ready = !!state && !sim.error, running = state?.running ?? false;
 
   /** A pick selects the dipole and opens the Selection tab (§07: selection changes auto-open it). */
@@ -117,16 +119,6 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   }, [d?.tick]);
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 5000); return () => clearTimeout(timer); }, [notice]);
   useEffect(() => { onPresetChange?.(preset); }, [preset, onPresetChange]);
-  useEffect(() => {
-    const keyboard = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      // Keys another control already handled (a plot's crosshair uses the arrows) are not transport shortcuts.
-      if (e.defaultPrevented || ['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON', 'A'].includes(target.tagName) || target.isContentEditable || about.open || !ready || !active) return;
-      if (e.code === 'Space') { e.preventDefault(); if (!contextLost) runtime.run(!latest.current?.running); }
-      if (e.code === 'ArrowRight') { e.preventDefault(); runtime.step(); }
-    };
-    window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
-  }, [active, ready, contextLost, latest, runtime, about.open]);
 
   const clearSelection = useCallback(() => viewport.current?.select(null), []);
   const focusSelection = useCallback(() => { if (picked) viewport.current?.focusOn(picked.position); }, [picked]);
@@ -169,7 +161,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const params: MediumParams = { ...parameters, seed };
   const scenarioTitle = mediumDefinition.scenarios.find(s => s.id === scenario)?.title;
   const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle} modified={preset === 'custom'} onHelp={() => about.show()} onChip={() => about.show('scenario')}
-    actions={<FileActions disabled={!ready || busy} onFile={importFile} onSave={() => save('file')}
+    actions={<FileActions inputRef={fileInput} disabled={!ready || busy} onFile={importFile} onSave={() => save('file')}
       exports={[{ id: 'png', label: 'PNG image', onSelect: exportPNG, disabled: !!graphicsError }, { id: 'csv', label: 'CSV (diagnostics)', onSelect: exportCSV, disabled: !rows.length }]}/>}/>;
 
   const viewportNode = (
@@ -244,14 +236,25 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
       </>}/>
   );
 
+  const timeline = mediumDefinition.timeline(scenario, params);
+  // Every shortcut is an action (plan §11): the Help sheet lists them and one listener runs them.
+  const actions: Action[] = [
+    ...transportActions(runtime, timeline, SPEEDS, { onCapture: () => save('checkpoint'), runDisabled: contextLost, disabled: !ready || busy }),
+    ...cameraActions([{ id: 'perspective', label: 'Perspective' }, { id: 'top', label: 'Top' }, { id: 'front', label: 'Front' }], id => setCamera(id as typeof camera)),
+    { id: 'view.representation', label: 'Dipoles or points', group: 'View', keys: ['r'], run: () => setOption('representation', view.representation === 'dipoles' ? 'points' : 'dipoles') },
+    { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
+    ...fileShortcuts(() => save('file'), fileInput, !ready || busy),
+    SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
+  ];
+  useActions(active && !about.open, actions);
   const timelineNode = state && (
-    <TimelineBar runtime={runtime} timeline={mediumDefinition.timeline(scenario, params)} speeds={SPEEDS}
+    <TimelineBar runtime={runtime} timeline={timeline} speeds={SPEEDS}
       markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `t ${c.tick * DT < 100 ? (c.tick * DT).toFixed(2) : Math.round(c.tick * DT)} τ` }))}
       onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) restore(c); }} onCapture={() => save('checkpoint')} runDisabled={contextLost}/>
   );
 
   const aboutNode = (
-    <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={scenarioTitle} sections={[
+    <AboutSheet {...about} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={scenarioTitle} sections={[
       { id: 'scenario', content: <><h3>What you are observing</h3><p className="model-lede">Observe pairs rotate, separate and collapse around fixed centres. Changes apply at the next available model tick.</p><p>This is a reproducible, reduced visualization of the blueprint’s fluctuation lifecycle. It is not a complete ZPF force solver or experimental validation of the hypothesis.</p><div className="model-equations"><span>E = hf/2</span><span>Δt = 1/f</span><span>Efield + Ereservoir = constant</span></div><h3>The choices made in this version</h3><ul><li>A periodic 8 L₀ cube, at most 10,000 representative dipoles. The population is a finite sample, not a literal Planck-resolved medium.</li><li>Seeded Poisson births; frequencies uniform from 0.5–1.5 times the frequency centre. Existing dipoles keep their assigned frequency.</li><li>We identify ΔE with E and use the blueprint’s equality ΔE Δt = h/2, giving lifetime 1/f. This is an explicit model convention.</li><li>Every birth debits E from a bookkeeping reservoir; every death credits E. Each pair has a fixed centre. Its lobes rotate in opposite positions, separate smoothly to a maximum at midlife, and collapse together before disappearance. The chosen rotation rate and separation envelope are illustrative; no kinetic-energy law is asserted.</li><li>The energy slice bins live dipole energy in a 0.5 L₀ slab. It is not pressure or an emergent force.</li><li>At 1× playback, one wall-clock second represents one τ = 10⁻²⁰ physical seconds. Fixed ticks are 1/120 τ. Runs pause when the tab is hidden.</li></ul><p className="model-limits">Torque, emergent constants, stable shells, force propagation, exchange events and cosmology need additional equations and are not implemented in this release.</p><p className="model-note-card"><strong>A finite window into a proposed field.</strong> Reduced lifecycle model. Physical scales are mapped to an observable clock. A space to observe. A model to question.</p></> },
       { id: 'units', content: <><h3>Scale &amp; conventions</h3><dl className="medium-constants"><div><dt>Length · L₀</dt><dd>10⁻¹³ m</dd></div><div><dt>Frequency · f₀</dt><dd>10²⁰ Hz</dd></div><div><dt>Time · τ</dt><dd>10⁻²⁰ s</dd></div><div><dt>Energy · E₀</dt><dd>hf₀</dd></div><div><dt>Fixed step</dt><dd>1/120 τ</dd></div></dl>
           <div className="formula">E = ½hf <span>·</span> Δt = 1/f</div></> },

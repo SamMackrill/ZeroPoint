@@ -105,7 +105,7 @@ test('mobile controls and source notes fit the viewport', async ({ page }) => {
   await tid(page, 'params-apply').click();
   await page.getByRole('button', { name: 'Close inspector' }).click();
   await tid(page, 'transport-step').click();
-  await page.getByRole('button', { name: 'About this scenario' }).filter({ visible: true }).click(); // phones hide the header chip
+  await page.getByRole('button', { name: 'Help', exact: true }).filter({ visible: true }).click(); // phones hide the header chip
   const about = page.getByTestId('about-sheet');
   await expect(about.getByText(/Section 5 leaves the quantitative force law unresolved/)).toBeVisible();
   await about.getByRole('tab', { name: 'Sources' }).click();
