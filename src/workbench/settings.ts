@@ -33,10 +33,10 @@ function load(): Settings {
 /** The current settings. */
 export function getSettings(): Settings { return current ??= load(); }
 
-/** Change some settings, store them and notify every subscriber. */
+/** Change some settings, store them and notify every subscriber. A failed write (storage full or revoked) still applies them for this visit. */
 export function updateSettings(changes: Partial<Settings>) {
   current = { ...getSettings(), ...changes };
-  layoutStorage().setItem(KEY, JSON.stringify(current));
+  try { layoutStorage().setItem(KEY, JSON.stringify(current)); } catch (error) { console.warn('Settings will not be saved: browser storage refused the write.', error); }
   listeners.forEach(listener => listener());
 }
 
