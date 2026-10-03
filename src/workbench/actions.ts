@@ -1,7 +1,7 @@
 // The action registry (plan §11 "Keyboard map", roadmap P6): every keyboard shortcut is an action with a label, a group
 // and a binding. One listener per visible lab runs them, the Help sheet lists them, and the command palette (UI 15b)
 // will search them.
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 
 /** Palette and Help-sheet groups, in display order. */
 export const ACTION_GROUPS = ['Transport', 'Cameras', 'Selection', 'Setup', 'View', 'Files', 'Help'] as const;
@@ -70,7 +70,9 @@ function ownKey(event: KeyboardEvent): boolean {
  * elsewhere (defaultPrevented: a plot's arrows, a popover's Esc) or bound to nothing are left alone.
  */
 export function useActions(active: boolean, actions: readonly Action[]) {
-  const current = useRef(actions); current.current = actions;
+  // The listener reads the committed list: a layout effect updates it before any later keydown (render stays pure).
+  const current = useRef(actions);
+  useLayoutEffect(() => { current.current = actions; });
   useEffect(() => {
     if (!active) return;
     const onKey = (event: KeyboardEvent) => {
