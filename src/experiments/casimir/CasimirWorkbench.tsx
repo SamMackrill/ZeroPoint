@@ -18,6 +18,7 @@ import '../../casimir/casimir.css';
 import './casimir-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
 import { SplitView } from '../../workbench/SplitView';
+import { InfoTip } from '../../ui/InfoTip';
 import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
 
 /** Format a pressure delta with an explicit sign and fixed precision. */
@@ -157,7 +158,6 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
         <button onClick={() => { const p = [...model.particles].reverse().find(p => model.bridge(p)); if (p) pin(p); }}>Inspect newest Zepton</button>
         <label><input type="checkbox" checked={follow} onChange={e => setFollow(e.target.checked)}/> Follow next birth after annihilation</label>
       </div>
-      <p className="casimir-muted">{like ? 'A weak or neutral midpoint leaves new dipoles disordered. Neighbouring dipoles turn toward their local field.' : 'Each new pair first expands and pushes back, then contracts. Dashed links show neighbouring pairs moving inward.'} Click a pair to inspect its lifetime.</p>
     </div>
   );
 
@@ -166,11 +166,9 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
       setup={<SetupPanel definition={casimirDefinition} scenario={scenario} params={params} onLive={() => undefined} onApply={changes => restart(withPaths(params, changes))} onReset={() => restart(casimirDefinition.defaultParams.pair === scenario ? casimirDefinition.defaultParams : { ...casimirDefinition.defaultParams, pair: scenario })}>
         <section className="inspector-group" aria-label="From pressure to motion">
           <header className="inspector-group-head"><h3>From pressure to motion</h3></header>
-          <div className="inspector-choice"><span className="inspector-choice-label">Charges</span>
+          <div className="inspector-choice"><span className="inspector-choice-label">Charges<InfoTip label="Charges" testId="info-charges">{model.released ? 'Charges respond to the measured pressure difference.' : 'Charges are held so you can watch the surrounding field.'} {like ? 'Equal masses respond equally.' : 'The proton responds 1/1836 as much as the electron.'} Illustrative acceleration; run playback to move.</InfoTip></span>
             <Segmented label="Charges" testId="charges" options={[{ value: 'held', label: 'Held' }, { value: 'released', label: 'Released', disabled: model.boundaryReached }]} value={model.released ? 'released' : 'held'}
               onChange={v => { if (v === 'held') model.hold(); else model.released = true; refresh(); }}/></div>
-          <p className="casimir-muted">{model.released ? 'Charges respond to the measured pressure difference.' : 'Charges are held so you can watch the surrounding field.'} {like ? 'Equal masses respond equally.' : 'The proton responds 1/1836 as much as the electron.'}</p>
-          <small className="casimir-muted">Illustrative acceleration · run playback to move</small>
         </section>
       </SetupPanel>}
       view={<ViewPanel definition={casimirDefinition} scenario={scenario} view={view} onView={(k, v) => setView(old => withPaths(old, { [k]: v }))}/>}/>
@@ -189,6 +187,10 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
             ['02', 'Grow, then contract', 'New pairs push back as they grow. During collapse, adjacent pairs shift inward toward the voids.'],
             ['03', 'A greater outer push', 'Contraction outweighs growth in this illustration. Higher outer pressure pushes the charges together.'],
           ]).map(([n, title, text]) => <div key={n}><span>{n}</span><h2>{title}</h2><p>{text}</p></div>)}</section>
+          <p>{like ? 'A weak or neutral midpoint leaves new dipoles disordered. Neighbouring dipoles turn toward their local field.' : 'Each new pair first expands and pushes back, then contracts. Dashed links show neighbouring pairs moving inward.'}</p>
+          <h3>From pressure to motion</h3>
+          <ul><li>Held · Charges are held so you can watch the surrounding field.</li><li>Released · Charges respond to the measured pressure difference. {like ? 'Equal masses respond equally.' : 'The proton responds 1/1836 as much as the electron.'}</li></ul>
+          <p>Illustrative acceleration · run playback to move</p>
           <p className="casimir-muted">Fleming’s proposed mechanism · qualitative pressure, arbitrary spatial units. Extended Casimir effect · short-lived Zeptons and local van der Waals pressure.</p>
         </div> },
       { id: 'sources', content: <div className="about-links"><a href="./docs/casimir-model.md" target="_blank" rel="noreferrer">Model and source notes ↗</a><a href={paper} target="_blank" rel="noreferrer">Read Section 4 ↗</a><a href={paper} target="_blank" rel="noreferrer">Section 4 · Figures 3 & 4 ↗</a></div> },

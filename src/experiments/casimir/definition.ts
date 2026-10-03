@@ -22,8 +22,8 @@ export const casimirDefinition: ExperimentDefinition<CasimirParams, CasimirView>
   ],
   layers: [
     { key: 'zeptons', label: 'Zeptons', group: 'Medium' },
-    { key: 'pressure', label: 'Pressure colour', group: 'Fields' },
-    { key: 'interactions', label: 'Interaction arrows', group: 'Fields' },
+    { key: 'pressure', label: 'Pressure colour', group: 'Fields', info: 'Qualitative local pressure relative to ambient P₀. Colour saturates at the scale endpoints.' },
+    { key: 'interactions', label: 'Interaction arrows', group: 'Fields', info: 'Yellow arrows show the net push; dashed links show neighbouring pairs moving inward.' },
   ],
   cameras: [],
   speeds: CASIMIR_SPEEDS,
