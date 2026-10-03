@@ -125,7 +125,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   } finally { await a.server.close(); }
   // The command that regenerates this page, quoted for a POSIX shell (Git Bash on Windows).
   const quote = text => `'${text.replace(/'/g, `'\\''`)}'`;
-  const command = ['node scripts/compare-screens.mjs', '--before', before, '--out', out, '--set', option('--set') ?? 'screens', '--title', quote(title), '--description', quote(description)].join(' ');
+  const word = text => (/^[\w./:@-]+$/.test(text) ? text : quote(text)); // paths stay bare unless they need quoting
+  const command = ['node scripts/compare-screens.mjs', '--before', word(before), '--out', word(out), '--set', option('--set') ?? 'screens', '--title', quote(title), '--description', quote(description)].join(' ');
   writeFileSync(join(target, 'index.html'), reviewPage(title, description, screens, command));
   console.log(`Review page: ${relative(root, join(target, 'index.html'))}`);
 }
