@@ -79,6 +79,13 @@ test('pinned Zepton finishes its own lifetime and does not inherit a new identit
   await app.getByLabel('Follow next birth after annihilation').check();
   await expect(app.locator('.casimir-life-heading strong')).not.toHaveText(identity);
   await tid(page, 'transport-run').click();
+  // Transport keys do nothing while About is open, even with focus on one of its tab panels.
+  const paused = await time(page).innerText();
+  await page.getByRole('button', { name: 'Illustrative model' }).filter({ visible: true }).click();
+  await page.getByTestId('about-sheet').getByRole('tabpanel').focus();
+  await page.keyboard.press('Space'); await page.keyboard.press('ArrowRight');
+  await expect(time(page)).toHaveText(paused); await expect(tid(page, 'transport-run')).toContainText('Run');
+  await page.keyboard.press('Escape');
   // The loupe opens 2-up beside the scene; 1-up returns it to the Selection tab.
   await expect(app.getByRole('region', { name: 'Lifetime loupe' }).locator('.casimir-loupe')).toBeVisible();
   await expect(app.locator('.casimir-selection .casimir-loupe')).toHaveCount(0);
@@ -96,12 +103,15 @@ test('mobile controls and source notes fit the viewport', async ({ page }) => {
   await tid(page, 'params-apply').click();
   await page.getByRole('button', { name: 'Close inspector' }).click();
   await tid(page, 'transport-step').click();
-  await page.getByRole('button', { name: 'Illustrative model' }).click();
-  await expect(app.getByText(/Section 5 leaves the quantitative force law unresolved/)).toBeVisible();
-  const link = app.getByRole('link', { name: 'Read Section 4' });
+  await page.getByRole('button', { name: 'About this scenario' }).filter({ visible: true }).click(); // phones hide the header chip
+  const about = page.getByTestId('about-sheet');
+  await expect(about.getByText(/Section 5 leaves the quantitative force law unresolved/)).toBeVisible();
+  await about.getByRole('tab', { name: 'Sources' }).click();
+  const link = about.getByRole('link', { name: 'Read Section 4' });
   const response = await page.request.get((await link.getAttribute('href'))!.split('#')[0]);
   expect(response.ok()).toBe(true);
   expect(response.headers()['content-type']).toContain('pdf');
-  await app.screenshot({ path: 'test-results/casimir-mobile.png' });
+  await page.screenshot({ path: 'test-results/casimir-mobile.png' });
+  await page.keyboard.press('Escape'); await expect(about).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });

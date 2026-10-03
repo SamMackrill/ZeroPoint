@@ -13,6 +13,8 @@ export interface ShellProps {
   viewport: ReactNode;
   timeline?: ReactNode;
   dock?: ReactNode;
+  /** The dock is only its readout strip (the scenario has no dock tabs): it sits under the timeline, not in a resizable panel. */
+  dockStripOnly?: boolean;
   inspector?: ReactNode;
   status?: ReactNode;
 }
@@ -69,7 +71,7 @@ export function Shell(props: ShellProps) {
 }
 
 /** The desktop shell: resizable panels with keyboard toggles. */
-function WideShell({ id, header, rail, viewport, timeline, dock, inspector, status }: ShellProps) {
+function WideShell({ id, header, rail, viewport, timeline, dock, dockStripOnly, inspector, status }: ShellProps) {
   const railRef = usePanelRef(), inspectorRef = usePanelRef(), dockRef = usePanelRef();
   const storage = layoutStorage();
   const outer = useDefaultLayout({ id: `zeropoint-shell-${id}`, storage });
@@ -107,9 +109,9 @@ function WideShell({ id, header, rail, viewport, timeline, dock, inspector, stat
         <Panel id="centre" minSize="30%">
           <Group orientation="vertical" className="workbench-centre" {...inner}>
             <Panel id="viewport" minSize="25%">
-              <div className="workbench-stage"><div className="workbench-viewport">{viewport}</div>{timeline}</div>
+              <div className="workbench-stage"><div className="workbench-viewport">{viewport}</div>{timeline}{dockStripOnly && dock}</div>
             </Panel>
-            {dock && <>
+            {dock && !dockStripOnly && <>
               <Separator className="workbench-separator is-horizontal"/>
               <Panel id="dock" panelRef={dockRef} defaultSize="170px" minSize="90px" collapsible collapsedSize="45px">{dock}</Panel>
             </>}

@@ -56,19 +56,16 @@
   max-height: none;
 }
 
-.casimir-dock-notes {
-  display: grid;
-  gap: 10px;
+/* About › This scenario: the three-step mechanism reads top to bottom in the sheet. */
+.casimir-about .casimir-explanation {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  margin: 16px 0;
+  padding: 16px 0 0;
 }
 
-.casimir-dock-notes .casimir-notes {
-  margin: 0;
-}
-
-.casimir-dock-notes .casimir-explanation {
-  margin: 0;
-  padding: 0;
-  border: 0;
+.casimir-about .casimir-explanation h2 {
+  margin: 4px 0;
 }
 
 .casimir-selection .casimir-loupe,

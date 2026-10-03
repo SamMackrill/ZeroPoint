@@ -38,16 +38,6 @@
   max-width: 760px;
 }
 
-.vdw-dock-chapter {
-  display: grid;
-  gap: 12px;
-}
-
-.vdw-dock-chapter .vdw-context,
-.vdw-dock-chapter .vdw-sources {
-  margin: 0;
-}
-
 .vdw-setup-notes {
   margin-top: 12px;
 }
@@ -121,4 +111,20 @@
   display: block;
   margin-top: 4px;
   color: var(--text-3);
+}
+
+/* About sheet: Chapter 3's context and the source gallery, two figures to a row. */
+.about-body .vdw-source-content {
+  padding: 0;
+}
+
+.about-body .vdw-source-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 16px 0;
+}
+
+.about-body .vdw-about h2 {
+  margin: 4px 0 10px;
+  color: var(--text);
+  font-size: var(--fs-title);
 }

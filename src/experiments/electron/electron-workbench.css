@@ -102,10 +102,6 @@
   margin: 8px 0;
 }
 
-.electron-about {
-  margin-top: 12px;
-}
-
 @media(max-width:850px) {
   .electron-workbench-root .light-view-top .segmented {
     display: none;
@@ -146,4 +142,9 @@
 .electron-workbench-root .light-view-top {
   flex-wrap: wrap;
   row-gap: 8px;
+}
+
+/* About › Sources: the source cards read top to bottom in the sheet. */
+.about-body .electron-about-sources {
+  grid-template-columns: minmax(0, 1fr);
 }

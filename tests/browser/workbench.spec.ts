@@ -30,7 +30,7 @@ test('controls, inspection, checkpoints, files and error handling work end to en
   await inspector(page, 'View');
   await page.getByRole('radio', { name: 'Points', exact: true }).click(); await expect(page.getByRole('radio', { name: 'Points', exact: true })).toHaveAttribute('aria-checked', 'true');
   await tid(page, 'layer-slice').click(); await expect(tid(page, 'layer-slice')).toHaveAttribute('aria-pressed', 'true'); await expect(page.getByRole('slider', { name: 'Slice Z' })).toBeVisible();
-  await page.getByRole('button', { name: 'About the model' }).click(); await expect(page.getByRole('dialog')).toBeVisible(); await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).not.toBeVisible();
+  await page.getByRole('button', { name: 'About this scenario' }).click(); await expect(page.getByRole('dialog')).toContainText('What you are observing'); await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).not.toBeVisible();
   await expect(page.getByRole('slider', { name: /Jitter/ })).toHaveCount(0);
   await inspector(page, 'Setup');
   await page.getByRole('slider', { name: /Peak pair separation/ }).press('End');
@@ -39,7 +39,7 @@ test('controls, inspection, checkpoints, files and error handling work end to en
   await inspector(page, 'Selection'); await page.getByRole('button', { name: 'Select first active dipole' }).click();
   const centre = page.getByTestId('dipole-readouts').locator('.readout').filter({ has: page.locator('dt', { hasText: 'Fixed centre' }) }).locator('.readout-value');
   const position = await centre.innerText(); await tid(page, 'transport-step').click(); await expect(page.getByTestId('tick')).toHaveText('Tick 1'); await expect(centre).toHaveText(position);
-  await page.getByRole('button', { name: 'About the model' }).click(); await page.getByRole('button', { name: /Beyond the medium/ }).click(); await expect(page.getByRole('heading', { name: 'Van der Waals / Casimir pressure · available' })).toBeVisible();
+  await page.getByRole('button', { name: 'Illustrative model' }).filter({ visible: true }).click(); await tid(page, 'about-sources').click(); await expect(page.getByRole('heading', { name: 'Van der Waals / Casimir pressure · available' })).toBeVisible();
   const casimirLink = page.getByRole('link', { name: 'Read experiment plan' });
   const response = await page.request.get((await casimirLink.getAttribute('href'))!); expect(response.ok()).toBe(true); expect(await response.text()).toContain('Status: analytic comparison implemented'); await page.keyboard.press('Escape');
   expect(errors).toEqual([]); await page.screenshot({ path: 'test-results/workbench-desktop.png', fullPage: true });
