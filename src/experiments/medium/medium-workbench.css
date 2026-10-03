@@ -101,3 +101,23 @@
     display: none;
   }
 }
+
+.dipole-close-up {
+  margin: 0;
+}
+
+.dipole-close-up svg {
+  display: block;
+  width: 100%;
+}
+
+.dipole-close-up figcaption {
+  display: grid;
+  gap: 4px;
+  color: var(--text-2);
+  font-size: var(--fs-ui);
+}
+
+.dipole-close-up strong {
+  color: var(--text);
+}

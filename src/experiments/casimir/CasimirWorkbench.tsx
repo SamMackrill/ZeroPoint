@@ -17,6 +17,7 @@ import { casimirDefinition, type CasimirParams } from './definition';
 import '../../casimir/casimir.css';
 import './casimir-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { SplitView } from '../../workbench/SplitView';
 
 /** Format a pressure delta with an explicit sign and fixed precision. */
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(3)}`;
@@ -66,7 +67,7 @@ export interface CasimirWorkbenchProps {
  * The extended Casimir laboratory in the workbench (UI 10): the 2D charge-interaction scene on the main thread, driven
  * by MainThreadRuntime (fixed steps, 0.1–2× speed, hidden-tab pause); the two pairings as rail scenarios; the initial
  * separation as a ↻ parameter and Held / Released as a live control; pressure readouts, plots, events and notes in the
- * dock; the lifetime loupe in Selection. The model is unchanged.
+ * dock; the lifetime loupe in a 2-up split pane (or Selection, when 1-up). The model is unchanged.
  */
 export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScenarioChange }: CasimirWorkbenchProps) {
   const runtime = useMemo(() => new MainThreadRuntime(casimirModel()), []);
@@ -79,6 +80,8 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   const [params, setParams] = useState<CasimirParams>(casimirDefinition.defaultParams);
   const [view, setView] = useState<SceneLayers>(casimirDefinition.defaultView);
   const [selected, setSelected] = useState<number | null>(null), [follow, setFollow] = useState(true);
+  // Casimir opens 2-up with the lifetime loupe beside the scene; 1-up moves the loupe back into the Selection tab.
+  const [split, setSplit] = useState(true);
   const lastSelected = useRef<Zepton | null>(null);
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
   const scenario = params.pair;
@@ -160,7 +163,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
 
   const selectionNode = (
     <div className="casimir-selection">
-      <Lifetime particle={displayed} expired={!inspected}/>
+      {!split && <Lifetime particle={displayed} expired={!inspected}/>}
       <div className="casimir-inspect-actions">
         <button onClick={() => { const p = [...model.particles].reverse().find(p => model.bridge(p)); if (p) pin(p); }}>Inspect newest Zepton</button>
         <label><input type="checkbox" checked={follow} onChange={e => setFollow(e.target.checked)}/> Follow next birth after annihilation</label>
@@ -188,7 +191,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
 
   return (
     <div className="casimir-workbench-root" style={{ display: active ? undefined : 'none' }}>
-      <Shell id="casimir" header={headerNode} rail={rail} viewport={viewportNode} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+      <Shell id="casimir" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'loupe', label: 'Lifetime loupe', content: <div className="casimir-loupe-pane"><Lifetime particle={displayed} expired={!inspected}/></div> }]} split={split} onSplit={setSplit} pane="loupe" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={running} items={[`Separation ${params.separation.toFixed(1)} a.u.`, `${model.particles.length} Zeptons`, 'Qualitative pressure · arbitrary spatial units']}/>}/>
     </div>
   );
