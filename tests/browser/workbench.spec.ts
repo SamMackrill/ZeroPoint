@@ -150,3 +150,25 @@ test('keyboard shortcuts run the registry\'s actions and are listed in Help › 
   await page.keyboard.press('Escape'); await expect(help).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test('the command palette jumps to parameters, toggles layers by name and switches experiments', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/'); await expect(tid(page, 'transport-run')).toBeEnabled();
+  const palette = async (search: string) => {
+    await page.keyboard.press('Control+k');
+    await page.getByRole('combobox', { name: 'Command palette' }).fill(search);
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('combobox', { name: 'Command palette' })).toHaveCount(0);
+  };
+  await palette('frequency centre');
+  await expect(page.locator('[data-testid="param-frequency"] input').filter({ visible: true })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await palette('hide cell boundaries');
+  await page.getByRole('tab', { name: 'View', exact: true }).click();
+  await expect(tid(page, 'layer-bounds')).toHaveAttribute('aria-pressed', 'false');
+  await palette('sparse fluctuations');
+  await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toContainText('Sparse fluctuations');
+  await palette('light through');
+  await expect(page.getByTestId('light-tick')).toBeVisible();
+  expect(errors).toEqual([]);
+});
