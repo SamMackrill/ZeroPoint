@@ -203,7 +203,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
       tabs={[
         { id: 'plots', label: 'Plots', content: <div className="light-dock-plots">
           <div><h4>Spatial profile · current instant</h4><WavePlot x={spatialX} values={spatial} valuesB={spatialB} label="Spatial electric wave projection" unit="L" domain={[p.offset - 6, p.offset + 6]} marker={p.probe}/></div>
-          <div><h4>Probe trace · x = {p.probe.toFixed(1)} L</h4><WavePlot x={historyX} values={history} valuesB={historyB} label="Electric projection at the fixed probe over elapsed time" unit="τ" domain={[0, Math.max(d.time, 0.01)]}/></div>
+          <div><h4>Probe trace · x = {p.probe.toFixed(1)} L{pB && pB.probe !== p.probe && ` · B x = ${pB.probe.toFixed(1)} L`}</h4><WavePlot x={historyX} values={history} valuesB={historyB} label="Electric projection at the fixed probe over elapsed time" unit="τ" domain={[0, Math.max(d.time, 0.01)]}/></div>
         </div> },
         { id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={lightDefinition} scenario="induction" a={p} b={pB}
           onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}/> },
