@@ -221,3 +221,25 @@
   color: var(--text-3);
   font-size: var(--fs-micro);
 }
+
+/* Help › Saved views: each a link to a state, with what it shows. */
+.about-views {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.about-views li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.about-views a {
+  font-weight: 600;
+}
+
+.about-views p {
+  margin: 4px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-ui);
+}

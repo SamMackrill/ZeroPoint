@@ -97,21 +97,24 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   // A link restarts the sequence with its parameters and view, then seeks to its tick once the worker has them.
   const [link, setLink] = useState<PendingLink | null>(null), linkDone = useCallback(() => setLink(null), []);
   const applyLink = (request: ScenarioRequest) => {
-    const url = request.url;
+    const url = request.url, dropped = [...(request.dropped ?? [])];
     if (url) {
       const target = withPaths(scenarioState(lightDefinition, 'induction').params, url.params) as LightParameters;
-      runtime.configure(target); setSelected(null); setLink({ params: target, tick: url.tick });
+      runtime.configure(target); setLink({ params: target, tick: url.tick });
+      // A pinned pair is kept when it exists in the linked sequence.
+      if (url.selection !== undefined && url.selection < pairCount(target)) setSelected(url.selection);
+      else { setSelected(null); if (url.selection !== undefined) dropped.push(`selection ${url.selection}`); }
       setView(v => withPaths(v, url.view));
       if (url.camera) setCamera(url.camera as typeof camera);
       if (url.split) setSplit(url.split === 'pair');
     }
-    if (request.dropped?.length) setNotice(`Ignored link settings that don’t apply: ${request.dropped.join(', ')}.`);
+    if (dropped.length) setNotice(`Ignored link settings that don’t apply: ${dropped.join(', ')}.`);
   };
   const applyRef = useRef(applyLink); applyRef.current = applyLink;
   useEffect(() => { if (scenarioRequest) applyRef.current(scenarioRequest); }, [scenarioRequest]);
   const seek = useCallback((tick: number) => runtime.seek(tick), [runtime]);
   const linkHold = useLinkSeek(link, linkDone, state, seek);
-  const urlHash = encodeUrl(routeFor(lightDefinition, 'induction', p, view, { camera: camera === 'orbit' ? undefined : camera, split: split ? 'pair' : undefined, tick: s.tick || undefined }));
+  const urlHash = encodeUrl(routeFor(lightDefinition, 'induction', p, view, { camera: camera === 'orbit' ? undefined : camera, split: split ? 'pair' : undefined, tick: s.tick || undefined, selection: selected ?? undefined }));
   useUrlWriter(active, s.running || !state || linkHold, urlHash);
   const ready = !!state && !error;
   /** Restart the sequence with changed parameters (every light parameter is ↻). */

@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { fireEvent, render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AboutSheet, useAbout, type AboutSection, type AboutSectionId } from '../../src/workbench/AboutSheet';
 
 const SECTIONS: AboutSection[] = [{ id: 'scenario', content: <p>scenario notes</p> }, { id: 'sources', content: <p>source links</p> }];
@@ -57,5 +57,19 @@ describe('AboutSheet', () => {
     view.rerender(<Lab active={false}/>);
     view.rerender(<Lab/>);
     expect(view.queryByTestId('about-sheet')).toBeNull();
+  });
+
+  it('lists saved views as links, and following one closes Help and re-applies it even when it is already the address', () => {
+    const changed = vi.fn(); window.addEventListener('hashchange', changed);
+    const onOpenChange = vi.fn();
+    history.replaceState(null, '', '#/electron/spin?sel=1');
+    const view = render(<AboutSheet open section="views" onOpenChange={onOpenChange} onSection={() => undefined} experiment="Electron" active sections={[{ id: 'scenario', content: <p>notes</p> }]}
+      views={[{ title: 'Shared rotation', description: 'One pair, shared turns.', hash: '#/electron/spin?sel=1' }]}/>);
+    const link = view.getByRole('link', { name: 'Shared rotation' });
+    expect(link.getAttribute('href')).toBe('#/electron/spin?sel=1');
+    fireEvent.click(link);
+    expect(changed).toHaveBeenCalled();
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    window.removeEventListener('hashchange', changed);
   });
 });

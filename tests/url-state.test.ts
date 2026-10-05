@@ -49,5 +49,8 @@ describe('URL state', () => {
     // Entries the decoder rejects, and empty values, are listed with the dropped settings rather than lost.
     expect(resolveUrl(electronDefinition, decodeUrl('#/electron/spin?t=-4&L=+shells,~x')!).dropped).toEqual(['t -4', 'layer ~x']);
     expect(resolveUrl(lightDefinition, decodeUrl('#/light?wavelength=')!).dropped).toEqual(['wavelength']);
+    expect(decodeUrl('#/electron/spin?sel=2231')!.selection).toBe(2231);
+    expect(decodeUrl('#/electron/spin?sel=-1&sel2=4')!.selection).toBeUndefined();
+    expect(encodeUrl({ experiment: 'light', values: {}, layers: {}, selection: 0 })).toBe('#/light?sel=0');
   });
 });

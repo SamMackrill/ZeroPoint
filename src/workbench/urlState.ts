@@ -1,6 +1,6 @@
 // Shareable URL state (plan §11 "Shareable URL state", roadmap P6): the visible lab's experiment, scenario and the
 // non-default parts of its state, as a hash route the static host can serve:
-//   #/electron/spin?spin=-1&axis=x&cam=shell&split=section&t=691&L=+radius,-faraday
+//   #/electron/spin?spin=-1&axis=x&cam=shell&split=section&t=691&sel=2231&L=+radius,-faraday
 // Values are validated against the experiment's definition on the way in; anything unknown or out of range is dropped.
 import { useEffect, useState } from 'react';
 import type { Action } from './actions';
@@ -19,6 +19,8 @@ export interface UrlRoute {
   tick?: number;
   /** Entries the decoder could not read (a negative tick, a malformed layer), listed with the dropped settings. */
   rejected?: string[];
+  /** The selected item's stable index (Electron's sample, Light's pair); each lab checks its range. */
+  selection?: number;
 }
 
 /** The validated changes a lab applies on top of a scenario's starting state. */
@@ -28,9 +30,10 @@ export interface UrlOverrides {
   camera?: string;
   split?: string;
   tick?: number;
+  selection?: number;
 }
 
-const RESERVED = new Set(['cam', 'split', 't', 'L']);
+const RESERVED = new Set(['cam', 'split', 't', 'sel', 'L']);
 
 /** Format a value for the URL: numbers without float noise, booleans as 1/0. */
 const format = (value: unknown) => (typeof value === 'boolean' ? (value ? '1' : '0') : typeof value === 'number' ? String(Number(value.toPrecision(12))) : String(value));
@@ -42,6 +45,7 @@ export function encodeUrl(route: UrlRoute): string {
   if (route.camera) query.set('cam', route.camera);
   if (route.split) query.set('split', route.split);
   if (route.tick) query.set('t', String(route.tick));
+  if (route.selection !== undefined) query.set('sel', String(route.selection));
   const layers = Object.keys(route.layers).sort().map(k => `${route.layers[k] ? '+' : '-'}${k}`);
   if (layers.length) query.set('L', layers.join(','));
   const search = query.toString().replace(/%2C/g, ',').replace(/%2B/g, '+');
@@ -58,6 +62,7 @@ export function decodeUrl(hash: string): UrlRoute | null {
     if (key === 'cam') route.camera = value;
     else if (key === 'split') route.split = value;
     else if (key === 't') { const tick = Number(value); if (value.trim() !== '' && Number.isInteger(tick) && tick >= 0) route.tick = tick; else rejected.push(`t ${value}`); }
+    else if (key === 'sel') { const index = Number(value); if (value.trim() !== '' && Number.isInteger(index) && index >= 0) route.selection = index; else rejected.push(`sel ${value}`); }
     else if (key === 'L') for (const item of value.split(',')) { if (/^[+-][\w.]+$/.test(item)) route.layers[item.slice(1)] = item[0] === '+'; else rejected.push(`layer ${item}`); }
     else if (!RESERVED.has(key)) route.values[key] = value;
   }
@@ -66,7 +71,7 @@ export function decodeUrl(hash: string): UrlRoute | null {
 }
 
 /** The route for a lab's current state: only what differs from the scenario's starting state. */
-export function routeFor(definition: ExperimentDefinition, scenario: string, params: object, view: object, extra: Pick<UrlRoute, 'camera' | 'split' | 'tick'> = {}): UrlRoute {
+export function routeFor(definition: ExperimentDefinition, scenario: string, params: object, view: object, extra: Pick<UrlRoute, 'camera' | 'split' | 'tick' | 'selection'> = {}): UrlRoute {
   const start = scenarioState(definition, scenario), values: Record<string, string> = {}, layers: Record<string, boolean> = {};
   const differs = (a: unknown, b: unknown) => format(a) !== format(b);
   for (const spec of definition.params) if (appliesTo(spec, scenario) && differs(getPath(params, spec.key), getPath(start.params, spec.key))) values[spec.key] = format(getPath(params, spec.key));
@@ -110,6 +115,7 @@ export function resolveUrl(definition: ExperimentDefinition, route: UrlRoute): {
     if (panes.some(p => p.id === route.split) || (route.split === 'off' && panes.length)) overrides.split = route.split; else dropped.push(`split ${route.split}`);
   }
   if (route.tick) overrides.tick = route.tick;
+  if (route.selection !== undefined) overrides.selection = route.selection;
   return { scenario, overrides, dropped };
 }
 

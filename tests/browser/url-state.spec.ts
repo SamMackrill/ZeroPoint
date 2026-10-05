@@ -27,3 +27,12 @@ test('the address bar follows changes, Copy link writes it at once, and invalid 
   await expect(page.getByTestId('light-tick')).toBeVisible();
   await expect(tid(page, 'notice').filter({ visible: true })).toContainText('Ignored link settings that don’t apply: wavelength, bogus');
 });
+
+test('a link can carry the selection: Light opens with its pair pinned', async ({ page }) => {
+  await page.goto('/#/light?sel=3');
+  await expect(page.getByTestId('light-tick')).toBeVisible();
+  await page.getByRole('tab', { name: 'Selection', exact: true }).filter({ visible: true }).click();
+  await expect(page.locator('.light-selection-head h3')).toHaveText('Pair 4');
+  await expect(page.getByRole('button', { name: 'Follow active', exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/light?sel=3');
+});

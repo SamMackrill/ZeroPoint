@@ -6,12 +6,15 @@ import { ACTION_GROUPS, keyLabel, type Action } from './actions';
 import './about-sheet.css';
 
 /** The Help sheet's sections: About (plan §10) and the keyboard map (§11). Saved views joins them with URL state (UI 16). */
-export type AboutSectionId = 'scenario' | 'units' | 'sources' | 'shortcuts';
+export type AboutSectionId = 'scenario' | 'units' | 'sources' | 'views' | 'shortcuts';
 
 /** One section of the About sheet; a lab omits the sections it has nothing for. */
 export interface AboutSection { id: AboutSectionId; content: ReactNode }
 
-const LABELS: Record<AboutSectionId, string> = { scenario: 'This scenario', units: 'Units & constants', sources: 'Sources', shortcuts: 'Shortcuts' };
+const LABELS: Record<AboutSectionId, string> = { scenario: 'This scenario', units: 'Units & constants', sources: 'Sources', views: 'Saved views', shortcuts: 'Shortcuts' };
+
+/** A saved view (plan §10): a named URL-state link to a state worth returning to. */
+export interface SavedView { title: string; description: string; hash: string }
 
 /** The lab's keyboard map, grouped as in the palette; each binding shows as keys (Ctrl S, Shift →). */
 function ShortcutList({ actions }: { actions: readonly Action[] }) {
@@ -54,6 +57,8 @@ export interface AboutSheetProps {
   sections: readonly AboutSection[];
   /** The lab's actions, listed in a Shortcuts tab. */
   shortcuts?: readonly Action[];
+  /** Named links to states of this lab, listed in a Saved views tab. */
+  views?: readonly SavedView[];
   /** Whether Shift ? opens it (the lab is visible). */
   active: boolean;
 }
@@ -62,8 +67,14 @@ export interface AboutSheetProps {
  * The About sheet (plan §10): the full context behind the workspace — what the scenario shows and assumes, units and
  * constants, and sources — in a sheet over the inspector. The header chip, ? and Shift ? open it; Esc closes it.
  */
-export function AboutSheet({ open, onOpenChange, section, onSection, experiment, scenario, sections: about, shortcuts, active }: AboutSheetProps) {
-  const sections: readonly AboutSection[] = shortcuts?.length ? [...about, { id: 'shortcuts', content: <ShortcutList actions={shortcuts}/> }] : about;
+export function AboutSheet({ open, onOpenChange, section, onSection, experiment, scenario, sections: about, shortcuts, views, active }: AboutSheetProps) {
+  /** Follow a saved view: the hash routes it (re-applied even when the address bar already shows it), and Help closes. */
+  const follow = (view: SavedView) => { if (location.hash === view.hash) window.dispatchEvent(new HashChangeEvent('hashchange')); onOpenChange(false); };
+  const sections: readonly AboutSection[] = [
+    ...about,
+    ...(views?.length ? [{ id: 'views' as const, content: <ul className="about-views">{views.map(v => <li key={v.hash}><a href={v.hash} onClick={() => follow(v)}>{v.title}</a><p>{v.description}</p></li>)}</ul> }] : []),
+    ...(shortcuts?.length ? [{ id: 'shortcuts' as const, content: <ShortcutList actions={shortcuts}/> }] : []),
+  ];
   useEffect(() => {
     if (!active || open) return;
     const onKey = (event: KeyboardEvent) => {
