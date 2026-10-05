@@ -124,8 +124,11 @@ test('Esc clears and F focuses the selection, and a click on the field selects',
   await expect(page.getByText('No active selection')).toBeVisible();
   await expect(pane).toContainText('Select a dipole');
   await page.locator('.medium-workbench').getByTestId('split-toggle').click(); await expect(pane).toHaveCount(0);
+  // F zoomed in on that dipole, by an amount that depends on the camera animation's timing; return to the overview
+  // (Top, then Perspective re-applies the preset) so the sweep below crosses the same field on every run.
+  await page.getByRole('radio', { name: 'Top', exact: true }).click(); await page.getByRole('radio', { name: 'Perspective', exact: true }).click();
   const canvas = page.locator('canvas'), box = (await canvas.boundingBox())!;
-  for (let x = 0.3; x <= 0.7 && await page.getByText('No active selection').isVisible(); x += 0.02) await canvas.click({ position: { x: box.width * x, y: box.height * 0.5 } });
+  for (const y of [0.5, 0.45, 0.55]) for (let x = 0.3; x <= 0.7 && await page.getByText('No active selection').isVisible(); x += 0.02) await canvas.click({ position: { x: box.width * x, y: box.height * y } });
   await expect(page.locator('.dipole-inspector h2')).toContainText('Dipole ');
   expect(errors).toEqual([]);
 });
