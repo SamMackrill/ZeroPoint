@@ -113,14 +113,6 @@
   },
   {
     "file": "src/experiments/casimir/CasimirWorkbench.tsx",
-    "text": "A weak or neutral midpoint leaves new dipoles disordered. Neighbouring dipoles turn toward their local field."
-  },
-  {
-    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
-    "text": "Each new pair first expands and pushes back, then contracts. Dashed links show neighbouring pairs moving inward."
-  },
-  {
-    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
     "text": "Charges are held so you can watch the surrounding field."
   },
   {
@@ -146,6 +138,22 @@
   {
     "file": "src/experiments/casimir/CasimirWorkbench.tsx",
     "text": "Contraction outweighs growth in this illustration. Higher outer pressure pushes the charges together."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "A weak or neutral midpoint leaves new dipoles disordered. Neighbouring dipoles turn toward their local field."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Each new pair first expands and pushes back, then contracts. Dashed links show neighbouring pairs moving inward."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Held · Charges are held so you can watch the surrounding field."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Released · Charges respond to the measured pressure difference."
   },
   {
     "file": "src/experiments/casimir/CasimirWorkbench.tsx",
@@ -221,6 +229,10 @@
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Faraday lines trace the neighboring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative. Magnetic guides follow the motion-induced rotation direction."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Reference inputs, not fitted outputs. Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions."
   },
   {
@@ -246,10 +258,6 @@
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Shell sampling is hidden. Choose Shell close-up to restore the linked views."
-  },
-  {
-    "file": "src/experiments/electron/ElectronWorkbench.tsx",
-    "text": "Faraday lines trace the neighboring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative. Magnetic guides follow the motion-induced rotation direction."
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
