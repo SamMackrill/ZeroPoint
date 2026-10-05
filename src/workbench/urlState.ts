@@ -17,6 +17,8 @@ export interface UrlRoute {
   camera?: string;
   split?: string;
   tick?: number;
+  /** Entries the decoder could not read (a negative tick, a malformed layer), listed with the dropped settings. */
+  rejected?: string[];
 }
 
 /** The validated changes a lab applies on top of a scenario's starting state. */
@@ -51,14 +53,15 @@ export function decodeUrl(hash: string): UrlRoute | null {
   const match = /^#\/([\w-]+)(?:\/([\w-]+))?(?:\?(.*))?$/.exec(hash);
   if (!match) return null;
   const query = new URLSearchParams((match[3] ?? '').replace(/\+(?=[\w.-])/g, '%2B'));
-  const route: UrlRoute = { experiment: match[1], scenario: match[2], values: {}, layers: {} };
+  const route: UrlRoute = { experiment: match[1], scenario: match[2], values: {}, layers: {} }, rejected: string[] = [];
   for (const [key, value] of query) {
     if (key === 'cam') route.camera = value;
     else if (key === 'split') route.split = value;
-    else if (key === 't') { const tick = Number(value); if (Number.isInteger(tick) && tick >= 0) route.tick = tick; }
-    else if (key === 'L') for (const item of value.split(',')) { if (/^[+-][\w.]+$/.test(item)) route.layers[item.slice(1)] = item[0] === '+'; }
+    else if (key === 't') { const tick = Number(value); if (value.trim() !== '' && Number.isInteger(tick) && tick >= 0) route.tick = tick; else rejected.push(`t ${value}`); }
+    else if (key === 'L') for (const item of value.split(',')) { if (/^[+-][\w.]+$/.test(item)) route.layers[item.slice(1)] = item[0] === '+'; else rejected.push(`layer ${item}`); }
     else if (!RESERVED.has(key)) route.values[key] = value;
   }
+  if (rejected.length) route.rejected = rejected;
   return route;
 }
 
@@ -75,6 +78,7 @@ export function routeFor(definition: ExperimentDefinition, scenario: string, par
 /** Parse one value against its control, or undefined when it is not valid there. */
 function parse(spec: ControlSpec, raw: string): unknown {
   if (spec.kind === 'range') {
+    if (raw.trim() === '') return undefined; // Number('') is 0, which would pass as a value
     const value = Number(raw);
     if (!Number.isFinite(value) || value < spec.min || value > spec.max || (spec.integer && !Number.isInteger(value))) return undefined;
     return value;
@@ -87,7 +91,7 @@ function parse(spec: ControlSpec, raw: string): unknown {
  * lie within it; layers and the camera must apply. Returns the overrides to apply and the keys that were dropped.
  */
 export function resolveUrl(definition: ExperimentDefinition, route: UrlRoute): { scenario: string; overrides: UrlOverrides; dropped: string[] } {
-  const dropped: string[] = [];
+  const dropped: string[] = [...(route.rejected ?? [])];
   const scenario = route.scenario && definition.scenarios.some(s => s.id === route.scenario) ? route.scenario : definition.scenarios[0].id;
   if (route.scenario && route.scenario !== scenario) dropped.push(`scenario ${route.scenario}`);
   const overrides: UrlOverrides = { params: {}, view: {} };

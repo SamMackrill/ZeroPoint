@@ -46,5 +46,8 @@ describe('URL state', () => {
     expect(decodeUrl('#section-2')).toBeNull();
     expect(decodeUrl('#/medium')).toEqual({ experiment: 'medium', values: {}, layers: {} });
     expect(decodeUrl('#/medium?t=-4&t2=1')!.tick).toBeUndefined();
+    // Entries the decoder rejects, and empty values, are listed with the dropped settings rather than lost.
+    expect(resolveUrl(electronDefinition, decodeUrl('#/electron/spin?t=-4&L=+shells,~x')!).dropped).toEqual(['t -4', 'layer ~x']);
+    expect(resolveUrl(lightDefinition, decodeUrl('#/light?wavelength=')!).dropped).toEqual(['wavelength']);
   });
 });
