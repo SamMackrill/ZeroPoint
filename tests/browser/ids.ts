@@ -6,6 +6,6 @@ import type { Page } from '@playwright/test';
  *
  * The ids are a contract the UI redesign keeps as markup moves into the shell (docs/ui-redesign-plan.html §16, UI 01c):
  * lab-<id> · scenario-<id> · transport-run | step | next | reset | speed · timeline · file-save | load | input ·
- * params-apply · capture · export-png | csv · layer-<key> · setting-reduced-motion · event-<id> · notice · nav-open.
+ * params-apply · capture · export-png | csv · layer-<key> · settings · setting-reduced-motion | telemetry · status-telemetry · event-<id> · notice · nav-open.
  */
 export const tid = (page: Page, id: string) => page.getByTestId(id).filter({ visible: true });
