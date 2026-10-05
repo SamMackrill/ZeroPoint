@@ -103,7 +103,7 @@ export function Rail({ experiments, planned, experiment, scenario, onExperiment,
           const Icon = ICONS[e.id] ?? FlaskConical, active = e.id === experiment;
           return (
             <li key={e.id}>
-              <button type="button" className={`rail-experiment${active ? ' is-active' : ''}`} data-testid={`lab-${e.id}`} aria-current={active ? 'true' : undefined} title={collapsed ? e.title : undefined} onClick={() => onExperiment(e.id)}>
+              <button type="button" className={`rail-experiment${active ? ' is-active' : ''}`} data-testid={`lab-${e.id}`} aria-current={active ? 'true' : undefined} title={e.title} onClick={() => onExperiment(e.id)}>
                 <Icon size={15} aria-hidden="true"/>{!collapsed && <span>{e.title}</span>}
               </button>
               {active && !collapsed && e.scenarios && e.scenarios.length > 1 && (
