@@ -122,7 +122,11 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   function startScenario(request: ScenarioRequest) {
     const { id, url } = request, mode = MODE_OF[id];
     setScenario(id);
-    const selectable = url?.selection !== undefined && url.selection < LATTICE_SAMPLES + 4 * SAMPLES_PER_SHELL;
+    // A linked selection must be visible in the linked state: a lattice sample in any timed scenario, or a shell sample
+    // in Spin with the shells shown and within the linked shell count. Static studies select nothing.
+    const linkedView = withPaths(scenarioState(electronDefinition, id).view, url?.view ?? {}) as ElectronView, index = url?.selection;
+    const selectable = index !== undefined && !!mode && (index < LATTICE_SAMPLES
+      || (mode === 'spin' && linkedView.shells && index < LATTICE_SAMPLES + linkedView.spinDisplay.count * SAMPLES_PER_SHELL));
     const dropped = [...(request.dropped ?? []), ...(url?.selection !== undefined && !selectable ? [`selection ${url.selection}`] : [])];
     const ignored = dropped.length ? `Ignored link settings that don’t apply: ${dropped.join(', ')}.` : '';
     if (!mode) { runtime.run(false); if (ignored) setNotice(ignored); return; }
