@@ -148,7 +148,14 @@ export const MEDIUM_COMPARE_SCREENS = [
   { name: 'medium-compare', title: 'Medium · Dock › Compare: B (seed 2026) beside A (seed 7) after 40 ticks, Δ in the strip', prepare: compareMedium('compare') },
   { name: 'medium-compare-plots', title: 'Medium · Dock › Plots: B dashed beside A', prepare: compareMedium('plots') },
 ];
-const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS };
+/** Plan §13 tiers (`--set responsive`): a tablet, a phone with its inspector sheet open, and a 1366 px laptop. */
+const openInspector = async page => { await page.getByRole('button', { name: 'Open inspector' }).filter({ visible: true }).click(); await page.waitForTimeout(400); };
+export const RESPONSIVE_SCREENS = [
+  { name: 'tablet', title: 'Tablet · 1024 × 768: overlay rail and inspector, full-height viewport, dock collapsed to its strip', viewport: { width: 1024, height: 768 } },
+  { name: 'phone-sheet', title: 'Phone · 390 × 844: the inspector as a bottom sheet; no split toggle', viewport: { width: 390, height: 844 }, prepare: openInspector },
+  { name: 'laptop', title: 'Laptop · 1366 × 860: the rail starts collapsed to icons', viewport: { width: 1366, height: 860 } },
+];
+const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };

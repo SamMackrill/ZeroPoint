@@ -209,6 +209,12 @@ describe('Dock, Rail and StatusBar', () => {
       expect(layoutStorage()).toBeTruthy();
     });
   });
+  it('expands a collapsed dock from any tab, including the one already selected', () => {
+    const onCollapsedChange = vi.fn();
+    render(<Dock readouts={[]} tabs={[{ id: 'probe', label: 'Probe', content: <p>probe</p> }]} tab="probe" collapsed onCollapsedChange={onCollapsedChange}/>);
+    fireEvent.click(screen.getByTestId('dock-probe'));
+    expect(onCollapsedChange).toHaveBeenCalledWith(false);
+  });
   it('keeps the readout strip when the dock collapses', async () => {
     const onCollapsed = vi.fn();
     const { rerender } = render(<Dock readouts={[{ label: 'Active', value: '1,575' }, { label: 'Time', value: '2.433', unit: 'τ' }]} tabs={[{ id: 'plots', label: 'Plots', content: <p>plot</p> }]} onCollapsedChange={onCollapsed}/>);

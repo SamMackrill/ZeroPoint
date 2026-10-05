@@ -13,7 +13,7 @@ import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workb
 import { dipoleClockModel, type DipoleClock } from '../../workbench/main-thread-models';
 import { MainThreadRuntime } from '../../workbench/main-thread-runtime';
 import { SPEEDS } from '../../workbench/runtime';
-import { Shell } from '../../workbench/Shell';
+import { dockStartsCollapsed, Shell } from '../../workbench/Shell';
 import { SplitView } from '../../workbench/SplitView';
 import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
@@ -78,7 +78,7 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
   const [scenario, setScenario] = useState('induced');
   const [params, setParams] = useState<VdwParams>(vanDerWaalsDefinition.defaultParams);
   const [view, setView] = useState<VdwView>(vanDerWaalsDefinition.defaultView);
-  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
+  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(dockStartsCollapsed);
   // Plate pressure can set Fleming's Figure 3-3 or 3-4 beside the diagram for comparison; it opens 1-up.
   const [split, setSplit] = useState(false), [figure, setFigure] = useState('fig-3-3');
   const about = useAbout();

@@ -5,7 +5,7 @@ import { tid } from './ids';
 const SIM_TIMEOUT = 30_000;
 
 /** Whether the page is in the narrow (drawer) layout. */
-const narrow = (page: Page) => page.viewportSize()!.width <= 850;
+const narrow = (page: Page) => page.viewportSize()!.width <= 1279;
 /** Open the Casimir laboratory and return its workbench container. */
 async function openExperiment(page: Page) {
   await page.goto('/');

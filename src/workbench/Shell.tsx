@@ -35,7 +35,16 @@ export function useMediaQuery(query: string): boolean {
 }
 
 /** Below this width the shell stacks its panels and opens the rail and inspector as drawers (UI 18 refines phones). */
-export const NARROW_QUERY = '(max-width: 850px)';
+/**
+ * Plan §13 tiers. Desktop (≥ 1280 px) has the resizable shell; tablets (768–1279 px) and phones (< 768 px) the narrow one,
+ * with the rail and inspector as overlays. Phones are a basic viewer: no split view, Compare or palette.
+ */
+export const NARROW_QUERY = '(max-width: 1279px)';
+export const PHONE_QUERY = '(max-width: 767px)';
+/** Whether the window is phone-sized (the basic viewer). */
+export const usePhone = () => useMediaQuery(PHONE_QUERY);
+/** Narrow layouts (tablets, phones) start with the dock collapsed to its readout strip (plan §13). */
+export const dockStartsCollapsed = () => typeof matchMedia !== 'undefined' && matchMedia(NARROW_QUERY).matches;
 
 
 /** Layout persistence: localStorage when it works, otherwise an in-memory store for this session. */
@@ -77,6 +86,13 @@ function WideShell({ id, header, rail, viewport, timeline, dock, dockStripOnly, 
   const outer = useDefaultLayout({ id: `zeropoint-shell-${id}`, storage });
   const inner = useDefaultLayout({ id: `zeropoint-shell-${id}-centre`, storage });
   const beforeFocus = useRef<string[] | null>(null);
+  // 1280–1439 px: the rail starts collapsed to icons on the first visit (plan §13); after that, saved sizes rule.
+  useEffect(() => {
+    const seen = `zeropoint-shell-${id}-rail-start`;
+    if (storage.getItem(seen)) return;
+    storage.setItem(seen, '1');
+    if (window.innerWidth < 1440) railRef.current?.collapse();
+  }, [id, storage, railRef]);
 
   useEffect(() => {
     const panels = { rail: railRef, inspector: inspectorRef, dock: dockRef };

@@ -13,7 +13,7 @@ import { scenarioState, withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { mediumRuntime, SPEEDS } from '../../workbench/runtime';
-import { Shell } from '../../workbench/Shell';
+import { dockStartsCollapsed, Shell, usePhone } from '../../workbench/Shell';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
 import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { mediumDefinition, type MediumParams } from './definition';
@@ -84,7 +84,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const [picked, setPicked] = useState<PickedDipole | null>(null);
   const [parameters, setParameters] = useState<Parameters>(mediumDefinition.defaultParams), [seed, setSeed] = useState(2026);
   const [preset, setPreset] = useState('balanced'), [scenario, setScenario] = useState('balanced');
-  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
+  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(dockStartsCollapsed);
   const [rows, setRows] = useState<Diagnostics[]>([]), [checkpoints, setCheckpoints] = useState<Checkpoint[]>([]);
   const [notice, setNotice] = useState(''), [busy, setBusy] = useState(false);
   // Medium opens 1-up; the split pane shows the selected dipole enlarged (§07 split view).
@@ -93,7 +93,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const fileInput = useRef<HTMLInputElement>(null);
   const d = state?.diagnostics, ready = !!state && !sim.error, running = state?.running ?? false;
   // A/B compare (plan §11): B is a headless second simulation stepped to A's tick.
-  const compare = useMediumCompare();
+  const compare = useMediumCompare(), phone = usePhone(); // phones: no Compare (plan §13)
   useEffect(() => { if (compare.b && d) compare.advance(d.tick); }, [compare.b?.pinned, d?.tick]); // eslint-disable-line react-hooks/exhaustive-deps
   /** Pin A's exact current state as B (a checkpoint, so identical settings continue identically). */
   const pinCurrent = async () => { try { compare.pin(await runtime.checkpoint()); } catch (error) { setNotice(String(error)); } };
@@ -221,10 +221,10 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
       readouts={withDeltas(stripFor(d), bNow ? stripFor(bNow) : null)}
       tabs={[
         { id: 'plots', label: 'Plots', content: <div className="medium-plots"><div><h4>Active dipoles</h4><DiagnosticsPlot rows={rows} mode="population" b={compare.b ? compare.history.current : undefined}/></div><div><h4>Field energy · E₀</h4><DiagnosticsPlot rows={rows} mode="energy" b={compare.b ? compare.history.current : undefined}/></div></div> },
-        { id: 'compare', label: 'Compare', badge: compare.b ? 'B' : undefined, content: <CompareTab definition={mediumDefinition} scenario={scenario} a={params}
+        ...(phone ? [] : [{ id: 'compare', label: 'Compare', badge: compare.b ? 'B' : undefined, content: <CompareTab definition={mediumDefinition} scenario={scenario} a={params}
           b={compare.b ? { ...compare.b.pinned.parameters, seed: compare.b.pinned.seed } : null} onPin={pinCurrent} onLoadB={loadB} onClear={compare.clear}
           onCopyToA={() => { if (compare.b) restart({ ...compare.b.pinned.parameters }, compare.b.pinned.seed, 'custom', 'Copied B’s parameters to A. Experiment reset to tick 0.'); }}
-          note={compare.b?.error ?? `B is a second simulation from its pinned state (tick ${compare.b?.pinned.tick ?? 0}), stepped in lock-step with A’s tick and drawn dashed in the plots.`}/> },
+          note={compare.b?.error ?? `B is a second simulation from its pinned state (tick ${compare.b?.pinned.tick ?? 0}), stepped in lock-step with A’s tick and drawn dashed in the plots.`}/> }]),
         { id: 'ledger', label: 'Ledger', content: <div className="medium-ledger">
           <Readouts testId="medium-ledger" items={[
             { label: 'Reservoir energy', value: (d?.reservoir ?? 0).toFixed(2), unit: 'E₀' },

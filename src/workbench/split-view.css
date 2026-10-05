@@ -87,8 +87,8 @@
   font-size: var(--fs-ui);
 }
 
-@media(max-width:850px) {
-  /* The narrow stage is a fixed 46vh; while split it grows so the stacked second pane shows below the viewport. */
+@media(max-width:899px) {
+  /* Under 900 px the split stacks (plan §13): the stage grows so the stacked second pane shows below the viewport. */
   .workbench-viewport:has(.split-view.is-split) {
     height: auto;
     overflow: visible;

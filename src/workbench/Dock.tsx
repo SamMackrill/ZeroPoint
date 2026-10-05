@@ -33,7 +33,7 @@ export function Dock({ readouts, tabs, tab, onTab, collapsed = false, onCollapse
         </dl>
         {tabs.length > 0 && (
           <Tabs.List className="dock-tabs" aria-label="Dock">
-            {tabs.map(t => <Tabs.Trigger key={t.id} value={t.id} data-testid={`dock-${t.id}`}>{t.label}{t.badge && <span className="dock-badge" aria-label={`(${t.badge} active)`}>{t.badge}</span>}</Tabs.Trigger>)}
+            {tabs.map(t => <Tabs.Trigger key={t.id} value={t.id} data-testid={`dock-${t.id}`} onClick={() => { if (collapsed) onCollapsedChange?.(false); }}>{t.label}{t.badge && <span className="dock-badge" aria-label={`(${t.badge} active)`}>{t.badge}</span>}</Tabs.Trigger>)}
           </Tabs.List>
         )}
         {onCollapsedChange && (

@@ -4,7 +4,7 @@ import { tid } from './ids';
 /** Open the light laboratory and wait for worker readiness. */
 async function openLight(page: import('@playwright/test').Page) {
   await page.goto('/');
-  if (page.viewportSize()!.width <= 850) await tid(page, 'nav-open').click();
+  if (page.viewportSize()!.width <= 1279) await tid(page, 'nav-open').click();
   await tid(page, 'lab-light').click();
   await expect(tid(page, 'transport-run')).toBeEnabled();
 }

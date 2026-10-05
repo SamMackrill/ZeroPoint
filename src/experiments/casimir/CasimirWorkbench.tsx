@@ -11,7 +11,7 @@ import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { CASIMIR_SPEEDS, casimirModel, type CasimirConfig } from '../../workbench/main-thread-models';
 import { MainThreadRuntime } from '../../workbench/main-thread-runtime';
-import { Shell } from '../../workbench/Shell';
+import { dockStartsCollapsed, Shell, usePhone } from '../../workbench/Shell';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
 import { APPLY_SHORTCUT, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { casimirDefinition, type CasimirParams } from './definition';
@@ -86,9 +86,9 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   const [selected, setSelected] = useState<number | null>(null), [follow, setFollow] = useState(true);
   const about = useAbout();
   // Casimir opens 2-up with the lifetime loupe beside the scene; 1-up moves the loupe back into the Selection tab.
-  const [split, setSplit] = useState(true);
+  const [split, setSplit] = useState(true), phone = usePhone(); // phones have no split pane, so the loupe stays in Selection
   const lastSelected = useRef<Zepton | null>(null);
-  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
+  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(dockStartsCollapsed);
   const scenario = params.pair;
   const refresh = () => setRevision(r => r + 1);
   useEffect(() => { if (!active) runtime.run(false); }, [active, runtime]);
@@ -172,7 +172,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
 
   const selectionNode = (
     <div className="casimir-selection">
-      {!split && <Lifetime particle={displayed} expired={!inspected}/>}
+      {(!split || phone) && <Lifetime particle={displayed} expired={!inspected}/>}
       <div className="casimir-inspect-actions">
         <button onClick={inspectNewest}>Inspect newest Zepton</button>
         <label><input type="checkbox" checked={follow} onChange={e => setFollow(e.target.checked)}/> Follow next birth after annihilation</label>
