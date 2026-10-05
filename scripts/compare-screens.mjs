@@ -101,7 +101,13 @@ export const PALETTE_SCREENS = [
   { name: 'medium-palette', title: 'Medium · Ctrl K: every scenario and the lab’s actions, each with its shortcut', prepare: openPalette('') },
   { name: 'electron-palette-search', title: 'Electron · Spin: Ctrl K, searching “shell”', lab: 'lab-electron', scenario: 'scenario-spin', prepare: openPalette('shell') },
 ];
-const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS };
+/** Links (`--set links`): each screen opens a URL-state link. Before links existed, the app ignored the hash. */
+export const LINK_SCREENS = [
+  { name: 'electron-link', title: 'Electron · #/electron/spin?axis=x&cam=orbit&t=120&L=+radius', hash: '#/electron/spin?axis=x&cam=orbit&t=120&L=%2Bradius' },
+  { name: 'vdw-link', title: 'Van der Waals · #/vdw/pressure?area=4&gap=500&split=fig-3-4', hash: '#/vdw/pressure?area=4&gap=500&split=fig-3-4' },
+  { name: 'light-link-invalid', title: 'Light · #/light?wavelength=9&bogus=1 (settings that don’t apply are dropped, with a notice)', hash: '#/light?wavelength=9&bogus=1' },
+];
+const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -117,8 +123,9 @@ async function serve(worktree, port) {
 async function capture(browser, url, screen, path) {
   const viewport = screen.viewport ?? { width: 1440, height: 900 }, narrow = viewport.width <= 850;
   const page = await browser.newPage({ viewport });
-  await page.goto(url);
-  await page.getByTestId('transport-run').filter({ visible: true }).first().waitFor();
+  await page.goto(screen.hash ? `${url}${screen.hash}` : url);
+  // Every lab has a status bar; static stages (van der Waals' plates) have no Run button to wait for.
+  await page.locator('.workbench-status').filter({ visible: true }).first().waitFor();
   // Narrow layouts keep the rail in a drawer, opened before each rail choice.
   const rail = async id => { if (narrow) await page.getByTestId('nav-open').filter({ visible: true }).click(); await page.getByTestId(id).filter({ visible: true }).click(); };
   if (screen.lab) await rail(screen.lab);

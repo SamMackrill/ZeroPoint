@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { DevProfiler } from './DevProfiler';
 import { EXPERIMENTS, casimirDefinition, electronDefinition, lightDefinition, mediumDefinition, vanDerWaalsDefinition } from '../experiments';
 import { MediumWorkbench } from '../experiments/medium/MediumWorkbench';
@@ -9,6 +9,7 @@ import { VdwWorkbench } from '../experiments/van-der-waals/VdwWorkbench';
 import { Rail, type PlannedExperiment } from '../workbench/Chrome';
 import { CommandPalette } from '../workbench/CommandPalette';
 import type { Action } from '../workbench/actions';
+import { requestFromHash, type ScenarioRequest } from '../workbench/urlState';
 
 /** Planned experiments: greyed in the rail, each opening a one-line summary and its plan. */
 const PLANNED: PlannedExperiment[] = [
@@ -26,12 +27,20 @@ type ExperimentId = 'medium' | 'light' | 'electron' | 'casimir' | 'vdw';
  * scenarios.
  */
 export function App() {
-  const [experiment, setExperiment] = useState<ExperimentId>('medium');
-  const [visited, setVisited] = useState<Record<ExperimentId, boolean>>({ medium: true, light: false, electron: false, casimir: false, vdw: false });
+  // A link (#/electron/spin?…) opens its lab at its scenario and state; otherwise the app starts on Medium.
+  const [link] = useState(() => requestFromHash(location.hash, EXPERIMENTS));
+  const [experiment, setExperiment] = useState<ExperimentId>((link?.experiment as ExperimentId) ?? 'medium');
+  const [visited, setVisited] = useState<Record<ExperimentId, boolean>>(() => ({ medium: true, light: false, electron: false, casimir: false, vdw: false, ...(link ? { [link.experiment]: true } : {}) }));
   const open = useCallback((id: ExperimentId) => { setVisited(v => (v[id] ? v : { ...v, [id]: true })); setExperiment(id); }, []);
   // Labs whose scenarios the rail switches; each reports its current scenario back for the rail's highlight.
   const [current, setCurrent] = useState<Partial<Record<ExperimentId, string>>>({ medium: 'balanced', electron: 'stationary', casimir: 'electron-electron', vdw: 'induced' });
-  const [requests, setRequests] = useState<Partial<Record<ExperimentId, { id: string; at: number }>>>({});
+  const [requests, setRequests] = useState<Partial<Record<ExperimentId, ScenarioRequest>>>(() => (link ? { [link.experiment]: link.request } : {}));
+  // Editing the address bar, or following a saved view, routes the same way.
+  useEffect(() => {
+    const onHash = () => { const next = requestFromHash(location.hash, EXPERIMENTS); if (next) { open(next.experiment as ExperimentId); setRequests(r => ({ ...r, [next.experiment]: next.request })); } };
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, [open]);
   const onPresetChange = useCallback((id: string) => setCurrent(c => ({ ...c, medium: id })), []);
   const onElectronScenario = useCallback((id: string) => setCurrent(c => ({ ...c, electron: id })), []);
   const onCasimirScenario = useCallback((id: string) => setCurrent(c => ({ ...c, casimir: id })), []);
@@ -51,7 +60,7 @@ export function App() {
     <CommandPalette navigation={navigation}/>
     <DevProfiler id="medium"><MediumWorkbench active={experiment === 'medium'} rail={rail} header={{ experiment: mediumDefinition.title }} scenarioRequest={requests.medium}
       onPresetChange={onPresetChange} onOpenLight={() => open('light')} onOpenElectron={() => open('electron')} onOpenVdw={() => open('vdw')}/></DevProfiler>
-    {visited.light && <DevProfiler id="light"><LightWorkbench active={experiment === 'light'} rail={rail} header={{ experiment: lightDefinition.title }}/></DevProfiler>}
+    {visited.light && <DevProfiler id="light"><LightWorkbench active={experiment === 'light'} rail={rail} header={{ experiment: lightDefinition.title }} scenarioRequest={requests.light}/></DevProfiler>}
     {visited.electron && <DevProfiler id="electron"><ElectronWorkbench active={experiment === 'electron'} rail={rail} header={{ experiment: electronDefinition.title }} scenarioRequest={requests.electron} onScenarioChange={onElectronScenario}/></DevProfiler>}
     {visited.casimir && <DevProfiler id="casimir"><CasimirWorkbench active={experiment === 'casimir'} rail={rail} header={{ experiment: casimirDefinition.title }} scenarioRequest={requests.casimir} onScenarioChange={onCasimirScenario}/></DevProfiler>}
     {visited.vdw && <DevProfiler id="vdw"><VdwWorkbench active={experiment === 'vdw'} rail={rail} header={{ experiment: vanDerWaalsDefinition.title }} scenarioRequest={requests.vdw} onScenarioChange={onVdwScenario}/></DevProfiler>}

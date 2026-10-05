@@ -24,7 +24,7 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
   title: 'Electron in the ZPF',
   scenarios: [
     { id: 'stationary', title: 'Stationary electron', description: 'Nearby pairs align first as the electric pattern resolves', params: { mode: 'electric' } },
-    { id: 'spin', title: 'Spin in the field', description: 'Neighbouring zeptons turn locally around a stationary core', params: { mode: 'spin' } },
+    { id: 'spin', title: 'Spin in the field', description: 'Neighbouring zeptons turn locally around a stationary core', params: { mode: 'spin' }, view: { faraday: false } },
     { id: 'moving', title: 'Moving electron', description: 'Pairs turn locally as the electron passes', params: { mode: 'moving' } },
     { id: 'charge-flux', title: 'Charge & flux', description: 'A Gauss sphere of variable radius', static: true },
     { id: 'radius-limit', title: 'Radius limit', description: 'Effective speed against radius', static: true },
@@ -55,6 +55,7 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
     { key: 'radius', label: 'Half-Compton radius', group: 'Guides', scenarios: LIVE },
     { key: 'cutaway', label: 'Central slab cutaway', group: 'Clipping', scenarios: LIVE },
   ],
+  panes: [{ id: 'section', scenarios: ['spin'] }, { id: 'motion', scenarios: ['spin'] }],
   cameras: [
     { id: 'front', label: 'Front', scenarios: LIVE },
     { id: 'orbit', label: 'Orbit', scenarios: LIVE },

@@ -32,6 +32,7 @@ export const mediumDefinition: ExperimentDefinition<MediumParams, ViewSettings> 
     { key: 'bounds', label: 'Cell boundaries', group: 'Guides' },
     { key: 'slice', label: 'Energy density slice', group: 'Clipping', info: '0.5 L₀ slab · binned energy, not pressure' },
   ],
+  panes: [{ id: 'dipole' }],
   cameras: [{ id: 'perspective', label: 'Perspective' }, { id: 'top', label: 'Top' }, { id: 'front', label: 'Front' }],
   speeds: SPEEDS,
   timeline: () => ({ kind: 'open', dt: DT, events: [], next: 'jump' }),

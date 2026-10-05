@@ -111,6 +111,8 @@ export interface ExperimentDefinition<P extends object = object, V extends objec
   viewControls?: readonly ControlSpec[];
   layers: readonly LayerSpec[];
   cameras: readonly CameraSpec[];
+  /** The split view's linked panes (§07), by id; a link's split names one of these, or off. */
+  panes?: readonly { id: string; scenarios?: readonly string[] }[];
   speeds: readonly number[];
   timeline(scenario: string, params: P): TimelineSpec;
 }

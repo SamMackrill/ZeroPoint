@@ -12,7 +12,7 @@ import { palette } from '../../ui/palette';
 import { Plot } from '../../ui/Plot';
 import { Segmented } from '../../ui/Segmented';
 import { exportActions, FileActions, fileShortcuts, Header, type ExportItem, StatusBar, type HeaderProps } from '../../workbench/Chrome';
-import { appliesTo, getPath, withPaths } from '../../workbench/definition';
+import { appliesTo, getPath, scenarioState, withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Control, Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { electronRuntime, SPEEDS } from '../../workbench/runtime';
@@ -24,6 +24,7 @@ import '../../light/light.css';
 import '../../electron/electron.css';
 import './electron-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { copyLinkAction, encodeUrl, routeFor, splitValue, useLinkSeek, useUrlWriter, type PendingLink, type ScenarioRequest } from '../../workbench/urlState';
 import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView, type SplitPane } from '../../workbench/SplitView';
@@ -48,7 +49,7 @@ export interface ElectronWorkbenchProps {
   active: boolean;
   rail: ReactNode;
   header: Pick<HeaderProps, 'experiment'>;
-  scenarioRequest?: { id: string; at: number } | null;
+  scenarioRequest?: ScenarioRequest | null;
   onScenarioChange?(id: string): void;
 }
 
@@ -108,17 +109,28 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   // The charge-motion pane follows the selected shell pair; with none selected it says so rather than showing a stand-in.
   const shellIndex = selected !== null && selected >= LATTICE_SAMPLES && selected < LATTICE_SAMPLES + view.spinDisplay.count * SAMPLES_PER_SHELL ? selected : null;
 
-  /** Switch scenario: timed ones restart the worker in their mode, with the view suited to it; static ones pause it. */
-  function startScenario(id: string) {
+  /**
+   * Switch scenario: timed ones restart the worker in their mode, with the view suited to it; static ones pause it. A
+   * link starts from the scenario's defined parameters instead of the current ones, then applies its own settings.
+   */
+  function startScenario(request: ScenarioRequest) {
+    const { id, url } = request, mode = MODE_OF[id];
     setScenario(id);
-    const mode = MODE_OF[id];
-    if (!mode) { runtime.run(false); return; }
-    runtime.configure({ ...p, mode }); setSelected(null);
-    setView(v => ({ ...v, intrinsic: false, faraday: mode !== 'spin', radius: false, cutaway: false, shells: mode === 'spin' ? true : v.shells }));
-    setCamera(mode === 'spin' ? 'shell' : 'orbit'); setNotice('View changed. The sequence is paused at its start.');
+    const ignored = request.dropped?.length ? `Ignored link settings that don’t apply: ${request.dropped.join(', ')}.` : '';
+    if (!mode) { runtime.run(false); if (ignored) setNotice(ignored); return; }
+    const target = (url ? withPaths(scenarioState(electronDefinition, id).params, url.params) : { ...p, mode }) as ElectronParameters;
+    runtime.configure(target); setSelected(null);
+    setView(v => withPaths({ ...v, intrinsic: false, faraday: mode !== 'spin', radius: false, cutaway: false, shells: mode === 'spin' ? true : v.shells }, url?.view ?? {}));
+    setCamera((url?.camera as Camera | undefined) ?? (mode === 'spin' ? 'shell' : 'orbit'));
+    if (url?.split) { if (url.split === 'motion' || url.split === 'section') setPane(url.split); setView(v => withPaths(v, { 'spinDisplay.section': url.split !== 'off' })); }
+    if (url) setLink({ params: target, tick: url.tick });
+    setNotice(ignored || (url ? 'Opened from a link.' : 'View changed. The sequence is paused at its start.'));
   }
   const startRef = useRef(startScenario); startRef.current = startScenario;
-  useEffect(() => { if (scenarioRequest) startRef.current(scenarioRequest.id); }, [scenarioRequest]);
+  useEffect(() => { if (scenarioRequest) startRef.current(scenarioRequest); }, [scenarioRequest]);
+  const [link, setLink] = useState<PendingLink | null>(null), linkDone = useCallback(() => setLink(null), []);
+  const seek = useCallback((tick: number) => runtime.seek(tick), [runtime]);
+  const linkHold = useLinkSeek(link, linkDone, state, seek);
   /** Restart with changed physics parameters (all ↻). */
   function configure(changes: Record<string, unknown>) { runtime.configure(withPaths(p, changes) as ElectronParameters); setNotice('Electron parameters applied. Paused at tick 0.'); }
   /** Download the current electron experiment state. */
@@ -156,6 +168,14 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const scenarioTitle = electronDefinition.scenarios.find(x => x.id === scenario)?.title;
 
   const timeline = electronDefinition.timeline(scenario, p);
+  // The address bar follows this lab (plan §11): camera, split and tick only where they differ from the scenario's start.
+  const spinStart = MODE_OF[scenario] === 'spin', split = splitValue(view.spinDisplay.section, pane);
+  const urlHash = encodeUrl(routeFor(electronDefinition, scenario, p, view, study || !MODE_OF[scenario] ? {} : {
+    camera: camera === (spinStart ? 'shell' : 'orbit') ? undefined : camera,
+    split: spinStart && split !== 'section' ? split : undefined,
+    tick: s.tick || undefined,
+  }));
+  useUrlWriter(active, s.running || !state || linkHold, urlHash);
   /** Choose a camera preset; Shell close-up brings the shells back if they were hidden. */
   const chooseCamera = (id: string) => { if (id === 'shell') setView(old => ({ ...old, shells: true })); setCamera(id as Camera); };
   const exportItems: ExportItem[] = [{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError || !!study }, { id: 'csv', label: 'CSV (reference sequence)', onSelect: csv }];
@@ -166,6 +186,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     ...(study ? [] : [{ id: 'view.layers', label: 'Open View › Layers', group: 'View' as const, keys: ['l'], run: () => setTab('view') }]),
     ...fileShortcuts(save, fileInput, !ready),
     ...(study ? [] : [SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus]), APPLY_SHORTCUT, ...(p.mode === 'spin' && !study ? [SPLIT_SHORTCUT] : []), ...PANEL_SHORTCUTS,
+    copyLinkAction(urlHash, setNotice),
     ...layerActions(electronDefinition, scenario, view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
     ...parameterActions(electronDefinition, scenario, () => setTab('setup')),
     ...(study ? [] : [{ id: 'selection.probe', label: 'Select nearest to probe', group: 'Selection' as const, run: inspectProbe }]),

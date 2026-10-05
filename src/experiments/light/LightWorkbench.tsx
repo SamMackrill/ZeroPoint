@@ -9,7 +9,7 @@ import { Plot } from '../../ui/Plot';
 import { Readouts } from '../../ui/Readouts';
 import { Segmented } from '../../ui/Segmented';
 import { exportActions, FileActions, fileShortcuts, Header, type ExportItem, StatusBar, type HeaderProps } from '../../workbench/Chrome';
-import { withPaths } from '../../workbench/definition';
+import { scenarioState, withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { lightRuntime, SPEEDS } from '../../workbench/runtime';
@@ -20,6 +20,7 @@ import { lightDefinition } from './definition';
 import '../../light/light.css';
 import './light-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { copyLinkAction, encodeUrl, routeFor, useLinkSeek, useUrlWriter, type PendingLink, type ScenarioRequest } from '../../workbench/urlState';
 import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView } from '../../workbench/SplitView';
@@ -37,6 +38,8 @@ export interface LightWorkbenchProps {
   active: boolean;
   rail: ReactNode;
   header: Pick<HeaderProps, 'experiment'>;
+  /** A link's request (Light has one scenario, so only links send one). */
+  scenarioRequest?: ScenarioRequest | null;
 }
 
 /**
@@ -44,7 +47,7 @@ export interface LightWorkbenchProps {
  * bounded 0–12 τ timeline with one tick per induction, the dock (travelled, time, energy; plots, ledger, events), and
  * the inspector (Setup, all ↻; View; Selection: the pair close-up). The worker protocol and renderer are unchanged.
  */
-export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
+export function LightWorkbench({ active, rail, header, scenarioRequest }: LightWorkbenchProps) {
   const { state, latest, sink, send, error, restart } = useLight(active);
   const runtime = useMemo(() => lightRuntime({ send, latest, sink }), [send, latest, sink]);
   useEffect(() => () => runtime.dispose(), [runtime]);
@@ -91,6 +94,25 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   useSelectionKeys({ active, hasSelection: selected !== null, onClear: clearSelection, onFocus: focusSelection });
   const s = state ?? { model: LIGHT_MODEL, tick: 0, parameters: lightDefinition.defaultParams, running: false, speed: 1 };
   const p = s.parameters, d = lightReadout(s), inspected = pairAt(p, s.tick, selected ?? d.index);
+  // A link restarts the sequence with its parameters and view, then seeks to its tick once the worker has them.
+  const [link, setLink] = useState<PendingLink | null>(null), linkDone = useCallback(() => setLink(null), []);
+  const applyLink = (request: ScenarioRequest) => {
+    const url = request.url;
+    if (url) {
+      const target = withPaths(scenarioState(lightDefinition, 'induction').params, url.params) as LightParameters;
+      runtime.configure(target); setSelected(null); setLink({ params: target, tick: url.tick });
+      setView(v => withPaths(v, url.view));
+      if (url.camera) setCamera(url.camera as typeof camera);
+      if (url.split) setSplit(url.split === 'pair');
+    }
+    if (request.dropped?.length) setNotice(`Ignored link settings that don’t apply: ${request.dropped.join(', ')}.`);
+  };
+  const applyRef = useRef(applyLink); applyRef.current = applyLink;
+  useEffect(() => { if (scenarioRequest) applyRef.current(scenarioRequest); }, [scenarioRequest]);
+  const seek = useCallback((tick: number) => runtime.seek(tick), [runtime]);
+  const linkHold = useLinkSeek(link, linkDone, state, seek);
+  const urlHash = encodeUrl(routeFor(lightDefinition, 'induction', p, view, { camera: camera === 'orbit' ? undefined : camera, split: split ? 'pair' : undefined, tick: s.tick || undefined }));
+  useUrlWriter(active, s.running || !state || linkHold, urlHash);
   const ready = !!state && !error;
   /** Restart the sequence with changed parameters (every light parameter is ↻). */
   function configure(changes: Record<string, unknown>) { runtime.configure(withPaths(p, changes) as LightParameters); setSelected(null); setNotice('Parameters applied. The light sequence is paused at its start.'); }
@@ -133,6 +155,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
     { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
     ...fileShortcuts(save, fileInput, !ready),
     SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
+    copyLinkAction(urlHash, setNotice),
     ...layerActions(lightDefinition, 'induction', view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
     ...parameterActions(lightDefinition, 'induction', () => setTab('setup')),
     ...exportActions(exportItems, !ready),
