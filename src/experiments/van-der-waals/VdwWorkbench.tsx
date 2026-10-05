@@ -14,6 +14,7 @@ import { MainThreadRuntime } from '../../workbench/main-thread-runtime';
 import { SPEEDS } from '../../workbench/runtime';
 import { Shell } from '../../workbench/Shell';
 import { SplitView } from '../../workbench/SplitView';
+import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
 import { TimelineBar } from '../../workbench/TimelineBar';
 import { vanDerWaalsDefinition, type VdwParams, type VdwView } from './definition';
 import '../../van-der-waals/van-der-waals.css';
@@ -75,23 +76,24 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
   const [scenario, setScenario] = useState('induced');
   const [params, setParams] = useState<VdwParams>(vanDerWaalsDefinition.defaultParams);
   const [view, setView] = useState<VdwView>(vanDerWaalsDefinition.defaultView);
-  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('chapter'), [dockCollapsed, setDockCollapsed] = useState(false);
+  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
   // Plate pressure can set Fleming's Figure 3-3 or 3-4 beside the diagram for comparison; it opens 1-up.
   const [split, setSplit] = useState(false), [figure, setFigure] = useState('fig-3-3');
+  const about = useAbout();
   const stage = stages.findIndex(s => s.id === scenario), current = stages[stage];
   useEffect(() => { if (!active || scenario !== 'correlated') runtime.run(false); }, [active, scenario, runtime]);
   useEffect(() => { onScenarioChange?.(scenario); }, [scenario, onScenarioChange]);
-  useEffect(() => { if (scenarioRequest) { setScenario(scenarioRequest.id); setDockTab(scenarioRequest.id === 'pressure' ? 'plots' : 'chapter'); } }, [scenarioRequest]);
+  useEffect(() => { if (scenarioRequest) { setScenario(scenarioRequest.id); if (scenarioRequest.id === 'pressure') setDockTab('plots'); } }, [scenarioRequest]);
   useEffect(() => {
     if (!active || scenario !== 'correlated') return;
     const keyboard = (event: KeyboardEvent) => {
       const el = event.target as HTMLElement;
-      if (event.defaultPrevented || el.closest('input, select, textarea, button, a, summary, [contenteditable=true]')) return;
+      if (event.defaultPrevented || about.open || el.closest('input, select, textarea, button, a, summary, [contenteditable=true]')) return;
       if (event.code === 'Space') { event.preventDefault(); runtime.run(!runtime.status().running); }
       if (event.code === 'ArrowRight') { event.preventDefault(); runtime.step(); }
     };
     window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
-  }, [active, scenario, runtime]);
+  }, [active, scenario, runtime, about.open]);
 
   const reference = casimir(params.gap, params.area), pair = london(params.distance);
   /** Restore the stage's starting parameters (and the dipole clock). */
@@ -111,7 +113,7 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
     } catch (error) { setNotice(`Could not load: ${error instanceof Error ? error.message : String(error)}`); }
   }
 
-  const headerNode = <Header experiment={header.experiment} scenario={current.title} onChip={() => { setDockCollapsed(false); setDockTab('chapter'); }}
+  const headerNode = <Header experiment={header.experiment} scenario={current.title} onChip={() => about.show('scenario')} onHelp={() => about.show()}
     actions={<FileActions onFile={load} onSave={save} exports={[{ id: 'csv', label: 'CSV (pressure sweep)', onSelect: exportCsv }]}/>}/>;
 
   const viewportNode = (
@@ -129,22 +131,22 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
       ? [{ label: 'Pair energy', value: number(pair.energy), unit: 'E₀', testId: 'vdw-pair-energy' }, { label: 'Mean force', value: number(pair.force), unit: 'E₀/r₀' }, { label: 'Separation', value: params.distance.toFixed(2), unit: 'r₀' }]
       : [{ label: 'Net pressure', value: `${number(reference.pressure)} Pa`, testId: 'vdw-pressure' }, { label: 'Force on each plate', value: `${number(reference.force * 1e6)} μN`, testId: 'vdw-force' }, { label: 'Energy / area', value: number(reference.energyPerArea * 1e9), unit: 'nJ/m²' }, { label: 'Gap', value: String(params.gap), unit: 'nm' }];
 
-  const chapter = (
-    <div className="vdw-dock-chapter">
-      <section className="vdw-context"><div><span className="micro-label">READING CHAPTER 3</span><h2>From molecular attraction to a field pressure</h2></div><p>Keesom forces involve permanent dipoles; Debye forces involve a permanent and an induced dipole; London dispersion involves fluctuating, induced dipoles. This experiment follows the London branch into Fleming’s account of the Casimir effect. Follow an induced dipole into a collective force — and a measurable pressure difference.</p><p>Fleming treats vacuum fluctuations as interacting electric dipoles. The numerical plate result here is the standard ideal Casimir reference, evaluated separately from that illustration. A microscopic pressure law for Fleming’s medium is not derived by these diagrams.</p><a href={`${BOOK}#page=27`} target="_blank" rel="noreferrer"><BookOpen size={14}/> Chapter 3 ↗</a></section>
-      <details className="vdw-sources"><summary><BookOpen size={17}/>Source figures & model notes<span>Chapter 3 · Figures 3-1–3-4</span></summary><div className="vdw-source-content"><p>Original embedded figures extracted from Ray Fleming’s <em>The Zero-Point Universe</em>. Page numbers below are PDF page positions. Interactive diagrams above are adaptations.</p><div className="vdw-source-grid">{SOURCE_FIGURES.map((_, i) => <SourceFigure key={i} index={i}/>)}</div><p>Figure 3-1 shows an opposed, repulsive configuration (I) and an aligned, attractive one (II). The surrounding text calls both repulsive; the interactive explanation uses the charge geometry. The prescribed in-phase motion is a teaching aid, not a quantum dispersion calculation.</p><p>Retardation concerns finite electromagnetic propagation time. Figure 3-3’s “excluded fluctuations” are a heuristic; actual conductor boundary conditions constrain a full electromagnetic spectrum. Neither counting drawn dipoles nor cancelling two arbitrary pressures derives the reference result.</p><p>The ideal reference excludes material dispersion, temperature, surface roughness, edge effects and short-range overlap repulsion. Observing Casimir attraction does not uniquely establish a dipolar vacuum or determine absolute vacuum energy; see <a href="https://arxiv.org/abs/hep-th/0503158" target="_blank" rel="noreferrer">Jaffe’s discussion</a>.</p><div className="vdw-reference-links"><a href="./docs/van-der-waals-model.md" target="_blank" rel="noreferrer">Model & source notes ↗</a><a href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.73.360" target="_blank" rel="noreferrer">Casimir & Polder (1948) ↗</a><a href="https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=906575" target="_blank" rel="noreferrer">NIST-hosted Casimir review ↗</a></div></div></details>
-    </div>
+  const aboutNode = (
+    <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={current.title} sections={[
+      { id: 'scenario', content: <div className="vdw-about"><div><span className="micro-label">READING CHAPTER 3</span><h2>From molecular attraction to a field pressure</h2></div><p>Keesom forces involve permanent dipoles; Debye forces involve a permanent and an induced dipole; London dispersion involves fluctuating, induced dipoles. This experiment follows the London branch into Fleming’s account of the Casimir effect. Follow an induced dipole into a collective force — and a measurable pressure difference.</p><p>Fleming treats vacuum fluctuations as interacting electric dipoles. The numerical plate result here is the standard ideal Casimir reference, evaluated separately from that illustration. A microscopic pressure law for Fleming’s medium is not derived by these diagrams.</p></div> },
+      { id: 'sources', content: <div className="vdw-about vdw-source-content"><div className="about-links"><a href={`${BOOK}#page=27`} target="_blank" rel="noreferrer"><BookOpen size={14}/> Chapter 3 ↗</a></div><p>Original embedded figures extracted from Ray Fleming’s <em>The Zero-Point Universe</em>. Page numbers below are PDF page positions. Interactive diagrams above are adaptations.</p><div className="vdw-source-grid">{SOURCE_FIGURES.map((_, i) => <SourceFigure key={i} index={i}/>)}</div><p>Figure 3-1 shows an opposed, repulsive configuration (I) and an aligned, attractive one (II). The surrounding text calls both repulsive; the interactive explanation uses the charge geometry. The prescribed in-phase motion is a teaching aid, not a quantum dispersion calculation.</p><p>Retardation concerns finite electromagnetic propagation time. Figure 3-3’s “excluded fluctuations” are a heuristic; actual conductor boundary conditions constrain a full electromagnetic spectrum. Neither counting drawn dipoles nor cancelling two arbitrary pressures derives the reference result.</p><p>The ideal reference excludes material dispersion, temperature, surface roughness, edge effects and short-range overlap repulsion. Observing Casimir attraction does not uniquely establish a dipolar vacuum or determine absolute vacuum energy; see <a href="https://arxiv.org/abs/hep-th/0503158" target="_blank" rel="noreferrer">Jaffe’s discussion</a>.</p><div className="vdw-reference-links"><a href="./docs/van-der-waals-model.md" target="_blank" rel="noreferrer">Model & source notes ↗</a><a href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.73.360" target="_blank" rel="noreferrer">Casimir & Polder (1948) ↗</a><a href="https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=906575" target="_blank" rel="noreferrer">NIST-hosted Casimir review ↗</a></div></div> },
+    ]}/>
   );
 
   const dockNode = (
-    // Plots and Stress exist only on the plate-pressure stage; elsewhere (after a stage change or a Load) show Chapter 3.
-    <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={stage === 2 ? dockTab : 'chapter'} onTab={setDockTab} readouts={readouts}
+    // Plots and Stress exist only on the plate-pressure stage; the other stages show just the readout strip, fixed under
+    // the timeline (the Shell's dockStripOnly).
+    <Dock collapsed={dockCollapsed} onCollapsedChange={stage === 2 ? setDockCollapsed : undefined} tab={stage === 2 ? dockTab : undefined} onTab={setDockTab} readouts={readouts}
       tabs={[
         ...(stage === 2 ? [
           { id: 'plots', label: 'Plots', content: <div className="vdw-dock-plot"><h4>Gap sweep · ideal reference</h4><PressurePlot gap={params.gap}/><p>Double the gap → <strong>1/16 of the pressure</strong>. Double the area → twice the force, at the same pressure.</p></div> },
           { id: 'stress', label: 'Stress', content: <div className="vdw-dock-text"><h4>How zero-point energy produces stress</h4><p>Each field mode has ground-state energy ½ℏω. The plates change the allowed spectrum. Subtracting the infinite-separation reference gives a finite interaction energy per area:</p><div className="vdw-equation">U / A = −π²ℏc / (720d³)<br/>P = −∂(U/A) / ∂d</div><p>Pressure is the force per area associated with changing the cavity width. This is a <strong>difference in normal stress</strong>; the readout does not measure an absolute, uniform pressure of the vacuum.</p><p className="vdw-control-note">The curves illustrate normal standing-wave components (n = 1, 2, 3; λₙ = 2d/n). They are examples of boundary constraints, not a count of all modes or a wavelength cutoff. Their display does not set the calculated pressure.</p></div> },
         ] : []),
-        { id: 'chapter', label: 'Chapter 3', content: chapter },
       ]}/>
   );
 
@@ -166,9 +168,10 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
 
   return (
     <div className="vdw-workbench-root" style={{ display: active ? undefined : 'none' }}>
-      <Shell id="vdw" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={stage === 2 ? [2, 3].map(i => ({ id: `fig-3-${i + 1}`, label: `Fig. 3-${i + 1}`, content: <div className="vdw-figure-pane"><SourceFigure index={i}/></div> })) : []} split={split} onSplit={setSplit} pane={figure} onPane={setFigure}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+      <Shell id="vdw" dockStripOnly={stage !== 2} header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={stage === 2 ? [2, 3].map(i => ({ id: `fig-3-${i + 1}`, label: `Fig. 3-${i + 1}`, content: <div className="vdw-figure-pane"><SourceFigure index={i}/></div> })) : []} split={split} onSplit={setSplit} pane={figure} onPane={setFigure}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<VdwStatus runtime={runtime} stage={current.title}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
+      {aboutNode}
     </div>
   );
 }

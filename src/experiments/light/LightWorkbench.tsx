@@ -21,6 +21,7 @@ import '../../light/light.css';
 import './light-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
 import { SplitView } from '../../workbench/SplitView';
+import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
 
 /** Render a normalized electric-projection trace with the shared Plot, with an optional probe marker. */
 function WavePlot({ x, values, label, unit, domain, marker }: { x: number[]; values: number[]; label: string; unit: 'L' | 'τ'; domain: [number, number]; marker?: number }) {
@@ -51,6 +52,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   const [checkpoints, setCheckpoints] = useState<LightState[]>([]);
   // Light opens 1-up; the split pane shows the pair close-up glyph enlarged, which then leaves the Selection tab.
   const [split, setSplit] = useState(false);
+  const about = useAbout();
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
   // The host is a callback ref held in state, so the renderer follows the element when the shell changes layout.
   const [host, setHost] = useState<HTMLDivElement | null>(null), renderer = useRef<LightRenderer | null>(null);
@@ -81,12 +83,12 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
     const key = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       // Keys another control already handled (a plot's crosshair uses the arrows) are not transport shortcuts.
-      if (e.defaultPrevented || ['INPUT', 'SELECT', 'BUTTON', 'A', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable || error) return;
+      if (e.defaultPrevented || ['INPUT', 'SELECT', 'BUTTON', 'A', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable || about.open || error) return;
       if (e.code === 'Space' && !contextLost) { e.preventDefault(); runtime.run(!latest.current?.running); }
       if (e.code === 'ArrowRight') { e.preventDefault(); runtime.step(); }
     };
     window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key);
-  }, [active, runtime, latest, error, contextLost]);
+  }, [active, runtime, latest, error, contextLost, about.open]);
 
   const clearSelection = useCallback(() => setSelected(null), []);
   // Re-apply the preset even when the camera is already on it, so F always frames the current selection.
@@ -127,7 +129,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   const pairX = 100 + Math.sin(inspected.angle) * inspected.separation * 140, pairY = 66 - Math.cos(inspected.angle) * inspected.separation * 140;
   const stateLine = d.finished ? 'SEQUENCE COMPLETE' : `Pair ${d.index + 1} / ${pairCount(p)} · ${d.pair.sense > 0 ? '↺ positive' : '↻ negative'}`;
 
-  const headerNode = <Header experiment={header.experiment} scenario={lightDefinition.scenarios[0].title}
+  const headerNode = <Header experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} onChip={() => about.show('scenario')} onHelp={() => about.show()}
     actions={<FileActions disabled={!ready} onFile={load} onSave={save}
       exports={[{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError }, { id: 'csv', label: 'CSV (full sequence)', onSelect: exportCSV }]}/>}/>;
 
@@ -185,6 +187,13 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
   const glyph = (
     <svg className="light-pair-glyph" viewBox="0 0 200 135" role="img" aria-label="Selected pair in its rotation plane; fixed midpoint and opposite charge lobes"><circle cx="100" cy="66" r="59" fill="none" stroke={palette.line2} strokeDasharray="3 5"/><path d="M93 66H107M100 59V73" stroke={palette.dataShell3}/><line x1={pairX} y1={pairY} x2={200 - pairX} y2={132 - pairY} stroke={palette.text4}/>{inspected.active && <><circle cx={pairX} cy={pairY} r="10" fill={palette.danger}/><text x={pairX} y={pairY + 4} textAnchor="middle" fill={palette.bg2} fontSize="14">+</text><circle cx={200 - pairX} cy={132 - pairY} r="10" fill={palette.dataNeg}/><text x={200 - pairX} y={136 - pairY} textAnchor="middle" fill={palette.bg2} fontSize="14">−</text></>}<text x="100" y="130" textAnchor="middle" fill={palette.accent2} fontSize="9">Rotation plane · geometry exaggerated</text></svg>
   );
+  const aboutNode = (
+    <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} sections={[
+      { id: 'scenario', content: <><p>Successive dipoles make half-turns over half-wavelength intervals. The surrounding response and finite pulse shape are visual conventions. Follow an energy wave through successive, locally rotating pairs.</p><p>{`Paused stepping is available. At 1×, one second of playback represents ${(TIME_SECONDS * 1e15).toFixed(3)} fs.`}</p></> },
+      { id: 'sources', content: <div className="about-links"><a href="./docs/light-model.md" target="_blank" rel="noreferrer">Model equations & limitations ↗</a><a href="./docs/papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf#page=4" target="_blank" rel="noreferrer">Fleming’s paper · self-induction, p. 4 ↗</a></div> },
+    ]}/>
+  );
+
   const selectionNode = (
     <div className="light-selection">
       <div className="light-selection-head"><h3>Pair {inspected.index + 1}</h3><button type="button" className="inspector-link" onClick={() => setSelected(selected === null ? d.index : null)}>{selected === null ? 'Pin pair' : 'Follow active'}</button></div>
@@ -212,7 +221,6 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
           <header className="inspector-group-head"><h3>Settings</h3></header>
           <label className="medium-setting"><input type="checkbox" data-testid="setting-reduced-motion" checked={view.reducedMotion} onChange={e => setView(v => ({ ...v, reducedMotion: e.target.checked }))}/>Reduced flashing &amp; camera motion</label>
         </section>
-        <section className="light-source"><Info size={16}/><div><strong>About this experiment</strong><p>Successive dipoles make half-turns over half-wavelength intervals. The surrounding response and finite pulse shape are visual conventions. Follow an energy wave through successive, locally rotating pairs.</p><p>{`Paused stepping is available. At 1×, one second of playback represents ${(TIME_SECONDS * 1e15).toFixed(3)} fs.`}</p><a href="./docs/light-model.md" target="_blank" rel="noreferrer">Model equations & limitations ↗</a><a href="./docs/papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf#page=4" target="_blank" rel="noreferrer">Fleming’s paper · self-induction, p. 4 ↗</a></div></section>
       </>}/>
   );
 
@@ -227,6 +235,7 @@ export function LightWorkbench({ active, rail, header }: LightWorkbenchProps) {
       <Shell id="light" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'pair', label: `Pair ${inspected.index + 1} close-up`, content: <div className="light-pair-pane">{glyph}</div> }]} split={split} onSplit={setSplit} pane="pair" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={s.running} items={[LIGHT_MODEL, <span data-testid="light-tick">Tick {s.tick} · Δt = τ/120</span>, `start x = ${sourceX(p).toFixed(1)} L`, 'Fixed centres · prescribed c · local worker']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
+      {aboutNode}
     </div>
   );
 }

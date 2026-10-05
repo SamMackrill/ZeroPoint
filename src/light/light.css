@@ -572,32 +572,6 @@
   accent-color: var(--accent);
 }
 
-.light-source {
-  display: flex;
-  gap: 10px;
-  color: var(--accent-2);
-  padding: 4px 6px;
-}
-
-.light-source strong {
-  font-size: var(--fs-micro);
-  font-weight: 500;
-}
-
-.light-source p {
-  font-size: var(--fs-micro);
-  color: var(--text-3);
-  line-height: 1.9;
-  margin: 9px 0;
-}
-
-.light-source a {
-  font-size: var(--fs-micro);
-  display: block;
-  line-height: 2.2;
-  color: var(--accent);
-}
-
 .light-status {
   min-height: 28px;
   margin-top: 22px;
@@ -833,9 +807,6 @@
   }
   .light-toggle {
     font-size: var(--fs-micro);
-  }
-  .light-source {
-    margin: 3px 0 8px;
   }
   .light-app .statusbar {
     gap: 8px;

@@ -54,23 +54,6 @@
   white-space: nowrap;
 }
 
-.casimir-notes {
-  padding: 20px;
-  border: 1px solid var(--line-2);
-  background: var(--bg-3);
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: var(--fs-ui);
-  line-height: 1.9;
-  color: var(--text-2);
-}
-
-.casimir-notes a {
-  display: inline-block;
-  margin: 12px 20px 0 0;
-  color: var(--accent);
-}
-
 .casimir-modes {
   display: grid;
   grid-template-columns: 1fr 1fr;
