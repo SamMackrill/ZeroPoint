@@ -37,7 +37,7 @@ test('the core loop works from the keyboard alone, and the run state is announce
   await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toContainText('Sparse fluctuations');
   // Run and pause from the Run button, then step with →.
   await tabTo(page, '[data-testid="transport-run"]'); await page.keyboard.press('Space');
-  await expect(runState).toHaveText('Running');
+  await expect(runState).toHaveText('Running'); await expect(tid(page, 'transport-run')).toContainText('Pause');
   await page.keyboard.press('Space'); await expect(runState).toHaveText('Paused');
   const before = await page.getByTestId('tick').innerText();
   await page.keyboard.press('ArrowRight'); await expect(page.getByTestId('tick')).not.toHaveText(before);

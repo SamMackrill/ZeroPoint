@@ -68,7 +68,7 @@ export function TimelineBar({ runtime, timeline, speeds, markers = [], onMarker,
   return (
     <div className="timeline-bar" role="toolbar" aria-label="Timeline">
       <button type="button" className="timeline-button" data-testid="transport-reset" disabled={!can.reset} onClick={() => runtime.reset()} title="Reset" aria-label="Reset"><RotateCcw size={15} aria-hidden="true"/></button>
-      <button type="button" className={`timeline-run${status.running ? ' is-running' : ''}`} data-testid="transport-run" disabled={!can.run || (status.finished && !status.running) || (runDisabled && !status.running)} onClick={() => runtime.run(!status.running)}>
+      <button type="button" className={`timeline-run${status.running ? ' is-running' : ''}`} data-testid="transport-run" disabled={!can.run || (status.finished && !status.running) || (runDisabled && !status.running)} onClick={() => runtime.run(!runtime.status().running)} /* live status: the rendered one refreshes at most 15 times a second */>
         {status.running ? <Pause size={14} aria-hidden="true"/> : <Play size={14} aria-hidden="true"/>}{status.running ? 'Pause' : 'Run'}
       </button>
       <button type="button" className="timeline-button" data-testid="transport-step" disabled={!can.step || status.finished} onClick={() => runtime.step()} title="Step" aria-label="Step"><StepForward size={15} aria-hidden="true"/></button>
