@@ -29,6 +29,8 @@ export interface TimelineBarProps {
   markers?: readonly TimelineMarker[];
   /** Restore a ◆ checkpoint. */
   onMarker?(marker: TimelineMarker): void;
+  /** Pin a ◆ checkpoint as comparison B (right-click). */
+  onMarkerPin?(marker: TimelineMarker): void;
   /** Capture a checkpoint (shows "◆ Capture"). */
   onCapture?(): void;
   /** Hold playback, e.g. while the viewport recovers a lost graphics context. */
@@ -56,7 +58,7 @@ export function timeText(timeline: TimelineSpec, status: RuntimeStatus): string 
  * Run/Pause, Step, Next (the next event, or +1 τ), speed, a scrubber with event ticks and ◆ checkpoint markers, the
  * time and Capture. Controls follow the runtime's capabilities. Static scenarios have no timeline bar.
  */
-export function TimelineBar({ runtime, timeline, speeds, markers = [], onMarker, onCapture, runDisabled }: TimelineBarProps) {
+export function TimelineBar({ runtime, timeline, speeds, markers = [], onMarker, onMarkerPin, onCapture, runDisabled }: TimelineBarProps) {
   const status = useRuntimeStatus(runtime);
   if (!status || timeline.kind === 'static') return null;
   const can = runtime.capabilities, length = trackLength(timeline, status, markers);
@@ -86,7 +88,8 @@ export function TimelineBar({ runtime, timeline, speeds, markers = [], onMarker,
           <button type="button" key={`${e.tick}-${e.label}`} data-testid={e.id ? `event-${e.id}` : undefined} className="timeline-tick" style={{ left: pct(e.tick) }} title={event(e)} aria-label={event(e)} disabled={!can.seek} onClick={() => runtime.seek(e.tick)}/>
         ))}
         {markers.map(m => (
-          <button type="button" key={m.id} className="timeline-marker" style={{ left: pct(m.tick) }} title={`${m.label} · tick ${m.tick}`} aria-label={`Restore ${m.label}`} onClick={() => onMarker?.(m)}><Diamond size={10} aria-hidden="true"/></button>
+          <button type="button" key={m.id} className="timeline-marker" style={{ left: pct(m.tick) }} title={`${m.label} · tick ${m.tick}${onMarkerPin ? ' · right-click to pin as B' : ''}`} aria-label={`Restore ${m.label}`} onClick={() => onMarker?.(m)}
+            onContextMenu={onMarkerPin ? event => { event.preventDefault(); onMarkerPin(m); } : undefined}><Diamond size={10} aria-hidden="true"/></button>
         ))}
       </div>
       <output className="timeline-time" aria-live="off">{timeText(timeline, status)}</output>

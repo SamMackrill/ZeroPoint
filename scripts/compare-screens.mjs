@@ -133,7 +133,22 @@ export const COMPARE_SCREENS = [
   { name: 'light-compare', title: 'Light · Dock › Compare: B pinned at 500 nm, A at 750 nm, Δ in the readout strip', lab: 'lab-light', prepare: compareLight('compare') },
   { name: 'light-compare-plots', title: 'Light · Dock › Plots: B drawn dashed beside A', lab: 'lab-light', prepare: compareLight('plots') },
 ];
-const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS };
+/** Medium's B (`--set compare-medium`): pin at tick 0, give A another seed, step both 40 ticks, then show the tab. */
+const compareMedium = tab => async page => {
+  const visible = id => page.getByTestId(id).filter({ visible: true });
+  if (!(await visible('dock-compare').count())) { for (let i = 0; i < 40; i++) await visible('transport-step').click(); return; }
+  await visible('dock-compare').click(); await visible('compare-pin').click();
+  await page.getByRole('tab', { name: 'Setup', exact: true }).filter({ visible: true }).click();
+  const seed = page.getByRole('textbox', { name: /^Random seed/ }).filter({ visible: true }); await seed.fill('7'); await seed.press('Enter');
+  await visible('params-apply').click();
+  for (let i = 0; i < 40; i++) await visible('transport-step').click();
+  await visible(`dock-${tab}`).click();
+};
+export const MEDIUM_COMPARE_SCREENS = [
+  { name: 'medium-compare', title: 'Medium · Dock › Compare: B (seed 2026) beside A (seed 7) after 40 ticks, Δ in the strip', prepare: compareMedium('compare') },
+  { name: 'medium-compare-plots', title: 'Medium · Dock › Plots: B dashed beside A', prepare: compareMedium('plots') },
+];
+const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };

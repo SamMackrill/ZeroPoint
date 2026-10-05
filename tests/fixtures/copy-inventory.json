@@ -325,6 +325,18 @@
   },
   {
     "file": "src/experiments/medium/MediumWorkbench.tsx",
+    "text": "Copied B’s parameters to A. Experiment reset to tick 0."
+  },
+  {
+    "file": "src/experiments/medium/MediumWorkbench.tsx",
+    "text": "B is a second simulation from its pinned state (tick $"
+  },
+  {
+    "file": "src/experiments/medium/MediumWorkbench.tsx",
+    "text": "), stepped in lock-step with A’s tick and drawn dashed in the plots."
+  },
+  {
+    "file": "src/experiments/medium/MediumWorkbench.tsx",
     "text": "Pause and click a dipole in the field, or select one here."
   },
   {

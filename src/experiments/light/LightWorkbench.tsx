@@ -206,7 +206,8 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
           <div><h4>Probe trace · x = {p.probe.toFixed(1)} L{pB && pB.probe !== p.probe && ` · B x = ${pB.probe.toFixed(1)} L`}</h4><WavePlot x={historyX} values={history} valuesB={historyB} label="Electric projection at the fixed probe over elapsed time" unit="τ" domain={[0, Math.max(d.time, 0.01)]}/></div>
         </div> },
         { id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={lightDefinition} scenario="induction" a={p} b={pB}
-          onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}/> },
+          onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}
+          onLoadB={async file => { try { compare.pin(parseLightFile(await file.text()).state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> },
         { id: 'ledger', label: 'Ledger', content: <div className="light-ledger">
           <Readouts items={[
             { label: 'Central pair · hf/2', value: d.pairEnergy.toFixed(4), unit: 'eV' },
@@ -268,7 +269,8 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   const timelineNode = state && (
     <TimelineBar runtime={runtime} timeline={timeline} speeds={SPEEDS}
       markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `tick ${c.tick}` }))}
-      onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) { runtime.restore(c); setSelected(null); } }} onCapture={capture} runDisabled={contextLost}/>
+      onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) { runtime.restore(c); setSelected(null); } }}
+      onMarkerPin={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) { compare.pin(c.parameters); setNotice('Pinned the checkpoint’s parameters as B.'); } }} onCapture={capture} runDisabled={contextLost}/>
   );
 
   return (

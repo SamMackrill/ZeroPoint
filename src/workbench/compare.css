@@ -85,6 +85,11 @@
   cursor: pointer;
 }
 
+.compare-load {
+  display: inline-flex;
+  align-items: center;
+}
+
 .compare-button:hover:not(:disabled) {
   border-color: var(--accent-line);
 }

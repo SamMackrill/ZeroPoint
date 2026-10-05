@@ -39,7 +39,8 @@ export function withDeltas(a: readonly Readout[], b: readonly Readout[] | null):
   return a.map(item => {
     const other = b.find(r => r.label === item.label);
     if (!other) return item;
-    const x = Number(item.value), y = Number(other.value);
+    // Counts read "1,234" (en-GB grouping); parse them without the separators.
+    const x = Number(item.value.replace(/,/g, '')), y = Number(other.value.replace(/,/g, ''));
     if (!Number.isFinite(x) || !Number.isFinite(y)) return { ...item, delta: other.value === item.value ? 'Δ 0' : `B ${other.value}` };
     const d = y - x, digits = Math.max(places(item.value), places(other.value));
     return { ...item, delta: `Δ ${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d).toFixed(digits)}` };
@@ -55,16 +56,22 @@ export interface CompareTabProps {
   onPin(): void;
   onCopyToA(): void;
   onClear(): void;
+  /** Pin B from a saved file of this lab ("Load as B"). */
+  onLoadB?(file: File): void;
   /** What B shows, e.g. "Plots draw B dashed". */
   note?: string;
 }
 
 /** The Compare dock tab: pin B, the parameters that differ, copy B's parameters to A, and clear. */
-export function CompareTab({ definition, scenario, a, b, onPin, onCopyToA, onClear, note }: CompareTabProps) {
+export function CompareTab({ definition, scenario, a, b, onPin, onCopyToA, onClear, onLoadB, note }: CompareTabProps) {
+  const loadB = onLoadB && (
+    <label className="compare-button compare-load" data-testid="compare-load">Load as B…<input className="visually-hidden" type="file" accept=".json,application/json" aria-label="Load a saved file as B" data-testid="compare-load-input"
+      onChange={event => { const file = event.target.files?.[0]; if (file) onLoadB(file); event.target.value = ''; }}/></label>
+  );
   if (!b) return (
     <div className="compare-empty">
       <p>Pin the current configuration as B, then change A’s parameters to compare the two side by side.</p>
-      <button type="button" className="compare-button" data-testid="compare-pin" onClick={onPin}>Pin current as B</button>
+      <div className="compare-actions"><button type="button" className="compare-button" data-testid="compare-pin" onClick={onPin}>Pin current as B</button>{loadB}</div>
     </div>
   );
   const diff = parameterDiff(definition, scenario, a, b);
@@ -80,6 +87,7 @@ export function CompareTab({ definition, scenario, a, b, onPin, onCopyToA, onCle
       <div className="compare-actions">
         <button type="button" className="compare-button" data-testid="compare-copy" disabled={!diff.length} onClick={onCopyToA}>Copy B’s parameters to A</button>
         <button type="button" className="compare-button" data-testid="compare-repin" onClick={onPin}>Pin current as B</button>
+        {loadB}
         <button type="button" className="compare-button" data-testid="compare-clear" onClick={onClear}>Clear B</button>
       </div>
     </div>

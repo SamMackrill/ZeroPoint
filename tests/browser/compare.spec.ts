@@ -45,3 +45,29 @@ test('Electron compares spin projections with B dashed in the probe history, and
   await root.getByTestId('dock-compare').click();
   await expect(root.getByTestId('compare-pin')).toBeVisible();
 });
+
+test('Medium\'s B is a second simulation: the same state gives zero Δ, a different seed a non-zero Δ, and ◆ right-click pins B', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/'); await expect(tid(page, 'transport-run')).toBeEnabled();
+  const root = page.locator('.medium-workbench'), deltas = root.locator('.dock-strip .dock-delta');
+  await root.getByTestId('dock-compare').click(); await root.getByTestId('compare-pin').click();
+  await expect(root.getByTestId('dock-compare')).toContainText('B');
+  for (let i = 0; i < 20; i++) await tid(page, 'transport-step').click();
+  await expect(page.getByTestId('tick')).toHaveText('Tick 20');
+  // Deterministic: B continues identically from the pinned state, so every Δ is zero.
+  await expect(deltas).toHaveCount(4);
+  await expect.poll(async () => (await deltas.allInnerTexts()).every(text => /^Δ 0(\.0+)?$/.test(text.trim()))).toBe(true);
+  // A different seed restarts A from tick 0; B re-runs from its pin, so the same ticks now differ.
+  await page.getByRole('tab', { name: 'Setup', exact: true }).filter({ visible: true }).click();
+  const seed = page.getByRole('textbox', { name: /^Random seed/ }).filter({ visible: true }); await seed.fill('7'); await seed.press('Enter');
+  await tid(page, 'params-apply').click(); await expect(page.getByTestId('tick')).toHaveText('Tick 0');
+  for (let i = 0; i < 20; i++) await tid(page, 'transport-step').click();
+  await expect(root.getByTestId('compare-diff')).toContainText('Random seed');
+  await expect.poll(async () => (await deltas.allInnerTexts()).some(text => /Δ [+−]/.test(text))).toBe(true);
+  // A ◆ checkpoint pins B from its right-click menu.
+  await page.keyboard.press('c'); await expect(root.locator('.timeline-marker')).toHaveCount(1);
+  await root.locator('.timeline-marker').click({ button: 'right' });
+  await expect(tid(page, 'notice').filter({ visible: true })).toContainText('Pinned the checkpoint at tick 20 as B');
+  await expect.poll(async () => (await deltas.allInnerTexts()).every(text => /^Δ 0(\.0+)?$/.test(text.trim()))).toBe(true);
+  expect(errors).toEqual([]);
+});
