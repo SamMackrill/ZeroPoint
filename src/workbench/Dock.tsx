@@ -5,7 +5,7 @@ import type { Readout } from '../ui/Readouts';
 import './dock.css';
 
 /** One dock tab (Plots, Ledger, Events, Probe, Compare…). */
-export interface DockTab { id: string; label: string; content: ReactNode }
+export interface DockTab { id: string; label: string; content: ReactNode; /** A small badge after the label ("B" while comparing). */ badge?: string }
 
 /** Props for Dock. */
 export interface DockProps {
@@ -28,12 +28,12 @@ export function Dock({ readouts, tabs, tab, onTab, collapsed = false, onCollapse
       <div className="dock-head">
         <dl className="dock-strip" aria-label="Key readouts">
           {readouts.slice(0, 4).map(r => (
-            <div key={r.label}><dt>{r.label}</dt><dd><span data-testid={r.testId}>{r.value}</span>{r.unit && <small> {r.unit}</small>}</dd></div>
+            <div key={r.label}><dt>{r.label}</dt><dd><span data-testid={r.testId}>{r.value}</span>{r.unit && <small> {r.unit}</small>}{r.delta && <small className="dock-delta" data-testid={r.testId ? `${r.testId}-delta` : undefined}>{r.delta}</small>}</dd></div>
           ))}
         </dl>
         {tabs.length > 0 && (
           <Tabs.List className="dock-tabs" aria-label="Dock">
-            {tabs.map(t => <Tabs.Trigger key={t.id} value={t.id} data-testid={`dock-${t.id}`}>{t.label}</Tabs.Trigger>)}
+            {tabs.map(t => <Tabs.Trigger key={t.id} value={t.id} data-testid={`dock-${t.id}`}>{t.label}{t.badge && <span className="dock-badge" aria-label={`(${t.badge} active)`}>{t.badge}</span>}</Tabs.Trigger>)}
           </Tabs.List>
         )}
         {onCollapsedChange && (

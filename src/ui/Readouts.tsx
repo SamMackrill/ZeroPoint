@@ -10,6 +10,8 @@ export interface Readout {
   info?: ReactNode;
   /** A test id for the value. */
   testId?: string;
+  /** B's difference from this value while comparing (Dock › Compare), in small text. */
+  delta?: string;
 }
 
 /** Props for Readouts. */

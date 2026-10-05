@@ -177,6 +177,10 @@
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Shared local preference selected, following the video’s coordination explanation at 4:44."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "View changed. The sequence is paused at its start."
   },
   {
@@ -186,10 +190,6 @@
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Exported the full analytic reference sequence, including future samples and the separate intrinsic-dipole reference."
-  },
-  {
-    "file": "src/experiments/electron/ElectronWorkbench.tsx",
-    "text": "Shared local preference selected, following the video’s coordination explanation at 4:44."
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
@@ -458,6 +458,18 @@
   {
     "file": "src/workbench/Chrome.tsx",
     "text": "Model IDs and parameter revisions in the status bar."
+  },
+  {
+    "file": "src/workbench/compare.tsx",
+    "text": "Pin the current configuration as B, then change A’s parameters to compare the two side by side."
+  },
+  {
+    "file": "src/workbench/compare.tsx",
+    "text": "B runs in lock-step with A’s tick and is drawn dashed in the plots."
+  },
+  {
+    "file": "src/workbench/compare.tsx",
+    "text": "A and B have the same parameters. Change A in Setup to compare."
   },
   {
     "file": "src/workbench/Inspector.tsx",

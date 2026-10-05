@@ -109,3 +109,10 @@
 .dock-body:focus-visible {
   outline: none;
 }
+
+/* B's difference under a strip value while comparing. */
+.dock-delta {
+  display: block;
+  color: var(--accent-2);
+  font: var(--fs-micro) var(--mono);
+}
