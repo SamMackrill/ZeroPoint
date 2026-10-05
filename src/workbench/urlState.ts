@@ -130,3 +130,32 @@ export function useUrlWriter(active: boolean, hold: boolean, hash: string) {
     return () => clearTimeout(timer);
   }, [active, hold, hash]);
 }
+
+/** A link waiting for its runtime: the parameters it configured, and the tick to seek to once they are in effect. */
+export interface PendingLink { params: object; tick?: number }
+
+/** Whether every value in `want` equals the one at the same path in `have` (nested objects compared the same way). */
+export function sameValues(want: object, have: object): boolean {
+  return Object.entries(want).every(([key, value]) => {
+    const other = (have as Record<string, unknown>)[key];
+    return value && typeof value === 'object' ? !!other && typeof other === 'object' && sameValues(value, other) : Object.is(value, other);
+  });
+}
+
+/**
+ * After a link restarts a runtime with its parameters, wait until the runtime reports them, then seek to the link's tick
+ * and clear the pending link (callers hold the URL writer while one is pending, so the link isn't overwritten).
+ */
+export function useLinkSeek(pending: PendingLink | null, done: () => void, state: { parameters: object } | null, seek: (tick: number) => void) {
+  useEffect(() => {
+    if (!pending || !state || !sameValues(pending.params, state.parameters)) return;
+    if (pending.tick) seek(pending.tick);
+    done();
+  }, [pending, state, done, seek]);
+  // A runtime that normalizes a value it reports back would never match; give up waiting rather than hold the URL.
+  useEffect(() => {
+    if (!pending) return;
+    const timer = setTimeout(done, 3000);
+    return () => clearTimeout(timer);
+  }, [pending, done]);
+}

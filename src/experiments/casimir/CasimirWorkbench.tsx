@@ -1,4 +1,4 @@
-import { ArrowLeftRight } from 'lucide-react';
+import { ArrowLeftRight, Info, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { extent, lifeStage, phase, type CasimirModel, type Zepton } from '../../casimir/model';
 import { Scene, type SceneLayers } from '../../casimir/Scene';
@@ -18,6 +18,7 @@ import { casimirDefinition, type CasimirParams } from './definition';
 import '../../casimir/casimir.css';
 import './casimir-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
+import { encodeUrl, routeFor, useUrlWriter, type ScenarioRequest } from '../../workbench/urlState';
 import { SplitView } from '../../workbench/SplitView';
 import { InfoTip } from '../../ui/InfoTip';
 import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
@@ -62,7 +63,7 @@ export interface CasimirWorkbenchProps {
   active: boolean;
   rail: ReactNode;
   header: Pick<HeaderProps, 'experiment'>;
-  scenarioRequest?: { id: string; at: number } | null;
+  scenarioRequest?: ScenarioRequest | null;
   onScenarioChange?(id: string): void;
 }
 
@@ -97,7 +98,16 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   function restart(next: CasimirParams) { runtime.configure(next as CasimirConfig); setParams(next); setSelected(null); lastSelected.current = null; }
   const restartRef = useRef(restart); restartRef.current = restart;
   const paramsRef = useRef(params); paramsRef.current = params;
-  useEffect(() => { if (scenarioRequest) restartRef.current({ ...paramsRef.current, pair: scenarioRequest.id as CasimirParams['pair'] }); }, [scenarioRequest]);
+  const [notice, setNotice] = useState('');
+  useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 5000); return () => clearTimeout(timer); }, [notice]);
+  // The rail switches pairing, keeping the separation; a link starts the pairing from its defined state plus its settings.
+  useEffect(() => {
+    if (!scenarioRequest) return;
+    const { id, url, dropped } = scenarioRequest, pair = id as CasimirParams['pair'];
+    restartRef.current(url ? withPaths({ ...casimirDefinition.defaultParams, pair }, url.params) : { ...paramsRef.current, pair });
+    if (url) { setView(v => withPaths(v, url.view)); if (url.split) setSplit(url.split === 'loupe'); }
+    if (dropped?.length) setNotice(`Ignored link settings that don’t apply: ${dropped.join(', ')}.`);
+  }, [scenarioRequest]);
 
   let inspected = model.particles.find(p => p.id === selected);
   if (follow && !inspected) inspected = [...model.particles].reverse().find(p => scenario === 'electron-electron' ? p.gap : model.bridge(p)) ?? model.particles.find(p => model.bridge(p));
@@ -112,6 +122,8 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   const tendency = Math.abs(model.delta) < .002 ? 'Building pressure' : model.delta > 0 ? 'Apart' : 'Together';
   const start = model.history[0]?.time ?? 0, end = model.history.at(-1)?.time ?? 0;
   const running = runtime.status().running;
+  // The address bar follows this lab (plan §11); the loupe pane is open by default, so only 'off' is written.
+  useUrlWriter(active, running, encodeUrl(routeFor(casimirDefinition, scenario, params, view, { split: split ? undefined : 'off' })));
   /** Pin a Zepton (stops following new births). */
   const pin = (p: Zepton) => { setSelected(p.id); lastSelected.current = { ...p }; setFollow(false); setTab('selection'); };
 
@@ -209,6 +221,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
     <div className="casimir-workbench-root" style={{ display: active ? undefined : 'none' }}>
       <Shell id="casimir" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'loupe', label: 'Lifetime loupe', content: <div className="casimir-loupe-pane"><Lifetime particle={displayed} expired={!inspected}/></div> }]} split={split} onSplit={setSplit} pane="loupe" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={running} items={[`Separation ${params.separation.toFixed(1)} a.u.`, `${model.particles.length} Zeptons`, 'Qualitative pressure · arbitrary spatial units']}/>}/>
+      {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
     </div>
   );
