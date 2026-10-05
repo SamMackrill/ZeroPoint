@@ -452,6 +452,10 @@
     "text": "Logarithmic plot of attractive pressure magnitude versus plate gap. Doubling the gap reduces pressure magnitude sixteenfold."
   },
   {
+    "file": "src/workbench/AboutSheet.tsx",
+    "text": "Shortcuts are ignored while typing in a field or while a dialog is open."
+  },
+  {
     "file": "src/workbench/Chrome.tsx",
     "text": "Model IDs and parameter revisions in the status bar."
   },

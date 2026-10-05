@@ -1,11 +1,11 @@
 import { BookOpen } from 'lucide-react';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Info, X } from 'lucide-react';
 import { downloadFile } from '../../persistence/experiment';
 import { BOOK, InductionDiagram, number, PairDiagram, PlateDiagram, PressurePlot, stages } from '../../van-der-waals/diagrams';
 import { casimir, london, pressureCSV } from '../../van-der-waals/model';
 import { parseVdwFile, vdwFile } from './file';
-import { FileActions, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
+import { FileActions, fileShortcuts, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
 import { withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
@@ -15,7 +15,8 @@ import { SPEEDS } from '../../workbench/runtime';
 import { Shell } from '../../workbench/Shell';
 import { SplitView } from '../../workbench/SplitView';
 import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
-import { TimelineBar } from '../../workbench/TimelineBar';
+import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
+import { PANEL_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { vanDerWaalsDefinition, type VdwParams, type VdwView } from './definition';
 import '../../van-der-waals/van-der-waals.css';
 import './vdw-workbench.css';
@@ -80,20 +81,11 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
   // Plate pressure can set Fleming's Figure 3-3 or 3-4 beside the diagram for comparison; it opens 1-up.
   const [split, setSplit] = useState(false), [figure, setFigure] = useState('fig-3-3');
   const about = useAbout();
+  const fileInput = useRef<HTMLInputElement>(null);
   const stage = stages.findIndex(s => s.id === scenario), current = stages[stage];
   useEffect(() => { if (!active || scenario !== 'correlated') runtime.run(false); }, [active, scenario, runtime]);
   useEffect(() => { onScenarioChange?.(scenario); }, [scenario, onScenarioChange]);
   useEffect(() => { if (scenarioRequest) { setScenario(scenarioRequest.id); if (scenarioRequest.id === 'pressure') setDockTab('plots'); } }, [scenarioRequest]);
-  useEffect(() => {
-    if (!active || scenario !== 'correlated') return;
-    const keyboard = (event: KeyboardEvent) => {
-      const el = event.target as HTMLElement;
-      if (event.defaultPrevented || about.open || el.closest('input, select, textarea, button, a, summary, [contenteditable=true]')) return;
-      if (event.code === 'Space') { event.preventDefault(); runtime.run(!runtime.status().running); }
-      if (event.code === 'ArrowRight') { event.preventDefault(); runtime.step(); }
-    };
-    window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
-  }, [active, scenario, runtime, about.open]);
 
   const reference = casimir(params.gap, params.area), pair = london(params.distance);
   /** Restore the stage's starting parameters (and the dipole clock). */
@@ -113,8 +105,19 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
     } catch (error) { setNotice(`Could not load: ${error instanceof Error ? error.message : String(error)}`); }
   }
 
+  // Every shortcut is an action (plan §11): the Help sheet lists them and one listener runs them. Only the correlated
+  // stage has a timeline; the others are static.
+  const timeline = vanDerWaalsDefinition.timeline(scenario, params);
+  const actions: Action[] = [
+    ...transportActions(runtime, timeline, SPEEDS),
+    ...(stage === 2 ? [{ id: 'view.layers', label: 'Open View › Layers', group: 'View' as const, keys: ['l'], run: () => setTab('view') }, SPLIT_SHORTCUT] : []),
+    ...fileShortcuts(save, fileInput),
+    ...PANEL_SHORTCUTS,
+  ];
+  useActions(active && !about.open, actions);
+
   const headerNode = <Header experiment={header.experiment} scenario={current.title} onChip={() => about.show('scenario')} onHelp={() => about.show()}
-    actions={<FileActions onFile={load} onSave={save} exports={[{ id: 'csv', label: 'CSV (pressure sweep)', onSelect: exportCsv }]}/>}/>;
+    actions={<FileActions inputRef={fileInput} onFile={load} onSave={save} exports={[{ id: 'csv', label: 'CSV (pressure sweep)', onSelect: exportCsv }]}/>}/>;
 
   const viewportNode = (
     <section className="vdw-scene-card vdw-stage" aria-label={current.title}>
@@ -137,7 +140,7 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
       : <><div className="vdw-equation">P = −π²ℏc / (240d⁴)<br/>F ≈ P × A</div><p className="vdw-control-note">Negative = attraction. Ideal perfect conductors at 0 K; finite-area force neglects edges. Values are an analytic reference.</p></>;
 
   const aboutNode = (
-    <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={current.title} sections={[
+    <AboutSheet {...about} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={current.title} sections={[
       { id: 'scenario', content: <div className="vdw-about"><h3>{EXPLANATIONS[stage][0]}</h3><p>{EXPLANATIONS[stage][1]}</p>{stageNotes}<div><span className="micro-label">READING CHAPTER 3</span><h2>From molecular attraction to a field pressure</h2></div><p>Keesom forces involve permanent dipoles; Debye forces involve a permanent and an induced dipole; London dispersion involves fluctuating, induced dipoles. This experiment follows the London branch into Fleming’s account of the Casimir effect. Follow an induced dipole into a collective force — and a measurable pressure difference.</p><p>Fleming treats vacuum fluctuations as interacting electric dipoles. The numerical plate result here is the standard ideal Casimir reference, evaluated separately from that illustration. A microscopic pressure law for Fleming’s medium is not derived by these diagrams.</p></div> },
       { id: 'sources', content: <div className="vdw-about vdw-source-content"><div className="about-links"><a href={`${BOOK}#page=27`} target="_blank" rel="noreferrer"><BookOpen size={14}/> Chapter 3 ↗</a></div><p>Original embedded figures extracted from Ray Fleming’s <em>The Zero-Point Universe</em>. Page numbers below are PDF page positions. Interactive diagrams above are adaptations.</p><div className="vdw-source-grid">{SOURCE_FIGURES.map((_, i) => <SourceFigure key={i} index={i}/>)}</div><p>Figure 3-1 shows an opposed, repulsive configuration (I) and an aligned, attractive one (II). The surrounding text calls both repulsive; the interactive explanation uses the charge geometry. The prescribed in-phase motion is a teaching aid, not a quantum dispersion calculation.</p><p>Retardation concerns finite electromagnetic propagation time. Figure 3-3’s “excluded fluctuations” are a heuristic; actual conductor boundary conditions constrain a full electromagnetic spectrum. Neither counting drawn dipoles nor cancelling two arbitrary pressures derives the reference result.</p><p>The ideal reference excludes material dispersion, temperature, surface roughness, edge effects and short-range overlap repulsion. Observing Casimir attraction does not uniquely establish a dipolar vacuum or determine absolute vacuum energy; see <a href="https://arxiv.org/abs/hep-th/0503158" target="_blank" rel="noreferrer">Jaffe’s discussion</a>.</p><div className="vdw-reference-links"><a href="./docs/van-der-waals-model.md" target="_blank" rel="noreferrer">Model & source notes ↗</a><a href="https://journals.aps.org/pr/abstract/10.1103/PhysRev.73.360" target="_blank" rel="noreferrer">Casimir & Polder (1948) ↗</a><a href="https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=906575" target="_blank" rel="noreferrer">NIST-hosted Casimir review ↗</a></div></div> },
     ]}/>
@@ -161,7 +164,7 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
       view={stage === 2 ? <ViewPanel definition={vanDerWaalsDefinition} scenario={scenario} view={view} onView={(k, v) => setView(old => withPaths(old, { [k]: v }))}/> : <p className="inspector-empty">This stage has no scene layers.</p>}/>
   );
 
-  const timelineNode = scenario === 'correlated' ? <TimelineBar runtime={runtime} timeline={vanDerWaalsDefinition.timeline(scenario, params)} speeds={SPEEDS}/> : null;
+  const timelineNode = scenario === 'correlated' ? <TimelineBar runtime={runtime} timeline={timeline} speeds={SPEEDS}/> : null;
 
   return (
     <div className="vdw-workbench-root" style={{ display: active ? undefined : 'none' }}>

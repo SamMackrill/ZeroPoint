@@ -12,7 +12,8 @@ import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workb
 import { CASIMIR_SPEEDS, casimirModel, type CasimirConfig } from '../../workbench/main-thread-models';
 import { MainThreadRuntime } from '../../workbench/main-thread-runtime';
 import { Shell } from '../../workbench/Shell';
-import { TimelineBar } from '../../workbench/TimelineBar';
+import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
+import { APPLY_SHORTCUT, PANEL_SHORTCUTS, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { casimirDefinition, type CasimirParams } from './definition';
 import '../../casimir/casimir.css';
 import './casimir-workbench.css';
@@ -97,16 +98,6 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   const restartRef = useRef(restart); restartRef.current = restart;
   const paramsRef = useRef(params); paramsRef.current = params;
   useEffect(() => { if (scenarioRequest) restartRef.current({ ...paramsRef.current, pair: scenarioRequest.id as CasimirParams['pair'] }); }, [scenarioRequest]);
-  useEffect(() => {
-    if (!active) return;
-    const keyboard = (event: KeyboardEvent) => {
-      const el = event.target as HTMLElement;
-      if (event.defaultPrevented || about.open || el.closest('input, select, textarea, button, a, summary, [contenteditable=true]')) return;
-      if (event.code === 'Space') { event.preventDefault(); runtime.run(!runtime.status().running); }
-      if (event.code === 'ArrowRight') { event.preventDefault(); runtime.step(); }
-    };
-    window.addEventListener('keydown', keyboard); return () => window.removeEventListener('keydown', keyboard);
-  }, [active, runtime, about.open]);
 
   let inspected = model.particles.find(p => p.id === selected);
   if (follow && !inspected) inspected = [...model.particles].reverse().find(p => scenario === 'electron-electron' ? p.gap : model.bridge(p)) ?? model.particles.find(p => model.bridge(p));
@@ -123,6 +114,14 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   const running = runtime.status().running;
   /** Pin a Zepton (stops following new births). */
   const pin = (p: Zepton) => { setSelected(p.id); lastSelected.current = { ...p }; setFollow(false); setTab('selection'); };
+
+  // Every shortcut is an action (plan §11): the Help sheet lists them and one listener runs them.
+  const actions: Action[] = [
+    ...transportActions(runtime, casimirDefinition.timeline(scenario, params), CASIMIR_SPEEDS),
+    { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
+    SELECTION_SHORTCUTS.clear, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
+  ];
+  useActions(active && !about.open, actions);
 
   const headerNode = <Header experiment={header.experiment} scenario={casimirDefinition.scenarios.find(s => s.id === scenario)?.title}
     onChip={() => about.show('scenario')} onHelp={() => about.show()}/>;
@@ -175,7 +174,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   );
 
   const aboutNode = (
-    <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={casimirDefinition.scenarios.find(s => s.id === scenario)?.title} sections={[
+    <AboutSheet {...about} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={casimirDefinition.scenarios.find(s => s.id === scenario)?.title} sections={[
       { id: 'scenario', content: <div className="casimir-about">
           <p>This experiment animates Fleming’s proposed mechanism in Section 4, Figures 3–4. Pressure kernels, lifetimes and motion gain are illustrative choices; this is not a validated derivation of electrostatic force. Section 5 leaves the quantitative force law unresolved. τ is an expanded observation clock, not seconds. Dipole sizes and spacing are exaggerated.</p>
           <section className="casimir-explanation" aria-label="Mechanism sequence">{(like ? [
@@ -197,7 +196,8 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
     ]}/>
   );
 
-  const timelineNode = <TimelineBar runtime={runtime} timeline={casimirDefinition.timeline(scenario, params)} speeds={CASIMIR_SPEEDS}/>;
+  const timeline = casimirDefinition.timeline(scenario, params);
+  const timelineNode = <TimelineBar runtime={runtime} timeline={timeline} speeds={CASIMIR_SPEEDS}/>;
 
   return (
     <div className="casimir-workbench-root" style={{ display: active ? undefined : 'none' }}>

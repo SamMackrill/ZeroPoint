@@ -30,7 +30,7 @@ test('controls, inspection, checkpoints, files and error handling work end to en
   await inspector(page, 'View');
   await page.getByRole('radio', { name: 'Points', exact: true }).click(); await expect(page.getByRole('radio', { name: 'Points', exact: true })).toHaveAttribute('aria-checked', 'true');
   await tid(page, 'layer-slice').click(); await expect(tid(page, 'layer-slice')).toHaveAttribute('aria-pressed', 'true'); await expect(page.getByRole('slider', { name: 'Slice Z' })).toBeVisible();
-  await page.getByRole('button', { name: 'About this scenario' }).click(); await expect(page.getByRole('dialog')).toContainText('What you are observing'); await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).not.toBeVisible();
+  await page.getByRole('button', { name: 'Help', exact: true }).click(); await expect(page.getByRole('dialog')).toContainText('What you are observing'); await page.keyboard.press('Escape'); await expect(page.getByRole('dialog')).not.toBeVisible();
   await expect(page.getByRole('slider', { name: /Jitter/ })).toHaveCount(0);
   await inspector(page, 'Setup');
   await page.getByRole('slider', { name: /Peak pair separation/ }).press('End');
@@ -127,5 +127,26 @@ test('Esc clears and F focuses the selection, and a click on the field selects',
   const canvas = page.locator('canvas'), box = (await canvas.boundingBox())!;
   for (let x = 0.3; x <= 0.7 && await page.getByText('No active selection').isVisible(); x += 0.02) await canvas.click({ position: { x: box.width * x, y: box.height * 0.5 } });
   await expect(page.locator('.dipole-inspector h2')).toContainText('Dipole ');
+  expect(errors).toEqual([]);
+});
+
+test('keyboard shortcuts run the registry\'s actions and are listed in Help › Shortcuts', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/'); await expect(tid(page, 'transport-run')).toBeEnabled(); await expect(page.locator('canvas')).toBeVisible();
+  await page.keyboard.press('2'); await expect(page.getByRole('radio', { name: 'Top', exact: true })).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('ArrowRight'); await expect(page.getByTestId('tick')).toHaveText('Tick 1');
+  await page.keyboard.press('Shift+ArrowRight'); await expect(page.getByTestId('tick')).toHaveText('Tick 121');
+  await page.keyboard.press('>'); await expect(page.getByRole('radio', { name: '2× speed' })).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('<'); await expect(page.getByRole('radio', { name: '1× speed' })).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('c'); await expect(tid(page, 'notice')).toContainText('Checkpoint captured at tick 121');
+  await page.keyboard.press('l'); await expect(page.getByRole('tab', { name: 'View', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('r'); await expect(page.getByRole('radio', { name: 'Points', exact: true })).toHaveAttribute('aria-checked', 'true');
+  await page.keyboard.press('Home'); await expect(page.getByTestId('tick')).toHaveText('Tick 0');
+  await page.keyboard.press('Shift+Slash');
+  const help = page.getByTestId('about-sheet'); await tid(page, 'about-shortcuts').click();
+  await expect(help.getByRole('region', { name: 'Transport shortcuts' })).toContainText('Capture checkpoint');
+  await expect(help.getByRole('region', { name: 'View shortcuts' })).toContainText('Focus mode');
+  await page.keyboard.press('Space'); await expect(tid(page, 'transport-run')).toContainText('Run'); // not while the sheet is open
+  await page.keyboard.press('Escape'); await expect(help).toHaveCount(0);
   expect(errors).toEqual([]);
 });
