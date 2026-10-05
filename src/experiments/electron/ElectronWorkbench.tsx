@@ -130,7 +130,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   useEffect(() => { if (scenarioRequest) startRef.current(scenarioRequest); }, [scenarioRequest]);
   const [link, setLink] = useState<PendingLink | null>(null), linkDone = useCallback(() => setLink(null), []);
   const seek = useCallback((tick: number) => runtime.seek(tick), [runtime]);
-  useLinkSeek(link, linkDone, state, seek);
+  const linkHold = useLinkSeek(link, linkDone, state, seek);
   /** Restart with changed physics parameters (all ↻). */
   function configure(changes: Record<string, unknown>) { runtime.configure(withPaths(p, changes) as ElectronParameters); setNotice('Electron parameters applied. Paused at tick 0.'); }
   /** Download the current electron experiment state. */
@@ -175,7 +175,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     split: spinStart && split !== 'section' ? split : undefined,
     tick: s.tick || undefined,
   }));
-  useUrlWriter(active, s.running || !state || !!link, urlHash);
+  useUrlWriter(active, s.running || !state || linkHold, urlHash);
   /** Choose a camera preset; Shell close-up brings the shells back if they were hidden. */
   const chooseCamera = (id: string) => { if (id === 'shell') setView(old => ({ ...old, shells: true })); setCamera(id as Camera); };
   const exportItems: ExportItem[] = [{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError || !!study }, { id: 'csv', label: 'CSV (reference sequence)', onSelect: csv }];

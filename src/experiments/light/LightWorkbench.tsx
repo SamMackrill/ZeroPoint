@@ -110,9 +110,9 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   const applyRef = useRef(applyLink); applyRef.current = applyLink;
   useEffect(() => { if (scenarioRequest) applyRef.current(scenarioRequest); }, [scenarioRequest]);
   const seek = useCallback((tick: number) => runtime.seek(tick), [runtime]);
-  useLinkSeek(link, linkDone, state, seek);
+  const linkHold = useLinkSeek(link, linkDone, state, seek);
   const urlHash = encodeUrl(routeFor(lightDefinition, 'induction', p, view, { camera: camera === 'orbit' ? undefined : camera, split: split ? 'pair' : undefined, tick: s.tick || undefined }));
-  useUrlWriter(active, s.running || !state || !!link, urlHash);
+  useUrlWriter(active, s.running || !state || linkHold, urlHash);
   const ready = !!state && !error;
   /** Restart the sequence with changed parameters (every light parameter is ↻). */
   function configure(changes: Record<string, unknown>) { runtime.configure(withPaths(p, changes) as LightParameters); setSelected(null); setNotice('Parameters applied. The light sequence is paused at its start.'); }

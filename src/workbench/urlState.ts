@@ -2,7 +2,7 @@
 // non-default parts of its state, as a hash route the static host can serve:
 //   #/electron/spin?spin=-1&axis=x&cam=shell&split=section&t=691&L=+radius,-faraday
 // Values are validated against the experiment's definition on the way in; anything unknown or out of range is dropped.
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { Action } from './actions';
 import { appliesTo, getPath, scenarioState, type ControlSpec, type ExperimentDefinition } from './definition';
 
@@ -152,20 +152,25 @@ export function sameValues(want: object, have: object): boolean {
 
 /**
  * After a link restarts a runtime with its parameters, wait until the runtime reports them, then seek to the link's tick
- * and clear the pending link (callers hold the URL writer while one is pending, so the link isn't overwritten).
+ * and clear the pending link. Returns whether the URL writer should hold, so the link isn't overwritten meanwhile.
+ * The hold lasts at most 3 s; a slow worker still gets its seek when its parameters arrive, for up to 30 s.
  */
-export function useLinkSeek(pending: PendingLink | null, done: () => void, state: { parameters: object } | null, seek: (tick: number) => void) {
+export function useLinkSeek(pending: PendingLink | null, done: () => void, state: { parameters: object } | null, seek: (tick: number) => void): boolean {
+  const [holding, setHolding] = useState(false);
   useEffect(() => {
     if (!pending || !state || !sameValues(pending.params, state.parameters)) return;
     if (pending.tick) seek(pending.tick);
     done();
   }, [pending, state, done, seek]);
-  // A runtime that normalizes a value it reports back would never match; give up waiting rather than hold the URL.
   useEffect(() => {
-    if (!pending) return;
-    const timer = setTimeout(done, 3000);
-    return () => clearTimeout(timer);
+    if (!pending) { setHolding(false); return; }
+    // A runtime that normalizes a value it reports back would never match: release the URL writer after 3 s, and
+    // forget the seek after 30 s so it can't fire much later on a coincidental match.
+    setHolding(true);
+    const release = setTimeout(() => setHolding(false), 3000), expire = setTimeout(done, 30_000);
+    return () => { clearTimeout(release); clearTimeout(expire); };
   }, [pending, done]);
+  return !!pending && holding;
 }
 
 /**
