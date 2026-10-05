@@ -24,7 +24,8 @@ export function useMediumCompare() {
       const reply = event.data;
       if (reply.type === 'error') { setB(old => old && { ...old, error: reply.message }); return; }
       if (reply.diagnostics) { history.current.set(reply.tick, reply.diagnostics); if (history.current.size > HISTORY) history.current.delete(history.current.keys().next().value!); }
-      setB(old => old && { ...old, diagnostics: reply.diagnostics, stepMs: reply.stepMs });
+      // A reply after an error (A went back below the run limit, say) means B recovered: clear the error.
+      setB(old => old && { ...old, diagnostics: reply.diagnostics, stepMs: reply.stepMs, error: undefined });
     };
     w.postMessage({ type: 'pin', checkpoint } satisfies CompareCommand);
     setB({ pinned: checkpoint, diagnostics: null, stepMs: 0 });

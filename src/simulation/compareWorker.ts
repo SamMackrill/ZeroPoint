@@ -11,6 +11,8 @@ export type CompareReply = { type: 'diagnostics'; tick: number; diagnostics: Dia
 
 const ctx = self as unknown as { postMessage: (reply: CompareReply) => void; onmessage: (event: MessageEvent<CompareCommand>) => void };
 let pinned: Checkpoint | undefined, model: Medium | undefined, stepMs = 0;
+/** Medium.step's largest single advance. */
+const STEP_BATCH = 10_000;
 
 ctx.onmessage = ({ data }) => {
   try {
@@ -20,7 +22,12 @@ ctx.onmessage = ({ data }) => {
     // A went back (Reset, a ◆ restore, a scrub): B re-runs from its pinned checkpoint, which is deterministic.
     if (target < model.diagnostics().tick) model = Medium.restore(pinned);
     const steps = target - model.diagnostics().tick;
-    if (steps > 0) { const started = performance.now(); model.step(steps); stepMs = (performance.now() - started) / steps; }
+    if (steps > 0) {
+      // Medium.step takes at most 10,000 ticks at a time, so a B pinned far behind A catches up in batches.
+      const started = performance.now();
+      for (let remaining = steps; remaining > 0; remaining -= STEP_BATCH) model.step(Math.min(remaining, STEP_BATCH));
+      stepMs = (performance.now() - started) / steps;
+    }
     ctx.postMessage({ type: 'diagnostics', tick: target, diagnostics: steps >= 0 ? model.diagnostics() : null, stepMs });
   } catch (error) { ctx.postMessage({ type: 'error', message: error instanceof Error ? error.message : String(error) }); }
 };
