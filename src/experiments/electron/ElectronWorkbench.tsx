@@ -124,7 +124,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     setCamera((url?.camera as Camera | undefined) ?? (mode === 'spin' ? 'shell' : 'orbit'));
     if (url?.split) { if (url.split === 'motion' || url.split === 'section') setPane(url.split); setView(v => withPaths(v, { 'spinDisplay.section': url.split !== 'off' })); }
     if (url) setLink({ params: target, tick: url.tick });
-    setNotice(ignored || 'View changed. The sequence is paused at its start.');
+    setNotice(ignored || (url ? 'Opened from a link.' : 'View changed. The sequence is paused at its start.'));
   }
   const startRef = useRef(startScenario); startRef.current = startScenario;
   useEffect(() => { if (scenarioRequest) startRef.current(scenarioRequest); }, [scenarioRequest]);
