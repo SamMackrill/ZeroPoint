@@ -20,7 +20,7 @@ import { lightDefinition } from './definition';
 import '../../light/light.css';
 import './light-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
-import { encodeUrl, routeFor, useLinkSeek, useUrlWriter, type PendingLink, type ScenarioRequest } from '../../workbench/urlState';
+import { copyLinkAction, encodeUrl, routeFor, useLinkSeek, useUrlWriter, type PendingLink, type ScenarioRequest } from '../../workbench/urlState';
 import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView } from '../../workbench/SplitView';
@@ -111,7 +111,8 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   useEffect(() => { if (scenarioRequest) applyRef.current(scenarioRequest); }, [scenarioRequest]);
   const seek = useCallback((tick: number) => runtime.seek(tick), [runtime]);
   useLinkSeek(link, linkDone, state, seek);
-  useUrlWriter(active, s.running || !state || !!link, encodeUrl(routeFor(lightDefinition, 'induction', p, view, { camera: camera === 'orbit' ? undefined : camera, split: split ? 'pair' : undefined, tick: s.tick || undefined })));
+  const urlHash = encodeUrl(routeFor(lightDefinition, 'induction', p, view, { camera: camera === 'orbit' ? undefined : camera, split: split ? 'pair' : undefined, tick: s.tick || undefined }));
+  useUrlWriter(active, s.running || !state || !!link, urlHash);
   const ready = !!state && !error;
   /** Restart the sequence with changed parameters (every light parameter is ↻). */
   function configure(changes: Record<string, unknown>) { runtime.configure(withPaths(p, changes) as LightParameters); setSelected(null); setNotice('Parameters applied. The light sequence is paused at its start.'); }
@@ -154,6 +155,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
     { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
     ...fileShortcuts(save, fileInput, !ready),
     SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
+    copyLinkAction(urlHash, setNotice),
     ...layerActions(lightDefinition, 'induction', view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
     ...parameterActions(lightDefinition, 'induction', () => setTab('setup')),
     ...exportActions(exportItems, !ready),

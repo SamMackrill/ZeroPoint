@@ -24,7 +24,7 @@ import '../../light/light.css';
 import '../../electron/electron.css';
 import './electron-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
-import { encodeUrl, routeFor, splitValue, useLinkSeek, useUrlWriter, type PendingLink, type ScenarioRequest } from '../../workbench/urlState';
+import { copyLinkAction, encodeUrl, routeFor, splitValue, useLinkSeek, useUrlWriter, type PendingLink, type ScenarioRequest } from '../../workbench/urlState';
 import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView, type SplitPane } from '../../workbench/SplitView';
@@ -170,11 +170,12 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const timeline = electronDefinition.timeline(scenario, p);
   // The address bar follows this lab (plan §11): camera, split and tick only where they differ from the scenario's start.
   const spinStart = MODE_OF[scenario] === 'spin', split = splitValue(view.spinDisplay.section, pane);
-  useUrlWriter(active, s.running || !state || !!link, encodeUrl(routeFor(electronDefinition, scenario, p, view, study || !MODE_OF[scenario] ? {} : {
+  const urlHash = encodeUrl(routeFor(electronDefinition, scenario, p, view, study || !MODE_OF[scenario] ? {} : {
     camera: camera === (spinStart ? 'shell' : 'orbit') ? undefined : camera,
     split: spinStart && split !== 'section' ? split : undefined,
     tick: s.tick || undefined,
-  })));
+  }));
+  useUrlWriter(active, s.running || !state || !!link, urlHash);
   /** Choose a camera preset; Shell close-up brings the shells back if they were hidden. */
   const chooseCamera = (id: string) => { if (id === 'shell') setView(old => ({ ...old, shells: true })); setCamera(id as Camera); };
   const exportItems: ExportItem[] = [{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError || !!study }, { id: 'csv', label: 'CSV (reference sequence)', onSelect: csv }];
@@ -185,6 +186,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     ...(study ? [] : [{ id: 'view.layers', label: 'Open View › Layers', group: 'View' as const, keys: ['l'], run: () => setTab('view') }]),
     ...fileShortcuts(save, fileInput, !ready),
     ...(study ? [] : [SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus]), APPLY_SHORTCUT, ...(p.mode === 'spin' && !study ? [SPLIT_SHORTCUT] : []), ...PANEL_SHORTCUTS,
+    copyLinkAction(urlHash, setNotice),
     ...layerActions(electronDefinition, scenario, view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
     ...parameterActions(electronDefinition, scenario, () => setTab('setup')),
     ...(study ? [] : [{ id: 'selection.probe', label: 'Select nearest to probe', group: 'Selection' as const, run: inspectProbe }]),

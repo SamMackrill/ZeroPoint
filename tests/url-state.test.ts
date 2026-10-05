@@ -4,19 +4,20 @@ import { scenarioState, withPaths } from '../src/workbench/definition';
 import { decodeUrl, encodeUrl, resolveUrl, routeFor } from '../src/workbench/urlState';
 
 describe('URL state', () => {
+  // Spin starts with Faraday lines off (its definition's view), so turning them on is a change.
   it('encodes only what differs from the scenario, and round-trips through decode and resolve', () => {
     const start = scenarioState(electronDefinition, 'spin');
     const params = withPaths(start.params, { spin: -1, axis: 'x' });
-    const view = withPaths(start.view, { radius: true, faraday: false, 'spinDisplay.gain': 4 });
+    const view = withPaths(start.view, { radius: true, faraday: true, 'spinDisplay.gain': 4 });
     const route = routeFor(electronDefinition, 'spin', params, view, { camera: 'shell', split: 'section', tick: 691 });
     const hash = encodeUrl(route);
-    expect(hash).toBe('#/electron/spin?axis=x&spin=-1&spinDisplay.gain=4&cam=shell&split=section&t=691&L=-faraday,+radius');
+    expect(hash).toBe('#/electron/spin?axis=x&spin=-1&spinDisplay.gain=4&cam=shell&split=section&t=691&L=+faraday,+radius');
     const decoded = decodeUrl(hash)!;
     expect(decoded).toEqual(route);
     const { scenario, overrides, dropped } = resolveUrl(electronDefinition, decoded);
     expect(scenario).toBe('spin');
     expect(dropped).toEqual([]);
-    expect(overrides).toEqual({ params: { axis: 'x', spin: -1 }, view: { 'spinDisplay.gain': 4, faraday: false, radius: true }, camera: 'shell', split: 'section', tick: 691 });
+    expect(overrides).toEqual({ params: { axis: 'x', spin: -1 }, view: { 'spinDisplay.gain': 4, faraday: true, radius: true }, camera: 'shell', split: 'section', tick: 691 });
   });
 
   it('gives a bare route for a scenario at its starting state, without a scenario for single-scenario labs', () => {

@@ -19,7 +19,7 @@ import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameter
 import { mediumDefinition, type MediumParams } from './definition';
 import './medium-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
-import { encodeUrl, routeFor, useUrlWriter, type ScenarioRequest } from '../../workbench/urlState';
+import { copyLinkAction, encodeUrl, routeFor, useUrlWriter, type ScenarioRequest } from '../../workbench/urlState';
 import { getSettings, updateSettings, useSettings } from '../../workbench/settings';
 import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
 import { SplitView } from '../../workbench/SplitView';
@@ -171,7 +171,8 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
 
   const params: MediumParams = { ...parameters, seed };
   // The address bar follows the visible lab (plan §11): its scenario and whatever differs from the scenario's start.
-  useUrlWriter(active, running, encodeUrl(routeFor(mediumDefinition, scenario, params, view, { camera: camera === 'perspective' ? undefined : camera, split: split ? 'dipole' : undefined })));
+  const urlHash = encodeUrl(routeFor(mediumDefinition, scenario, params, view, { camera: camera === 'perspective' ? undefined : camera, split: split ? 'dipole' : undefined }));
+  useUrlWriter(active, running, urlHash);
   const scenarioTitle = mediumDefinition.scenarios.find(s => s.id === scenario)?.title;
   const exportItems: ExportItem[] = [{ id: 'png', label: 'PNG image', onSelect: exportPNG, disabled: !!graphicsError }, { id: 'csv', label: 'CSV (diagnostics)', onSelect: exportCSV, disabled: !rows.length }];
   const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle} modified={preset === 'custom'} onHelp={() => about.show()} onChip={() => about.show('scenario')}
@@ -259,6 +260,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
     { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
     ...fileShortcuts(() => save('file'), fileInput, !ready || busy),
     SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
+    copyLinkAction(urlHash, setNotice),
     ...layerActions(mediumDefinition, scenario, view, (k, v) => setOption(k, v)),
     ...parameterActions(mediumDefinition, scenario, () => setTab('setup')),
     { id: 'selection.first', label: 'Select first active dipole', group: 'Selection', disabled: !ready, run: () => viewport.current?.inspectFirst() },

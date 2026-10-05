@@ -6,7 +6,8 @@ import { BOOK, InductionDiagram, number, PairDiagram, PlateDiagram, PressurePlot
 import { casimir, london, pressureCSV } from '../../van-der-waals/model';
 import { parseVdwFile, vdwFile } from './file';
 import { exportActions, FileActions, fileShortcuts, Header, type ExportItem, StatusBar, type HeaderProps } from '../../workbench/Chrome';
-import { withPaths } from '../../workbench/definition';
+import { scenarioState, withPaths } from '../../workbench/definition';
+import { copyLinkAction, encodeUrl, routeFor, useUrlWriter, type ScenarioRequest } from '../../workbench/urlState';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { dipoleClockModel, type DipoleClock } from '../../workbench/main-thread-models';
@@ -61,7 +62,7 @@ export interface VdwWorkbenchProps {
   active: boolean;
   rail: ReactNode;
   header: Pick<HeaderProps, 'experiment'>;
-  scenarioRequest?: { id: string; at: number } | null;
+  scenarioRequest?: ScenarioRequest | null;
   onScenarioChange?(id: string): void;
 }
 
@@ -85,7 +86,6 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
   const stage = stages.findIndex(s => s.id === scenario), current = stages[stage];
   useEffect(() => { if (!active || scenario !== 'correlated') runtime.run(false); }, [active, scenario, runtime]);
   useEffect(() => { onScenarioChange?.(scenario); }, [scenario, onScenarioChange]);
-  useEffect(() => { if (scenarioRequest) { setScenario(scenarioRequest.id); if (scenarioRequest.id === 'pressure') setDockTab('plots'); } }, [scenarioRequest]);
 
   const reference = casimir(params.gap, params.area), pair = london(params.distance);
   /** Restore the stage's starting parameters (and the dipole clock). */
@@ -93,6 +93,21 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
   const exportCsv = () => downloadFile('van-der-waals-pressure-sweep.csv', pressureCSV(params.area), 'text/csv');
   const [notice, setNotice] = useState('');
   useEffect(() => { if (!notice) return; const timer = setTimeout(() => setNotice(''), 5000); return () => clearTimeout(timer); }, [notice]);
+  // The rail switches stage, keeping the settings; a link also sets the stage's settings, layers and split from its start.
+  useEffect(() => {
+    if (!scenarioRequest) return;
+    const { id, url, dropped } = scenarioRequest;
+    setScenario(id); if (id === 'pressure') setDockTab('plots');
+    if (url) {
+      const start = scenarioState(vanDerWaalsDefinition, id);
+      setParams(withPaths(start.params, url.params)); setView(withPaths(start.view, url.view));
+      if (url.split) { setSplit(url.split !== 'off'); if (url.split.startsWith('fig-')) setFigure(url.split); }
+    }
+    if (dropped?.length) setNotice(`Ignored link settings that don’t apply: ${dropped.join(', ')}.`);
+  }, [scenarioRequest]);
+  // The address bar follows this lab (plan §11); only the plate-pressure stage has a split view.
+  const urlHash = encodeUrl(routeFor(vanDerWaalsDefinition, scenario, params, view, { split: scenario === 'pressure' && split ? figure : undefined }));
+  useUrlWriter(active, false, urlHash);
   /** Save the stage, parameters, layers and dipole-clock tick. */
   const save = () => { downloadFile(`zeropoint-vdw-${scenario}.json`, JSON.stringify(vdwFile(scenario, params, view, runtime.latest().tick)), 'application/json'); setNotice(`Saved the ${current.title.toLowerCase()} stage.`); };
   /** Load a saved stage, validating every field. */
@@ -114,6 +129,7 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
     ...(stage === 2 ? [{ id: 'view.layers', label: 'Open View › Layers', group: 'View' as const, keys: ['l'], run: () => setTab('view') }, SPLIT_SHORTCUT] : []),
     ...fileShortcuts(save, fileInput),
     ...PANEL_SHORTCUTS,
+    copyLinkAction(urlHash, setNotice),
     ...layerActions(vanDerWaalsDefinition, scenario, view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
     ...parameterActions(vanDerWaalsDefinition, scenario, () => setTab('setup')),
     ...exportActions(exportItems, false),

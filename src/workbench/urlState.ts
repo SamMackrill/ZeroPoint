@@ -3,6 +3,7 @@
 //   #/electron/spin?spin=-1&axis=x&cam=shell&split=section&t=691&L=+radius,-faraday
 // Values are validated against the experiment's definition on the way in; anything unknown or out of range is dropped.
 import { useEffect } from 'react';
+import type { Action } from './actions';
 import { appliesTo, getPath, scenarioState, type ControlSpec, type ExperimentDefinition } from './definition';
 
 /** A decoded route. Values are still strings; `resolveUrl` validates them for one experiment. */
@@ -159,3 +160,16 @@ export function useLinkSeek(pending: PendingLink | null, done: () => void, state
     return () => clearTimeout(timer);
   }, [pending, done]);
 }
+
+/**
+ * Copy a link to the lab's current state (Ctrl Shift C): write the hash at once, without waiting for the debounced
+ * writer, then copy the address; where the clipboard is refused, show the link to copy by hand.
+ */
+export async function copyLink(hash: string, notify: (text: string) => void) {
+  history.replaceState(history.state, '', hash);
+  try { await navigator.clipboard.writeText(location.href); notify('Link copied. It opens this lab in its current state.'); }
+  catch { notify(`Copy this link: ${location.href}`); }
+}
+
+/** The Copy link action, for each lab's registry. */
+export const copyLinkAction = (hash: string, notify: (text: string) => void): Action => ({ id: 'files.link', label: 'Copy link to this state', group: 'Files', keys: ['Mod+Shift+c'], run: () => { void copyLink(hash, notify); } });

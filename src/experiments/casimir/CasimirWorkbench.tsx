@@ -18,7 +18,7 @@ import { casimirDefinition, type CasimirParams } from './definition';
 import '../../casimir/casimir.css';
 import './casimir-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
-import { encodeUrl, routeFor, useUrlWriter, type ScenarioRequest } from '../../workbench/urlState';
+import { copyLinkAction, encodeUrl, routeFor, useUrlWriter, type ScenarioRequest } from '../../workbench/urlState';
 import { SplitView } from '../../workbench/SplitView';
 import { InfoTip } from '../../ui/InfoTip';
 import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
@@ -123,7 +123,8 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   const start = model.history[0]?.time ?? 0, end = model.history.at(-1)?.time ?? 0;
   const running = runtime.status().running;
   // The address bar follows this lab (plan §11); the loupe pane is open by default, so only 'off' is written.
-  useUrlWriter(active, running, encodeUrl(routeFor(casimirDefinition, scenario, params, view, { split: split ? undefined : 'off' })));
+  const urlHash = encodeUrl(routeFor(casimirDefinition, scenario, params, view, { split: split ? undefined : 'off' }));
+  useUrlWriter(active, running, urlHash);
   /** Pin a Zepton (stops following new births). */
   const pin = (p: Zepton) => { setSelected(p.id); lastSelected.current = { ...p }; setFollow(false); setTab('selection'); };
 
@@ -134,6 +135,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
     ...transportActions(runtime, casimirDefinition.timeline(scenario, params), CASIMIR_SPEEDS),
     { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
     SELECTION_SHORTCUTS.clear, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
+    copyLinkAction(urlHash, setNotice),
     ...layerActions(casimirDefinition, scenario, view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
     ...parameterActions(casimirDefinition, scenario, () => setTab('setup')),
     { id: 'selection.newest', label: 'Inspect newest Zepton', group: 'Selection', run: inspectNewest },
