@@ -1,5 +1,5 @@
 import { Command } from 'cmdk';
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ACTION_GROUPS, keyLabel, matches, visibleActions, type Action } from './actions';
 import './command-palette.css';
 
@@ -21,7 +21,18 @@ export interface CommandPaletteProps {
  * palette, then runs it.
  */
 export function CommandPalette({ navigation }: CommandPaletteProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false), openRef = useRef(false), returnTo = useRef<HTMLElement | null>(null);
+  /**
+   * Open or close. cmdk's dialog has no trigger, so Radix restores no focus on close: remember what had focus when it
+   * opened and return focus there on the next frame, before a chosen action runs (which may move focus itself).
+   */
+  const change = (next: boolean) => {
+    if (next) returnTo.current = document.activeElement instanceof HTMLElement && document.activeElement !== document.body ? document.activeElement : null;
+    else { const target = returnTo.current; returnTo.current = null; if (target) requestAnimationFrame(() => { if (document.activeElement === document.body || !document.activeElement) target.focus(); }); }
+    openRef.current = next; setOpen(next);
+  };
+  const changeRef = useRef(change);
+  useLayoutEffect(() => { changeRef.current = change; });
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (!matches('Mod+k', event)) return;
@@ -29,16 +40,16 @@ export function CommandPalette({ navigation }: CommandPaletteProps) {
       const target = event.target instanceof HTMLElement ? event.target : null;
       if (target?.closest('[role=dialog], dialog[open]') && !target.closest('[cmdk-root]')) return;
       event.preventDefault();
-      setOpen(o => !o);
+      changeRef.current(!openRef.current);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
   const actions = open ? [...navigation, ...visibleActions()].filter(a => a.palette !== false) : [];
   /** Close first, so focus returns to the page, then run the action on the next frame. */
-  const choose = (action: Action) => { setOpen(false); requestAnimationFrame(() => action.run()); };
+  const choose = (action: Action) => { change(false); requestAnimationFrame(() => action.run()); };
   return (
-    <Command.Dialog open={open} onOpenChange={setOpen} label="Command palette" filter={paletteFilter} overlayClassName="palette-overlay" contentClassName="palette" data-testid="palette">
+    <Command.Dialog open={open} onOpenChange={change} label="Command palette" filter={paletteFilter} overlayClassName="palette-overlay" contentClassName="palette" data-testid="palette">
       <Command.Input className="palette-input" placeholder="Type a command, scenario, layer or parameter…"/>
       <Command.List className="palette-list">
         <Command.Empty className="palette-empty">No matching commands.</Command.Empty>

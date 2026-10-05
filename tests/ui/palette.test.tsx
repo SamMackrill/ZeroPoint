@@ -33,6 +33,18 @@ describe('command palette', () => {
     expect(screen.queryByRole('combobox', { name: 'Command palette' })).toBeNull();
   });
 
+  it('returns focus to where it was when the palette closes', async () => {
+    vi.restoreAllMocks(); // real frames: focus returns after the dialog unmounts
+    const view = render(<><button type="button">Run</button><CommandPalette navigation={[]}/></>);
+    view.getByText('Run').focus();
+    act(() => { fireEvent.keyDown(view.getByText('Run'), { key: 'k', ctrlKey: true }); });
+    const input = screen.getByRole('combobox', { name: 'Command palette' });
+    input.focus();
+    act(() => { fireEvent.keyDown(input, { key: 'Escape' }); });
+    await act(() => new Promise(resolve => setTimeout(resolve, 50)));
+    expect(document.activeElement).toBe(view.getByText('Run'));
+  });
+
   it('ignores Ctrl K from inside another dialog', () => {
     const view = render(<><div role="dialog"><button type="button">in Help</button></div><CommandPalette navigation={[]}/></>);
     fireEvent.keyDown(view.getByText('in Help'), { key: 'k', ctrlKey: true });
