@@ -35,6 +35,10 @@ describe('URL state', () => {
     expect(dropped.sort()).toEqual(['axis', 'beta', 'camera nope', 'layer bogus', 'spin', 'wobble'].sort()); // beta is Moving-only
     expect(resolveUrl(electronDefinition, decodeUrl('#/electron/nowhere')!)).toMatchObject({ scenario: 'stationary', dropped: ['scenario nowhere'] });
     expect(resolveUrl(lightDefinition, decodeUrl('#/light?wavelength=9')!).dropped).toEqual(['wavelength']);
+    // Split names one of the scenario's panes, or off where it has any.
+    expect(resolveUrl(electronDefinition, decodeUrl('#/electron/spin?split=motion')!).overrides.split).toBe('motion');
+    expect(resolveUrl(electronDefinition, decodeUrl('#/electron/spin?split=fig-9-9')!).dropped).toEqual(['split fig-9-9']);
+    expect(resolveUrl(electronDefinition, decodeUrl('#/electron/moving?split=off')!).dropped).toEqual(['split off']);
   });
 
   it('rejects hashes that are not routes', () => {

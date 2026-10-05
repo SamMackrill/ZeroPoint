@@ -26,6 +26,7 @@ export const vanDerWaalsDefinition: ExperimentDefinition<VdwParams, VdwView> = {
     { kind: 'range', key: 'area', label: 'Plate area', group: 'Plates', apply: 'live', min: 0.1, max: 10, step: 0.1, unit: 'mm²', scenarios: ['pressure'], info: 'F ≈ P × A. The finite-area force neglects edge effects.' },
   ],
   layers: [{ key: 'modes', label: 'Cavity modes', group: 'Fields', scenarios: ['pressure'], info: 'Example standing waves (λₙ = 2d/n). Display only: not a mode count, and not used in the pressure.' }],
+  panes: [{ id: 'fig-3-3', scenarios: ['pressure'] }, { id: 'fig-3-4', scenarios: ['pressure'] }],
   cameras: [],
   speeds: SPEEDS,
   timeline: scenario => scenario === 'correlated' ? { kind: 'loop', dt: 0.05, end: VDW_LOOP_TICKS, events: [] } : { kind: 'static', dt: 0.05, events: [] },

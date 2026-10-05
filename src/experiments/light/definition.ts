@@ -35,6 +35,7 @@ export const lightDefinition: ExperimentDefinition<LightParameters, LightView> =
     { key: 'envelope', label: 'Energy envelope', group: 'Fields' },
     { key: 'centres', label: 'Fixed pair centres', group: 'Guides' },
   ],
+  panes: [{ id: 'pair' }],
   cameras: [{ id: 'orbit', label: 'Orbit' }, { id: 'side', label: 'Side' }, { id: 'pair', label: 'Pair close-up' }],
   speeds: SPEEDS,
   timeline: (_scenario, params) => ({ kind: 'bounded', dt: LIGHT_DT, end: LIGHT_END_TICK, events: inductionEvents(params), next: 'event' }),

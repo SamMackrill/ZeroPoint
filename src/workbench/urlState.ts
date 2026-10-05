@@ -101,7 +101,10 @@ export function resolveUrl(definition: ExperimentDefinition, route: UrlRoute): {
     if (definition.layers.some(l => l.key === key && appliesTo(l, scenario))) overrides.view[key] = on; else dropped.push(`layer ${key}`);
   }
   if (route.camera) { if (definition.cameras.some(c => c.id === route.camera && appliesTo(c, scenario))) overrides.camera = route.camera; else dropped.push(`camera ${route.camera}`); }
-  if (route.split) overrides.split = route.split;
+  if (route.split) {
+    const panes = (definition.panes ?? []).filter(p => appliesTo(p, scenario));
+    if (panes.some(p => p.id === route.split) || (route.split === 'off' && panes.length)) overrides.split = route.split; else dropped.push(`split ${route.split}`);
+  }
   if (route.tick) overrides.tick = route.tick;
   return { scenario, overrides, dropped };
 }
