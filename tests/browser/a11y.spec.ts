@@ -18,3 +18,36 @@ for (const [name, lab] of labs) {
     expect(await audit(page)).toEqual([]);
   });
 }
+
+/** Press Tab until the focused element matches, as a keyboard-only user would. */
+async function tabTo(page: Page, selector: string, max = 80) {
+  for (let i = 0; i < max; i++) {
+    if (await page.evaluate(s => !!document.activeElement?.matches(s), selector)) return;
+    await page.keyboard.press('Tab');
+  }
+  throw new Error(`Tab never reached ${selector}`);
+}
+
+test('the core loop works from the keyboard alone, and the run state is announced', async ({ page }) => {
+  await page.goto('/'); await expect(tid(page, 'transport-run')).toBeEnabled();
+  const runState = page.locator('.medium-workbench').getByTestId('run-state');
+  await expect(runState).toHaveAttribute('aria-live', 'polite');
+  // Choose a scenario in the rail.
+  await tabTo(page, '[data-testid="scenario-sparse"]'); await page.keyboard.press('Enter');
+  await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toContainText('Sparse fluctuations');
+  // Run and pause from the Run button, then step with →.
+  await tabTo(page, '[data-testid="transport-run"]'); await page.keyboard.press('Space');
+  await expect(runState).toHaveText('Running');
+  await page.keyboard.press('Space'); await expect(runState).toHaveText('Paused');
+  const before = await page.getByTestId('tick').innerText();
+  await page.keyboard.press('ArrowRight'); await expect(page.getByTestId('tick')).not.toHaveText(before);
+  // Change a live parameter with its slider.
+  await tabTo(page, '[role="slider"][aria-label^="Frequency centre"]');
+  const value = await page.getByRole('slider', { name: /Frequency centre/ }).getAttribute('aria-valuenow');
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByRole('slider', { name: /Frequency centre/ })).not.toHaveAttribute('aria-valuenow', value!);
+  // Help opens with ? and closes with Esc, returning to the workbench.
+  await page.keyboard.press('Escape'); await page.locator('body').press('Shift+Slash');
+  await expect(page.getByTestId('about-sheet')).toBeVisible();
+  await page.keyboard.press('Escape'); await expect(page.getByTestId('about-sheet')).toHaveCount(0);
+});

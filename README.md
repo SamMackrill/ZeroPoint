@@ -27,13 +27,17 @@ Open <http://127.0.0.1:5174>. The simulation, fonts and controls run locally; th
 
 ## Use the laboratory
 
-- Choose a preset, then **Run** (Space), **Pause**, **Step** (Right arrow) or **Reset**. Runs start paused and pause when the tab is hidden.
-- Change creation rate, frequency centre and peak pair separation. Seed changes take effect on reset.
-- Drag to orbit, scroll to zoom, switch camera presets, or choose a point overview. Toggle bounds and a measured energy-density slice.
-- Pause and click a dipole to inspect its fixed centre, pair separation, frequency, energy, age and lifetime, or use **Dipole → Inspect first active dipole**.
-- **Capture** keeps up to six in-memory checkpoints. Click one to restore that exact state while paused.
-- **Save experiment** downloads a versioned state file; **Load** validates and restores it. Export recent diagnostic samples as CSV or the labelled viewport as PNG.
-- **Reduced model** explains the implemented assumptions. Mobile layouts expose the library and inspector through drawer buttons.
+Every experiment opens in the same workbench: the **rail** (experiments and their scenarios) on the left, the **viewport** with the **timeline bar** under it, the **dock** (readouts, plots, ledger, events and Compare) below, and the **inspector** (Setup, View and Selection) on the right.
+
+- **Run.** **Run/Pause** (Space), **Step** (→), **+1 τ** (Shift →), next and previous event (] and [), **Reset** (Home), slower and faster (< and >). **Capture** (C) keeps up to eight ◆ checkpoints on the timeline; click one to restore it. Runs start paused and pause when the tab is hidden.
+- **Set up.** Setup changes apply at once, or wait behind **Apply** (Ctrl ⏎) for parameters marked ↻, which restart the run. Each ⓘ gives a control's caveat; the full context is in **Help**.
+- **Look.** Drag to orbit, scroll to zoom, and switch camera presets (1–4). Show or hide layers in **View**. The split view (`\`) puts a linked pane beside the viewport, such as a dipole close-up, the equatorial section or a source figure.
+- **Select.** Click to select (a drag orbits instead), Esc to clear, and F to focus the camera on the selection.
+- **Compare.** **Dock › Compare** pins the current configuration as B. Change A and B keeps up with A's tick: plots draw B dashed, the readout strip shows Δ, and the tab lists the parameters that differ. Right-click a ◆ checkpoint, or use **Load as B…**, to pin B from there.
+- **Keep.** **Save** (Ctrl S), **Load** (Ctrl O) and **Export ▾** (PNG image, CSV). The address bar records the lab, scenario and whatever you changed, so **Copy link** (Ctrl Shift C) shares that state. **Help › Saved views** holds named links, such as the electron video's shared rotation.
+- **Find.** Ctrl K opens the command palette: every scenario, layer, parameter and action, with its shortcut. ? opens **Help**: About (this scenario, units and constants, sources), Saved views and the full keyboard map.
+- **Settings.** The header's gear sets **Reduce flashing & camera motion** (it follows your system setting at first) and **Show debug telemetry** for every lab. Ctrl B, Ctrl I and Ctrl J show or hide the rail, inspector and dock; Ctrl . hides all three.
+- **Smaller screens.** Tablets open the rail and inspector as overlays, with the dock collapsed to its readout strip. Phones are a basic viewer: the viewport, the timeline and the readouts, with Setup, View and Selection in a bottom sheet.
 
 Choose **Light through the zero-point field** in the library to explore the new [illustrative induction experiment](docs/light-model.md). Adjust wavelength, polarization and direction, step each handoff, pin a pair, inspect field/probe plots and save or replay the sequence. Switching laboratories keeps their separate state and pauses playback.
 

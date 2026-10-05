@@ -154,7 +154,8 @@ export function StatusBar({ running, items = [], telemetry = [] }: StatusBarProp
   const settings = useSettings();
   return (
     <footer className="workbench-status">
-      <span className={`status-state${running ? ' is-running' : ''}`}><i aria-hidden="true"/>{running ? 'Running' : 'Paused'}</span>
+      {/* A polite live region (plan §13): screen readers hear Running or Paused when playback starts or stops. */}
+      <span className={`status-state${running ? ' is-running' : ''}`} role="status" aria-live="polite" aria-atomic="true" data-testid="run-state"><i aria-hidden="true"/>{running ? 'Running' : 'Paused'}</span>
       {items.map((item, i) => <span key={i}>{item}</span>)}
       {settings.telemetry && telemetry.map((item, i) => <span key={`t${i}`} className="status-telemetry" data-testid="status-telemetry">{item}</span>)}
       <span className="status-disclaimer">Illustrative model</span>
