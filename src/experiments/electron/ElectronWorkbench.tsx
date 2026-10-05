@@ -186,7 +186,8 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     camera: camera === (spinStart ? 'shell' : 'orbit') ? undefined : camera,
     split: spinStart && split !== 'section' ? split : undefined,
     tick: s.tick || undefined,
-    selection: selected ?? undefined,
+    // Only a selection the current view shows, so the link restores what was copied (the rule startScenario applies).
+    selection: selected !== null && (selected < LATTICE_SAMPLES || (p.mode === 'spin' && view.shells && selected < LATTICE_SAMPLES + view.spinDisplay.count * SAMPLES_PER_SHELL)) ? selected : undefined,
   }));
   useUrlWriter(active, s.running || !state || linkHold, urlHash);
   /** Choose a camera preset; Shell close-up brings the shells back if they were hidden. */

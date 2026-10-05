@@ -44,3 +44,11 @@ test('a linked selection must be visible in the linked state, or it is listed as
   await page.goto('/#/electron/charge-flux?sel=5');
   await expect(tid(page, 'notice').filter({ visible: true })).toContainText('selection 5');
 });
+
+test('the address bar only carries a selection the current view shows', async ({ page }) => {
+  await page.goto('/#/electron/spin?sel=2300'); // a pair on shell 2, visible with the default two shells
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/electron/spin?sel=2300');
+  await page.getByRole('tab', { name: 'Setup', exact: true }).filter({ visible: true }).click();
+  await page.getByRole('radio', { name: '1', exact: true }).filter({ visible: true }).click(); // one visible shell hides it
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/electron/spin?spinDisplay.count=1');
+});
