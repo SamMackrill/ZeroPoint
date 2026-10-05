@@ -8,19 +8,19 @@ import { palette } from '../../ui/palette';
 import { Plot } from '../../ui/Plot';
 import { Readouts } from '../../ui/Readouts';
 import { Segmented } from '../../ui/Segmented';
-import { FileActions, fileShortcuts, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
+import { exportActions, FileActions, fileShortcuts, Header, type ExportItem, StatusBar, type HeaderProps } from '../../workbench/Chrome';
 import { scenarioState, withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { mediumRuntime, SPEEDS } from '../../workbench/runtime';
 import { Shell } from '../../workbench/Shell';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
-import { APPLY_SHORTCUT, cameraActions, PANEL_SHORTCUTS, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
+import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { mediumDefinition, type MediumParams } from './definition';
 import './medium-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
 import { getSettings, updateSettings, useSettings } from '../../workbench/settings';
-import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
+import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
 import { SplitView } from '../../workbench/SplitView';
 import { DipoleCloseUp } from './DipoleCloseUp';
 
@@ -160,9 +160,10 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
 
   const params: MediumParams = { ...parameters, seed };
   const scenarioTitle = mediumDefinition.scenarios.find(s => s.id === scenario)?.title;
+  const exportItems: ExportItem[] = [{ id: 'png', label: 'PNG image', onSelect: exportPNG, disabled: !!graphicsError }, { id: 'csv', label: 'CSV (diagnostics)', onSelect: exportCSV, disabled: !rows.length }];
   const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle} modified={preset === 'custom'} onHelp={() => about.show()} onChip={() => about.show('scenario')}
     actions={<FileActions inputRef={fileInput} disabled={!ready || busy} onFile={importFile} onSave={() => save('file')}
-      exports={[{ id: 'png', label: 'PNG image', onSelect: exportPNG, disabled: !!graphicsError }, { id: 'csv', label: 'CSV (diagnostics)', onSelect: exportCSV, disabled: !rows.length }]}/>}/>;
+      exports={exportItems}/>}/>;
 
   const viewportNode = (
     <section className="viewport-shell medium-stage" aria-label="Field visualization">
@@ -245,6 +246,11 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
     { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
     ...fileShortcuts(() => save('file'), fileInput, !ready || busy),
     SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
+    ...layerActions(mediumDefinition, scenario, view, (k, v) => setOption(k, v)),
+    ...parameterActions(mediumDefinition, scenario, () => setTab('setup')),
+    { id: 'selection.first', label: 'Select first active dipole', group: 'Selection', disabled: !ready, run: () => viewport.current?.inspectFirst() },
+    ...exportActions(exportItems, !ready || busy),
+    ...helpActions(about.show),
   ];
   useActions(active && !about.open, actions);
   const timelineNode = state && (

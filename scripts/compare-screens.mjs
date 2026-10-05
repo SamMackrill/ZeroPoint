@@ -91,7 +91,17 @@ export const SHORTCUT_SCREENS = [
   { name: 'medium-shortcuts', title: 'Medium · Help › Shortcuts', prepare: openShortcuts },
   { name: 'electron-shortcuts', title: 'Electron · Spin: Help › Shortcuts', lab: 'lab-electron', scenario: 'scenario-spin', prepare: openShortcuts },
 ];
-const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS };
+/** The command palette (`--set palette`): Ctrl K, optionally searching. Before the palette existed, Ctrl K does nothing. */
+const openPalette = search => async page => {
+  await page.keyboard.press('Control+k');
+  const input = page.getByRole('combobox', { name: 'Command palette' });
+  if (search && await input.count()) await input.fill(search);
+};
+export const PALETTE_SCREENS = [
+  { name: 'medium-palette', title: 'Medium · Ctrl K: every scenario and the lab’s actions, each with its shortcut', prepare: openPalette('') },
+  { name: 'electron-palette-search', title: 'Electron · Spin: Ctrl K, searching “shell”', lab: 'lab-electron', scenario: 'scenario-spin', prepare: openPalette('shell') },
+];
+const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };

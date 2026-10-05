@@ -124,8 +124,11 @@ test('Esc clears and F focuses the selection, and a click on the field selects',
   await expect(page.getByText('No active selection')).toBeVisible();
   await expect(pane).toContainText('Select a dipole');
   await page.locator('.medium-workbench').getByTestId('split-toggle').click(); await expect(pane).toHaveCount(0);
+  // F zoomed in on that dipole, by an amount that depends on the camera animation's timing; return to the overview
+  // (Top, then Perspective re-applies the preset) so the sweep below crosses the same field on every run.
+  await page.getByRole('radio', { name: 'Top', exact: true }).click(); await page.getByRole('radio', { name: 'Perspective', exact: true }).click();
   const canvas = page.locator('canvas'), box = (await canvas.boundingBox())!;
-  for (let x = 0.3; x <= 0.7 && await page.getByText('No active selection').isVisible(); x += 0.02) await canvas.click({ position: { x: box.width * x, y: box.height * 0.5 } });
+  for (const y of [0.5, 0.45, 0.55]) for (let x = 0.3; x <= 0.7 && await page.getByText('No active selection').isVisible(); x += 0.02) await canvas.click({ position: { x: box.width * x, y: box.height * y } });
   await expect(page.locator('.dipole-inspector h2')).toContainText('Dipole ');
   expect(errors).toEqual([]);
 });
@@ -148,5 +151,27 @@ test('keyboard shortcuts run the registry\'s actions and are listed in Help › 
   await expect(help.getByRole('region', { name: 'View shortcuts' })).toContainText('Focus mode');
   await page.keyboard.press('Space'); await expect(tid(page, 'transport-run')).toContainText('Run'); // not while the sheet is open
   await page.keyboard.press('Escape'); await expect(help).toHaveCount(0);
+  expect(errors).toEqual([]);
+});
+
+test('the command palette jumps to parameters, toggles layers by name and switches experiments', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/'); await expect(tid(page, 'transport-run')).toBeEnabled();
+  const palette = async (search: string) => {
+    await page.keyboard.press('Control+k');
+    await page.getByRole('combobox', { name: 'Command palette' }).fill(search);
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('combobox', { name: 'Command palette' })).toHaveCount(0);
+  };
+  await palette('frequency centre');
+  await expect(page.locator('[data-testid="param-frequency"] input').filter({ visible: true })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await palette('hide cell boundaries');
+  await page.getByRole('tab', { name: 'View', exact: true }).click();
+  await expect(tid(page, 'layer-bounds')).toHaveAttribute('aria-pressed', 'false');
+  await palette('sparse fluctuations');
+  await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toContainText('Sparse fluctuations');
+  await palette('light through');
+  await expect(page.getByTestId('light-tick')).toBeVisible();
   expect(errors).toEqual([]);
 });

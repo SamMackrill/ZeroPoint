@@ -11,7 +11,7 @@ import { useElectron } from '../../electron/useElectron';
 import { palette } from '../../ui/palette';
 import { Plot } from '../../ui/Plot';
 import { Segmented } from '../../ui/Segmented';
-import { FileActions, fileShortcuts, Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
+import { exportActions, FileActions, fileShortcuts, Header, type ExportItem, StatusBar, type HeaderProps } from '../../workbench/Chrome';
 import { appliesTo, getPath, withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Control, Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
@@ -24,10 +24,10 @@ import '../../light/light.css';
 import '../../electron/electron.css';
 import './electron-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
-import { APPLY_SHORTCUT, cameraActions, PANEL_SHORTCUTS, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
+import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView, type SplitPane } from '../../workbench/SplitView';
-import { AboutSheet, useAbout } from '../../workbench/AboutSheet';
+import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
 
 /** Scenario id ↔ worker mode for the three timed scenarios. */
 const MODE_OF: Record<string, ElectronMode> = { stationary: 'electric', spin: 'spin', moving: 'moving' };
@@ -158,6 +158,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const timeline = electronDefinition.timeline(scenario, p);
   /** Choose a camera preset; Shell close-up brings the shells back if they were hidden. */
   const chooseCamera = (id: string) => { if (id === 'shell') setView(old => ({ ...old, shells: true })); setCamera(id as Camera); };
+  const exportItems: ExportItem[] = [{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError || !!study }, { id: 'csv', label: 'CSV (reference sequence)', onSelect: csv }];
   // Every shortcut is an action (plan §11): the Help sheet lists them and one listener runs them.
   const actions: Action[] = [
     ...transportActions(runtime, timeline, SPEEDS, { onCapture: capture, runDisabled: contextLost, disabled: !ready }),
@@ -165,12 +166,17 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     ...(study ? [] : [{ id: 'view.layers', label: 'Open View › Layers', group: 'View' as const, keys: ['l'], run: () => setTab('view') }]),
     ...fileShortcuts(save, fileInput, !ready),
     ...(study ? [] : [SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus]), APPLY_SHORTCUT, ...(p.mode === 'spin' && !study ? [SPLIT_SHORTCUT] : []), ...PANEL_SHORTCUTS,
+    ...layerActions(electronDefinition, scenario, view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
+    ...parameterActions(electronDefinition, scenario, () => setTab('setup')),
+    ...(study ? [] : [{ id: 'selection.probe', label: 'Select nearest to probe', group: 'Selection' as const, run: inspectProbe }]),
+    ...exportActions(exportItems, !ready),
+    ...helpActions(about.show),
   ];
   useActions(active && !about.open, actions);
 
   const headerNode = <Header experiment={header.experiment} scenario={scenarioTitle} onChip={() => about.show('scenario')} onHelp={() => about.show()}
     actions={<FileActions inputRef={fileInput} disabled={!ready} onFile={load} onSave={save}
-      exports={[{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError || !!study }, { id: 'csv', label: 'CSV (reference sequence)', onSelect: csv }]}/>}/>;
+      exports={exportItems}/>}/>;
 
   const scene = (
     <section className="light-viewport-shell electron-stage" aria-label="Electron field visualization">

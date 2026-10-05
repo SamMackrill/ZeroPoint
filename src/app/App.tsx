@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { DevProfiler } from './DevProfiler';
 import { EXPERIMENTS, casimirDefinition, electronDefinition, lightDefinition, mediumDefinition, vanDerWaalsDefinition } from '../experiments';
 import { MediumWorkbench } from '../experiments/medium/MediumWorkbench';
@@ -7,6 +7,8 @@ import { ElectronWorkbench } from '../experiments/electron/ElectronWorkbench';
 import { CasimirWorkbench } from '../experiments/casimir/CasimirWorkbench';
 import { VdwWorkbench } from '../experiments/van-der-waals/VdwWorkbench';
 import { Rail, type PlannedExperiment } from '../workbench/Chrome';
+import { CommandPalette } from '../workbench/CommandPalette';
+import type { Action } from '../workbench/actions';
 
 /** Planned experiments: greyed in the rail, each opening a one-line summary and its plan. */
 const PLANNED: PlannedExperiment[] = [
@@ -38,8 +40,15 @@ export function App() {
   const rail = <Rail experiments={EXPERIMENTS.map(d => ({ id: d.id, title: d.title, scenarios: d.scenarios }))} planned={PLANNED} experiment={experiment}
     scenario={highlighted !== 'custom' ? highlighted : undefined} onExperiment={id => open(id as ExperimentId)}
     onScenario={(e, id) => setRequests(r => ({ ...r, [e]: { id, at: performance.now() } }))}/>;
+  // Palette › Scenarios: every experiment and scenario, wherever you are (a scenario opens its lab, then selects it).
+  const navigation = useMemo<Action[]>(() => EXPERIMENTS.flatMap(d => [
+    { id: `go.${d.id}`, label: d.title, group: 'Scenarios' as const, run: () => open(d.id as ExperimentId) },
+    ...(d.scenarios.length > 1 ? d.scenarios.map(s => ({ id: `go.${d.id}.${s.id}`, label: `${d.title} › ${s.title}`, group: 'Scenarios' as const,
+      run: () => { open(d.id as ExperimentId); setRequests(r => ({ ...r, [d.id]: { id: s.id, at: performance.now() } })); } })) : []),
+  ]), [open]);
   // Each lab is profiled separately in development so the render budget can catch one lab re-rendering another.
   return <>
+    <CommandPalette navigation={navigation}/>
     <DevProfiler id="medium"><MediumWorkbench active={experiment === 'medium'} rail={rail} header={{ experiment: mediumDefinition.title }} scenarioRequest={requests.medium}
       onPresetChange={onPresetChange} onOpenLight={() => open('light')} onOpenElectron={() => open('electron')} onOpenVdw={() => open('vdw')}/></DevProfiler>
     {visited.light && <DevProfiler id="light"><LightWorkbench active={experiment === 'light'} rail={rail} header={{ experiment: lightDefinition.title }}/></DevProfiler>}
