@@ -163,7 +163,13 @@ export const CAMERA_SCREENS = [
   { name: 'electron-phone', title: 'Electron · phone 390 × 844', viewport: { width: 390, height: 844 }, lab: 'lab-electron' },
   { name: 'light-wide', title: 'Light · 1440 × 900: wide screens keep the segmented control, unchanged', lab: 'lab-light' },
 ];
-const SETS = { camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
+/** Electron's charge-motion pane in Stationary and Moving (`--set electron-motion`), opened by link with a pair selected. */
+export const ELECTRON_MOTION_SCREENS = [
+  { name: 'moving-velocity', title: 'Electron · Moving at tick 600, pair 100: charge velocities', hash: '#/electron/moving?split=motion&sel=100&t=600' },
+  { name: 'stationary-aligning', title: 'Electron · Stationary at tick 240, pair 100: aligning as the polarization builds', hash: '#/electron/stationary?split=motion&sel=100&t=240' },
+  { name: 'stationary-aligned', title: 'Electron · Stationary at tick 2400, pair 100: aligned and still', hash: '#/electron/stationary?split=motion&sel=100&t=2400' },
+];
+const SETS = { 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -215,7 +221,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const before = option('--before'), out = option('--out'), title = option('--title') ?? 'Change', description = option('--description') ?? '';
   const screens = SETS[option('--set') ?? 'screens'];
   if (!screens) throw new Error(`--set must be one of: ${Object.keys(SETS).join(', ')}`);
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.

@@ -41,7 +41,27 @@
   },
   {
     "file": "src/electron/ChargeMotion.tsx",
+    "text": "Arrows show direction, not speed. Separation and collapse velocities are omitted. The main timeline drives this pair."
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
     "text": "Arrows show direction, not speed. This is a local current comparison, not an integrated magnetic moment or a calculation of g ≈ 2. Separation and collapse velocities are omitted. The main timeline drives this pair."
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
+    "text": "Once aligned, the pair holds still: a stationary electron polarizes the medium (E) but moves no charge, so there is no current."
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
+    "text": "This pair is not turning at this moment. Run or step the timeline to see it turn as the electron passes."
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
+    "text": "The negative charge reverses the current sign: (+e)v+ and (−e)v− point together, so the turn is a local current."
+  },
+  {
+    "file": "src/electron/ChargeMotion.tsx",
+    "text": "As the polarization builds, the pair turns its + end toward the electron about its fixed midpoint, so the two ends move oppositely."
   },
   {
     "file": "src/electron/ElectronProperties.tsx",
@@ -206,6 +226,10 @@
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Faraday lines follow dipoles · field arrows are references"
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Select a zepton (click the field) to see its charge motion."
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",

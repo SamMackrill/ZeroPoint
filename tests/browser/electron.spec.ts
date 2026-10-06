@@ -228,3 +228,18 @@ test('electron pauses when hidden and recovers actual WebGL loss', async ({ page
   await tid(page, 'timeline').press('End');
   await expect(tid(page, 'transport-run')).toBeDisabled();
 });
+
+test('Stationary and Moving offer the selected pair’s charge motion as a pane, 1-up by default', async ({ page }) => {
+  await page.goto('/#/electron/moving?split=motion&sel=100&t=600');
+  const pane = page.locator('.electron-charge-motion').filter({ visible: true });
+  await expect(pane.getByRole('heading', { name: 'Two charges, turning as the electron passes' })).toBeVisible();
+  await expect(pane.getByTestId('charge-motion-explanation')).toContainText('As the electron passes');
+  await pane.getByRole('button', { name: 'Conventional current qv' }).click();
+  await expect(pane.getByTestId('charge-motion-explanation')).toContainText('local current');
+  await expect.poll(() => page.evaluate(() => location.hash)).toContain('split=motion');
+  // Stationary opens 1-up; the split toggle offers the pane, which asks for a selection until there is one.
+  await tid(page, 'scenario-stationary').filter({ visible: true }).click();
+  await expect(page.locator('.electron-charge-motion')).toHaveCount(0);
+  await page.getByTestId('split-toggle').filter({ visible: true }).click();
+  await expect(page.getByText('Select a zepton (click the field) to see its charge motion.')).toBeVisible();
+});
