@@ -79,6 +79,13 @@ describe('run intent', () => {
     ch.push({ ...medium, running: true }); // the intent is settled: later reports read through
     expect(rt.status().running).toBe(true);
   });
+  it('counts a Run confirmation that a later report overtook, as at a bounded timeline’s end', () => {
+    const near = { model: 'light', tick: LIGHT_END_TICK - 1, parameters: {}, running: false, speed: 1 } as unknown as LightSnapshot;
+    const ch = channel<unknown, LightSnapshot>(near), rt = lightRuntime(ch as never);
+    rt.run(true);
+    ch.push({ ...near, running: true }); ch.push({ ...near, tick: LIGHT_END_TICK, running: false }); // both before status() is read
+    expect(rt.status()).toMatchObject({ running: false, finished: true });
+  });
   it('gives up on an intent the worker never confirms after a second', () => {
     vi.useFakeTimers();
     const ch = channel<unknown, LightSnapshot>({ model: 'light', tick: 0, parameters: {}, running: false, speed: 1 } as unknown as LightSnapshot), rt = lightRuntime(ch as never);
