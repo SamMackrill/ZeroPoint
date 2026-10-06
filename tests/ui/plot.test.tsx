@@ -38,6 +38,11 @@ describe('plot scales', () => {
     expect(nearestIndex([], 1)).toBe(-1);
     expect(nearestIndex([100, 200], 145)).toBe(0);
     expect(nearestIndex([100, 200], 145, 'log')).toBe(1);
+    // A log axis draws only positive x: the search skips the rest and keeps the original indices.
+    expect(nearestIndex([-1, 0, 100, 200], 145, 'log')).toBe(3);
+    expect(nearestIndex([-1, 0, 100, 200], 1, 'log')).toBe(2);
+    expect(nearestIndex([-1, 0, 100, 200], 0, 'log')).toBe(2);
+    expect(nearestIndex([-2, 0], 1, 'log')).toBe(-1);
   });
   it('exports exactly what is plotted as CSV, gaps empty and labels quoted', () => {
     expect(plotCsv('x (τ)', [0, 0.5], [{ label: 'Inner', values: [1, null] }, { label: 'B, z', values: [2, 3] }])).toBe('x (τ),Inner,"B, z"\n0,1,2\n0.5,,3\n');

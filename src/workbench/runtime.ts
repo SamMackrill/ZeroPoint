@@ -82,16 +82,31 @@ export interface WorkerChannel<Command, State> {
   sink: { current: ((state: State) => void) | null };
 }
 
-/** A set of listeners fed from a channel's sink; the previous sink keeps receiving states. */
+/** One multicast per channel sink, installed once; the sink it replaced keeps receiving states. */
+const hubs = new WeakMap<object, Set<(state: never) => void>>();
+function hub<State>(channel: WorkerChannel<unknown, State>) {
+  let feeds = hubs.get(channel.sink) as Set<(state: State) => void> | undefined;
+  if (!feeds) {
+    const all = new Set<(state: State) => void>(), previous = channel.sink.current;
+    channel.sink.current = state => { previous?.(state); for (const feed of all) feed(state); };
+    hubs.set(channel.sink, all); feeds = all;
+  }
+  return feeds;
+}
+
+/**
+ * A runtime's listeners, fed from its channel's hub. Joining and leaving the hub, rather than chaining sinks, keeps this
+ * safe under StrictMode: it builds the memoised runtime twice and runs a workbench's dispose effect once before the
+ * effects subscribe again, so a runtime may be disposed and then subscribed to.
+ */
 function fanOut<State>(channel: WorkerChannel<unknown, State>) {
-  const listeners = new Set<(state: State) => void>(), previous = channel.sink.current;
-  const sink = (state: State) => { previous?.(state); for (const listener of listeners) listener(state); };
-  channel.sink.current = sink;
+  const listeners = new Set<(state: State) => void>(), feeds = hub(channel);
+  const feed = (state: State) => { for (const listener of listeners) listener(state); };
   return {
-    subscribe(listener: (state: State) => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    subscribe(listener: (state: State) => void) { listeners.add(listener); feeds.add(feed); return () => { listeners.delete(listener); }; },
     /** Re-send a state to the listeners, for a change the worker did not report (an expired run intent). */
-    notify(state: State) { for (const listener of listeners) listener(state); },
-    dispose() { listeners.clear(); if (channel.sink.current === sink) channel.sink.current = previous; },
+    notify(state: State) { feed(state); },
+    dispose() { listeners.clear(); feeds.delete(feed); },
   };
 }
 

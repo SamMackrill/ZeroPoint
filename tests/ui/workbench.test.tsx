@@ -135,6 +135,17 @@ describe('Setup and View panels', () => {
     fireEvent.keyDown(seed, { key: 'Enter', ctrlKey: true });
     expect(onApply).toHaveBeenCalledWith({ seed: 11 });
   });
+  it('leaves staged changes alone while an input method is composing', async () => {
+    const onApply = vi.fn();
+    render(<MediumSetup onLive={() => undefined} onApply={onApply}/>);
+    const seed = screen.getByRole('textbox', { name: /^Random seed/ });
+    await userEvent.clear(seed); await userEvent.type(seed, '9{Enter}');
+    const pending = screen.getByRole('status').textContent;
+    fireEvent.keyDown(seed, { key: 'Escape', isComposing: true }); // cancels the composition, not the edits
+    fireEvent.keyDown(seed, { key: 'Enter', ctrlKey: true, keyCode: 229 }); // Safari reports composition as keyCode 229
+    expect(screen.getByRole('status').textContent).toBe(pending);
+    expect(onApply).not.toHaveBeenCalled();
+  });
   it('applies the value a Ctrl ⏎ commits, with or without an earlier staged change', async () => {
     const onApply = vi.fn();
     render(<MediumSetup onLive={() => undefined} onApply={onApply}/>);

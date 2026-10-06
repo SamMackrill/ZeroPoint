@@ -39,7 +39,7 @@ describe('mediumRuntime', () => {
     expect(() => rt.nextEvent()).toThrow(UnsupportedCommand);
     expect(() => rt.speed(3)).toThrow('Invalid playback speed');
   });
-  it('fans states out to subscribers, keeps the previous sink, and restores it on dispose', () => {
+  it('fans states out to subscribers, keeps the previous sink, and stops on dispose', () => {
     const ch = Object.assign(channel<unknown, Snapshot>(null), { checkpoint: vi.fn() });
     const rt = mediumRuntime(ch as never), listener = vi.fn();
     expect(() => rt.reset()).toThrow('before the Medium worker has started');
@@ -49,8 +49,20 @@ describe('mediumRuntime', () => {
     expect(ch.previous).toHaveBeenCalledWith(medium);
     off(); ch.push(medium);
     expect(listener).toHaveBeenCalledTimes(1);
-    rt.dispose();
-    expect(ch.sink.current).toBe(ch.previous);
+    rt.dispose(); rt.subscribe(listener); rt.dispose(); ch.push(medium);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(ch.previous).toHaveBeenCalledTimes(3);
+  });
+  it('survives StrictMode: a second runtime on the channel, and a dispose before the effects subscribe again', () => {
+    const ch = Object.assign(channel<unknown, Snapshot>(medium), { checkpoint: vi.fn() });
+    const discarded = mediumRuntime(ch as never), rt = mediumRuntime(ch as never), listener = vi.fn(), other = vi.fn();
+    discarded.subscribe(other); discarded.dispose();
+    rt.subscribe(vi.fn())(); rt.dispose(); // the first mount's effects, then StrictMode's cleanup
+    rt.subscribe(listener); // the second mount
+    ch.push(medium);
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(other).not.toHaveBeenCalled();
+    expect(ch.previous).toHaveBeenCalledTimes(1);
   });
 });
 
