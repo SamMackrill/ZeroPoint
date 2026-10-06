@@ -213,6 +213,10 @@
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Electron files must be smaller than 100 KB."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "toward the core. Reverse the spin projection in Setup to reverse every shell. Playback, step and timeline control both views together."
   },
   {
@@ -258,6 +262,10 @@
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Shell sampling is hidden. Choose Shell close-up to restore the linked views."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Could not pin as B: that checkpoint is from another scenario."
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
@@ -317,11 +325,23 @@
   },
   {
     "file": "src/experiments/medium/MediumWorkbench.tsx",
+    "text": "Experiment files must be smaller than 8 MB."
+  },
+  {
+    "file": "src/experiments/medium/MediumWorkbench.tsx",
     "text": ". Controls, diagnostics and experiment files remain available."
   },
   {
     "file": "src/experiments/medium/MediumWorkbench.tsx",
-    "text": "Experiment files must be smaller than 8 MB."
+    "text": "Copied B’s parameters to A. Experiment reset to tick 0."
+  },
+  {
+    "file": "src/experiments/medium/MediumWorkbench.tsx",
+    "text": "B is a second simulation from its pinned state (tick $"
+  },
+  {
+    "file": "src/experiments/medium/MediumWorkbench.tsx",
+    "text": "), stepped in lock-step with A’s tick and drawn dashed in the plots."
   },
   {
     "file": "src/experiments/medium/MediumWorkbench.tsx",

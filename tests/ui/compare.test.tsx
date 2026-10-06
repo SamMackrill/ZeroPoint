@@ -21,6 +21,7 @@ describe('A/B compare', () => {
     expect(withDeltas(a, a).map(r => r.delta)).toEqual(['Δ 0.000', 'Δ 0', 'Δ 0']);
     const b = [{ label: 'Energy', value: '2.230' }, { label: 'Spin', value: '−½' }];
     expect(withDeltas(a, b).map(r => r.delta)).toEqual(['Δ −0.250', 'B −½', undefined]);
+    expect(withDeltas([{ label: 'Active', value: '1,234' }], [{ label: 'Active', value: '1,240' }])[0].delta).toBe('Δ +6'); // en-GB grouping
   });
 
   it('pins B, lists the difference, copies B to A and clears', () => {

@@ -263,7 +263,8 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
             <p className="light-small">E₀ = e/(4πε₀R²), B₀ = E₀/c. Motion field vanishes at zero velocity. Intrinsic magnetism can remain at rest. Reference components use normalized units; gaps mark the excluded central region. Intrinsic spin magnetism is a separate dipole reference, not part of B = v × E / c².</p></div>
         </div> },
         ...(study ? [] : [{ id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={electronDefinition} scenario={scenario} a={p} b={pB}
-          onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}/> }]),
+          onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}
+          onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Electron files must be smaller than 100 KB.'); const saved = parseElectronFile(await file.text()); if (saved.state.parameters.mode !== p.mode) throw new Error('that file is from another scenario'); compare.pin(saved.state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> }]),
         ...(p.mode === 'spin' ? [{ id: 'shells', label: 'Shell rates', content: <div className="electron-shell-rates">
           <div className="electron-rate-profile" aria-label="Illustrative shell rotation profile">{SHELL_RADII.slice(0, view.spinDisplay.count).map((r, i) => {
             const pair = displayedDipole(s, LATTICE_SAMPLES + i * SAMPLES_PER_SHELL + 34, view.spinDisplay);
@@ -328,7 +329,8 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const timelineNode = state && !study && (
     <TimelineBar runtime={runtime} timeline={timeline} speeds={SPEEDS}
       markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `electron tick ${c.tick}` }))}
-      onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) runtime.restore(c); }} onCapture={capture} runDisabled={contextLost}/>
+      onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) runtime.restore(c); }}
+      onMarkerPin={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (!c) return; if (c.parameters.mode !== p.mode) { setNotice('Could not pin as B: that checkpoint is from another scenario.'); return; } compare.pin(c.parameters); setNotice('Pinned the checkpoint’s parameters as B.'); }} onCapture={capture} runDisabled={contextLost}/>
   );
 
   return (

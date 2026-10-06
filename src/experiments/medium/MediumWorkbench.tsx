@@ -23,6 +23,8 @@ import { copyLinkAction, encodeUrl, routeFor, useUrlWriter, type ScenarioRequest
 import { getSettings, updateSettings, useSettings } from '../../workbench/settings';
 import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
 import { SplitView } from '../../workbench/SplitView';
+import { CompareTab, withDeltas } from '../../workbench/compare';
+import { useMediumCompare } from '../../simulation/useMediumCompare';
 import { DipoleCloseUp } from './DipoleCloseUp';
 
 /** At most this many ◆ checkpoints are kept, for every experiment (§09). */
@@ -32,11 +34,13 @@ export const CHECKPOINT_LIMIT = 8;
 const fmt = (n: number) => n.toLocaleString('en-GB', { maximumFractionDigits: 0 });
 
 /** Plot recent medium population or energy diagnostics. */
-function DiagnosticsPlot({ rows, mode }: { rows: Diagnostics[]; mode: 'population' | 'energy' }) {
-  const values = rows.map(r => mode === 'population' ? r.active : r.fieldEnergy);
+function DiagnosticsPlot({ rows, mode, b }: { rows: Diagnostics[]; mode: 'population' | 'energy'; b?: ReadonlyMap<number, Diagnostics> }) {
+  const pick = (r: Diagnostics) => (mode === 'population' ? r.active : r.fieldEnergy);
+  const values = rows.map(pick), valuesB = b && rows.map(r => { const other = b.get(r.tick); return other ? pick(other) : null; });
+  const label = mode === 'population' ? 'Active dipoles' : 'Field energy';
   return <Plot label={`${mode === 'population' ? 'Active dipole count' : 'Field energy in E₀'} over recent model time`} x={rows.map(r => r.time)}
-    series={[{ key: mode, label: mode === 'population' ? 'Active dipoles' : 'Field energy', color: palette.dataShell3, values, area: true }]}
-    xUnit="τ" yUnit={mode === 'energy' ? 'E₀' : undefined} yDomain={[0, Math.max(1, ...values) * 1.15]} formatX={t => t.toFixed(2)} formatY={fmt}
+    series={[{ key: mode, label, color: palette.dataShell3, values, area: true }, ...(valuesB ? [{ key: `${mode}B`, label: `${label} · B`, color: palette.dataShell3, values: valuesB, dashed: true }] : [])]}
+    xUnit="τ" yUnit={mode === 'energy' ? 'E₀' : undefined} yDomain={[0, Math.max(1, ...values, ...(valuesB ?? []).map(v => v ?? 0)) * 1.15]} formatX={t => t.toFixed(2)} formatY={fmt}
     empty="Run or step the experiment to collect samples" height={96} testId={`medium-plot-${mode}`}/>;
 }
 
@@ -88,6 +92,22 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const about = useAbout();
   const fileInput = useRef<HTMLInputElement>(null);
   const d = state?.diagnostics, ready = !!state && !sim.error, running = state?.running ?? false;
+  // A/B compare (plan §11): B is a headless second simulation stepped to A's tick.
+  const compare = useMediumCompare();
+  useEffect(() => { if (compare.b && d) compare.advance(d.tick); }, [compare.b?.pinned, d?.tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** Pin A's exact current state as B (a checkpoint, so identical settings continue identically). */
+  const pinCurrent = async () => { try { compare.pin(await runtime.checkpoint()); } catch (error) { setNotice(String(error)); } };
+  /** Load a saved Medium file as B. */
+  const loadB = async (file: File) => { try { if (file.size > 8 * 1024 * 1024) throw new Error('Experiment files must be smaller than 8 MB.'); compare.pin(parseExperiment(await file.text()).checkpoint); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } };
+  // Δ compares like with like: B's diagnostics at A's displayed tick (a reply for an older tick is not used).
+  const bNow = compare.b && d ? compare.history.current.get(d.tick) : undefined;
+  /** The readout strip for one set of diagnostics. */
+  const stripFor = (x: Diagnostics | undefined) => [
+    { label: 'Active', value: fmt(x?.active ?? 0) },
+    { label: 'Time', value: (x?.time ?? 0).toFixed(3), unit: 'τ' },
+    { label: 'Energy', value: (x?.fieldEnergy ?? 0).toFixed(1), unit: 'E₀' },
+    { label: 'Residual', value: Math.abs(x?.residual ?? 0).toExponential(1), unit: 'E₀' },
+  ];
 
   /** A pick selects the dipole and opens the Selection tab (§07: selection changes auto-open it). */
   // The renderer reports the selection again on every snapshot; only a newly picked dipole opens the Selection tab.
@@ -198,14 +218,13 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
 
   const dockNode = (
     <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={dockTab} onTab={setDockTab}
-      readouts={[
-        { label: 'Active', value: fmt(d?.active ?? 0) },
-        { label: 'Time', value: (d?.time ?? 0).toFixed(3), unit: 'τ' },
-        { label: 'Energy', value: (d?.fieldEnergy ?? 0).toFixed(1), unit: 'E₀' },
-        { label: 'Residual', value: Math.abs(d?.residual ?? 0).toExponential(1), unit: 'E₀' },
-      ]}
+      readouts={withDeltas(stripFor(d), bNow ? stripFor(bNow) : null)}
       tabs={[
-        { id: 'plots', label: 'Plots', content: <div className="medium-plots"><div><h4>Active dipoles</h4><DiagnosticsPlot rows={rows} mode="population"/></div><div><h4>Field energy · E₀</h4><DiagnosticsPlot rows={rows} mode="energy"/></div></div> },
+        { id: 'plots', label: 'Plots', content: <div className="medium-plots"><div><h4>Active dipoles</h4><DiagnosticsPlot rows={rows} mode="population" b={compare.b ? compare.history.current : undefined}/></div><div><h4>Field energy · E₀</h4><DiagnosticsPlot rows={rows} mode="energy" b={compare.b ? compare.history.current : undefined}/></div></div> },
+        { id: 'compare', label: 'Compare', badge: compare.b ? 'B' : undefined, content: <CompareTab definition={mediumDefinition} scenario={scenario} a={params}
+          b={compare.b ? { ...compare.b.pinned.parameters, seed: compare.b.pinned.seed } : null} onPin={pinCurrent} onLoadB={loadB} onClear={compare.clear}
+          onCopyToA={() => { if (compare.b) restart({ ...compare.b.pinned.parameters }, compare.b.pinned.seed, 'custom', 'Copied B’s parameters to A. Experiment reset to tick 0.'); }}
+          note={compare.b?.error ?? `B is a second simulation from its pinned state (tick ${compare.b?.pinned.tick ?? 0}), stepped in lock-step with A’s tick and drawn dashed in the plots.`}/> },
         { id: 'ledger', label: 'Ledger', content: <div className="medium-ledger">
           <Readouts testId="medium-ledger" items={[
             { label: 'Reservoir energy', value: (d?.reservoir ?? 0).toFixed(2), unit: 'E₀' },
@@ -271,7 +290,8 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const timelineNode = state && (
     <TimelineBar runtime={runtime} timeline={timeline} speeds={SPEEDS}
       markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `t ${c.tick * DT < 100 ? (c.tick * DT).toFixed(2) : Math.round(c.tick * DT)} τ` }))}
-      onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) restore(c); }} onCapture={() => save('checkpoint')} runDisabled={contextLost}/>
+      onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) restore(c); }}
+      onMarkerPin={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) { compare.pin(c); setNotice(`Pinned the checkpoint at tick ${c.tick} as B.`); } }} onCapture={() => save('checkpoint')} runDisabled={contextLost}/>
   );
 
   const aboutNode = (
@@ -286,7 +306,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   return (
     <div className="medium-workbench" style={{ display: active ? undefined : 'none' }}>
       <Shell id="medium" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'dipole', label: 'Dipole close-up', content: <DipoleCloseUp picked={picked}/> }]} split={split} onSplit={setSplit} pane="dipole" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
-        status={<StatusBar running={running} items={[sim.error ? 'Simulation error' : ready ? 'Simulation ready' : 'Starting worker', `Seed ${state?.seed ?? '—'}`, <span data-testid="tick">Tick {d?.tick ?? 0}</span>]} telemetry={[MODEL_VERSION, `Parameter revision ${d?.parameterVersion ?? 0}`]}/>}/>
+        status={<StatusBar running={running} items={[...(compare.b ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), sim.error ? 'Simulation error' : ready ? 'Simulation ready' : 'Starting worker', `Seed ${state?.seed ?? '—'}`, <span data-testid="tick">Tick {d?.tick ?? 0}</span>]} telemetry={[MODEL_VERSION, `Parameter revision ${d?.parameterVersion ?? 0}`, ...(compare.b ? [`B ${compare.b.stepMs.toFixed(3)} ms/step`] : [])]}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
     </div>
