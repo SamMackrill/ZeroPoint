@@ -1,6 +1,7 @@
 import { Command } from 'cmdk';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ACTION_GROUPS, keyLabel, matches, visibleActions, type Action } from './actions';
+import { usePhone } from './Shell';
 import './command-palette.css';
 
 /** Every typed word must appear in the entry's label or group (cmdk's fuzzy default matched scattered letters). */
@@ -33,9 +34,13 @@ export function CommandPalette({ navigation }: CommandPaletteProps) {
   };
   const changeRef = useRef(change);
   useLayoutEffect(() => { changeRef.current = change; });
+  const phone = usePhone(), phoneRef = useRef(phone);
+  useLayoutEffect(() => { phoneRef.current = phone; });
+  // Shrinking to a phone closes an open palette: phones have none (plan §13).
+  useEffect(() => { if (phone && openRef.current) changeRef.current(false); }, [phone]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (!matches('Mod+k', event)) return;
+      if (!matches('Mod+k', event) || phoneRef.current) return; // no palette on phones (plan §13)
       // Ctrl K works from fields too, but not from inside another dialog (Help, a drawer); in the palette it closes it.
       const target = event.target instanceof HTMLElement ? event.target : null;
       if (target?.closest('[role=dialog], dialog[open]') && !target.closest('[cmdk-root]')) return;

@@ -5,7 +5,7 @@ import { readFile } from 'node:fs/promises';
 test.describe.configure({ timeout: 60000 });
 
 /** Whether the page is in the narrow (drawer) layout. */
-const narrow = (page: Page) => page.viewportSize()!.width <= 850;
+const narrow = (page: Page) => page.viewportSize()!.width <= 1279;
 /** Open the electron laboratory. */
 async function openElectron(page: Page) {
   await page.goto('/');
@@ -205,6 +205,7 @@ test('electron mobile layers, masked probe and exports work', async ({ page }) =
   await tid(page, 'export-menu').click(); const image = page.waitForEvent('download'); await tid(page, 'export-png').click(); expect((await image).suggestedFilename()).toBe('zeropoint-electron.png');
   await tid(page, 'export-menu').click(); const csv = page.waitForEvent('download'); await tid(page, 'export-csv').click(); expect((await csv).suggestedFilename()).toContain('reference-sequence.csv');
   close = await inspector(page, 'Setup'); await type(page, /^Probe Y/, '0'); await tid(page, 'params-apply').click(); await close();
+  await tid(page, 'dock-probe').filter({ visible: true }).click(); // phones start with the dock collapsed to its strip
   await expect(page.getByText('Probe lies inside the 0.3 R numerical mask. Field values are excluded.')).toBeVisible();
   expect((await page.request.get('/docs/Polarization-Notes.md')).ok()).toBe(true);
   await page.screenshot({ path: 'test-results/electron-mobile.png', fullPage: true });

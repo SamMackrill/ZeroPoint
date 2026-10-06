@@ -1,6 +1,7 @@
 import { Columns2, Square } from 'lucide-react';
 import { useEffect, type ReactNode } from 'react';
 import { Segmented } from '../ui/Segmented';
+import { usePhone } from './Shell';
 import './split-view.css';
 
 /** One linked view the second pane can show. */
@@ -27,7 +28,9 @@ const typing = (event: KeyboardEvent) => event.target instanceof HTMLElement && 
  * Split view (docs/ui-redesign-plan.html §07): the ▢ / ▢▢ toggle (or \) shows a second pane beside the viewport, with a
  * picker of the scenario's linked views. Both panes share the timeline and the selection. Narrow screens stack them.
  */
-export function SplitView({ primary, panes, split, onSplit, pane, onPane, active }: SplitViewProps) {
+export function SplitView({ primary, panes: offered, split, onSplit, pane, onPane, active }: SplitViewProps) {
+  // Phones are a basic viewer (plan §13): one view, no split toggle.
+  const panes = usePhone() ? [] : offered;
   const current = panes.find(p => p.id === pane) ?? panes[0];
   const open = split && !!current;
   useEffect(() => {

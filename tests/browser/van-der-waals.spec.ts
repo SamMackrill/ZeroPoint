@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import type { Page } from '@playwright/test';
 
 /** Whether the page is in the narrow (drawer) layout. */
-const narrow = (page: Page) => page.viewportSize()!.width <= 850;
+const narrow = (page: Page) => page.viewportSize()!.width <= 1279;
 /** Navigate from the workbench to the van der Waals experiment. */
 async function openExperiment(page: Page) {
   await page.goto('/');

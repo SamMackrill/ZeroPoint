@@ -159,3 +159,39 @@
   right: 6px;
   z-index: 1;
 }
+
+/* Tablets (768–1279 px, plan §13): the narrow shell, but the viewport takes the screen above the timeline, the dock
+   strip and the status bar, rather than 46vh of a scrolling page. */
+@media(min-width:768px) {
+  .workbench-narrow-stage .workbench-viewport {
+    height: max(320px, calc(100dvh - 40px - 45px - 40px - 46px - 24px));
+  }
+}
+
+/* Phones (< 768 px): the inspector is a bottom sheet holding Setup, View and Selection. */
+@media(max-width:767px) {
+  .workbench-drawer.is-inspector {
+    inset: auto 0 0 0;
+    width: 100%;
+    max-height: 78dvh;
+    border-left: 0;
+    border-top: 1px solid var(--line-2);
+    border-radius: 12px 12px 0 0;
+  }
+}
+
+/* Touch screens: every control is at least 36 px (plan §13). */
+@media(pointer:coarse) {
+  .workbench-icon-button,
+  .timeline-button,
+  .timeline-run,
+  .file-button,
+  .split-toggle,
+  .segmented-item,
+  .dock-tabs button,
+  .dock-toggle,
+  .wb-inspector-tabs button {
+    min-width: 36px;
+    min-height: 36px;
+  }
+}

@@ -13,7 +13,7 @@ import { scenarioState, withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { lightRuntime, SPEEDS } from '../../workbench/runtime';
-import { Shell } from '../../workbench/Shell';
+import { dockStartsCollapsed, Shell, usePhone } from '../../workbench/Shell';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
 import { CHECKPOINT_LIMIT } from '../medium/MediumWorkbench';
 import { lightDefinition } from './definition';
@@ -60,11 +60,11 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   const [graphicsError, setGraphicsError] = useState(''), [revision, setRevision] = useState(0), [notice, setNotice] = useState('');
   const [checkpoints, setCheckpoints] = useState<LightState[]>([]);
   // Light opens 1-up; the split pane shows the pair close-up glyph enlarged, which then leaves the Selection tab.
-  const [split, setSplit] = useState(false);
+  const [split, setSplit] = useState(false), phone = usePhone(); // phones: no split pane or Compare (plan §13)
   const about = useAbout();
   const compare = useCompare<LightParameters>();
   const fileInput = useRef<HTMLInputElement>(null);
-  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
+  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(dockStartsCollapsed);
   // The host is a callback ref held in state, so the renderer follows the element when the shell changes layout.
   const [host, setHost] = useState<HTMLDivElement | null>(null), renderer = useRef<LightRenderer | null>(null);
   // A lost graphics context holds playback until the viewport recovers.
@@ -149,7 +149,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   const spatialX = Array.from({ length: 161 }, (_, i) => p.offset - 6 + i * 12 / 160), historyX = Array.from({ length: 161 }, (_, i) => d.time * i / 160);
   const spatial = spatialX.map(x => waveAt(p, d.time, x).electric), history = historyX.map(t => waveAt(p, t, p.probe).electric);
   // B: the same model with B's parameters at A's tick (Light is analytic, so B needs no worker).
-  const pB = compare.b, dB = pB && lightReadout({ ...s, parameters: pB });
+  const pB = phone ? null : compare.b, dB = pB && lightReadout({ ...s, parameters: pB });
   const spatialB = pB && dB ? spatialX.map(x => waveAt(pB, dB.time, x).electric) : undefined, historyB = pB ? historyX.map(t => waveAt(pB, t, pB.probe).electric) : undefined;
   /** The readout strip for one configuration. */
   const stripFor = (r: ReturnType<typeof lightReadout>, q: LightParameters) => [
@@ -205,9 +205,9 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
           <div><h4>Spatial profile · current instant</h4><WavePlot x={spatialX} values={spatial} valuesB={spatialB} label="Spatial electric wave projection" unit="L" domain={[p.offset - 6, p.offset + 6]} marker={p.probe}/></div>
           <div><h4>Probe trace · x = {p.probe.toFixed(1)} L{pB && pB.probe !== p.probe && ` · B x = ${pB.probe.toFixed(1)} L`}</h4><WavePlot x={historyX} values={history} valuesB={historyB} label="Electric projection at the fixed probe over elapsed time" unit="τ" domain={[0, Math.max(d.time, 0.01)]}/></div>
         </div> },
-        { id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={lightDefinition} scenario="induction" a={p} b={pB}
+        ...(phone ? [] : [{ id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={lightDefinition} scenario="induction" a={p} b={pB}
           onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}
-          onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Light files must be smaller than 100 KB.'); compare.pin(parseLightFile(await file.text()).state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> },
+          onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Light files must be smaller than 100 KB.'); compare.pin(parseLightFile(await file.text()).state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> }]),
         { id: 'ledger', label: 'Ledger', content: <div className="light-ledger">
           <Readouts items={[
             { label: 'Central pair · hf/2', value: d.pairEnergy.toFixed(4), unit: 'eV' },
@@ -244,7 +244,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   const selectionNode = (
     <div className="light-selection">
       <div className="light-selection-head"><h3>Pair {inspected.index + 1}</h3><button type="button" className="inspector-link" onClick={() => setSelected(selected === null ? d.index : null)}>{selected === null ? 'Pin pair' : 'Follow active'}</button></div>
-      {!split && glyph}
+      {(!split || phone) && glyph}
       <dl className="light-readouts">
         <div><dt>State</dt><dd>{inspected.active ? 'Induced' : s.tick < inspected.index * hopTicks(p) ? 'Awaiting induction' : inspected.progress < 1 ? 'Window exited' : 'Collapsed / retired'}</dd></div>
         <div><dt>Fixed centre</dt><dd data-testid="light-pair-centre">{inspected.centre.toFixed(3)} L</dd></div>

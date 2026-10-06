@@ -16,7 +16,7 @@ import { appliesTo, getPath, scenarioState, withPaths } from '../../workbench/de
 import { Dock } from '../../workbench/Dock';
 import { Control, Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { electronRuntime, SPEEDS } from '../../workbench/runtime';
-import { Shell } from '../../workbench/Shell';
+import { dockStartsCollapsed, Shell, usePhone } from '../../workbench/Shell';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
 import { CHECKPOINT_LIMIT } from '../medium/MediumWorkbench';
 import { electronDefinition, electronMilestones } from './definition';
@@ -80,11 +80,11 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const [graphicsError, setGraphicsError] = useState(''), [contextLost, setContextLost] = useState(false), [revision, setRevision] = useState(0), [notice, setNotice] = useState('');
   const [checkpoints, setCheckpoints] = useState<ElectronState[]>([]);
   const about = useAbout();
-  const compare = useCompare<ElectronParameters>();
+  const compare = useCompare<ElectronParameters>(), phone = usePhone(); // phones: no Compare (plan §13)
   const fileInput = useRef<HTMLInputElement>(null);
   // Spin's split state is the saved Linked 2D section flag (2-up by default); this picks which linked view it shows.
   const [pane, setPane] = useState<'section' | 'motion'>('section');
-  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('probe'), [dockCollapsed, setDockCollapsed] = useState(false);
+  const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('probe'), [dockCollapsed, setDockCollapsed] = useState(dockStartsCollapsed);
   const [host, setHost] = useState<HTMLDivElement | null>(null), renderer = useRef<ElectronRenderer | null>(null);
   const viewRef = useRef(view), selectedRef = useRef(selected), cameraRef = useRef(camera); viewRef.current = view; selectedRef.current = selected; cameraRef.current = camera;
   /** A pick selects the zepton and opens the Selection tab. */
@@ -176,7 +176,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   /** The fixed probe's reference components over elapsed time, for one configuration at A's tick. */
   const tracesFor = (q: ElectronParameters) => Array.from({ length: 161 }, (_, i) => { const f = referenceFields({ ...s, parameters: q, tick: Math.round(s.tick * i / 160) }, probePosition(q)); return f.valid ? [f.electric[1], f.motion[2], q.mode === 'electric' ? 0 : f.intrinsic[2]] : null; });
   // B: the same analytic references with B's parameters, in lock-step with A's tick (no second worker needed).
-  const pB = compare.b && compare.b.mode === p.mode ? compare.b : null, sB = pB && { ...s, parameters: pB };
+  const pB = !phone && compare.b && compare.b.mode === p.mode ? compare.b : null, sB = pB && { ...s, parameters: pB };
   const traces = tracesFor(p), tracesB = pB ? tracesFor(pB) : null;
   const max = Math.max(.01, ...traces.flatMap(v => v?.map(Math.abs) ?? []), ...(tracesB ?? []).flatMap(v => v?.map(Math.abs) ?? []));
   /** The readout strip for one configuration. */
@@ -262,7 +262,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
           <div>{field.valid ? <dl className="light-readouts"><div><dt>Electric / E₀</dt><dd data-testid="electron-E">{vector(field.electric)}</dd></div><div><dt>Motion B / B₀</dt><dd data-testid="electron-B-motion">{vector(field.motion)}</dd></div><div><dt>Intrinsic B / B₀</dt><dd>{p.mode === 'electric' ? 'Hidden in electric-only view' : vector(field.intrinsic)}</dd></div><div><dt>Distance to electron</dt><dd>{field.radius.toFixed(3)} R</dd></div></dl> : <p className="electron-excluded" role="status">Probe lies inside the 0.3 R numerical mask. Field values are excluded.</p>}
             <p className="light-small">E₀ = e/(4πε₀R²), B₀ = E₀/c. Motion field vanishes at zero velocity. Intrinsic magnetism can remain at rest. Reference components use normalized units; gaps mark the excluded central region. Intrinsic spin magnetism is a separate dipole reference, not part of B = v × E / c².</p></div>
         </div> },
-        ...(study ? [] : [{ id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={electronDefinition} scenario={scenario} a={p} b={pB}
+        ...(study || phone ? [] : [{ id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={electronDefinition} scenario={scenario} a={p} b={pB}
           onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}
           onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Electron files must be smaller than 100 KB.'); const saved = parseElectronFile(await file.text()); if (saved.state.parameters.mode !== p.mode) throw new Error('that file is from another scenario'); compare.pin(saved.state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> }]),
         ...(p.mode === 'spin' ? [{ id: 'shells', label: 'Shell rates', content: <div className="electron-shell-rates">

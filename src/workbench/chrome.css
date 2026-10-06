@@ -139,6 +139,7 @@ button.workbench-chip:focus-visible {
 }
 
 .workbench-rail {
+  container: rail / inline-size;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -483,4 +484,20 @@ button.workbench-chip:focus-visible {
 
 .status-telemetry {
   color: var(--text-3);
+}
+
+/* However the rail got narrow (Ctrl B, a drag, or starting collapsed at 1280–1439 px), at icon width it shows icons only,
+   as the collapsed rail does; each icon keeps its experiment's name as a tooltip. */
+@container rail (max-width: 100px) {
+  .rail-head > span,
+  .rail-experiment > span,
+  .rail-scenarios,
+  .rail-planned {
+    display: none;
+  }
+  .rail-head,
+  .rail-experiment {
+    justify-content: center;
+    padding: 0;
+  }
 }
