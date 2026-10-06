@@ -140,8 +140,12 @@ export const splitValue = (open: boolean, pane: string) => (open ? pane : 'off')
 export function useUrlWriter(active: boolean, hold: boolean, hash: string) {
   useEffect(() => {
     if (!active || hold) return;
-    const timer = setTimeout(() => { if (location.hash !== hash) history.replaceState(history.state, '', hash); }, 300);
-    return () => clearTimeout(timer);
+    // A link arriving meanwhile (a hashchange, or the address bar edited) wins: never overwrite it with the old state.
+    const seen = location.hash;
+    const timer = setTimeout(() => { if (location.hash === seen && location.hash !== hash) history.replaceState(history.state, '', hash); }, 300);
+    const onHash = () => clearTimeout(timer);
+    window.addEventListener('hashchange', onHash);
+    return () => { clearTimeout(timer); window.removeEventListener('hashchange', onHash); };
   }, [active, hold, hash]);
 }
 
