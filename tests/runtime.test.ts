@@ -54,6 +54,59 @@ describe('mediumRuntime', () => {
   });
 });
 
+describe('run intent', () => {
+  it('reports a just-sent Run until the worker confirms it, so a quick second press pauses', () => {
+    const ch = Object.assign(channel<{ type: string; value?: boolean }, Snapshot>(medium), { checkpoint: vi.fn() });
+    const rt = mediumRuntime(ch as never);
+    rt.run(!rt.status().running); // Run: the worker has not replied yet
+    expect(rt.status().running).toBe(true);
+    rt.run(!rt.status().running); // a second press straight after sends Pause, not Run again
+    expect(ch.sent).toEqual([{ type: 'running', value: true }, { type: 'running', value: false }]);
+    ch.push({ ...medium, running: false }); // the worker settles paused
+    expect(rt.status().running).toBe(false);
+    rt.run(true); rt.step(); // stepping supersedes the pending Run (the worker pauses to step)
+    expect(rt.status().running).toBe(false);
+  });
+  it('keeps a pending Pause through the worker’s late reply to the Run before it', () => {
+    const ch = Object.assign(channel<{ type: string; value?: boolean }, Snapshot>(medium), { checkpoint: vi.fn() });
+    const rt = mediumRuntime(ch as never);
+    rt.run(true); rt.run(false); // the state on hand already reads paused, but it predates both presses
+    expect(rt.status().running).toBe(false);
+    ch.push({ ...medium, running: true }); // the worker acts on the Run
+    expect(rt.status().running).toBe(false); // still Pause, so the next press sends Run rather than Pause again
+    ch.push({ ...medium, running: false }); // then on the Pause
+    expect(rt.status().running).toBe(false);
+    ch.push({ ...medium, running: true }); // the intent is settled: later reports read through
+    expect(rt.status().running).toBe(true);
+  });
+  it('drops a pending Run at a bounded timeline’s end, when the final report overtook the Running one', () => {
+    const near = { model: 'light', tick: LIGHT_END_TICK - 1, parameters: {}, running: false, speed: 1 } as unknown as LightSnapshot;
+    const ch = channel<unknown, LightSnapshot>(near), rt = lightRuntime(ch as never);
+    rt.run(true);
+    ch.push({ ...near, running: true }); ch.push({ ...near, tick: LIGHT_END_TICK, running: false }); // both before status() is read
+    expect(rt.status()).toMatchObject({ running: false, finished: true });
+  });
+  it('gives up on an intent the worker never confirms after a second', () => {
+    vi.useFakeTimers();
+    const ch = channel<unknown, LightSnapshot>({ model: 'light', tick: 0, parameters: {}, running: false, speed: 1 } as unknown as LightSnapshot), rt = lightRuntime(ch as never);
+    rt.run(true); expect(rt.status().running).toBe(true);
+    vi.advanceTimersByTime(1100); expect(rt.status().running).toBe(false); // the worker refused (e.g. the sequence had finished)
+    vi.useRealTimers();
+  });
+  it('tells subscribers when an unconfirmed intent lapses, so the status bar re-reads it', () => {
+    vi.useFakeTimers();
+    const ch = channel<unknown, LightSnapshot>({ model: 'light', tick: 0, parameters: {}, running: false, speed: 1 } as unknown as LightSnapshot), rt = lightRuntime(ch as never);
+    const listener = vi.fn(() => rt.status().running);
+    rt.subscribe(listener); rt.run(true);
+    vi.advanceTimersByTime(900); expect(listener).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(200);
+    expect(listener).toHaveBeenCalledTimes(1); expect(listener).toHaveLastReturnedWith(false);
+    rt.run(true); rt.step(); vi.advanceTimersByTime(2000); // a superseded intent has nothing to announce
+    expect(listener).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+});
+
 describe('tick runtimes', () => {
   const light = { model: 'light', tick: 100, parameters: { wavelength: 625 }, running: true, speed: 1 } as unknown as LightSnapshot;
   it('Light seeks within its bounds, uses its own next-induction command, and checkpoints without playback fields', async () => {

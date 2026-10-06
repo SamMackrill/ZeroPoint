@@ -89,6 +89,8 @@ function fanOut<State>(channel: WorkerChannel<unknown, State>) {
   channel.sink.current = sink;
   return {
     subscribe(listener: (state: State) => void) { listeners.add(listener); return () => { listeners.delete(listener); }; },
+    /** Re-send a state to the listeners, for a change the worker did not report (an expired run intent). */
+    notify(state: State) { for (const listener of listeners) listener(state); },
     dispose() { listeners.clear(); if (channel.sink.current === sink) channel.sink.current = previous; },
   };
 }
@@ -101,6 +103,33 @@ export interface MediumChannel extends WorkerChannel<Command, Snapshot> {
   checkpoint(): Promise<Checkpoint>;
 }
 
+/** How long a Run or Pause the worker has not confirmed is reported, in ms. */
+const INTENT_MS = 1000;
+
+/**
+ * The latest Run or Pause sent to a worker. status() reports it until the worker confirms it (or 1 s passes, in case it
+ * refused), so a second press straight after the first reads the intended state, not the worker's last report, and
+ * sends Pause rather than Run again. Only a state the worker sent after the command confirms it: the state on hand when
+ * Pause is pressed may already read paused while the worker has yet to act on the Run before it. Any other command
+ * (step, seek, reset, restore) supersedes it.
+ */
+function runIntent(latest: () => { running: boolean } | null, expired: () => void) {
+  let pending: { on: boolean; at: number; seen: unknown } | null = null, timer: ReturnType<typeof setTimeout> | undefined;
+  return {
+    sent(on: boolean) {
+      pending = { on, at: performance.now(), seen: latest() };
+      // Nothing else re-reads status() if the worker never answers, so say when the intent lapses.
+      clearTimeout(timer); timer = setTimeout(() => { if (pending) expired(); }, INTENT_MS + 50);
+    },
+    clear() { pending = null; clearTimeout(timer); },
+    running() {
+      const state = latest();
+      if (pending && ((state !== pending.seen && state?.running === pending.on) || performance.now() - pending.at > INTENT_MS)) pending = null;
+      return pending ? pending.on : state?.running ?? false;
+    },
+  };
+}
+
 /**
  * Medium: an open-ended timeline. Parameters are live, the seed restarts (configure), jump steps through model time,
  * and seeking is the shell's job (restore the nearest checkpoint), so seek and nextEvent are unsupported.
@@ -108,22 +137,23 @@ export interface MediumChannel extends WorkerChannel<Command, Snapshot> {
 export function mediumRuntime(channel: MediumChannel): Runtime<Snapshot, Partial<Parameters>, MediumConfig, Checkpoint> {
   const listeners = fanOut(channel), now = () => channel.latest.current;
   const require = (command: string) => { const state = now(); if (!state) throw new Error(`Cannot ${command} before the Medium worker has started.`); return state; };
+  const intent = runIntent(now, () => { const state = now(); if (state) listeners.notify(state); });
   return {
     capabilities: { run: true, step: true, jump: true, nextEvent: false, seek: false, reset: true, speed: true, live: true, configure: true, checkpoint: true, restore: true },
-    run: on => channel.send({ type: 'running', value: on }),
-    step: () => channel.send({ type: 'step' }),
-    jump: tau => { for (let i = Math.round(tau / DT); i > 0; i--) channel.send({ type: 'step' }); },
+    run: on => { intent.sent(on); channel.send({ type: 'running', value: on }); },
+    step: () => { intent.clear(); channel.send({ type: 'step' }); },
+    jump: tau => { intent.clear(); for (let i = Math.round(tau / DT); i > 0; i--) channel.send({ type: 'step' }); },
     nextEvent: () => { throw new UnsupportedCommand('next event'); },
     seek: () => { throw new UnsupportedCommand('seek'); },
-    reset: () => { const state = require('reset'); channel.send({ type: 'reset', seed: state.seed, parameters: state.parameters }); },
+    reset: () => { const state = require('reset'); intent.clear(); channel.send({ type: 'reset', seed: state.seed, parameters: state.parameters }); },
     speed: value => channel.send({ type: 'speed', value: checkSpeed(value) }),
     setLive: parameters => channel.send({ type: 'parameters', value: { ...require('change parameters').parameters, ...parameters } }),
-    configure: ({ seed, parameters }) => channel.send({ type: 'reset', seed, parameters }),
+    configure: ({ seed, parameters }) => { intent.clear(); channel.send({ type: 'reset', seed, parameters }); },
     checkpoint: () => channel.checkpoint(),
-    restore: checkpoint => channel.send({ type: 'restore', checkpoint }),
+    restore: checkpoint => { intent.clear(); channel.send({ type: 'restore', checkpoint }); },
     subscribe: listeners.subscribe,
     latest: now,
-    status: () => { const s = now(); return { running: s?.running ?? false, tick: s?.diagnostics.tick ?? 0, time: s?.diagnostics.time ?? 0, speed: s?.speed ?? 1, finished: false }; },
+    status: () => { const s = now(); return { running: intent.running(), tick: s?.diagnostics.tick ?? 0, time: s?.diagnostics.time ?? 0, speed: s?.speed ?? 1, finished: false }; },
     dispose: listeners.dispose,
   };
 }
@@ -141,12 +171,14 @@ interface TickOptions<S> {
 /** A bounded, tick-based worker runtime; checkpoints are the state without playback fields. */
 function tickRuntime<Command extends { type: string }, S extends { tick: number; running: boolean; speed: number }, P, C>(channel: WorkerChannel<Command, S>, options: TickOptions<S>, toCheckpoint: (state: S) => C) {
   const listeners = fanOut(channel), now = () => channel.latest.current;
-  const send = (command: unknown) => channel.send(command as Command);
+  const intent = runIntent(now, () => { const state = now(); if (state) listeners.notify(state); });
+  // Every command but Run and speed supersedes a pending Run or Pause (they pause, or replace the run).
+  const send = (command: unknown) => { if (!['run', 'speed'].includes((command as { type: string }).type)) intent.clear(); channel.send(command as Command); };
   const tick = () => now()?.tick ?? 0;
   const seek = (target: number) => send({ type: 'seek', tick: Math.max(0, Math.min(options.end, Math.round(target))) });
   const runtime: Runtime<S, never, P, C> = {
     capabilities: { run: true, step: true, jump: true, nextEvent: Boolean(options.next || options.events), seek: true, reset: true, speed: true, live: false, configure: true, checkpoint: true, restore: true },
-    run: on => send({ type: 'run', value: on }),
+    run: on => { send({ type: 'run', value: on }); intent.sent(on); },
     step: () => send({ type: 'step' }),
     jump: tau => seek(tick() + tau / options.dt),
     nextEvent: () => {
@@ -165,7 +197,13 @@ function tickRuntime<Command extends { type: string }, S extends { tick: number;
     restore: state => send({ type: 'restore', state }),
     subscribe: listeners.subscribe,
     latest: now,
-    status: () => { const s = now(); return { running: s?.running ?? false, tick: tick(), time: tick() * options.dt, speed: s?.speed ?? 1, finished: tick() >= options.end }; },
+    status: () => {
+      // At the end the worker has stopped, whatever was pending: its Running report may have been overtaken by its final
+      // Paused one before status() was read, so the intent would otherwise never see a confirmation.
+      const s = now(), at = tick(), finished = at >= options.end;
+      if (finished) intent.clear();
+      return { running: intent.running(), tick: at, time: at * options.dt, speed: s?.speed ?? 1, finished };
+    },
     dispose: listeners.dispose,
   };
   return runtime;
