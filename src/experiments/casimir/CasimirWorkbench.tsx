@@ -1,11 +1,12 @@
 import { ArrowLeftRight, Info, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { extent, lifeStage, phase, type CasimirModel, type Zepton } from '../../casimir/model';
+import { CASIMIR_FILE_LIMIT, extent, lifeStage, parseCasimirFile, phase, STEP, type CasimirModel, type Zepton } from '../../casimir/model';
+import { downloadFile } from '../../persistence/experiment';
 import { Scene, type SceneLayers } from '../../casimir/Scene';
 import { palette } from '../../ui/palette';
 import { Plot } from '../../ui/Plot';
 import { Segmented } from '../../ui/Segmented';
-import { Header, StatusBar, type HeaderProps } from '../../workbench/Chrome';
+import { exportActions, FileActions, fileShortcuts, Header, StatusBar, type ExportItem, type HeaderProps } from '../../workbench/Chrome';
 import { withPaths } from '../../workbench/definition';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
@@ -125,6 +126,27 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   // The address bar follows this lab (plan §11); the loupe pane is open by default, so only 'off' is written.
   const urlHash = encodeUrl(routeFor(casimirDefinition, scenario, params, view, { split: split ? undefined : 'off' }));
   useUrlWriter(active, running, urlHash);
+  const fileInput = useRef<HTMLInputElement>(null);
+  /** Download the run: the model with its generator, so a loaded run continues exactly as this one would. */
+  function save() {
+    downloadFile(`zeropoint-casimir-${scenario}-tick-${model.tick}.json`, JSON.stringify({ format: 'zeropoint-casimir', version: 1, state: model.state(), view }), 'application/json');
+    setNotice(`Saved the Casimir run at ${model.time.toFixed(2)} τ.`);
+  }
+  /** Load and restore a Casimir experiment file selected by the user. */
+  async function load(file: File) {
+    try {
+      if (file.size > CASIMIR_FILE_LIMIT) throw new Error('Casimir files must be smaller than 1 MB.');
+      const text = await file.text(), state = parseCasimirFile(text), saved = JSON.parse(text).view;
+      const layers = { ...casimirDefinition.defaultView };
+      for (const key of Object.keys(layers) as (keyof SceneLayers)[]) { if (typeof saved?.[key] !== 'boolean') throw new Error(`Invalid ${key} layer setting.`); layers[key] = saved[key]; }
+      runtime.restore(state); setParams({ pair: state.pair, separation: state.separation }); setView(layers); unpin();
+      setNotice(`Loaded the Casimir run at ${(state.tick * STEP).toFixed(2)} τ. Playback is paused.`);
+    } catch (e) { setNotice(`Could not load: ${e instanceof Error ? e.message : String(e)}`); }
+  }
+  const exportItems: ExportItem[] = [{ id: 'pressure-csv', label: 'Pressure history (CSV)', onSelect: () => {
+    downloadFile(`zeropoint-casimir-${scenario}-pressure.csv`, ['time_tau,inner_pressure,outer_pressure', ...model.history.map(h => `${h.time},${h.inner},${h.outer}`)].join('\n'), 'text/csv');
+    setNotice('Exported the pressure history shown in the plot.');
+  } }];
   /** Pin a Zepton (stops following new births). */
   const pin = (p: Zepton) => { setSelected(p.id); lastSelected.current = { ...p }; setFollow(false); setTab('selection'); };
 
@@ -135,6 +157,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
     ...transportActions(runtime, casimirDefinition.timeline(scenario, params), CASIMIR_SPEEDS),
     { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
     SELECTION_SHORTCUTS.clear, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
+    ...fileShortcuts(save, fileInput, false), ...exportActions(exportItems, false),
     copyLinkAction(urlHash, setNotice),
     ...layerActions(casimirDefinition, scenario, view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
     ...parameterActions(casimirDefinition, scenario, () => setTab('setup')),
@@ -144,7 +167,8 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   useActions(active && !about.open, actions);
 
   const headerNode = <Header experiment={header.experiment} scenario={casimirDefinition.scenarios.find(s => s.id === scenario)?.title}
-    onChip={() => about.show('scenario')} onHelp={() => about.show()}/>;
+    onChip={() => about.show('scenario')} onHelp={() => about.show()}
+    actions={<FileActions inputRef={fileInput} onFile={load} onSave={save} exports={exportItems}/>}/>;
 
   const viewportNode = (
     <section className="casimir-scene casimir-stage" aria-label="Charge interaction visualization">

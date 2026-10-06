@@ -171,4 +171,85 @@ export class CasimirModel {
   }
   /** Stop released charge motion while preserving their current positions. */
   hold() { this.released = false; this.leftVelocity = 0; this.rightVelocity = 0; }
+  /** The full state, generator included, so a restored run continues exactly as this one would. */
+  state(): CasimirState {
+    const { pair, separation, tick, births, deaths, gapBirths, released, boundaryReached, left, right, leftVelocity, rightVelocity, inner, outer, randomState, nextId, eventId } = this;
+    return {
+      pair, separation, tick, births, deaths, gapBirths, released, boundaryReached, left, right, leftVelocity, rightVelocity, inner, outer, randomState, nextId, eventId,
+      particles: this.particles.map(p => ({ ...p })), events: this.events.map(e => ({ ...e })), history: this.history.map(h => ({ ...h })),
+    };
+  }
+  /** A model continuing from a saved state (validate it first: see parseCasimirFile). */
+  static restore(state: CasimirState) {
+    const model = new CasimirModel(state.pair, state.separation);
+    Object.assign(model, state, { particles: state.particles.map(p => ({ ...p })), events: state.events.map(e => ({ ...e })), history: state.history.map(h => ({ ...h })) });
+    return model;
+  }
+}
+
+/** A Casimir run's saved state: the model's fields and its generator. */
+export interface CasimirState {
+  pair: ChargePair; separation: number; tick: number;
+  particles: Zepton[]; events: Interaction[]; history: PressureSample[];
+  births: number; deaths: number; gapBirths: number; released: boolean; boundaryReached: boolean;
+  left: number; right: number; leftVelocity: number; rightVelocity: number; inner: number; outer: number;
+  randomState: number; nextId: number; eventId: number;
+}
+
+/** Ids and counters stay well inside the safe-integer range, so a restored run can keep incrementing them exactly. */
+const COUNT_LIMIT = 2 ** 48;
+/** A non-negative integer: an id or a counter. */
+const count = (v: number) => Number.isSafeInteger(v) && v >= 0 && v <= COUNT_LIMIT;
+/** Charges further out than this (scene units) are not a state the model reaches. */
+const POSITION_LIMIT = 1_000;
+
+/** Largest Casimir file accepted, in characters. */
+export const CASIMIR_FILE_LIMIT = 1_000_000;
+
+/** Check that a value is an object holding the given fields of the given kinds; returns it typed. */
+function shaped<T>(value: unknown, what: string, fields: Record<string, 'number' | 'boolean' | 'string' | 'number?'>): T {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`Invalid ${what}.`);
+  const o = value as Record<string, unknown>;
+  for (const [key, kind] of Object.entries(fields)) {
+    const v = o[key];
+    const ok = kind === 'number' ? Number.isFinite(v) : kind === 'number?' ? v === null || Number.isFinite(v) : typeof v === kind;
+    if (!ok) throw new Error(`Invalid ${what}: ${key}.`);
+  }
+  return o as T;
+}
+/** Check that a value is an array of at most `max` items, each checked by `item`. */
+function list<T>(value: unknown, what: string, max: number, item: (v: unknown) => T): T[] {
+  if (!Array.isArray(value) || value.length > max) throw new Error(`Invalid ${what}.`);
+  return value.map(item);
+}
+
+const ZEPTON = { id: 'number', site: 'number', x: 'number', y: 'number', homeX: 'number', homeY: 'number', angle: 'number', age: 'number', lifetime: 'number', alignment: 'number', gap: 'boolean', deflected: 'boolean', contribution: 'number', neighbor: 'number?' } as const;
+
+/** Parse and validate a saved Casimir experiment (format zeropoint-casimir, version 1). */
+export function parseCasimirFile(text: string): CasimirState {
+  if (text.length > CASIMIR_FILE_LIMIT) throw new Error('Casimir files must be smaller than 1 MB.');
+  const f = JSON.parse(text);
+  if (f?.format !== 'zeropoint-casimir' || f.version !== 1) throw new Error('Choose a ZeroPoint Casimir experiment file.');
+  const s = shaped<CasimirState>(f.state, 'Casimir state', {
+    separation: 'number', tick: 'number', births: 'number', deaths: 'number', gapBirths: 'number', released: 'boolean', boundaryReached: 'boolean',
+    left: 'number', right: 'number', leftVelocity: 'number', rightVelocity: 'number', inner: 'number', outer: 'number', randomState: 'number', nextId: 'number', eventId: 'number',
+  });
+  if (s.pair !== 'electron-electron' && s.pair !== 'electron-proton') throw new Error('Invalid Casimir state: pair.');
+  if (s.separation < 4 || s.separation > 7) throw new Error('Invalid Casimir state: separation.');
+  if (!Number.isInteger(s.tick) || s.tick < 0 || !Number.isInteger(s.randomState) || s.randomState < 0 || s.randomState > 0xffffffff) throw new Error('Invalid Casimir state: tick or generator.');
+  // Finite is not enough: step() divides by lifetimes and hands out ids, so a crafted file must not slip in values that
+  // turn the run to NaN or repeat ids.
+  for (const key of ['nextId', 'eventId', 'births', 'deaths', 'gapBirths'] as const) if (!count(s[key])) throw new Error(`Invalid Casimir state: ${key}.`);
+  if (!(s.left < s.right) || Math.abs(s.left) > POSITION_LIMIT || Math.abs(s.right) > POSITION_LIMIT) throw new Error('Invalid Casimir state: charge positions.');
+  return {
+    ...s,
+    particles: list(s.particles, 'Zeptons', 5_000, v => {
+      const z = shaped<Zepton>(v, 'Zepton', ZEPTON);
+      // A gap birth has no lattice site (-1).
+      if (!count(z.id) || !(Number.isInteger(z.site) && z.site >= -1) || !(z.lifetime > 0) || z.age < 0) throw new Error('Invalid Zepton: id, site, age or lifetime.');
+      return z;
+    }),
+    events: list(s.events, 'interactions', 5_000, v => shaped<Interaction>(v, 'interaction', { id: 'number', time: 'number', text: 'string' })),
+    history: list(s.history, 'pressure history', 100_000, v => shaped<PressureSample>(v, 'pressure sample', { time: 'number', inner: 'number', outer: 'number' })),
+  };
 }
