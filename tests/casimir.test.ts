@@ -91,6 +91,9 @@ describe('Casimir files', () => {
     // Values the parser's types allow but the run cannot use.
     expect(() => parseCasimirFile(file({ ...good, nextId: 1.5 }))).toThrow('nextId');
     expect(() => parseCasimirFile(file({ ...good, nextId: 2 ** 53 }))).toThrow('nextId'); // nextId++ would repeat it
+    expect(() => parseCasimirFile(file({ ...good, tick: 2 ** 53 }))).toThrow('tick'); // tick++ would stall
+    expect(() => parseCasimirFile(file({ ...good, particles: [good.particles[0], { ...good.particles[1], id: good.particles[0].id }] }))).toThrow('appears twice');
+    expect(() => parseCasimirFile(file({ ...good, history: [{ time: 1, inner: 1, outer: 1 }, { time: .5, inner: 1, outer: 1 }] }))).toThrow('backwards');
     expect(() => parseCasimirFile(file({ ...good, births: -1 }))).toThrow('births');
     expect(() => parseCasimirFile(file({ ...good, left: 3, right: -3 }))).toThrow('charge positions');
     expect(() => parseCasimirFile(file({ ...good, particles: [{ ...good.particles[0], lifetime: 0 }] }))).toThrow('lifetime');
