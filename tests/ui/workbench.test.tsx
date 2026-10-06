@@ -209,6 +209,10 @@ describe('Dock, Rail and StatusBar', () => {
       expect(layoutStorage()).toBeTruthy();
     });
   });
+  it('shows the first tab when the selected one is no longer offered (Compare on a phone)', () => {
+    render(<Dock readouts={[]} tabs={[{ id: 'plots', label: 'Plots', content: <p>plots body</p> }]} tab="compare"/>);
+    expect(screen.getByText('plots body')).toBeTruthy();
+  });
   it('expands a collapsed dock from any tab, including the one already selected', () => {
     const onCollapsedChange = vi.fn();
     render(<Dock readouts={[]} tabs={[{ id: 'probe', label: 'Probe', content: <p>probe</p> }]} tab="probe" collapsed onCollapsedChange={onCollapsedChange}/>);

@@ -36,6 +36,8 @@ export function CommandPalette({ navigation }: CommandPaletteProps) {
   useLayoutEffect(() => { changeRef.current = change; });
   const phone = usePhone(), phoneRef = useRef(phone);
   useLayoutEffect(() => { phoneRef.current = phone; });
+  // Shrinking to a phone closes an open palette: phones have none (plan §13).
+  useEffect(() => { if (phone && openRef.current) changeRef.current(false); }, [phone]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (!matches('Mod+k', event) || phoneRef.current) return; // no palette on phones (plan §13)
