@@ -196,8 +196,10 @@ export interface CasimirState {
   randomState: number; nextId: number; eventId: number;
 }
 
+/** Ids and counters stay well inside the safe-integer range, so a restored run can keep incrementing them exactly. */
+const COUNT_LIMIT = 2 ** 48;
 /** A non-negative integer: an id or a counter. */
-const count = (v: number) => Number.isInteger(v) && v >= 0;
+const count = (v: number) => Number.isSafeInteger(v) && v >= 0 && v <= COUNT_LIMIT;
 /** Charges further out than this (scene units) are not a state the model reaches. */
 const POSITION_LIMIT = 1_000;
 
