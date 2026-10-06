@@ -28,7 +28,7 @@ import { copyLinkAction, encodeUrl, routeFor, splitValue, useLinkSeek, useUrlWri
 import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView, type SplitPane } from '../../workbench/SplitView';
-import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
+import { AboutSheet, helpActions, useAbout, type SavedView } from '../../workbench/AboutSheet';
 
 /** Scenario id ↔ worker mode for the three timed scenarios. */
 const MODE_OF: Record<string, ElectronMode> = { stationary: 'electric', spin: 'spin', moving: 'moving' };
@@ -41,6 +41,12 @@ const DESCRIPTION: Record<ElectronMode, string> = {
   spin: 'Following Fig. 2: neighboring zeptons turn locally as they polarize around the stationary electron. Compare the spherical field and equatorial section, then inspect how opposite charge motions contribute to current. Alternating whole bands is an optional extension.',
   moving: 'As the electron passes, nearby pairs turn locally. Reverse its velocity to reverse the motion-induced magnetic field.',
 };
+/** Help › Saved views: states worth returning to, as links (plan §10). */
+const SAVED_VIEWS: readonly SavedView[] = [{
+  title: 'The video’s shared rotation (4:44)',
+  description: 'Shared local preference selected, following the video’s coordination explanation at 4:44.',
+  hash: `#/electron/spin?spinDisplay.alternating=0&split=motion&sel=${LATTICE_SAMPLES + 34}`,
+}];
 const vector = (v: number[]) => v.map(n => Math.abs(n) < 1e-9 ? '0' : n.toFixed(4)).join(', ');
 type Camera = 'front' | 'orbit' | 'probe' | 'shell';
 
@@ -116,7 +122,13 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   function startScenario(request: ScenarioRequest) {
     const { id, url } = request, mode = MODE_OF[id];
     setScenario(id);
-    const ignored = request.dropped?.length ? `Ignored link settings that don’t apply: ${request.dropped.join(', ')}.` : '';
+    // A linked selection must be visible in the linked state: a lattice sample in any timed scenario, or a shell sample
+    // in Spin with the shells shown and within the linked shell count. Static studies select nothing.
+    const linkedView = withPaths(scenarioState(electronDefinition, id).view, url?.view ?? {}) as ElectronView, index = url?.selection;
+    const selectable = index !== undefined && !!mode && (index < LATTICE_SAMPLES
+      || (mode === 'spin' && linkedView.shells && index < LATTICE_SAMPLES + linkedView.spinDisplay.count * SAMPLES_PER_SHELL));
+    const dropped = [...(request.dropped ?? []), ...(url?.selection !== undefined && !selectable ? [`selection ${url.selection}`] : [])];
+    const ignored = dropped.length ? `Ignored link settings that don’t apply: ${dropped.join(', ')}.` : '';
     if (!mode) { runtime.run(false); if (ignored) setNotice(ignored); return; }
     const target = (url ? withPaths(scenarioState(electronDefinition, id).params, url.params) : { ...p, mode }) as ElectronParameters;
     runtime.configure(target); setSelected(null);
@@ -124,6 +136,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     setCamera((url?.camera as Camera | undefined) ?? (mode === 'spin' ? 'shell' : 'orbit'));
     if (url?.split) { if (url.split === 'motion' || url.split === 'section') setPane(url.split); setView(v => withPaths(v, { 'spinDisplay.section': url.split !== 'off' })); }
     if (url) setLink({ params: target, tick: url.tick });
+    if (selectable) { setSelected(url!.selection!); setTab('selection'); }
     setNotice(ignored || (url ? 'Opened from a link.' : 'View changed. The sequence is paused at its start.'));
   }
   const startRef = useRef(startScenario); startRef.current = startScenario;
@@ -155,7 +168,6 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   /** Select the displayed sample nearest to the configured probe. */
   function inspectProbe() { const shell = view.shells && p.mode === 'spin'; let best = shell ? LATTICE_SAMPLES : 0, distance = Infinity; for (let i = best; i < (shell ? LATTICE_SAMPLES + view.spinDisplay.count * SAMPLES_PER_SHELL : LATTICE_SAMPLES); i++) { const c = shellCentre(i, p.axis), r = Math.hypot(c[0] - p.probeX, c[1] - p.probeY, c[2] - p.probeZ); if (r < distance) { best = i; distance = r; } } setSelected(best); }
   /** The saved view the video's coordination explanation at 4:44 describes. */
-  function sharedRotation() { setView(v => ({ ...v, shells: true, inspect: true, spinDisplay: { ...v.spinDisplay, alternating: false, section: true } })); setPane('motion'); setSelected(LATTICE_SAMPLES + 34); setCamera('shell'); setNotice('Shared local preference selected, following the video’s coordination explanation at 4:44.'); }
   /** Capture the current state as a ◆ checkpoint. */
   function capture() { const st = latest.current; if (st) setCheckpoints(old => [...old, { model: st.model, tick: st.tick, parameters: { ...st.parameters } }].slice(-CHECKPOINT_LIMIT)); }
 
@@ -174,6 +186,8 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     camera: camera === (spinStart ? 'shell' : 'orbit') ? undefined : camera,
     split: spinStart && split !== 'section' ? split : undefined,
     tick: s.tick || undefined,
+    // Only a selection the current view shows, so the link restores what was copied (the rule startScenario applies).
+    selection: selected !== null && (selected < LATTICE_SAMPLES || (p.mode === 'spin' && view.shells && selected < LATTICE_SAMPLES + view.spinDisplay.count * SAMPLES_PER_SHELL)) ? selected : undefined,
   }));
   useUrlWriter(active, s.running || !state || linkHold, urlHash);
   /** Choose a camera preset; Shell close-up brings the shells back if they were hidden. */
@@ -251,13 +265,13 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
           })}</div>
           <div><p className="light-small">Turn directions are viewed from +{p.axis.toUpperCase()} toward the core. Reverse the spin projection in Setup to reverse every shell. Playback, step and timeline control both views together.</p>
             <p className="light-small"><strong>{view.spinDisplay.alternating ? 'Alternating complete zepton shells is an illustrative extension.' : 'Shared preference illustrates the local coordination in §3.'}</strong> Fleming’s §4 counter-rotating charge shells are the inner + and outer − ends of a dipole, rather than a stated rule for successive whole zepton shells. The shell spacing, magnified turns and capped 1/r² rate are display assumptions.</p>
-            <div className="electron-replay-actions"><button disabled={!ready} onClick={sharedRotation}>Explore the video’s shared rotation</button><a className="light-small" href="./docs/electron-source-notes.md#figure-2-linked-shell-views" target="_blank" rel="noreferrer">Fig. 2 interpretation & visualization choices ↗</a></div></div>
+            <div className="electron-replay-actions"><a className="light-small" href="./docs/electron-source-notes.md#figure-2-linked-shell-views" target="_blank" rel="noreferrer">Fig. 2 interpretation & visualization choices ↗</a></div></div>
         </div> }] : []),
       ]}/>
   );
 
   const aboutNode = (
-    <AboutSheet {...about} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={scenarioTitle} sections={[
+    <AboutSheet {...about} shortcuts={actions} views={SAVED_VIEWS} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={scenarioTitle} sections={[
       ...(MODE_OF[scenario] ? [{ id: 'scenario' as const, content: <><p>{DESCRIPTION[MODE_OF[scenario]]} {p.mode === 'electric' ? 'The electron appears during the first 0.35 τ; nearby pairs then align before distant ones. The 3 τ introduction is an illustrative transition, not a calculated propagation time. Probe numbers are final-field analytic references.' : p.mode === 'spin' ? 'Each replacement pair starts partly aligned, turns toward the electron, and collapses. Both views show the same equatorial sites and generations. Outer pairs turn more slowly under the chosen display law; no centre orbits the electron.' : 'The path marks the prescribed electron trajectory. It is not a permanent magnetic wake; the reference field changes as the electron passes.'}</p><h3>Reading the scene</h3><p>Faraday lines trace the neighboring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative. Magnetic guides follow the motion-induced rotation direction.</p></> }] : []),
       { id: 'units', content: <><h3>Source scale &amp; constants</h3><dl className="light-readouts"><div><dt>R = λC/2</dt><dd>{(RADIUS * 1e12).toFixed(6)} pm</dd></div><div><dt>c/(2πR)</dt><dd>{(C / (2 * Math.PI * RADIUS)).toExponential(3)} Hz</dd></div><div><dt>α</dt><dd>1 / {(1 / ALPHA).toFixed(6)}</dd></div><div><dt>μ along preferred axis</dt><dd>{(-p.spin * G_FACTOR / 2).toFixed(6)} μB</dd></div></dl><p className="light-small">Reference inputs, not fitted outputs. Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions.</p><a href="./docs/electron-source-notes.md" target="_blank" rel="noreferrer">Read extracted source details & model decisions ↗</a></> },
       { id: 'sources', content: <div className="electron-sources electron-about-sources">

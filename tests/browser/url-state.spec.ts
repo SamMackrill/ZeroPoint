@@ -27,3 +27,28 @@ test('the address bar follows changes, Copy link writes it at once, and invalid 
   await expect(page.getByTestId('light-tick')).toBeVisible();
   await expect(tid(page, 'notice').filter({ visible: true })).toContainText('Ignored link settings that don’t apply: wavelength, bogus');
 });
+
+test('a link can carry the selection: Light opens with its pair pinned', async ({ page }) => {
+  await page.goto('/#/light?sel=3');
+  await expect(page.getByTestId('light-tick')).toBeVisible();
+  await page.getByRole('tab', { name: 'Selection', exact: true }).filter({ visible: true }).click();
+  await expect(page.locator('.light-selection-head h3')).toHaveText('Pair 4');
+  await expect(page.getByRole('button', { name: 'Follow active', exact: true })).toBeVisible();
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/light?sel=3');
+});
+
+test('a linked selection must be visible in the linked state, or it is listed as ignored', async ({ page }) => {
+  // One visible shell holds samples 2197–2276; 2300 is on a hidden shell.
+  await page.goto('/#/electron/spin?spinDisplay.count=1&sel=2300');
+  await expect(tid(page, 'notice').filter({ visible: true })).toContainText('Ignored link settings that don’t apply: selection 2300');
+  await page.goto('/#/electron/charge-flux?sel=5');
+  await expect(tid(page, 'notice').filter({ visible: true })).toContainText('selection 5');
+});
+
+test('the address bar only carries a selection the current view shows', async ({ page }) => {
+  await page.goto('/#/electron/spin?sel=2300'); // a pair on shell 2, visible with the default two shells
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/electron/spin?sel=2300');
+  await page.getByRole('tab', { name: 'Setup', exact: true }).filter({ visible: true }).click();
+  await page.getByRole('radio', { name: '1', exact: true }).filter({ visible: true }).click(); // one visible shell hides it
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/electron/spin?spinDisplay.count=1');
+});

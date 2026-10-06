@@ -67,8 +67,11 @@ test('the static studies compare flux and rate limits, and the spin scenario lin
   await page.getByLabel('Electron property investigations', { exact: true }).screenshot({ path: 'test-results/electron-property-rate.png' });
   await scenario(page, 'spin');
   await expect(page.getByTestId('electron-tick')).toContainText('Tick 0');
-  await tid(page, 'dock-shells').click();
-  await page.getByRole('button', { name: 'Explore the video’s shared rotation', exact: true }).click();
+  // The video's shared rotation is a saved view in Help: a link that sets Shared, opens Charge motion and selects a pair.
+  await page.getByRole('button', { name: 'Help', exact: true }).filter({ visible: true }).click();
+  await tid(page, 'about-views').click();
+  await page.getByRole('link', { name: 'The video’s shared rotation (4:44)' }).click();
+  await expect(page.getByTestId('about-sheet')).toHaveCount(0);
   await inspector(page, 'Setup'); await expect(page.getByRole('radio', { name: 'Shared', exact: true })).toHaveAttribute('aria-checked', 'true');
   // The shared rotation opens the split's Charge motion pane; the picker swaps it for the equatorial section.
   const closeup = page.getByLabel('Local charge motion close-up', { exact: true });
