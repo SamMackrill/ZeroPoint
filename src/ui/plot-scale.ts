@@ -66,10 +66,14 @@ export function areaPath(x: readonly number[], values: readonly Sample[], px: (x
   return runs.filter(r => r.length > 1).map(r => `M${r[0][0]} ${baseline}${r.map(([a, b]) => `L${a} ${b}`).join('')}L${r.at(-1)![0]} ${baseline}Z`).join('');
 }
 
-/** Index of the sample whose x is nearest to `target` on an axis of `kind` (x sorted ascending); -1 for no samples. */
+/**
+ * Index of the sample whose x is nearest to `target` on an axis of `kind` (x sorted ascending); -1 when no sample can be
+ * drawn. A log axis draws only positive x, so the search starts at the first positive sample and keeps original indices.
+ */
 export function nearestIndex(x: readonly number[], target: number, kind: ScaleKind = 'linear'): number {
-  if (!x.length) return -1;
   let lo = 0, hi = x.length - 1;
+  if (kind === 'log') { while (lo <= hi && !(x[lo] > 0)) lo++; if (lo <= hi && !(target > 0)) return lo; }
+  if (lo > hi) return -1;
   while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (x[mid] <= target) lo = mid; else hi = mid; }
   // Distances are compared as plotted: on a log axis, 145 is nearer 200 than 100.
   const at = (v: number) => (kind === 'log' ? Math.log10(v) : v);

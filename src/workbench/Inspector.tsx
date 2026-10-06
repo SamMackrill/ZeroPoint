@@ -116,6 +116,8 @@ export function SetupPanel<P extends object>({ definition, scenario, params, onL
 
   /** Ctrl ⏎ applies and Esc reverts while focus is inside the panel. */
   const onKeyDown = (event: KeyboardEvent) => {
+    // An input method editor is composing: its Enter commits the composition and its Escape cancels it, not the edits.
+    if (event.nativeEvent.isComposing || event.keyCode === 229) return;
     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { if (pendingOf(draftRef.current).length) { event.preventDefault(); apply(); } }
     else if (event.key === 'Escape' && !event.defaultPrevented && pendingOf(draftRef.current).length) revert();
   };
