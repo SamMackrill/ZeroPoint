@@ -243,7 +243,8 @@ export function parseCasimirFile(text: string): CasimirState {
     ...s,
     particles: list(s.particles, 'Zeptons', 5_000, v => {
       const z = shaped<Zepton>(v, 'Zepton', ZEPTON);
-      if (!count(z.id) || !count(z.site) || !(z.lifetime > 0) || z.age < 0) throw new Error('Invalid Zepton: id, site, age or lifetime.');
+      // A gap birth has no lattice site (-1).
+      if (!count(z.id) || !(Number.isInteger(z.site) && z.site >= -1) || !(z.lifetime > 0) || z.age < 0) throw new Error('Invalid Zepton: id, site, age or lifetime.');
       return z;
     }),
     events: list(s.events, 'interactions', 5_000, v => shaped<Interaction>(v, 'interaction', { id: 'number', time: 'number', text: 'string' })),

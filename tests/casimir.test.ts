@@ -68,6 +68,12 @@ describe('Casimir files', () => {
     advance(a, 2); advance(b, 2);
     expect(b.state()).toEqual(a.state());
   });
+  it('round-trips a run with gap births, which have no lattice site', () => {
+    const a = new CasimirModel('electron-electron');
+    advance(a, 8);
+    expect(a.particles.some(p => p.site === -1)).toBe(true);
+    expect(CasimirModel.restore(parseCasimirFile(file(a.state()))).state()).toEqual(a.state());
+  });
   it('keeps the restored state independent of the file it came from', () => {
     const state = new CasimirModel().state(), b = CasimirModel.restore(state);
     b.step(); state.particles[0].x = 99;
@@ -88,5 +94,6 @@ describe('Casimir files', () => {
     expect(() => parseCasimirFile(file({ ...good, left: 3, right: -3 }))).toThrow('charge positions');
     expect(() => parseCasimirFile(file({ ...good, particles: [{ ...good.particles[0], lifetime: 0 }] }))).toThrow('lifetime');
     expect(() => parseCasimirFile(file({ ...good, particles: [{ ...good.particles[0], site: 2.5 }] }))).toThrow('site');
+    expect(() => parseCasimirFile(file({ ...good, particles: [{ ...good.particles[0], site: -2 }] }))).toThrow('site');
   });
 });
