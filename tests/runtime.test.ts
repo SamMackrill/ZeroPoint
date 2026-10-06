@@ -93,6 +93,18 @@ describe('run intent', () => {
     vi.advanceTimersByTime(1100); expect(rt.status().running).toBe(false); // the worker refused (e.g. the sequence had finished)
     vi.useRealTimers();
   });
+  it('tells subscribers when an unconfirmed intent lapses, so the status bar re-reads it', () => {
+    vi.useFakeTimers();
+    const ch = channel<unknown, LightSnapshot>({ model: 'light', tick: 0, parameters: {}, running: false, speed: 1 } as unknown as LightSnapshot), rt = lightRuntime(ch as never);
+    const listener = vi.fn(() => rt.status().running);
+    rt.subscribe(listener); rt.run(true);
+    vi.advanceTimersByTime(900); expect(listener).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(200);
+    expect(listener).toHaveBeenCalledTimes(1); expect(listener).toHaveLastReturnedWith(false);
+    rt.run(true); rt.step(); vi.advanceTimersByTime(2000); // a superseded intent has nothing to announce
+    expect(listener).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
 });
 
 describe('tick runtimes', () => {
