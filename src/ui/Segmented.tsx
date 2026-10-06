@@ -19,15 +19,17 @@ export interface SegmentedProps<T extends string> {
   onChange(value: T): void;
   disabled?: boolean;
   testId?: string;
+  /** Extra classes on the root, beside `segmented`. */
+  className?: string;
 }
 
 /**
  * An exclusive choice with every option visible (docs/ui-redesign-plan.html §07), replacing a native select for short
  * option sets. Arrow keys move between options. One option is always selected: clicking the current one keeps it.
  */
-export function Segmented<T extends string>({ label, options, value, onChange, disabled, testId }: SegmentedProps<T>) {
+export function Segmented<T extends string>({ label, options, value, onChange, disabled, testId, className }: SegmentedProps<T>) {
   return (
-    <ToggleGroup.Root type="single" className="segmented" aria-label={label} value={value} disabled={disabled} data-testid={testId}
+    <ToggleGroup.Root type="single" className={className ? `segmented ${className}` : 'segmented'} aria-label={label} value={value} disabled={disabled} data-testid={testId}
       onValueChange={next => { if (next) onChange(next as T); }}>
       {options.map(option => (
         <ToggleGroup.Item key={option.value} value={option.value} className="segmented-item" disabled={option.disabled}

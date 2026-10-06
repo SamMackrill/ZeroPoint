@@ -44,10 +44,17 @@ test('below 851 px the camera presets collapse into a compact select that still 
   await expect(medium.getByTestId('camera')).toBeHidden();
   const select = medium.getByRole('combobox', { name: 'Camera' });
   await expect(select).toHaveValue('perspective');
+  await select.click({ trial: true }); // it takes the pointer, though the top bar lets clicks through to the scene
   await select.selectOption('top');
   await expect.poll(() => page.evaluate(() => location.hash)).toContain('cam=top');
   // Wider again, the segmented control shows the same preset.
   await page.setViewportSize({ width: 1280, height: 900 });
   await expect(medium.getByRole('radio', { name: 'Top', exact: true })).toHaveAttribute('aria-checked', 'true');
   await expect(select).toBeHidden();
+  // Light's top bar has its own rules; the select still shows, takes the pointer and switches the camera.
+  await page.setViewportSize({ width: 800, height: 900 });
+  await tid(page, 'nav-open').filter({ visible: true }).click(); await tid(page, 'lab-light').filter({ visible: true }).click();
+  const light = page.locator('.light-workbench-root').getByRole('combobox', { name: 'Camera' });
+  await light.click({ trial: true }); await light.selectOption({ index: 1 });
+  await expect.poll(() => page.evaluate(() => location.hash)).toContain('cam=');
 });
