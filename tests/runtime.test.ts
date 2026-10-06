@@ -79,7 +79,7 @@ describe('run intent', () => {
     ch.push({ ...medium, running: true }); // the intent is settled: later reports read through
     expect(rt.status().running).toBe(true);
   });
-  it('counts a Run confirmation that a later report overtook, as at a bounded timeline’s end', () => {
+  it('drops a pending Run at a bounded timeline’s end, when the final report overtook the Running one', () => {
     const near = { model: 'light', tick: LIGHT_END_TICK - 1, parameters: {}, running: false, speed: 1 } as unknown as LightSnapshot;
     const ch = channel<unknown, LightSnapshot>(near), rt = lightRuntime(ch as never);
     rt.run(true);

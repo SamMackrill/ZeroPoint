@@ -104,21 +104,19 @@ export interface MediumChannel extends WorkerChannel<Command, Snapshot> {
 /**
  * The latest Run or Pause sent to a worker. status() reports it until the worker confirms it (or 1 s passes, in case it
  * refused), so a second press straight after the first reads the intended state, not the worker's last report, and
- * sends Pause rather than Run again. Every state the worker reports counts, not just the latest: near Light's or
- * Electron's end the worker can report Running and then its final Paused before status() is read again. Only a report
- * that arrives after the command confirms it, so the paused state on hand when Pause follows Run does not. Any other
- * command (step, seek, reset, restore) supersedes it.
+ * sends Pause rather than Run again. Only a state the worker sent after the command confirms it: the state on hand when
+ * Pause is pressed may already read paused while the worker has yet to act on the Run before it. Any other command
+ * (step, seek, reset, restore) supersedes it.
  */
-function runIntent() {
-  let pending: { on: boolean; at: number } | null = null;
+function runIntent(latest: () => { running: boolean } | null) {
+  let pending: { on: boolean; at: number; seen: unknown } | null = null;
   return {
-    sent(on: boolean) { pending = { on, at: performance.now() }; },
+    sent(on: boolean) { pending = { on, at: performance.now(), seen: latest() }; },
     clear() { pending = null; },
-    /** A state the worker has just reported. */
-    observe(state: { running: boolean }) { if (pending && state.running === pending.on) pending = null; },
-    running(reported: boolean | undefined) {
-      if (pending && performance.now() - pending.at > 1000) pending = null;
-      return pending ? pending.on : reported ?? false;
+    running() {
+      const state = latest();
+      if (pending && ((state !== pending.seen && state?.running === pending.on) || performance.now() - pending.at > 1000)) pending = null;
+      return pending ? pending.on : state?.running ?? false;
     },
   };
 }
@@ -130,7 +128,7 @@ function runIntent() {
 export function mediumRuntime(channel: MediumChannel): Runtime<Snapshot, Partial<Parameters>, MediumConfig, Checkpoint> {
   const listeners = fanOut(channel), now = () => channel.latest.current;
   const require = (command: string) => { const state = now(); if (!state) throw new Error(`Cannot ${command} before the Medium worker has started.`); return state; };
-  const intent = runIntent(); listeners.subscribe(intent.observe);
+  const intent = runIntent(now);
   return {
     capabilities: { run: true, step: true, jump: true, nextEvent: false, seek: false, reset: true, speed: true, live: true, configure: true, checkpoint: true, restore: true },
     run: on => { intent.sent(on); channel.send({ type: 'running', value: on }); },
@@ -146,7 +144,7 @@ export function mediumRuntime(channel: MediumChannel): Runtime<Snapshot, Partial
     restore: checkpoint => { intent.clear(); channel.send({ type: 'restore', checkpoint }); },
     subscribe: listeners.subscribe,
     latest: now,
-    status: () => { const s = now(); return { running: intent.running(s?.running), tick: s?.diagnostics.tick ?? 0, time: s?.diagnostics.time ?? 0, speed: s?.speed ?? 1, finished: false }; },
+    status: () => { const s = now(); return { running: intent.running(), tick: s?.diagnostics.tick ?? 0, time: s?.diagnostics.time ?? 0, speed: s?.speed ?? 1, finished: false }; },
     dispose: listeners.dispose,
   };
 }
@@ -164,7 +162,7 @@ interface TickOptions<S> {
 /** A bounded, tick-based worker runtime; checkpoints are the state without playback fields. */
 function tickRuntime<Command extends { type: string }, S extends { tick: number; running: boolean; speed: number }, P, C>(channel: WorkerChannel<Command, S>, options: TickOptions<S>, toCheckpoint: (state: S) => C) {
   const listeners = fanOut(channel), now = () => channel.latest.current;
-  const intent = runIntent(); listeners.subscribe(intent.observe);
+  const intent = runIntent(now);
   // Every command but Run and speed supersedes a pending Run or Pause (they pause, or replace the run).
   const send = (command: unknown) => { if (!['run', 'speed'].includes((command as { type: string }).type)) intent.clear(); channel.send(command as Command); };
   const tick = () => now()?.tick ?? 0;
@@ -190,7 +188,13 @@ function tickRuntime<Command extends { type: string }, S extends { tick: number;
     restore: state => send({ type: 'restore', state }),
     subscribe: listeners.subscribe,
     latest: now,
-    status: () => { const s = now(); return { running: intent.running(s?.running), tick: tick(), time: tick() * options.dt, speed: s?.speed ?? 1, finished: tick() >= options.end }; },
+    status: () => {
+      // At the end the worker has stopped, whatever was pending: its Running report may have been overtaken by its final
+      // Paused one before status() was read, so the intent would otherwise never see a confirmation.
+      const s = now(), at = tick(), finished = at >= options.end;
+      if (finished) intent.clear();
+      return { running: intent.running(), tick: at, time: at * options.dt, speed: s?.speed ?? 1, finished };
+    },
     dispose: listeners.dispose,
   };
   return runtime;
