@@ -26,7 +26,7 @@ import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameter
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView } from '../../workbench/SplitView';
 import { CompareTab, useCompare, withDeltas } from '../../workbench/compare';
-import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
+import { AboutSheet, helpActions, ORBIT_GESTURES, useAbout } from '../../workbench/AboutSheet';
 
 /** Render a normalized electric-projection trace with the shared Plot, with an optional probe marker and B dashed. */
 function WavePlot({ x, values, valuesB, label, unit, domain, marker }: { x: number[]; values: number[]; valuesB?: number[]; label: string; unit: 'L' | 'τ'; domain: [number, number]; marker?: number }) {
@@ -236,7 +236,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
     <svg className="light-pair-glyph" viewBox="0 0 200 135" role="img" aria-label="Selected pair in its rotation plane; fixed midpoint and opposite charge lobes"><circle cx="100" cy="66" r="59" fill="none" stroke={palette.line2} strokeDasharray="3 5"/><path d="M93 66H107M100 59V73" stroke={palette.dataShell3}/><line x1={pairX} y1={pairY} x2={200 - pairX} y2={132 - pairY} stroke={palette.text4}/>{inspected.active && <><circle cx={pairX} cy={pairY} r="10" fill={palette.danger}/><text x={pairX} y={pairY + 4} textAnchor="middle" fill={palette.bg2} fontSize="14">+</text><circle cx={200 - pairX} cy={132 - pairY} r="10" fill={palette.dataNeg}/><text x={200 - pairX} y={136 - pairY} textAnchor="middle" fill={palette.bg2} fontSize="14">−</text></>}<text x="100" y="130" textAnchor="middle" fill={palette.accent2} fontSize="9">Rotation plane · geometry exaggerated</text></svg>
   );
   const aboutNode = (
-    <AboutSheet {...about} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} sections={[
+    <AboutSheet {...about} shortcuts={actions} pointer={ORBIT_GESTURES} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} sections={[
       { id: 'scenario', content: <><p>Successive dipoles make half-turns over half-wavelength intervals. The surrounding response and finite pulse shape are visual conventions. Follow an energy wave through successive, locally rotating pairs.</p><p>{`Paused stepping is available. At 1×, one second of playback represents ${(TIME_SECONDS * 1e15).toFixed(3)} fs.`}</p><p>Changes start a new paused sequence.</p></> },
       { id: 'sources', content: <div className="about-links"><a href="./docs/light-model.md" target="_blank" rel="noreferrer">Model equations & limitations ↗</a><a href="./docs/papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf#page=4" target="_blank" rel="noreferrer">Fleming’s paper · self-induction, p. 4 ↗</a></div> },
     ]}/>
