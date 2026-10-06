@@ -55,7 +55,7 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
     { key: 'radius', label: 'Half-Compton radius', group: 'Guides', scenarios: LIVE },
     { key: 'cutaway', label: 'Central slab cutaway', group: 'Clipping', scenarios: LIVE },
   ],
-  panes: [{ id: 'section', scenarios: ['spin'] }, { id: 'motion', scenarios: ['spin'] }],
+  panes: [{ id: 'section', scenarios: ['spin'] }, { id: 'motion', scenarios: LIVE }],
   cameras: [
     { id: 'front', label: 'Front', scenarios: LIVE },
     { id: 'orbit', label: 'Orbit', scenarios: LIVE },

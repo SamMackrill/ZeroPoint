@@ -85,6 +85,8 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const fileInput = useRef<HTMLInputElement>(null);
   // Spin's split state is the saved Linked 2D section flag (2-up by default); this picks which linked view it shows.
   const [pane, setPane] = useState<'section' | 'motion'>('section');
+  // Stationary and Moving have one optional pane, the selected pair's charge motion, and open 1-up (plan §07).
+  const [motionSplit, setMotionSplit] = useState(false);
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('probe'), [dockCollapsed, setDockCollapsed] = useState(dockStartsCollapsed);
   const [host, setHost] = useState<HTMLDivElement | null>(null), renderer = useRef<ElectronRenderer | null>(null);
   const viewRef = useRef(view), selectedRef = useRef(selected), cameraRef = useRef(camera); viewRef.current = view; selectedRef.current = selected; cameraRef.current = camera;
@@ -137,7 +139,8 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     runtime.configure(target); setSelected(null);
     setView(v => withPaths({ ...v, intrinsic: false, faraday: mode !== 'spin', radius: false, cutaway: false, shells: mode === 'spin' ? true : v.shells }, url?.view ?? {}));
     setCamera((url?.camera as Camera | undefined) ?? (mode === 'spin' ? 'shell' : 'orbit'));
-    if (url?.split) { if (url.split === 'motion' || url.split === 'section') setPane(url.split); setView(v => withPaths(v, { 'spinDisplay.section': url.split !== 'off' })); }
+    if (mode !== 'spin') setMotionSplit(url?.split === 'motion');
+    else if (url?.split) { if (url.split === 'motion' || url.split === 'section') setPane(url.split); setView(v => withPaths(v, { 'spinDisplay.section': url.split !== 'off' })); }
     if (url) setLink({ params: target, tick: url.tick });
     if (selectable) { setSelected(url!.selection!); setTab('selection'); }
     setNotice(ignored || (url ? 'Opened from a link.' : 'View changed. The sequence is paused at its start.'));
@@ -198,7 +201,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const spinStart = MODE_OF[scenario] === 'spin', split = splitValue(view.spinDisplay.section, pane);
   const urlHash = encodeUrl(routeFor(electronDefinition, scenario, p, view, study || !MODE_OF[scenario] ? {} : {
     camera: camera === (spinStart ? 'shell' : 'orbit') ? undefined : camera,
-    split: spinStart && split !== 'section' ? split : undefined,
+    split: spinStart ? (split !== 'section' ? split : undefined) : motionSplit ? 'motion' : undefined,
     tick: s.tick || undefined,
     // Only a selection the current view shows, so the link restores what was copied (the rule startScenario applies).
     selection: selected !== null && (selected < LATTICE_SAMPLES || (p.mode === 'spin' && view.shells && selected < LATTICE_SAMPLES + view.spinDisplay.count * SAMPLES_PER_SHELL)) ? selected : undefined,
@@ -213,7 +216,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     ...(study ? [] : cameraActions(electronDefinition.cameras.filter(c => appliesTo(c, scenario)), chooseCamera)),
     ...(study ? [] : [{ id: 'view.layers', label: 'Open View › Layers', group: 'View' as const, keys: ['l'], run: () => setTab('view') }]),
     ...fileShortcuts(save, fileInput, !ready),
-    ...(study ? [] : [SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus]), APPLY_SHORTCUT, ...(p.mode === 'spin' && !study ? [SPLIT_SHORTCUT] : []), ...PANEL_SHORTCUTS,
+    ...(study ? [] : [SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus]), APPLY_SHORTCUT, ...(!study ? [SPLIT_SHORTCUT] : []), ...PANEL_SHORTCUTS,
     copyLinkAction(urlHash, setNotice),
     ...layerActions(electronDefinition, scenario, view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
     ...parameterActions(electronDefinition, scenario, () => setTab('setup')),
@@ -247,9 +250,12 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const viewportNode = study
     ? <div className="electron-study"><ElectronProperties study={study}/></div>
     : <div className="electron-single">{scene}</div>;
-  // Spin links the equatorial section and the selected pair's charge motion. Stationary and Moving have no local turns
-  // for the charge-motion close-up to show, so they stay 1-up.
-  const panes: SplitPane[] = p.mode === 'spin' && view.shells && !study ? [
+  // Spin links the equatorial section and the selected shell pair's charge motion. Stationary and Moving offer the
+  // selected lattice pair's charge motion: its alignment turn, or its turn as the electron passes.
+  const latticeIndex = selected !== null && selected < LATTICE_SAMPLES ? selected : null;
+  const panes: SplitPane[] = study ? [] : p.mode !== 'spin' ? [
+    { id: 'motion', label: 'Charge motion', content: latticeIndex === null ? <p className="split-empty">Select a zepton (click the field) to see its charge motion.</p> : <ChargeMotion state={s} index={latticeIndex} display={view.spinDisplay}/> },
+  ] : view.shells ? [
     { id: 'section', label: 'Equatorial section', content: <SpinSection state={s} view={view} selected={selected} onPick={id => { setSelected(id); setTab('selection'); }}/> },
     { id: 'motion', label: 'Charge motion', content: shellIndex === null ? <p className="split-empty">Select a pair on a shell (click the field or the section) to see its charge motion.</p> : <ChargeMotion state={s} index={shellIndex} display={view.spinDisplay}/> },
   ] : [];
@@ -336,7 +342,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
 
   return (
     <div className={`electron-workbench-root ${p.mode === 'spin' ? 'electron-spin-view' : ''}`} style={{ display: active ? undefined : 'none' }}>
-      <Shell id="electron" header={headerNode} rail={rail} viewport={<SplitView active={active && !study} primary={viewportNode} panes={panes} split={view.spinDisplay.section} onSplit={setSplit} pane={pane} onPane={id => setPane(id as 'section' | 'motion')}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+      <Shell id="electron" header={headerNode} rail={rail} viewport={<SplitView active={active && !study} primary={viewportNode} panes={panes} split={p.mode === 'spin' ? view.spinDisplay.section : motionSplit} onSplit={p.mode === 'spin' ? setSplit : setMotionSplit} pane={p.mode === 'spin' ? pane : 'motion'} onPane={id => setPane(id as 'section' | 'motion')}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={s.running} telemetry={[ELECTRON_MODEL]} items={[...(pB ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), <span data-testid="electron-tick">Tick {s.tick} · {(time * TAU).toExponential(2)} s</span>, 'τ = R/c', 'Fixed zepton centres · local worker · source-linked model']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
