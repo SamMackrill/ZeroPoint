@@ -98,7 +98,9 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   /** Pin A's exact current state as B (a checkpoint, so identical settings continue identically). */
   const pinCurrent = async () => { try { compare.pin(await runtime.checkpoint()); } catch (error) { setNotice(String(error)); } };
   /** Load a saved Medium file as B. */
-  const loadB = async (file: File) => { try { compare.pin(parseExperiment(await file.text()).checkpoint); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } };
+  const loadB = async (file: File) => { try { if (file.size > 8 * 1024 * 1024) throw new Error('Experiment files must be smaller than 8 MB.'); compare.pin(parseExperiment(await file.text()).checkpoint); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } };
+  // Δ compares like with like: B's diagnostics at A's displayed tick (a reply for an older tick is not used).
+  const bNow = compare.b && d ? compare.history.current.get(d.tick) : undefined;
   /** The readout strip for one set of diagnostics. */
   const stripFor = (x: Diagnostics | undefined) => [
     { label: 'Active', value: fmt(x?.active ?? 0) },
@@ -216,7 +218,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
 
   const dockNode = (
     <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={dockTab} onTab={setDockTab}
-      readouts={withDeltas(stripFor(d), compare.b?.diagnostics ? stripFor(compare.b.diagnostics) : null)}
+      readouts={withDeltas(stripFor(d), bNow ? stripFor(bNow) : null)}
       tabs={[
         { id: 'plots', label: 'Plots', content: <div className="medium-plots"><div><h4>Active dipoles</h4><DiagnosticsPlot rows={rows} mode="population" b={compare.b ? compare.history.current : undefined}/></div><div><h4>Field energy · E₀</h4><DiagnosticsPlot rows={rows} mode="energy" b={compare.b ? compare.history.current : undefined}/></div></div> },
         { id: 'compare', label: 'Compare', badge: compare.b ? 'B' : undefined, content: <CompareTab definition={mediumDefinition} scenario={scenario} a={params}

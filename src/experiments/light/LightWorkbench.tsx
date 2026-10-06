@@ -207,7 +207,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
         </div> },
         { id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={lightDefinition} scenario="induction" a={p} b={pB}
           onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}
-          onLoadB={async file => { try { compare.pin(parseLightFile(await file.text()).state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> },
+          onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Light files must be smaller than 100 KB.'); compare.pin(parseLightFile(await file.text()).state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> },
         { id: 'ledger', label: 'Ledger', content: <div className="light-ledger">
           <Readouts items={[
             { label: 'Central pair · hf/2', value: d.pairEnergy.toFixed(4), unit: 'eV' },
