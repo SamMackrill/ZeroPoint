@@ -94,13 +94,15 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   const d = state?.diagnostics, ready = !!state && !sim.error, running = state?.running ?? false;
   // A/B compare (plan §11): B is a headless second simulation stepped to A's tick.
   const compare = useMediumCompare(), phone = usePhone(); // phones: no Compare (plan §13)
-  useEffect(() => { if (compare.b && d) compare.advance(d.tick); }, [compare.b?.pinned, d?.tick]); // eslint-disable-line react-hooks/exhaustive-deps
+  // On a phone B keeps its pin but neither steps nor shows; it catches up when the window widens again.
+  const shownB = phone ? null : compare.b;
+  useEffect(() => { if (shownB && d) compare.advance(d.tick); }, [shownB?.pinned, d?.tick]); // eslint-disable-line react-hooks/exhaustive-deps
   /** Pin A's exact current state as B (a checkpoint, so identical settings continue identically). */
   const pinCurrent = async () => { try { compare.pin(await runtime.checkpoint()); } catch (error) { setNotice(String(error)); } };
   /** Load a saved Medium file as B. */
   const loadB = async (file: File) => { try { if (file.size > 8 * 1024 * 1024) throw new Error('Experiment files must be smaller than 8 MB.'); compare.pin(parseExperiment(await file.text()).checkpoint); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } };
   // Δ compares like with like: B's diagnostics at A's displayed tick (a reply for an older tick is not used).
-  const bNow = compare.b && d ? compare.history.current.get(d.tick) : undefined;
+  const bNow = shownB && d ? compare.history.current.get(d.tick) : undefined;
   /** The readout strip for one set of diagnostics. */
   const stripFor = (x: Diagnostics | undefined) => [
     { label: 'Active', value: fmt(x?.active ?? 0) },
@@ -220,7 +222,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
     <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={dockTab} onTab={setDockTab}
       readouts={withDeltas(stripFor(d), bNow ? stripFor(bNow) : null)}
       tabs={[
-        { id: 'plots', label: 'Plots', content: <div className="medium-plots"><div><h4>Active dipoles</h4><DiagnosticsPlot rows={rows} mode="population" b={compare.b ? compare.history.current : undefined}/></div><div><h4>Field energy · E₀</h4><DiagnosticsPlot rows={rows} mode="energy" b={compare.b ? compare.history.current : undefined}/></div></div> },
+        { id: 'plots', label: 'Plots', content: <div className="medium-plots"><div><h4>Active dipoles</h4><DiagnosticsPlot rows={rows} mode="population" b={shownB ? compare.history.current : undefined}/></div><div><h4>Field energy · E₀</h4><DiagnosticsPlot rows={rows} mode="energy" b={shownB ? compare.history.current : undefined}/></div></div> },
         ...(phone ? [] : [{ id: 'compare', label: 'Compare', badge: compare.b ? 'B' : undefined, content: <CompareTab definition={mediumDefinition} scenario={scenario} a={params}
           b={compare.b ? { ...compare.b.pinned.parameters, seed: compare.b.pinned.seed } : null} onPin={pinCurrent} onLoadB={loadB} onClear={compare.clear}
           onCopyToA={() => { if (compare.b) restart({ ...compare.b.pinned.parameters }, compare.b.pinned.seed, 'custom', 'Copied B’s parameters to A. Experiment reset to tick 0.'); }}
@@ -306,7 +308,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   return (
     <div className="medium-workbench" style={{ display: active ? undefined : 'none' }}>
       <Shell id="medium" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'dipole', label: 'Dipole close-up', content: <DipoleCloseUp picked={picked}/> }]} split={split} onSplit={setSplit} pane="dipole" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
-        status={<StatusBar running={running} items={[...(compare.b ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), sim.error ? 'Simulation error' : ready ? 'Simulation ready' : 'Starting worker', `Seed ${state?.seed ?? '—'}`, <span data-testid="tick">Tick {d?.tick ?? 0}</span>]} telemetry={[MODEL_VERSION, `Parameter revision ${d?.parameterVersion ?? 0}`, ...(compare.b ? [`B ${compare.b.stepMs.toFixed(3)} ms/step`] : [])]}/>}/>
+        status={<StatusBar running={running} items={[...(shownB ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), sim.error ? 'Simulation error' : ready ? 'Simulation ready' : 'Starting worker', `Seed ${state?.seed ?? '—'}`, <span data-testid="tick">Tick {d?.tick ?? 0}</span>]} telemetry={[MODEL_VERSION, `Parameter revision ${d?.parameterVersion ?? 0}`, ...(compare.b ? [`B ${compare.b.stepMs.toFixed(3)} ms/step`] : [])]}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
     </div>

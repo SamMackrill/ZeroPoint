@@ -176,7 +176,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   /** The fixed probe's reference components over elapsed time, for one configuration at A's tick. */
   const tracesFor = (q: ElectronParameters) => Array.from({ length: 161 }, (_, i) => { const f = referenceFields({ ...s, parameters: q, tick: Math.round(s.tick * i / 160) }, probePosition(q)); return f.valid ? [f.electric[1], f.motion[2], q.mode === 'electric' ? 0 : f.intrinsic[2]] : null; });
   // B: the same analytic references with B's parameters, in lock-step with A's tick (no second worker needed).
-  const pB = compare.b && compare.b.mode === p.mode ? compare.b : null, sB = pB && { ...s, parameters: pB };
+  const pB = !phone && compare.b && compare.b.mode === p.mode ? compare.b : null, sB = pB && { ...s, parameters: pB };
   const traces = tracesFor(p), tracesB = pB ? tracesFor(pB) : null;
   const max = Math.max(.01, ...traces.flatMap(v => v?.map(Math.abs) ?? []), ...(tracesB ?? []).flatMap(v => v?.map(Math.abs) ?? []));
   /** The readout strip for one configuration. */

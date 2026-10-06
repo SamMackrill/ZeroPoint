@@ -149,7 +149,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   const spatialX = Array.from({ length: 161 }, (_, i) => p.offset - 6 + i * 12 / 160), historyX = Array.from({ length: 161 }, (_, i) => d.time * i / 160);
   const spatial = spatialX.map(x => waveAt(p, d.time, x).electric), history = historyX.map(t => waveAt(p, t, p.probe).electric);
   // B: the same model with B's parameters at A's tick (Light is analytic, so B needs no worker).
-  const pB = compare.b, dB = pB && lightReadout({ ...s, parameters: pB });
+  const pB = phone ? null : compare.b, dB = pB && lightReadout({ ...s, parameters: pB });
   const spatialB = pB && dB ? spatialX.map(x => waveAt(pB, dB.time, x).electric) : undefined, historyB = pB ? historyX.map(t => waveAt(pB, t, pB.probe).electric) : undefined;
   /** The readout strip for one configuration. */
   const stripFor = (r: ReturnType<typeof lightReadout>, q: LightParameters) => [
