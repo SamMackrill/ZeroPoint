@@ -67,6 +67,18 @@ describe('run intent', () => {
     rt.run(true); rt.step(); // stepping supersedes the pending Run (the worker pauses to step)
     expect(rt.status().running).toBe(false);
   });
+  it('keeps a pending Pause through the worker’s late reply to the Run before it', () => {
+    const ch = Object.assign(channel<{ type: string; value?: boolean }, Snapshot>(medium), { checkpoint: vi.fn() });
+    const rt = mediumRuntime(ch as never);
+    rt.run(true); rt.run(false); // the state on hand already reads paused, but it predates both presses
+    expect(rt.status().running).toBe(false);
+    ch.push({ ...medium, running: true }); // the worker acts on the Run
+    expect(rt.status().running).toBe(false); // still Pause, so the next press sends Run rather than Pause again
+    ch.push({ ...medium, running: false }); // then on the Pause
+    expect(rt.status().running).toBe(false);
+    ch.push({ ...medium, running: true }); // the intent is settled: later reports read through
+    expect(rt.status().running).toBe(true);
+  });
   it('gives up on an intent the worker never confirms after a second', () => {
     vi.useFakeTimers();
     const ch = channel<unknown, LightSnapshot>({ model: 'light', tick: 0, parameters: {}, running: false, speed: 1 } as unknown as LightSnapshot), rt = lightRuntime(ch as never);
