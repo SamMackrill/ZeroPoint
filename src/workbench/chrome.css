@@ -53,6 +53,37 @@
   color: var(--text);
 }
 
+/* On narrow layouts the scenario name is a button that opens the experiment library. */
+.workbench-scenario-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  min-height: 36px;
+  padding: 0 6px;
+  margin: 0 -6px;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.workbench-scenario-picker [aria-current=page] {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workbench-scenario-picker:hover {
+  background: var(--bg-3);
+}
+
+.workbench-scenario-picker:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
 .workbench-breadcrumb em {
   color: var(--warn);
   font-style: normal;
