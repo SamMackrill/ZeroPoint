@@ -27,6 +27,9 @@ describe('global settings', () => {
     act(() => { updateSettings({ telemetry: true }); });
     expect(getSettings().telemetry).toBe(true);
     expect(screen.getByText('model/1')).toBeTruthy();
+    // Every lab's telemetry starts with the shared frame rate and WebGL (jsdom has none).
+    expect(screen.getByText('0 fps')).toBeTruthy();
+    expect(screen.getByText('WebGL unavailable')).toBeTruthy();
     write.mockRestore(); warn.mockRestore();
   });
 
