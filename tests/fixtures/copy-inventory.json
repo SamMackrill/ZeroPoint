@@ -265,6 +265,10 @@
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Could not pin as B: that checkpoint is from another scenario."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Fixed zepton centres · local worker · source-linked model"
   },
   {

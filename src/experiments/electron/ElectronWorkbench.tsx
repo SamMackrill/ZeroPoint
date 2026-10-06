@@ -330,7 +330,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     <TimelineBar runtime={runtime} timeline={timeline} speeds={SPEEDS}
       markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `electron tick ${c.tick}` }))}
       onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) runtime.restore(c); }}
-      onMarkerPin={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) { compare.pin(c.parameters); setNotice('Pinned the checkpoint’s parameters as B.'); } }} onCapture={capture} runDisabled={contextLost}/>
+      onMarkerPin={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (!c) return; if (c.parameters.mode !== p.mode) { setNotice('Could not pin as B: that checkpoint is from another scenario.'); return; } compare.pin(c.parameters); setNotice('Pinned the checkpoint’s parameters as B.'); }} onCapture={capture} runDisabled={contextLost}/>
   );
 
   return (
