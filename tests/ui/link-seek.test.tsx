@@ -31,3 +31,17 @@ describe('useLinkSeek', () => {
     expect(done).toHaveBeenCalled();
   });
 });
+
+describe('useUrlWriter', () => {
+  afterEach(() => { vi.useRealTimers(); });
+  it('does not overwrite a link that arrives while its write is pending', async () => {
+    vi.useFakeTimers();
+    const { useUrlWriter } = await import('../../src/workbench/urlState');
+    function Writer({ hash }: { hash: string }) { useUrlWriter(true, false, hash); return null; }
+    history.replaceState(null, '', '#/medium/balanced');
+    render(<Writer hash="#/medium/balanced?separation=0.8"/>);
+    history.replaceState(null, '', '#/light?sel=3'); window.dispatchEvent(new HashChangeEvent('hashchange')); // a link arrives
+    act(() => { vi.advanceTimersByTime(400); });
+    expect(location.hash).toBe('#/light?sel=3');
+  });
+});

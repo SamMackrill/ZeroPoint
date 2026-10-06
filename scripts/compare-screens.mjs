@@ -115,7 +115,25 @@ export const VIEW_SCREENS = [
   { name: 'electron-shared-rotation', title: 'Electron · after following the saved view: Shared, Charge motion, pair 2231 selected', hash: '#/electron/spin?spinDisplay.alternating=0&split=motion&sel=2231' },
   { name: 'light-pinned', title: 'Light · #/light?sel=3 opens with pair 4 pinned', hash: '#/light?sel=3', prepare: openSelection },
 ];
-const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS };
+/**
+ * A/B compare (`--set compare`): pin B, change A, then show the Compare tab or the plots. Before Compare existed, the
+ * same steps leave the dock on its default tab.
+ */
+const compareLight = tab => async page => {
+  const visible = id => page.getByTestId(id).filter({ visible: true });
+  await visible('transport-next').click();
+  if (!(await visible('dock-compare').count())) return;
+  await visible('dock-compare').click(); await visible('compare-pin').click();
+  await page.getByRole('tab', { name: 'Setup', exact: true }).filter({ visible: true }).click();
+  const field = page.getByRole('textbox', { name: /^Wavelength/ }).filter({ visible: true }); await field.fill('750'); await field.press('Enter');
+  await visible('params-apply').click(); await visible('transport-next').click();
+  await visible(`dock-${tab}`).click();
+};
+export const COMPARE_SCREENS = [
+  { name: 'light-compare', title: 'Light · Dock › Compare: B pinned at 500 nm, A at 750 nm, Δ in the readout strip', lab: 'lab-light', prepare: compareLight('compare') },
+  { name: 'light-compare-plots', title: 'Light · Dock › Plots: B drawn dashed beside A', lab: 'lab-light', prepare: compareLight('plots') },
+];
+const SETS = { screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };

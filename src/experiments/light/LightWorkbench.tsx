@@ -24,11 +24,12 @@ import { copyLinkAction, encodeUrl, routeFor, useLinkSeek, useUrlWriter, type Pe
 import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView } from '../../workbench/SplitView';
+import { CompareTab, useCompare, withDeltas } from '../../workbench/compare';
 import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
 
-/** Render a normalized electric-projection trace with the shared Plot, with an optional probe marker. */
-function WavePlot({ x, values, label, unit, domain, marker }: { x: number[]; values: number[]; label: string; unit: 'L' | 'τ'; domain: [number, number]; marker?: number }) {
-  return <Plot label={label} x={x} series={[{ key: 'e', label: 'E projection', color: palette.dataE, values }]} xUnit={unit} xDomain={domain}
+/** Render a normalized electric-projection trace with the shared Plot, with an optional probe marker and B dashed. */
+function WavePlot({ x, values, valuesB, label, unit, domain, marker }: { x: number[]; values: number[]; valuesB?: number[]; label: string; unit: 'L' | 'τ'; domain: [number, number]; marker?: number }) {
+  return <Plot label={label} x={x} series={[{ key: 'e', label: 'E projection', color: palette.dataE, values }, ...(valuesB ? [{ key: 'eB', label: 'E projection · B', color: palette.dataE, values: valuesB, dashed: true }] : [])]} xUnit={unit} xDomain={domain}
     yDomain={[-1.4, 1.4]} yTicks={[-1, 0, 1]} formatX={v => v.toFixed(unit === 'τ' ? 2 : 1)} caption="Normalized E projection"
     markers={marker === undefined ? [] : [{ x: marker, label: 'Probe' }]} height={80}/>;
 }
@@ -61,6 +62,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   // Light opens 1-up; the split pane shows the pair close-up glyph enlarged, which then leaves the Selection tab.
   const [split, setSplit] = useState(false);
   const about = useAbout();
+  const compare = useCompare<LightParameters>();
   const fileInput = useRef<HTMLInputElement>(null);
   const [tab, setTab] = useState<InspectorTab>('setup'), [dockTab, setDockTab] = useState('plots'), [dockCollapsed, setDockCollapsed] = useState(false);
   // The host is a callback ref held in state, so the renderer follows the element when the shell changes layout.
@@ -146,6 +148,16 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
 
   const spatialX = Array.from({ length: 161 }, (_, i) => p.offset - 6 + i * 12 / 160), historyX = Array.from({ length: 161 }, (_, i) => d.time * i / 160);
   const spatial = spatialX.map(x => waveAt(p, d.time, x).electric), history = historyX.map(t => waveAt(p, t, p.probe).electric);
+  // B: the same model with B's parameters at A's tick (Light is analytic, so B needs no worker).
+  const pB = compare.b, dB = pB && lightReadout({ ...s, parameters: pB });
+  const spatialB = pB && dB ? spatialX.map(x => waveAt(pB, dB.time, x).electric) : undefined, historyB = pB ? historyX.map(t => waveAt(pB, t, pB.probe).electric) : undefined;
+  /** The readout strip for one configuration. */
+  const stripFor = (r: ReturnType<typeof lightReadout>, q: LightParameters) => [
+    { label: 'Travelled', value: r.time.toFixed(3), unit: `L · ${(r.time * 250).toFixed(0)} nm ${q.direction > 0 ? '+X' : '−X'}` },
+    { label: 'Time', value: (r.time * TIME_SECONDS * 1e15).toFixed(3), unit: 'fs' },
+    { label: 'Handoffs', value: String(r.handoffs) },
+    { label: 'Excess energy', value: r.energy.toFixed(3), unit: 'eV' },
+  ];
   const pairX = 100 + Math.sin(inspected.angle) * inspected.separation * 140, pairY = 66 - Math.cos(inspected.angle) * inspected.separation * 140;
   const stateLine = d.finished ? 'SEQUENCE COMPLETE' : `Pair ${d.index + 1} / ${pairCount(p)} · ${d.pair.sense > 0 ? '↺ positive' : '↻ negative'}`;
 
@@ -187,17 +199,14 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   const events = Array.from({ length: pairCount(p) }, (_, i) => ({ index: i, tick: i * hopTicks(p) }));
   const dockNode = (
     <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={dockTab} onTab={setDockTab}
-      readouts={[
-        { label: 'Travelled', value: d.time.toFixed(3), unit: `L · ${(d.time * 250).toFixed(0)} nm ${p.direction > 0 ? '+X' : '−X'}` },
-        { label: 'Time', value: (d.time * TIME_SECONDS * 1e15).toFixed(3), unit: 'fs' },
-        { label: 'Handoffs', value: String(d.handoffs) },
-        { label: 'Excess energy', value: d.energy.toFixed(3), unit: 'eV' },
-      ]}
+      readouts={withDeltas(stripFor(d, p), pB && dB ? stripFor(dB, pB) : null)}
       tabs={[
         { id: 'plots', label: 'Plots', content: <div className="light-dock-plots">
-          <div><h4>Spatial profile · current instant</h4><WavePlot x={spatialX} values={spatial} label="Spatial electric wave projection" unit="L" domain={[p.offset - 6, p.offset + 6]} marker={p.probe}/></div>
-          <div><h4>Probe trace · x = {p.probe.toFixed(1)} L</h4><WavePlot x={historyX} values={history} label="Electric projection at the fixed probe over elapsed time" unit="τ" domain={[0, Math.max(d.time, 0.01)]}/></div>
+          <div><h4>Spatial profile · current instant</h4><WavePlot x={spatialX} values={spatial} valuesB={spatialB} label="Spatial electric wave projection" unit="L" domain={[p.offset - 6, p.offset + 6]} marker={p.probe}/></div>
+          <div><h4>Probe trace · x = {p.probe.toFixed(1)} L{pB && pB.probe !== p.probe && ` · B x = ${pB.probe.toFixed(1)} L`}</h4><WavePlot x={historyX} values={history} valuesB={historyB} label="Electric projection at the fixed probe over elapsed time" unit="τ" domain={[0, Math.max(d.time, 0.01)]}/></div>
         </div> },
+        { id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={lightDefinition} scenario="induction" a={p} b={pB}
+          onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}/> },
         { id: 'ledger', label: 'Ledger', content: <div className="light-ledger">
           <Readouts items={[
             { label: 'Central pair · hf/2', value: d.pairEnergy.toFixed(4), unit: 'eV' },
@@ -265,7 +274,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   return (
     <div className="light-workbench-root" style={{ display: active ? undefined : 'none' }}>
       <Shell id="light" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'pair', label: `Pair ${inspected.index + 1} close-up`, content: <div className="light-pair-pane">{glyph}</div> }]} split={split} onSplit={setSplit} pane="pair" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
-        status={<StatusBar running={s.running} telemetry={[LIGHT_MODEL]} items={[<span data-testid="light-tick">Tick {s.tick} · Δt = τ/120</span>, `start x = ${sourceX(p).toFixed(1)} L`, 'Fixed centres · prescribed c · local worker']}/>}/>
+        status={<StatusBar running={s.running} telemetry={[LIGHT_MODEL]} items={[...(pB ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), <span data-testid="light-tick">Tick {s.tick} · Δt = τ/120</span>, `start x = ${sourceX(p).toFixed(1)} L`, 'Fixed centres · prescribed c · local worker']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
     </div>

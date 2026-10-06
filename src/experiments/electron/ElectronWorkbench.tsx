@@ -28,6 +28,7 @@ import { copyLinkAction, encodeUrl, routeFor, splitValue, useLinkSeek, useUrlWri
 import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView, type SplitPane } from '../../workbench/SplitView';
+import { CompareTab, useCompare, withDeltas } from '../../workbench/compare';
 import { AboutSheet, helpActions, useAbout, type SavedView } from '../../workbench/AboutSheet';
 
 /** Scenario id ↔ worker mode for the three timed scenarios. */
@@ -79,6 +80,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const [graphicsError, setGraphicsError] = useState(''), [contextLost, setContextLost] = useState(false), [revision, setRevision] = useState(0), [notice, setNotice] = useState('');
   const [checkpoints, setCheckpoints] = useState<ElectronState[]>([]);
   const about = useAbout();
+  const compare = useCompare<ElectronParameters>();
   const fileInput = useRef<HTMLInputElement>(null);
   // Spin's split state is the saved Linked 2D section flag (2-up by default); this picks which linked view it shows.
   const [pane, setPane] = useState<'section' | 'motion'>('section');
@@ -111,7 +113,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   useSelectionKeys({ active: active && !study, hasSelection: selected !== null, onClear: clearSelection, onFocus: focusSelection });
   const s = state ?? { model: ELECTRON_MODEL, tick: 0, parameters: electronDefinition.defaultParams, running: false, speed: 1 };
   const p = s.parameters, time = s.tick * ELECTRON_DT, ready = !!state && !error;
-  const field = referenceFields(s, probePosition(p)), picked = selected === null ? null : displayedDipole(s, selected, view.spinDisplay), flux = enclosedCharge(s, 2);
+  const field = referenceFields(s, probePosition(p)), picked = selected === null ? null : displayedDipole(s, selected, view.spinDisplay);
   // The charge-motion pane follows the selected shell pair; with none selected it says so rather than showing a stand-in.
   const shellIndex = selected !== null && selected >= LATTICE_SAMPLES && selected < LATTICE_SAMPLES + view.spinDisplay.count * SAMPLES_PER_SHELL ? selected : null;
 
@@ -121,7 +123,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
    */
   function startScenario(request: ScenarioRequest) {
     const { id, url } = request, mode = MODE_OF[id];
-    setScenario(id);
+    setScenario(id); compare.clear(); // B is pinned within one scenario
     // A linked selection must be visible in the linked state: a lattice sample in any timed scenario, or a shell sample
     // in Spin with the shells shown and within the linked shell count. Static studies select nothing.
     const linkedView = withPaths(scenarioState(electronDefinition, id).view, url?.view ?? {}) as ElectronView, index = url?.selection;
@@ -155,7 +157,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   async function load(file: File) {
     try {
       if (file.size > 100000) throw new Error('File exceeds 100 KB.');
-      const saved = parseElectronFile(await file.text()); runtime.restore(saved.state); setView({ ...saved.view, inspect: true }); setScenario(SCENARIO_OF[saved.state.parameters.mode]);
+      const saved = parseElectronFile(await file.text()); runtime.restore(saved.state); setView({ ...saved.view, inspect: true }); setScenario(SCENARIO_OF[saved.state.parameters.mode]); compare.clear(); // B is pinned within one scenario
       setNotice(`Loaded electron tick ${saved.state.tick}. Playback is paused.${saved.migrated ? ' Updated an older experiment to the cubic medium and revised polarization sequence.' : ''}`);
     } catch (e) { setNotice(`Could not load: ${e instanceof Error ? e.message : String(e)}`); }
   }
@@ -171,8 +173,19 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   /** Capture the current state as a ◆ checkpoint. */
   function capture() { const st = latest.current; if (st) setCheckpoints(old => [...old, { model: st.model, tick: st.tick, parameters: { ...st.parameters } }].slice(-CHECKPOINT_LIMIT)); }
 
-  const traces = Array.from({ length: 161 }, (_, i) => { const f = referenceFields({ ...s, tick: Math.round(s.tick * i / 160) }, probePosition(p)); return f.valid ? [f.electric[1], f.motion[2], p.mode === 'electric' ? 0 : f.intrinsic[2]] : null; });
-  const max = Math.max(.01, ...traces.flatMap(v => v?.map(Math.abs) ?? []));
+  /** The fixed probe's reference components over elapsed time, for one configuration at A's tick. */
+  const tracesFor = (q: ElectronParameters) => Array.from({ length: 161 }, (_, i) => { const f = referenceFields({ ...s, parameters: q, tick: Math.round(s.tick * i / 160) }, probePosition(q)); return f.valid ? [f.electric[1], f.motion[2], q.mode === 'electric' ? 0 : f.intrinsic[2]] : null; });
+  // B: the same analytic references with B's parameters, in lock-step with A's tick (no second worker needed).
+  const pB = compare.b && compare.b.mode === p.mode ? compare.b : null, sB = pB && { ...s, parameters: pB };
+  const traces = tracesFor(p), tracesB = pB ? tracesFor(pB) : null;
+  const max = Math.max(.01, ...traces.flatMap(v => v?.map(Math.abs) ?? []), ...(tracesB ?? []).flatMap(v => v?.map(Math.abs) ?? []));
+  /** The readout strip for one configuration. */
+  const stripFor = (st: ElectronState) => [
+    { label: 'Position', value: electronX(st).toFixed(3), unit: `R · ${velocity(st.parameters).toFixed(2)} c`, testId: 'electron-position' },
+    { label: 'Time', value: time.toFixed(2), unit: 'τ' },
+    { label: 'Enclosed Q', value: enclosedCharge(st, 2).toFixed(4), unit: 'e' },
+    { label: 'Spin', value: st.parameters.spin > 0 ? '+½' : '−½', unit: 'ℏ' },
+  ];
   const traceTimes = Array.from({ length: 161 }, (_, i) => time * i / 160);
   const stageNote = p.mode === 'electric' ? (s.tick === 0 ? 'Unpolarized ZPF · electron not yet introduced' : electronPresence(s) < 1 ? 'Introducing the negative electron' : '+ ends align toward the electron') : p.mode === 'spin' ? 'Local turns around a stationary core' : 'The electron moves; the medium responds';
   const stageLabel = p.mode === 'electric' ? `Alignment ${(alignmentProgress(s) * 100).toFixed(0)}%` : p.mode === 'spin' ? '3D shells' : `${velocity(p).toFixed(2)} c along X`;
@@ -242,18 +255,15 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
 
   const dockNode = study ? undefined : (
     <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={dockTab} onTab={setDockTab}
-      readouts={[
-        { label: 'Position', value: electronX(s).toFixed(3), unit: `R · ${velocity(p).toFixed(2)} c`, testId: 'electron-position' },
-        { label: 'Time', value: time.toFixed(2), unit: 'τ' },
-        { label: 'Enclosed Q', value: flux.toFixed(4), unit: 'e' },
-        { label: 'Spin', value: p.spin > 0 ? '+½' : '−½', unit: 'ℏ' },
-      ]}
+      readouts={withDeltas(stripFor(s), sB ? stripFor(sB) : null)}
       tabs={[
         { id: 'probe', label: 'Probe', content: <div className="electron-probe">
-          <div><h4>Field history · lab ({vector(probePosition(p))}) R</h4><Plot label="Electric Y, motion magnetic Z, and intrinsic magnetic Z reference components at the fixed probe" x={traceTimes} series={[{ key: 'e', label: 'Eᵧ/E₀', color: palette.dataE, values: traces.map(v => v?.[0] ?? null) }, { key: 'b', label: 'Bmotion,z/B₀', color: palette.dataB, values: traces.map(v => v?.[1] ?? null) }, { key: 'bspin', label: 'Bspin,z/B₀', color: palette.dataBspinHi, values: traces.map(v => v?.[2] ?? null) }]} xUnit="τ" xDomain={[0, Math.max(time, 0.01)]} yDomain={[-max * 1.25, max * 1.25]} reference={0} formatX={v => v.toFixed(2)} height={84} testId="electron-probe-plot"/></div>
+          <div><h4>Field history · lab ({vector(probePosition(p))}) R{pB && vector(probePosition(pB)) !== vector(probePosition(p)) && <> · B ({vector(probePosition(pB))}) R</>}</h4><Plot label="Electric Y, motion magnetic Z, and intrinsic magnetic Z reference components at the fixed probe" x={traceTimes} series={[{ key: 'e', label: 'Eᵧ/E₀', color: palette.dataE, values: traces.map(v => v?.[0] ?? null) }, { key: 'b', label: 'Bmotion,z/B₀', color: palette.dataB, values: traces.map(v => v?.[1] ?? null) }, { key: 'bspin', label: 'Bspin,z/B₀', color: palette.dataBspinHi, values: traces.map(v => v?.[2] ?? null) }, ...(tracesB ? [{ key: 'eB', label: 'Eᵧ/E₀ · B', color: palette.dataE, values: tracesB.map(v => v?.[0] ?? null), dashed: true }, { key: 'bB', label: 'Bmotion,z/B₀ · B', color: palette.dataB, values: tracesB.map(v => v?.[1] ?? null), dashed: true }, { key: 'bspinB', label: 'Bspin,z/B₀ · B', color: palette.dataBspinHi, values: tracesB.map(v => v?.[2] ?? null), dashed: true }] : [])]} xUnit="τ" xDomain={[0, Math.max(time, 0.01)]} yDomain={[-max * 1.25, max * 1.25]} reference={0} formatX={v => v.toFixed(2)} height={84} testId="electron-probe-plot"/></div>
           <div>{field.valid ? <dl className="light-readouts"><div><dt>Electric / E₀</dt><dd data-testid="electron-E">{vector(field.electric)}</dd></div><div><dt>Motion B / B₀</dt><dd data-testid="electron-B-motion">{vector(field.motion)}</dd></div><div><dt>Intrinsic B / B₀</dt><dd>{p.mode === 'electric' ? 'Hidden in electric-only view' : vector(field.intrinsic)}</dd></div><div><dt>Distance to electron</dt><dd>{field.radius.toFixed(3)} R</dd></div></dl> : <p className="electron-excluded" role="status">Probe lies inside the 0.3 R numerical mask. Field values are excluded.</p>}
             <p className="light-small">E₀ = e/(4πε₀R²), B₀ = E₀/c. Motion field vanishes at zero velocity. Intrinsic magnetism can remain at rest. Reference components use normalized units; gaps mark the excluded central region. Intrinsic spin magnetism is a separate dipole reference, not part of B = v × E / c².</p></div>
         </div> },
+        ...(study ? [] : [{ id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={electronDefinition} scenario={scenario} a={p} b={pB}
+          onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}/> }]),
         ...(p.mode === 'spin' ? [{ id: 'shells', label: 'Shell rates', content: <div className="electron-shell-rates">
           <div className="electron-rate-profile" aria-label="Illustrative shell rotation profile">{SHELL_RADII.slice(0, view.spinDisplay.count).map((r, i) => {
             const pair = displayedDipole(s, LATTICE_SAMPLES + i * SAMPLES_PER_SHELL + 34, view.spinDisplay);
@@ -324,7 +334,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   return (
     <div className={`electron-workbench-root ${p.mode === 'spin' ? 'electron-spin-view' : ''}`} style={{ display: active ? undefined : 'none' }}>
       <Shell id="electron" header={headerNode} rail={rail} viewport={<SplitView active={active && !study} primary={viewportNode} panes={panes} split={view.spinDisplay.section} onSplit={setSplit} pane={pane} onPane={id => setPane(id as 'section' | 'motion')}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
-        status={<StatusBar running={s.running} telemetry={[ELECTRON_MODEL]} items={[<span data-testid="electron-tick">Tick {s.tick} · {(time * TAU).toExponential(2)} s</span>, 'τ = R/c', 'Fixed zepton centres · local worker · source-linked model']}/>}/>
+        status={<StatusBar running={s.running} telemetry={[ELECTRON_MODEL]} items={[...(pB ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), <span data-testid="electron-tick">Tick {s.tick} · {(time * TAU).toExponential(2)} s</span>, 'τ = R/c', 'Fixed zepton centres · local worker · source-linked model']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
     </div>
