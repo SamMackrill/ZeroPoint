@@ -54,6 +54,28 @@ describe('mediumRuntime', () => {
   });
 });
 
+describe('run intent', () => {
+  it('reports a just-sent Run until the worker confirms it, so a quick second press pauses', () => {
+    const ch = Object.assign(channel<{ type: string; value?: boolean }, Snapshot>(medium), { checkpoint: vi.fn() });
+    const rt = mediumRuntime(ch as never);
+    rt.run(!rt.status().running); // Run: the worker has not replied yet
+    expect(rt.status().running).toBe(true);
+    rt.run(!rt.status().running); // a second press straight after sends Pause, not Run again
+    expect(ch.sent).toEqual([{ type: 'running', value: true }, { type: 'running', value: false }]);
+    ch.push({ ...medium, running: false }); // the worker settles paused
+    expect(rt.status().running).toBe(false);
+    rt.run(true); rt.step(); // stepping supersedes the pending Run (the worker pauses to step)
+    expect(rt.status().running).toBe(false);
+  });
+  it('gives up on an intent the worker never confirms after a second', () => {
+    vi.useFakeTimers();
+    const ch = channel<unknown, LightSnapshot>({ model: 'light', tick: 0, parameters: {}, running: false, speed: 1 } as unknown as LightSnapshot), rt = lightRuntime(ch as never);
+    rt.run(true); expect(rt.status().running).toBe(true);
+    vi.advanceTimersByTime(1100); expect(rt.status().running).toBe(false); // the worker refused (e.g. the sequence had finished)
+    vi.useRealTimers();
+  });
+});
+
 describe('tick runtimes', () => {
   const light = { model: 'light', tick: 100, parameters: { wavelength: 625 }, running: true, speed: 1 } as unknown as LightSnapshot;
   it('Light seeks within its bounds, uses its own next-induction command, and checkpoints without playback fields', async () => {

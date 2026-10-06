@@ -102,28 +102,46 @@ export interface MediumChannel extends WorkerChannel<Command, Snapshot> {
 }
 
 /**
+ * The latest Run or Pause sent to a worker. status() reports it until the worker confirms it (or 1 s passes, in case it
+ * refused), so a second press straight after the first reads the intended state, not the worker's last report, and
+ * sends Pause rather than Run again. Any other command (step, seek, reset, restore) supersedes it.
+ */
+function runIntent() {
+  let pending: { on: boolean; at: number } | null = null;
+  return {
+    sent(on: boolean) { pending = { on, at: performance.now() }; },
+    clear() { pending = null; },
+    running(reported: boolean | undefined) {
+      if (pending && (reported === pending.on || performance.now() - pending.at > 1000)) pending = null;
+      return pending ? pending.on : reported ?? false;
+    },
+  };
+}
+
+/**
  * Medium: an open-ended timeline. Parameters are live, the seed restarts (configure), jump steps through model time,
  * and seeking is the shell's job (restore the nearest checkpoint), so seek and nextEvent are unsupported.
  */
 export function mediumRuntime(channel: MediumChannel): Runtime<Snapshot, Partial<Parameters>, MediumConfig, Checkpoint> {
   const listeners = fanOut(channel), now = () => channel.latest.current;
   const require = (command: string) => { const state = now(); if (!state) throw new Error(`Cannot ${command} before the Medium worker has started.`); return state; };
+  const intent = runIntent();
   return {
     capabilities: { run: true, step: true, jump: true, nextEvent: false, seek: false, reset: true, speed: true, live: true, configure: true, checkpoint: true, restore: true },
-    run: on => channel.send({ type: 'running', value: on }),
-    step: () => channel.send({ type: 'step' }),
-    jump: tau => { for (let i = Math.round(tau / DT); i > 0; i--) channel.send({ type: 'step' }); },
+    run: on => { intent.sent(on); channel.send({ type: 'running', value: on }); },
+    step: () => { intent.clear(); channel.send({ type: 'step' }); },
+    jump: tau => { intent.clear(); for (let i = Math.round(tau / DT); i > 0; i--) channel.send({ type: 'step' }); },
     nextEvent: () => { throw new UnsupportedCommand('next event'); },
     seek: () => { throw new UnsupportedCommand('seek'); },
-    reset: () => { const state = require('reset'); channel.send({ type: 'reset', seed: state.seed, parameters: state.parameters }); },
+    reset: () => { const state = require('reset'); intent.clear(); channel.send({ type: 'reset', seed: state.seed, parameters: state.parameters }); },
     speed: value => channel.send({ type: 'speed', value: checkSpeed(value) }),
     setLive: parameters => channel.send({ type: 'parameters', value: { ...require('change parameters').parameters, ...parameters } }),
-    configure: ({ seed, parameters }) => channel.send({ type: 'reset', seed, parameters }),
+    configure: ({ seed, parameters }) => { intent.clear(); channel.send({ type: 'reset', seed, parameters }); },
     checkpoint: () => channel.checkpoint(),
-    restore: checkpoint => channel.send({ type: 'restore', checkpoint }),
+    restore: checkpoint => { intent.clear(); channel.send({ type: 'restore', checkpoint }); },
     subscribe: listeners.subscribe,
     latest: now,
-    status: () => { const s = now(); return { running: s?.running ?? false, tick: s?.diagnostics.tick ?? 0, time: s?.diagnostics.time ?? 0, speed: s?.speed ?? 1, finished: false }; },
+    status: () => { const s = now(); return { running: intent.running(s?.running), tick: s?.diagnostics.tick ?? 0, time: s?.diagnostics.time ?? 0, speed: s?.speed ?? 1, finished: false }; },
     dispose: listeners.dispose,
   };
 }
@@ -141,12 +159,14 @@ interface TickOptions<S> {
 /** A bounded, tick-based worker runtime; checkpoints are the state without playback fields. */
 function tickRuntime<Command extends { type: string }, S extends { tick: number; running: boolean; speed: number }, P, C>(channel: WorkerChannel<Command, S>, options: TickOptions<S>, toCheckpoint: (state: S) => C) {
   const listeners = fanOut(channel), now = () => channel.latest.current;
-  const send = (command: unknown) => channel.send(command as Command);
+  const intent = runIntent();
+  // Every command but Run and speed supersedes a pending Run or Pause (they pause, or replace the run).
+  const send = (command: unknown) => { if (!['run', 'speed'].includes((command as { type: string }).type)) intent.clear(); channel.send(command as Command); };
   const tick = () => now()?.tick ?? 0;
   const seek = (target: number) => send({ type: 'seek', tick: Math.max(0, Math.min(options.end, Math.round(target))) });
   const runtime: Runtime<S, never, P, C> = {
     capabilities: { run: true, step: true, jump: true, nextEvent: Boolean(options.next || options.events), seek: true, reset: true, speed: true, live: false, configure: true, checkpoint: true, restore: true },
-    run: on => send({ type: 'run', value: on }),
+    run: on => { send({ type: 'run', value: on }); intent.sent(on); },
     step: () => send({ type: 'step' }),
     jump: tau => seek(tick() + tau / options.dt),
     nextEvent: () => {
@@ -165,7 +185,7 @@ function tickRuntime<Command extends { type: string }, S extends { tick: number;
     restore: state => send({ type: 'restore', state }),
     subscribe: listeners.subscribe,
     latest: now,
-    status: () => { const s = now(); return { running: s?.running ?? false, tick: tick(), time: tick() * options.dt, speed: s?.speed ?? 1, finished: tick() >= options.end }; },
+    status: () => { const s = now(); return { running: intent.running(s?.running), tick: tick(), time: tick() * options.dt, speed: s?.speed ?? 1, finished: tick() >= options.end }; },
     dispose: listeners.dispose,
   };
   return runtime;
