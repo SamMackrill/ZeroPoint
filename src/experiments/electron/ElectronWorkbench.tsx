@@ -13,6 +13,7 @@ import { Plot } from '../../ui/Plot';
 import { Segmented } from '../../ui/Segmented';
 import { exportActions, FileActions, fileShortcuts, Header, type ExportItem, StatusBar, type HeaderProps } from '../../workbench/Chrome';
 import { appliesTo, getPath, scenarioState, withPaths } from '../../workbench/definition';
+import { CameraPicker } from '../../workbench/CameraPicker';
 import { Dock } from '../../workbench/Dock';
 import { Control, Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { electronRuntime, SPEEDS } from '../../workbench/runtime';
@@ -232,7 +233,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => restart()}>Restart electron worker</button></div>}
       <div className="light-view-top">
         <span><i className={`dot ${s.running ? '' : 'paused'}`}/>{s.running ? 'FIELD RESPONSE' : 'PAUSED'}<b>{stageLabel} · {stageNote}</b></span>
-        <Segmented label="Camera" testId="camera" options={electronDefinition.cameras.filter(c => appliesTo(c, scenario)).map(c => ({ value: c.id, label: c.label }))} value={camera}
+        <CameraPicker options={electronDefinition.cameras.filter(c => appliesTo(c, scenario)).map(c => ({ value: c.id, label: c.label }))} value={camera}
           onChange={chooseCamera}/>
       </div>
       <div className="electron-overlay-bottom">

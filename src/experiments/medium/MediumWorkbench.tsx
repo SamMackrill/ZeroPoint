@@ -10,6 +10,7 @@ import { Readouts } from '../../ui/Readouts';
 import { Segmented } from '../../ui/Segmented';
 import { exportActions, FileActions, fileShortcuts, Header, type ExportItem, StatusBar, type HeaderProps } from '../../workbench/Chrome';
 import { scenarioState, withPaths } from '../../workbench/definition';
+import { CameraPicker } from '../../workbench/CameraPicker';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { mediumRuntime, SPEEDS } from '../../workbench/runtime';
@@ -207,7 +208,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
       {sim.error && <div className="error-banner" role="alert">{sim.error}<button onClick={sim.restart}>Restart worker</button></div>}
       <div className="view-top">
         <div className="view-label"><span className={`dot ${running ? '' : 'paused'}`}/><span>{ready ? running ? 'LIVE FIELD' : 'PAUSED' : 'INITIALIZING'}</span><span className="view-label-divider"/>{fmt(d?.active ?? 0)} dipoles · periodic 8 L₀ cell</div>
-        <Segmented label="Camera" options={[{ value: 'perspective', label: 'Perspective' }, { value: 'top', label: 'Top' }, { value: 'front', label: 'Front' }]} value={camera} testId="camera"
+        <CameraPicker options={[{ value: 'perspective', label: 'Perspective' }, { value: 'top', label: 'Top' }, { value: 'front', label: 'Front' }]} value={camera}
           onChange={preset => setCamera(preset as typeof camera)}/>
       </div>
       <div className="view-axis" aria-hidden="true"><svg viewBox="0 0 60 60"><path d="M28 34V8M28 34L51 45M28 34L8 46" fill="none" strokeWidth="1.5" stroke={palette.text4}/><text x="24" y="7" fill={palette.dataShell3}>Y</text><text x="50" y="56" fill={palette.dataPos}>X</text><text x="0" y="55" fill={palette.text3}>Z</text><circle cx="28" cy="34" r="3" fill={palette.text2}/></svg></div>

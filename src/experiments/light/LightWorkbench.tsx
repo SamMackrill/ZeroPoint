@@ -10,6 +10,7 @@ import { Readouts } from '../../ui/Readouts';
 import { Segmented } from '../../ui/Segmented';
 import { exportActions, FileActions, fileShortcuts, Header, type ExportItem, StatusBar, type HeaderProps } from '../../workbench/Chrome';
 import { scenarioState, withPaths } from '../../workbench/definition';
+import { CameraPicker } from '../../workbench/CameraPicker';
 import { Dock } from '../../workbench/Dock';
 import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workbench/Inspector';
 import { lightRuntime, SPEEDS } from '../../workbench/runtime';
@@ -188,7 +189,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => { restart(); setSelected(null); setNotice('Light worker restarted with default parameters.'); }}>Restart light worker</button></div>}
       <div className="light-view-top">
         <span><i className={`dot ${s.running ? '' : 'paused'}`}/>{d.finished ? 'PULSE EXITED' : s.running ? 'PROPAGATING' : 'PAUSED'}<b>{stateLine}</b></span>
-        <Segmented label="Camera" testId="camera" options={lightDefinition.cameras.map(c => ({ value: c.id, label: c.label }))} value={camera} onChange={v => setCamera(v as typeof camera)}/>
+        <CameraPicker options={lightDefinition.cameras.map(c => ({ value: c.id, label: c.label }))} value={camera} onChange={v => setCamera(v as typeof camera)}/>
       </div>
       <div className="light-view-legend"><span><i className="charge positive"/>+ Positron</span><span><i className="charge negative"/>− Electron</span><span className="light-e">— E</span><span className="light-b">— B</span><span className="light-probe">○ Probe</span></div>
       <div className="light-scale">1 L = 250 nm · 12 L window · drag to orbit</div>

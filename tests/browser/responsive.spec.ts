@@ -36,3 +36,18 @@ test('from 1280 to 1439 px the rail starts collapsed to icons on the first visit
   await page.goto('/'); await expect(tid(page, 'transport-run')).toBeEnabled();
   await expect.poll(async () => (await page.locator('.medium-workbench .workbench-rail').boundingBox())?.width ?? 0).toBeLessThan(80);
 });
+
+test('below 851 px the camera presets collapse into a compact select that still switches the camera', async ({ page }) => {
+  await page.setViewportSize({ width: 800, height: 900 });
+  await page.goto('/'); await expect(tid(page, 'transport-run').filter({ visible: true })).toBeEnabled();
+  const medium = page.locator('.medium-workbench');
+  await expect(medium.getByTestId('camera')).toBeHidden();
+  const select = medium.getByRole('combobox', { name: 'Camera' });
+  await expect(select).toHaveValue('perspective');
+  await select.selectOption('top');
+  await expect.poll(() => page.evaluate(() => location.hash)).toContain('cam=top');
+  // Wider again, the segmented control shows the same preset.
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await expect(medium.getByRole('radio', { name: 'Top', exact: true })).toHaveAttribute('aria-checked', 'true');
+  await expect(select).toBeHidden();
+});
