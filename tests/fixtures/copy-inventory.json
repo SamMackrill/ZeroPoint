@@ -213,6 +213,10 @@
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Electron files must be smaller than 100 KB."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "toward the core. Reverse the spin projection in Setup to reverse every shell. Playback, step and timeline control both views together."
   },
   {
@@ -317,11 +321,11 @@
   },
   {
     "file": "src/experiments/medium/MediumWorkbench.tsx",
-    "text": ". Controls, diagnostics and experiment files remain available."
+    "text": "Experiment files must be smaller than 8 MB."
   },
   {
     "file": "src/experiments/medium/MediumWorkbench.tsx",
-    "text": "Experiment files must be smaller than 8 MB."
+    "text": ". Controls, diagnostics and experiment files remain available."
   },
   {
     "file": "src/experiments/medium/MediumWorkbench.tsx",
