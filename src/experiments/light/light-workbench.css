@@ -114,9 +114,6 @@
   .light-dock-plots {
     grid-template-columns: minmax(0, 1fr);
   }
-  .light-workbench-root .light-view-top .segmented {
-    display: none;
-  }
 }
 
 .light-pair-pane .light-pair-glyph {

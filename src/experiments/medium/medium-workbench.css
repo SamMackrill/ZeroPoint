@@ -96,12 +96,6 @@
   }
 }
 
-@media(max-width:850px) {
-  .medium-workbench .view-top .segmented {
-    display: none;
-  }
-}
-
 .dipole-close-up {
   margin: 0;
 }

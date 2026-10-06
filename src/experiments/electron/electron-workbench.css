@@ -103,9 +103,6 @@
 }
 
 @media(max-width:850px) {
-  .electron-workbench-root .light-view-top .segmented {
-    display: none;
-  }
   .electron-probe,
   .electron-shell-rates,
   .electron-sources {
