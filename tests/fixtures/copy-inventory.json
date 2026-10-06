@@ -93,6 +93,14 @@
   },
   {
     "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Casimir files must be smaller than 1 MB."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
+    "text": "Exported the pressure history shown in the plot."
+  },
+  {
+    "file": "src/experiments/casimir/CasimirWorkbench.tsx",
     "text": "Random births at the meeting point push outwards"
   },
   {

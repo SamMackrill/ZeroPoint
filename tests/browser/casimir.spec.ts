@@ -117,3 +117,20 @@ test('mobile controls and source notes fit the viewport', async ({ page }) => {
   await page.keyboard.press('Escape'); await expect(about).toHaveCount(0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
+
+test('a Casimir run saves, loads paused at the same moment, and exports its pressure history', async ({ page }) => {
+  await openExperiment(page);
+  for (let i = 0; i < 6; i++) await tid(page, 'transport-step').click();
+  const saved = await time(page).innerText();
+  expect(saved).not.toBe('0.00 τ');
+  const downloadPromise = page.waitForEvent('download'); await tid(page, 'file-save').click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^zeropoint-casimir-electron-electron-tick-\d+\.json$/);
+  await tid(page, 'transport-reset').click(); await expect(time(page)).toHaveText('0.00 τ');
+  await tid(page, 'file-input').setInputFiles((await download.path())!);
+  await expect(tid(page, 'notice')).toContainText('Playback is paused'); await expect(time(page)).toHaveText(saved);
+  await tid(page, 'file-input').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{}') });
+  await expect(tid(page, 'notice')).toContainText('Could not load'); await expect(time(page)).toHaveText(saved);
+  await tid(page, 'export-menu').click(); const csv = page.waitForEvent('download'); await tid(page, 'export-pressure-csv').click();
+  expect((await csv).suggestedFilename()).toBe('zeropoint-casimir-electron-electron-pressure.csv');
+});

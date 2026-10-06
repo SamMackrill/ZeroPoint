@@ -1,7 +1,7 @@
 // MainThreadModel adapters for the two labs that simulate on the main thread. Their models are unchanged: Casimir's
 // CasimirModel is recreated on reset or reconfigure (as the lab does today), and the van der Waals correlated-dipole
 // clock is a 120-tick loop that the lab advanced with a 50 ms interval (0.05 τ per tick at 1×).
-import { CasimirModel, STEP, type ChargePair } from '../casimir/model';
+import { CasimirModel, STEP, type CasimirState, type ChargePair } from '../casimir/model';
 import type { MainThreadModel } from './main-thread-runtime';
 
 /** Casimir's playback speeds, as the lab offers them today (0.1–2×). */
@@ -11,7 +11,7 @@ export const CASIMIR_SPEEDS = [0.1, 0.25, 0.5, 1, 2] as const;
 export interface CasimirConfig { pair: ChargePair; separation: number }
 
 /** Casimir as a main-thread model. Snapshots are the live CasimirModel, which renderers read directly. */
-export function casimirModel(initial: CasimirConfig = { pair: 'electron-electron', separation: 5.6 }): MainThreadModel<CasimirModel, CasimirConfig> {
+export function casimirModel(initial: CasimirConfig = { pair: 'electron-electron', separation: 5.6 }): MainThreadModel<CasimirModel, CasimirConfig, CasimirState> {
   let config = { ...initial }, model = new CasimirModel(config.pair, config.separation);
   return {
     dt: STEP,
@@ -21,6 +21,9 @@ export function casimirModel(initial: CasimirConfig = { pair: 'electron-electron
     tick: () => model.tick,
     snapshot: () => model,
     configure: next => { config = { ...next }; model = new CasimirModel(config.pair, config.separation); },
+    checkpoint: () => model.state(),
+    // A restored run keeps its pairing and separation, so Reset repeats it from the start.
+    restore: state => { config = { pair: state.pair, separation: state.separation }; model = CasimirModel.restore(state); },
   };
 }
 

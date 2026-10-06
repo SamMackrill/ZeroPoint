@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CasimirModel, extent, STEP, type ChargePair } from '../src/casimir/model';
+import { CasimirModel, extent, parseCasimirFile, STEP, type ChargePair } from '../src/casimir/model';
 
 /** Advance a model by a requested amount of simulation time. */
 const advance = (m: CasimirModel, seconds: number) => { for (let i = 0; i < Math.round(seconds / STEP); i++) m.step(); };
@@ -55,5 +55,32 @@ describe('extended Casimir illustrative lifecycle', () => {
     expect(m.boundaryReached).toBe(true); expect(m.released).toBe(false);
     expect(Number.isFinite(m.delta)).toBe(true);
     expect(m.births - m.deaths).toBe(m.particles.length);
+  });
+});
+
+describe('Casimir files', () => {
+  const file = (state: unknown) => JSON.stringify({ format: 'zeropoint-casimir', version: 1, state, view: {} });
+  it('restores a saved run that continues exactly as the original', () => {
+    const a = new CasimirModel('electron-proton', 6);
+    advance(a, 3); a.released = true; // the charges move, so velocities and positions are saved too
+    const b = CasimirModel.restore(parseCasimirFile(file(a.state())));
+    expect(b.state()).toEqual(a.state());
+    advance(a, 2); advance(b, 2);
+    expect(b.state()).toEqual(a.state());
+  });
+  it('keeps the restored state independent of the file it came from', () => {
+    const state = new CasimirModel().state(), b = CasimirModel.restore(state);
+    b.step(); state.particles[0].x = 99;
+    expect(b.particles[0].x).not.toBe(99);
+  });
+  it('rejects other files and invalid states', () => {
+    const good = new CasimirModel().state();
+    expect(() => parseCasimirFile('{}')).toThrow('Choose a ZeroPoint Casimir experiment file.');
+    expect(() => parseCasimirFile(file({ ...good, pair: 'proton-proton' }))).toThrow('pair');
+    expect(() => parseCasimirFile(file({ ...good, separation: 12 }))).toThrow('separation');
+    expect(() => parseCasimirFile(file({ ...good, inner: 'high' }))).toThrow('inner');
+    expect(() => parseCasimirFile(file({ ...good, tick: -1 }))).toThrow('tick');
+    expect(() => parseCasimirFile(file({ ...good, particles: [{ ...good.particles[0], gap: 1 }] }))).toThrow('Zepton: gap');
+    expect(() => parseCasimirFile(' '.repeat(1_000_001))).toThrow('smaller than 1 MB');
   });
 });
