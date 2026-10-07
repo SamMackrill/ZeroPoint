@@ -1,8 +1,8 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Popover from '@radix-ui/react-popover';
-import { ArrowDownToLine, ArrowUpFromLine, Atom, ChevronDown, ChevronRight, CircleHelp, FlaskConical, Info, Lightbulb, Magnet, PanelLeftClose, PanelLeftOpen, Settings, Waves } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, Atom, ChevronDown, ChevronRight, CircleHelp, FlaskConical, Info, Lightbulb, Magnet, PanelLeftClose, PanelLeftOpen, Search, Settings, Waves } from 'lucide-react';
 import { useContext, type ReactNode, type Ref, type RefObject } from 'react';
-import type { Action } from './actions';
+import { keyLabel, press, type Action } from './actions';
 import { BrandMark } from '../app/BrandMark';
 import { RepositoryLink } from '../app/RepositoryLink';
 import { updateSettings, useSettings } from './settings';
@@ -41,6 +41,10 @@ export function Header({ experiment, scenario, modified, actions, onHelp, onChip
       {onChip
         ? <button type="button" className="workbench-chip" onClick={onChip}><Info size={12} aria-hidden="true"/>Illustrative model</button>
         : <span className="workbench-chip"><Info size={12} aria-hidden="true"/>Illustrative model</span>}
+      {/* The palette's search, centred in the header (plan §05 A); it opens the palette as Ctrl K does. Wide layouts only. */}
+      <button type="button" className="workbench-search" data-testid="header-search" aria-label="Search commands and settings" aria-keyshortcuts="Control+K Meta+K" onClick={() => press('Mod+k')}>
+        <Search size={14} aria-hidden="true"/><span>Search or jump to…</span><span className="workbench-search-keys" aria-hidden="true">{keyLabel('Mod+k').map(part => <kbd key={part}>{part}</kbd>)}</span>
+      </button>
       <div className="workbench-actions">{actions}<RepositoryLink/><SettingsMenu/>{onHelp && <button type="button" className="workbench-icon-button" aria-label="Help" title="Help: About and shortcuts (?)" onClick={onHelp}><CircleHelp size={16} aria-hidden="true"/></button>}</div>
     </header>
   );
