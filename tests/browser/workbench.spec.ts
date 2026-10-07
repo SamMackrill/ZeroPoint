@@ -60,6 +60,10 @@ test('parameter edits are acknowledged, hidden tabs pause, and a lost viewport r
   await expect(tid(page, 'status-telemetry')).toHaveCount(0);
   await tid(page, 'settings').filter({ visible: true }).click(); await tid(page, 'setting-telemetry').check(); await page.keyboard.press('Escape');
   await expect(page.locator('.medium-workbench .workbench-status')).toContainText('Parameter revision 1');
+  // Frame rate and WebGL for every lab; Medium adds its worker's step time.
+  await expect(page.locator('.medium-workbench .workbench-status')).toContainText(/\d+ fps/);
+  await expect(page.locator('.medium-workbench .workbench-status')).toContainText('WebGL 2');
+  await expect(page.locator('.medium-workbench .workbench-status')).toContainText(/A \d+\.\d{3} ms\/step/);
   await tid(page, 'dock-events').click(); await expect(page.locator('.event-list')).toContainText('frequency 3 f₀');
   await tid(page, 'transport-run').click(); await expect(tid(page, 'transport-run')).toContainText('Pause');
   // Exercise the visibility handler deterministically; hardware tab scheduling varies in CI.

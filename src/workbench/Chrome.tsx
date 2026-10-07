@@ -6,6 +6,7 @@ import type { Action } from './actions';
 import { BrandMark } from '../app/BrandMark';
 import { RepositoryLink } from '../app/RepositoryLink';
 import { updateSettings, useSettings } from './settings';
+import { useFps, webglInfo } from './telemetry';
 import './chrome.css';
 
 /** Props for Header. */
@@ -149,6 +150,12 @@ export interface StatusBarProps {
   telemetry?: readonly ReactNode[];
 }
 
+/** Debug telemetry: the frame rate and WebGL every lab shares, then the lab's own (model ID, worker ms/step). */
+function Telemetry({ items }: { items: readonly ReactNode[] }) {
+  const fps = useFps(), gl = webglInfo();
+  return <>{[`${fps} fps`, <span className="status-telemetry-gl" title={gl}>{gl}</span>, ...items].map((item, i) => <span key={i} className="status-telemetry" data-testid="status-telemetry">{item}</span>)}</>;
+}
+
 /** The status bar (§05): run state, configuration and tick, and the model disclaimer. Debug telemetry lives in Settings. */
 export function StatusBar({ running, items = [], telemetry = [] }: StatusBarProps) {
   const settings = useSettings();
@@ -157,7 +164,7 @@ export function StatusBar({ running, items = [], telemetry = [] }: StatusBarProp
       {/* A polite live region (plan §13): screen readers hear Running or Paused when playback starts or stops. */}
       <span className={`status-state${running ? ' is-running' : ''}`} role="status" aria-live="polite" aria-atomic="true" data-testid="run-state"><i aria-hidden="true"/>{running ? 'Running' : 'Paused'}</span>
       {items.map((item, i) => <span key={i}>{item}</span>)}
-      {settings.telemetry && telemetry.map((item, i) => <span key={`t${i}`} className="status-telemetry" data-testid="status-telemetry">{item}</span>)}
+      {settings.telemetry && <Telemetry items={telemetry}/>}
       <span className="status-disclaimer">Illustrative model</span>
     </footer>
   );

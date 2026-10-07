@@ -169,7 +169,17 @@ export const ELECTRON_MOTION_SCREENS = [
   { name: 'stationary-aligning', title: 'Electron · Stationary at tick 240, pair 100: aligning as the polarization builds', hash: '#/electron/stationary?split=motion&sel=100&t=240' },
   { name: 'stationary-aligned', title: 'Electron · Stationary at tick 2400, pair 100: aligned and still', hash: '#/electron/stationary?split=motion&sel=100&t=2400' },
 ];
-const SETS = { 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
+/** The status bar with Settings › Show debug telemetry on (`--set telemetry`), a close-up of each lab's bar. */
+const showTelemetry = async page => {
+  await page.getByTestId('settings').filter({ visible: true }).click(); await page.getByTestId('setting-telemetry').check(); await page.keyboard.press('Escape');
+  await page.waitForTimeout(1500); // one frame-rate sample
+};
+export const TELEMETRY_SCREENS = [
+  { name: 'medium-status', title: 'Medium · status bar with debug telemetry', prepare: showTelemetry, focus: '.workbench-status' },
+  { name: 'light-status', title: 'Light · status bar with debug telemetry', lab: 'lab-light', prepare: showTelemetry, focus: '.workbench-status' },
+  { name: 'casimir-status', title: 'Casimir · status bar with debug telemetry (it had none)', lab: 'lab-casimir', prepare: showTelemetry, focus: '.workbench-status' },
+];
+const SETS = { telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -221,7 +231,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const before = option('--before'), out = option('--out'), title = option('--title') ?? 'Change', description = option('--description') ?? '';
   const screens = SETS[option('--set') ?? 'screens'];
   if (!screens) throw new Error(`--set must be one of: ${Object.keys(SETS).join(', ')}`);
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.

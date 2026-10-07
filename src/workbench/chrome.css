@@ -486,6 +486,16 @@ button.workbench-chip:focus-visible {
   color: var(--text-3);
 }
 
+/* The renderer string can be long (ANGLE, driver); the full text is its tooltip. */
+.status-telemetry-gl {
+  display: inline-block;
+  max-width: 28ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+}
+
 /* However the rail got narrow (Ctrl B, a drag, or starting collapsed at 1280–1439 px), at icon width it shows icons only,
    as the collapsed rail does; each icon keeps its experiment's name as a tooltip. */
 @container rail (max-width: 100px) {
