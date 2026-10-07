@@ -2,7 +2,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { cameraActions, keyLabel, matches, useActions, type Action } from '../../src/workbench/actions';
-import { AboutSheet } from '../../src/workbench/AboutSheet';
+import { AboutSheet, ORBIT_GESTURES } from '../../src/workbench/AboutSheet';
 import { transportActions, type TimelineRuntime } from '../../src/workbench/TimelineBar';
 import type { TimelineSpec } from '../../src/workbench/definition';
 
@@ -80,5 +80,12 @@ describe('action registry', () => {
       shortcuts={transportActions(runtime(), TIMELINE, [1, 2])}/>);
     expect(screen.getByRole('region', { name: 'Transport shortcuts' }).textContent).toContain('Run / Pause');
     expect(screen.getByText('Previous event').closest('div')!.querySelector('kbd')!.textContent).toBe('[');
+  });
+  it('lists the viewport’s pointer gestures first, where the one-time orbit hint moves to', () => {
+    render(<AboutSheet open section="shortcuts" onOpenChange={() => undefined} onSection={() => undefined} experiment="Medium" active sections={[{ id: 'scenario', content: <p>notes</p> }]}
+      shortcuts={transportActions(runtime(), TIMELINE, [1, 2])} pointer={ORBIT_GESTURES}/>);
+    const regions = screen.getAllByRole('region');
+    expect(regions[0].getAttribute('aria-label')).toBe('Mouse and touch');
+    expect(screen.getByText('Orbit the camera').closest('div')!.textContent).toContain('Drag');
   });
 });

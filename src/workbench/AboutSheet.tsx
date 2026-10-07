@@ -16,9 +16,21 @@ const LABELS: Record<AboutSectionId, string> = { scenario: 'This scenario', unit
 /** A saved view (plan §10): a named URL-state link to a state worth returning to. */
 export interface SavedView { title: string; description: string; hash: string }
 
+/** A pointer gesture and what it does in the viewport, listed above the keyboard map. */
+export interface PointerGesture { gesture: string; does: string }
+/** The 3D labs' viewport gestures: the orbit hint shows once on the canvas, then lives here (plan §05 C). */
+export const ORBIT_GESTURES: readonly PointerGesture[] = [
+  { gesture: 'Drag', does: 'Orbit the camera' },
+  { gesture: 'Scroll or pinch', does: 'Zoom' },
+  { gesture: 'Click or tap', does: 'Inspect what is under the pointer' },
+];
+
 /** The lab's keyboard map, grouped as in the palette; each binding shows as keys (Ctrl S, Shift →). */
-function ShortcutList({ actions }: { actions: readonly Action[] }) {
-  return <>{ACTION_GROUPS.map(group => {
+function ShortcutList({ actions, pointer = [] }: { actions: readonly Action[]; pointer?: readonly PointerGesture[] }) {
+  return <>{pointer.length > 0 && <section className="about-shortcuts" aria-label="Mouse and touch">
+    <h3>Mouse and touch</h3>
+    <dl>{pointer.map(g => <div key={g.gesture}><dt>{g.does}</dt><dd>{g.gesture}</dd></div>)}</dl>
+  </section>}{ACTION_GROUPS.map(group => {
     const rows = actions.filter(a => a.group === group && a.keys?.length);
     return rows.length > 0 && <section key={group} className="about-shortcuts" aria-label={`${group} shortcuts`}>
       <h3>{group}</h3>
@@ -57,6 +69,8 @@ export interface AboutSheetProps {
   sections: readonly AboutSection[];
   /** The lab's actions, listed in a Shortcuts tab. */
   shortcuts?: readonly Action[];
+  /** The viewport's pointer gestures, listed first in the Shortcuts tab. */
+  pointer?: readonly PointerGesture[];
   /** Named links to states of this lab, listed in a Saved views tab. */
   views?: readonly SavedView[];
   /** Whether Shift ? opens it (the lab is visible). */
@@ -67,13 +81,13 @@ export interface AboutSheetProps {
  * The About sheet (plan §10): the full context behind the workspace — what the scenario shows and assumes, units and
  * constants, and sources — in a sheet over the inspector. The header chip, ? and Shift ? open it; Esc closes it.
  */
-export function AboutSheet({ open, onOpenChange, section, onSection, experiment, scenario, sections: about, shortcuts, views, active }: AboutSheetProps) {
+export function AboutSheet({ open, onOpenChange, section, onSection, experiment, scenario, sections: about, shortcuts, pointer, views, active }: AboutSheetProps) {
   /** Follow a saved view: the hash routes it (re-applied even when the address bar already shows it), and Help closes. */
   const follow = (view: SavedView) => { if (location.hash === view.hash) window.dispatchEvent(new HashChangeEvent('hashchange')); onOpenChange(false); };
   const sections: readonly AboutSection[] = [
     ...about,
     ...(views?.length ? [{ id: 'views' as const, content: <ul className="about-views">{views.map(v => <li key={v.hash}><a href={v.hash} onClick={() => follow(v)}>{v.title}</a><p>{v.description}</p></li>)}</ul> }] : []),
-    ...(shortcuts?.length ? [{ id: 'shortcuts' as const, content: <ShortcutList actions={shortcuts}/> }] : []),
+    ...(shortcuts?.length ? [{ id: 'shortcuts' as const, content: <ShortcutList actions={shortcuts} pointer={pointer}/> }] : []),
   ];
   useEffect(() => {
     if (!active || open) return;
