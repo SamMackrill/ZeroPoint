@@ -117,6 +117,62 @@ button.workbench-chip:focus-visible {
   outline-offset: 2px;
 }
 
+/* The palette search sits centred between the chip and the actions. */
+.workbench-search {
+  display: flex;
+  flex: 0 1 300px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 28px;
+  margin: 0 auto;
+  padding: 0 6px 0 10px;
+  color: var(--text-3);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font: inherit;
+  font-size: var(--fs-ui);
+  cursor: pointer;
+}
+
+.workbench-search > span:first-of-type {
+  flex: 1;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workbench-search:hover {
+  color: var(--text-2);
+  border-color: var(--line-2);
+}
+
+.workbench-search:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.workbench-search-keys {
+  display: flex;
+  gap: 2px;
+}
+
+.workbench-search-keys kbd {
+  padding: 0 4px;
+  color: var(--text-3);
+  background: var(--bg-3);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  font: var(--fs-micro) var(--mono);
+}
+
+/* The search pushes the actions right; without it (narrow layouts) the actions keep their own margin. */
+.workbench:not(.is-narrow) .workbench-search + .workbench-actions {
+  margin-left: 0;
+}
+
 .workbench-actions {
   display: flex;
   align-items: center;

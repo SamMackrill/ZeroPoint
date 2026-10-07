@@ -62,6 +62,7 @@
   overflow: visible;
 }
 
+.workbench.is-narrow .workbench-search,
 .workbench.is-narrow .workbench-chip,
 .workbench.is-narrow .workbench-breadcrumb > span:first-child,
 .workbench.is-narrow .workbench-breadcrumb > svg,

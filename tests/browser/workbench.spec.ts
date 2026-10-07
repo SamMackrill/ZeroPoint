@@ -179,3 +179,18 @@ test('the command palette jumps to parameters, toggles layers by name and switch
   await expect(page.getByTestId('light-tick')).toBeVisible();
   expect(errors).toEqual([]);
 });
+
+test('the header’s search opens the command palette, and returns focus to it on Esc', async ({ page }) => {
+  await page.goto('/'); await expect(tid(page, 'transport-run')).toBeEnabled();
+  const search = tid(page, 'header-search').filter({ visible: true });
+  await expect(search).toContainText('Search or jump to…');
+  await search.click();
+  const input = page.getByRole('combobox', { name: 'Command palette' });
+  await expect(input).toBeFocused();
+  await input.fill('Top camera'); await expect(page.getByRole('option', { name: /Top camera/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(input).toHaveCount(0); await expect(search).toBeFocused();
+  // Narrow layouts have no room for it (tablets keep Ctrl K; phones have no palette).
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await expect(tid(page, 'header-search').filter({ visible: true })).toHaveCount(0);
+});
