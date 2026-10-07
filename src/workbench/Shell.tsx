@@ -1,7 +1,8 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import { Menu, SlidersHorizontal, X } from 'lucide-react';
-import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { Group, Panel, Separator, useDefaultLayout, usePanelRef } from 'react-resizable-panels';
+import { OpenLibrary } from './library';
 import './shell.css';
 
 /** Props for Shell. */
@@ -167,7 +168,9 @@ function Drawer({ side, label, closeLabel, trigger, open, onOpenChange, onClickC
 function NarrowShell({ header, rail, viewport, timeline, dock, inspector, status }: ShellProps) {
   const [drawer, setDrawer] = useState<'rail' | 'inspector' | null>(null);
   const openChange = (which: 'rail' | 'inspector') => (open: boolean) => setDrawer(open ? which : null);
+  const openLibrary = useCallback(() => setDrawer('rail'), []);
   return (
+    <OpenLibrary.Provider value={openLibrary}>
     <div className="workbench is-narrow">
       {header}
       <div className="workbench-narrow-bar">
@@ -187,5 +190,6 @@ function NarrowShell({ header, rail, viewport, timeline, dock, inspector, status
       {dock && <div className="workbench-narrow-dock">{dock}</div>}
       {status}
     </div>
+    </OpenLibrary.Provider>
   );
 }

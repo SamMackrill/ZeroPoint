@@ -179,7 +179,18 @@ export const TELEMETRY_SCREENS = [
   { name: 'light-status', title: 'Light · status bar with debug telemetry', lab: 'lab-light', prepare: showTelemetry, focus: '.workbench-status' },
   { name: 'casimir-status', title: 'Casimir · status bar with debug telemetry (it had none)', lab: 'lab-casimir', prepare: showTelemetry, focus: '.workbench-status' },
 ];
-const SETS = { telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
+/**
+ * The narrow header's scenario picker (`--set picker`), magnified: the scenario name is outlined on both sides, so the
+ * small change (a button with ▾ in place of plain text) is easy to spot; then the sheet a tap opens.
+ */
+const outlineScenario = async page => { await page.addStyleTag({ content: '.workbench-breadcrumb [aria-current=page], [data-testid=scenario-picker] { outline: 2px solid #f5a524; outline-offset: 3px; border-radius: 4px; }' }); };
+const tapScenario = async page => { const picker = page.getByTestId('scenario-picker').filter({ visible: true }); if (await picker.count()) { await picker.click(); await page.waitForTimeout(500); } }; // before 19i there is no picker
+export const PICKER_SCREENS = [
+  { name: 'phone-header', title: 'Phone 390 px · header, 3× zoom: the scenario name (outlined) becomes a button with ▾', viewport: { width: 390, height: 844 }, scale: 3, focus: '.workbench-header', prepare: outlineScenario },
+  { name: 'tablet-header', title: 'Tablet 1024 px · header, 2× zoom: the same picker', viewport: { width: 1024, height: 768 }, scale: 2, focus: '.workbench-header', prepare: outlineScenario },
+  { name: 'phone-tap', title: 'Phone · after tapping the scenario name: the experiment library opens as a sheet (before: nothing to tap)', viewport: { width: 390, height: 844 }, prepare: tapScenario },
+];
+const SETS = { picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -194,7 +205,7 @@ async function serve(worktree, port) {
 /** Open one screen (lab and scenario by test id), optionally step it, and capture the viewport or its focus section. */
 async function capture(browser, url, screen, path) {
   const viewport = screen.viewport ?? { width: 1440, height: 900 }, narrow = viewport.width <= 850;
-  const page = await browser.newPage({ viewport });
+  const page = await browser.newPage({ viewport, deviceScaleFactor: screen.scale ?? 1 });
   await page.goto(screen.hash ? `${url}${screen.hash}` : url);
   // Every lab has a status bar; static stages (van der Waals' plates) have no Run button to wait for.
   await page.locator('.workbench-status').filter({ visible: true }).first().waitFor();
@@ -231,7 +242,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const before = option('--before'), out = option('--out'), title = option('--title') ?? 'Change', description = option('--description') ?? '';
   const screens = SETS[option('--set') ?? 'screens'];
   if (!screens) throw new Error(`--set must be one of: ${Object.keys(SETS).join(', ')}`);
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.

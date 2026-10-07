@@ -509,7 +509,7 @@
   },
   {
     "file": "src/workbench/Chrome.tsx",
-    "text": "Model IDs and parameter revisions in the status bar."
+    "text": "Frame rate, WebGL, model IDs, worker step times and parameter revisions in the status bar."
   },
   {
     "file": "src/workbench/compare.tsx",

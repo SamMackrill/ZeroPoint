@@ -58,3 +58,19 @@ test('below 851 px the camera presets collapse into a compact select that still 
   await light.click({ trial: true }); await light.selectOption({ index: 1 });
   await expect.poll(() => page.evaluate(() => location.hash)).toContain('cam=');
 });
+
+test('on a phone the header’s scenario name is a picker: it opens the library sheet, and choosing closes it', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/'); await expect(tid(page, 'transport-run').filter({ visible: true })).toBeEnabled();
+  const picker = tid(page, 'scenario-picker').filter({ visible: true });
+  await expect(picker).toHaveAccessibleName('Scenario: Balanced medium. Choose another');
+  await picker.click();
+  const library = page.getByRole('dialog', { name: 'Experiment library' });
+  await expect(library).toBeVisible();
+  await library.getByTestId('scenario-sparse').click();
+  await expect(library).toBeHidden();
+  await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toHaveText('Sparse fluctuations');
+  // Wide layouts have the rail, so the name is plain text there.
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(tid(page, 'scenario-picker').filter({ visible: true })).toHaveCount(0);
+});

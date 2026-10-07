@@ -1,12 +1,13 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Popover from '@radix-ui/react-popover';
 import { ArrowDownToLine, ArrowUpFromLine, Atom, ChevronDown, ChevronRight, CircleHelp, FlaskConical, Info, Lightbulb, Magnet, PanelLeftClose, PanelLeftOpen, Settings, Waves } from 'lucide-react';
-import type { ReactNode, Ref, RefObject } from 'react';
+import { useContext, type ReactNode, type Ref, type RefObject } from 'react';
 import type { Action } from './actions';
 import { BrandMark } from '../app/BrandMark';
 import { RepositoryLink } from '../app/RepositoryLink';
 import { updateSettings, useSettings } from './settings';
 import { useFps, webglInfo } from './telemetry';
+import { OpenLibrary } from './library';
 import './chrome.css';
 
 /** Props for Header. */
@@ -25,12 +26,17 @@ export interface HeaderProps {
 
 /** The header (§05 A): brand, breadcrumb, the one "Illustrative model" chip, file actions and the repository link. */
 export function Header({ experiment, scenario, modified, actions, onHelp, onChip }: HeaderProps) {
+  const openLibrary = useContext(OpenLibrary);
+  const current = scenario && <span aria-current="page">{scenario}{modified && <em> · modified</em>}</span>;
   return (
     <header className="workbench-header">
       <div className="workbench-brand"><BrandMark/><span>ZeroPoint<span className="brand-period">.</span></span></div>
       <nav className="workbench-breadcrumb" aria-label="Breadcrumb">
         <span>{experiment}</span>
-        {scenario && <><ChevronRight size={13} aria-hidden="true"/><span aria-current="page">{scenario}{modified && <em> · modified</em>}</span></>}
+        {/* Narrow layouts keep the rail in a drawer, so the scenario name opens it: a scenario picker in the header. */}
+        {scenario && <><ChevronRight size={13} aria-hidden="true"/>{openLibrary
+          ? <button type="button" className="workbench-scenario-picker" data-testid="scenario-picker" aria-label={`Scenario: ${scenario}. Choose another`} onClick={openLibrary}>{current}<ChevronDown size={13} aria-hidden="true"/></button>
+          : current}</>}
       </nav>
       {onChip
         ? <button type="button" className="workbench-chip" onClick={onChip}><Info size={12} aria-hidden="true"/>Illustrative model</button>
@@ -52,7 +58,7 @@ export function SettingsMenu() {
           <label><input type="checkbox" data-testid="setting-reduced-motion" checked={reducedMotion} onChange={e => updateSettings({ reducedMotion: e.target.checked })}/>Reduce flashing &amp; camera motion</label>
           <p>Keeps lobe size constant; rotation and pair separation still follow the lifecycle. Step while paused for still inspection. Defaults to your system’s reduce-motion setting.</p>
           <label><input type="checkbox" data-testid="setting-telemetry" checked={telemetry} onChange={e => updateSettings({ telemetry: e.target.checked })}/>Show debug telemetry</label>
-          <p>Model IDs and parameter revisions in the status bar.</p>
+          <p>Frame rate, WebGL, model IDs, worker step times and parameter revisions in the status bar.</p>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
