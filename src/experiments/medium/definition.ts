@@ -1,4 +1,4 @@
-import { DEFAULT_PARAMETERS, DEFAULT_VIEW, DT, type Parameters, type ViewSettings } from '../../model/types';
+import { DEFAULT_PARAMETERS, DEFAULT_VIEW, DT, validateParameters, validateSeed, type Parameters, type ViewSettings } from '../../model/types';
 import { SPEEDS } from '../../workbench/runtime';
 import type { ExperimentDefinition } from '../../workbench/definition';
 
@@ -35,5 +35,6 @@ export const mediumDefinition: ExperimentDefinition<MediumParams, ViewSettings> 
   panes: [{ id: 'dipole' }],
   cameras: [{ id: 'perspective', label: 'Perspective' }, { id: 'top', label: 'Top' }, { id: 'front', label: 'Front' }],
   speeds: SPEEDS,
+  validate: params => { validateSeed(params.seed); return validateParameters(params); },
   timeline: () => ({ kind: 'open', dt: DT, events: [], next: 'jump' }),
 };

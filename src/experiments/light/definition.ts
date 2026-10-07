@@ -1,4 +1,4 @@
-import { DEFAULT_LIGHT, DEFAULT_LIGHT_VIEW, hopTicks, LIGHT_DT, LIGHT_END_TICK, type LightParameters, type LightView } from '../../light/model';
+import { DEFAULT_LIGHT, DEFAULT_LIGHT_VIEW, hopTicks, LIGHT_DT, LIGHT_END_TICK, validateLightParameters, type LightParameters, type LightView } from '../../light/model';
 import { SPEEDS } from '../../workbench/runtime';
 import type { ExperimentDefinition, TimelineEvent } from '../../workbench/definition';
 
@@ -38,5 +38,6 @@ export const lightDefinition: ExperimentDefinition<LightParameters, LightView> =
   panes: [{ id: 'pair' }],
   cameras: [{ id: 'orbit', label: 'Orbit' }, { id: 'side', label: 'Side' }, { id: 'pair', label: 'Pair close-up' }],
   speeds: SPEEDS,
+  validate: validateLightParameters,
   timeline: (_scenario, params) => ({ kind: 'bounded', dt: LIGHT_DT, end: LIGHT_END_TICK, events: inductionEvents(params), next: 'event' }),
 };

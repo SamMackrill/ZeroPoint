@@ -1,4 +1,4 @@
-import { DEFAULT_ELECTRON, DEFAULT_ELECTRON_VIEW, ELECTRON_DT, ELECTRON_END, type ElectronParameters, type ElectronView } from '../../electron/model';
+import { DEFAULT_ELECTRON, DEFAULT_ELECTRON_VIEW, ELECTRON_DT, ELECTRON_END, validateElectronParameters, type ElectronParameters, type ElectronView } from '../../electron/model';
 import { SPEEDS } from '../../workbench/runtime';
 import type { ExperimentDefinition, TimelineEvent } from '../../workbench/definition';
 
@@ -63,6 +63,7 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
     { id: 'shell', label: 'Shell close-up', scenarios: ['spin'] },
   ],
   speeds: SPEEDS,
+  validate: validateElectronParameters,
   timeline: scenario => scenario === 'charge-flux' || scenario === 'radius-limit'
     ? { kind: 'static', dt: ELECTRON_DT, events: [] }
     : { kind: 'bounded', dt: ELECTRON_DT, end: ELECTRON_END, events: electronMilestones(scenario), next: scenario === 'spin' ? 'jump' : 'event' },

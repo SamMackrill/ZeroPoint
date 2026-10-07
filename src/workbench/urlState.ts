@@ -4,7 +4,7 @@
 // Values are validated against the experiment's definition on the way in; anything unknown or out of range is dropped.
 import { useEffect, useState } from 'react';
 import type { Action } from './actions';
-import { appliesTo, getPath, scenarioState, type ControlSpec, type ExperimentDefinition } from './definition';
+import { appliesTo, getPath, scenarioState, withPaths, type ControlSpec, type ExperimentDefinition } from './definition';
 
 /** A decoded route. Values are still strings; `resolveUrl` validates them for one experiment. */
 export interface UrlRoute {
@@ -108,6 +108,16 @@ export function resolveUrl(definition: ExperimentDefinition, route: UrlRoute): {
   }
   for (const [key, on] of Object.entries(route.layers)) {
     if (definition.layers.some(l => l.key === key && appliesTo(l, scenario))) overrides.view[key] = on; else dropped.push(`layer ${key}`);
+  }
+  // The definition's ranges admit values the lab's own check rejects (Light's wavelength is in 0.1 L steps), so the
+  // parameters go through that check too, and a value it rejects is dropped like any other.
+  if (definition.validate && Object.keys(overrides.params).length) {
+    const base = scenarioState(definition, scenario).params as object;
+    const passes = (params: Record<string, unknown>) => { try { definition.validate!(withPaths(base, params)); return true; } catch { return false; } };
+    if (!passes(overrides.params)) {
+      for (const key of Object.keys(overrides.params)) if (!passes({ [key]: overrides.params[key] })) { delete overrides.params[key]; dropped.push(key); }
+      if (!passes(overrides.params)) { dropped.push(...Object.keys(overrides.params)); overrides.params = {}; }
+    }
   }
   if (route.camera) { if (definition.cameras.some(c => c.id === route.camera && appliesTo(c, scenario))) overrides.camera = route.camera; else dropped.push(`camera ${route.camera}`); }
   if (route.split) {

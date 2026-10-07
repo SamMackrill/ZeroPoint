@@ -115,6 +115,8 @@ export interface ExperimentDefinition<P extends object = object, V extends objec
   panes?: readonly { id: string; scenarios?: readonly string[] }[];
   speeds: readonly number[];
   timeline(scenario: string, params: P): TimelineSpec;
+  /** The lab's own parameter check, the one its files and worker use; throws on parameters it rejects. */
+  validate?(params: P): unknown;
 }
 
 /** Read a dotted path ("spinDisplay.count") from an object. */
@@ -168,6 +170,9 @@ export function validateDefinition<P extends object, V extends object>(definitio
     if (getPath(source, spec.key) === undefined) problems.push(`${where} "${spec.key}" is not in the defaults`);
   };
   for (const spec of definition.params) checkControl(spec, definition.defaultParams, 'parameter');
+  if (definition.validate) for (const scenario of definition.scenarios) {
+    try { definition.validate(scenarioState(definition, scenario.id).params); } catch (error) { problems.push(`scenario "${scenario.id}" parameters fail the lab's check: ${error instanceof Error ? error.message : String(error)}`); }
+  }
   for (const spec of definition.viewControls ?? []) checkControl(spec, definition.defaultView, 'view control');
   for (const layer of definition.layers) {
     scoped(`layer "${layer.key}"`, layer);

@@ -35,6 +35,9 @@ describe('URL state', () => {
     expect(dropped.sort()).toEqual(['axis', 'beta', 'camera nope', 'layer bogus', 'spin', 'wobble'].sort()); // beta is Moving-only
     expect(resolveUrl(electronDefinition, decodeUrl('#/electron/nowhere')!)).toMatchObject({ scenario: 'stationary', dropped: ['scenario nowhere'] });
     expect(resolveUrl(lightDefinition, decodeUrl('#/light?wavelength=9')!).dropped).toEqual(['wavelength']);
+    // Within the range is not enough: the lab's own check (the one its files and worker use) has the last word.
+    expect(resolveUrl(lightDefinition, decodeUrl('#/light?wavelength=2.55&phase=90')!)).toMatchObject({ dropped: ['wavelength'], overrides: { params: { phase: 90 } } });
+    expect(resolveUrl(lightDefinition, decodeUrl('#/light?wavelength=2.5&polarization=7')!).overrides.params).toEqual({ wavelength: 2.5, polarization: 7 }); // files allow 7°, so links do
     // Split names one of the scenario's panes, or off where it has any.
     expect(resolveUrl(electronDefinition, decodeUrl('#/electron/spin?split=motion')!).overrides.split).toBe('motion');
     expect(resolveUrl(electronDefinition, decodeUrl('#/electron/spin?split=fig-9-9')!).dropped).toEqual(['split fig-9-9']);
