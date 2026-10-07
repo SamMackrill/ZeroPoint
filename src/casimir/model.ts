@@ -236,20 +236,29 @@ export function parseCasimirFile(text: string): CasimirState {
   });
   if (s.pair !== 'electron-electron' && s.pair !== 'electron-proton') throw new Error('Invalid Casimir state: pair.');
   if (s.separation < 4 || s.separation > 7) throw new Error('Invalid Casimir state: separation.');
-  if (!Number.isInteger(s.tick) || s.tick < 0 || !Number.isInteger(s.randomState) || s.randomState < 0 || s.randomState > 0xffffffff) throw new Error('Invalid Casimir state: tick or generator.');
+  if (!count(s.tick) || !Number.isInteger(s.randomState) || s.randomState < 0 || s.randomState > 0xffffffff) throw new Error('Invalid Casimir state: tick or generator.');
   // Finite is not enough: step() divides by lifetimes and hands out ids, so a crafted file must not slip in values that
   // turn the run to NaN or repeat ids.
   for (const key of ['nextId', 'eventId', 'births', 'deaths', 'gapBirths'] as const) if (!count(s[key])) throw new Error(`Invalid Casimir state: ${key}.`);
   if (!(s.left < s.right) || Math.abs(s.left) > POSITION_LIMIT || Math.abs(s.right) > POSITION_LIMIT) throw new Error('Invalid Casimir state: charge positions.');
+  const ids = new Set<number>();
+  let last = -Infinity;
   return {
     ...s,
     particles: list(s.particles, 'Zeptons', 5_000, v => {
       const z = shaped<Zepton>(v, 'Zepton', ZEPTON);
+      if (ids.has(z.id)) throw new Error(`Invalid Zeptons: id ${z.id} appears twice.`);
+      ids.add(z.id);
       // A gap birth has no lattice site (-1).
       if (!count(z.id) || !(Number.isInteger(z.site) && z.site >= -1) || !(z.lifetime > 0) || z.age < 0) throw new Error('Invalid Zepton: id, site, age or lifetime.');
       return z;
     }),
     events: list(s.events, 'interactions', 5_000, v => shaped<Interaction>(v, 'interaction', { id: 'number', time: 'number', text: 'string' })),
-    history: list(s.history, 'pressure history', 100_000, v => shaped<PressureSample>(v, 'pressure sample', { time: 'number', inner: 'number', outer: 'number' })),
+    history: list(s.history, 'pressure history', 100_000, v => {
+      const h = shaped<PressureSample>(v, 'pressure sample', { time: 'number', inner: 'number', outer: 'number' });
+      if (h.time < last) throw new Error('Invalid pressure history: times go backwards.');
+      last = h.time;
+      return h;
+    }),
   };
 }
