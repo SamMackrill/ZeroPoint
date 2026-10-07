@@ -2,6 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { Menu, SlidersHorizontal, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react';
 import { Group, Panel, Separator, useDefaultLayout, usePanelRef } from 'react-resizable-panels';
+import { useCommand } from './actions';
 import { OpenLibrary } from './library';
 import './shell.css';
 
@@ -18,10 +19,10 @@ export interface ShellProps {
   dockStripOnly?: boolean;
   inspector?: ReactNode;
   status?: ReactNode;
+  /** Whether this lab is the visible one, so its panel keys apply (default true). */
+  active?: boolean;
 }
 
-/** Whether a key event comes from a text field, where the panel shortcuts must not fire. */
-const typing = (target: EventTarget | null) => target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 
 /** Whether a media query matches, following changes (false where matchMedia is unavailable). */
 export function useMediaQuery(query: string): boolean {
@@ -81,7 +82,7 @@ export function Shell(props: ShellProps) {
 }
 
 /** The desktop shell: resizable panels with keyboard toggles. */
-function WideShell({ id, header, rail, viewport, timeline, dock, dockStripOnly, inspector, status }: ShellProps) {
+function WideShell({ id, header, rail, viewport, timeline, dock, dockStripOnly, inspector, status, active = true }: ShellProps) {
   const railRef = usePanelRef(), inspectorRef = usePanelRef(), dockRef = usePanelRef();
   const storage = layoutStorage();
   const outer = useDefaultLayout({ id: `zeropoint-shell-${id}`, storage });
@@ -95,27 +96,19 @@ function WideShell({ id, header, rail, viewport, timeline, dock, dockStripOnly, 
     if (window.innerWidth < 1440) railRef.current?.collapse();
   }, [id, storage, railRef]);
 
-  useEffect(() => {
-    const panels = { rail: railRef, inspector: inspectorRef, dock: dockRef };
-    const toggle = (name: keyof typeof panels) => { const p = panels[name].current; if (!p) return; if (p.isCollapsed()) p.expand(); else p.collapse(); };
-    const onKey = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.altKey || typing(event.target)) return;
-      const key = event.key.toLowerCase();
-      if (key === 'b') toggle('rail');
-      else if (key === 'i') toggle('inspector');
-      else if (key === 'j') toggle('dock');
-      else if (key === '.') {
-        if (beforeFocus.current) { for (const name of beforeFocus.current) panels[name as keyof typeof panels].current?.expand(); beforeFocus.current = null; }
-        else {
-          beforeFocus.current = Object.entries(panels).filter(([, p]) => p.current && !p.current.isCollapsed()).map(([name]) => name);
-          for (const p of Object.values(panels)) p.current?.collapse();
-        }
-      } else return;
-      event.preventDefault();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [railRef, inspectorRef, dockRef]);
+  // The panel keys (PANEL_SHORTCUTS) run through the registry while this lab is visible.
+  const panels = { rail: railRef, inspector: inspectorRef, dock: dockRef };
+  const toggle = (name: keyof typeof panels) => { const p = panels[name].current; if (!p) return; if (p.isCollapsed()) p.expand(); else p.collapse(); };
+  useCommand('view.rail', active, () => toggle('rail'));
+  useCommand('view.inspector', active, () => toggle('inspector'));
+  useCommand('view.dock', active, () => toggle('dock'));
+  useCommand('view.focus', active, () => {
+    if (beforeFocus.current) { for (const name of beforeFocus.current) panels[name as keyof typeof panels].current?.expand(); beforeFocus.current = null; }
+    else {
+      beforeFocus.current = Object.entries(panels).filter(([, p]) => p.current && !p.current.isCollapsed()).map(([name]) => name);
+      for (const p of Object.values(panels)) p.current?.collapse();
+    }
+  });
 
   return (
     <div className="workbench">

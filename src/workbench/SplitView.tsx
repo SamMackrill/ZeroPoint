@@ -1,6 +1,7 @@
 import { Columns2, Square } from 'lucide-react';
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Segmented } from '../ui/Segmented';
+import { useCommand } from './actions';
 import { usePhone } from './Shell';
 import './split-view.css';
 
@@ -21,8 +22,6 @@ export interface SplitViewProps {
   active: boolean;
 }
 
-/** Whether a key event comes from a text field or a dialog, where \ must not toggle the split. */
-const typing = (event: KeyboardEvent) => event.target instanceof HTMLElement && (event.target.isContentEditable || !!event.target.closest('input, textarea, select, [role=dialog], dialog[open]'));
 
 /**
  * Split view (docs/ui-redesign-plan.html §07): the ▢ / ▢▢ toggle (or \) shows a second pane beside the viewport, with a
@@ -33,15 +32,7 @@ export function SplitView({ primary, panes: offered, split, onSplit, pane, onPan
   const panes = usePhone() ? [] : offered;
   const current = panes.find(p => p.id === pane) ?? panes[0];
   const open = split && !!current;
-  useEffect(() => {
-    if (!active || !panes.length) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== '\\' || event.repeat || event.ctrlKey || event.metaKey || event.altKey || event.defaultPrevented || typing(event)) return;
-      event.preventDefault(); onSplit(!split);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [active, panes.length, split, onSplit]);
+  useCommand('view.split', !!active && panes.length > 0, () => onSplit(!split)); // the \ key (SPLIT_SHORTCUT)
   return (
     <div className={`split-view${open ? ' is-split' : ''}`}>
       <div className="split-primary">

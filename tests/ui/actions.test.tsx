@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { cameraActions, keyLabel, matches, useActions, type Action } from '../../src/workbench/actions';
+import { cameraActions, keyLabel, matches, PANEL_SHORTCUTS, useActions, useCommand, type Action } from '../../src/workbench/actions';
 import { AboutSheet, ORBIT_GESTURES } from '../../src/workbench/AboutSheet';
 import { transportActions, type TimelineRuntime } from '../../src/workbench/TimelineBar';
 import type { TimelineSpec } from '../../src/workbench/definition';
@@ -87,5 +87,25 @@ describe('action registry', () => {
     const regions = screen.getAllByRole('region');
     expect(regions[0].getAttribute('aria-label')).toBe('Mouse and touch');
     expect(screen.getByText('Orbit the camera').closest('div')!.textContent).toContain('Drag');
+  });
+});
+
+/** A lab whose panel key is a shared shortcut its own component registers. */
+function SharedLab({ active, onRail }: { active: boolean; onRail(): void }) {
+  useCommand('view.rail', active, onRail);
+  useActions(active, PANEL_SHORTCUTS);
+  return null;
+}
+
+describe('shared shortcuts', () => {
+  it('run the visible lab’s handler only, and pass the key through while none is registered', () => {
+    const a = vi.fn(), b = vi.fn();
+    const view = render(<><SharedLab active onRail={a}/><SharedLab active={false} onRail={b}/></>);
+    const press = () => { const event = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, metaKey: true, cancelable: true }); window.dispatchEvent(event); return event.defaultPrevented; };
+    expect(press()).toBe(true); expect(a).toHaveBeenCalledTimes(1); expect(b).not.toHaveBeenCalled();
+    view.rerender(<><SharedLab active={false} onRail={a}/><SharedLab active onRail={b}/></>); // switch labs
+    press(); expect(a).toHaveBeenCalledTimes(1); expect(b).toHaveBeenCalledTimes(1);
+    view.rerender(<><SharedLab active={false} onRail={a}/><SharedLab active={false} onRail={b}/></>);
+    expect(PANEL_SHORTCUTS.find(s => s.id === 'view.rail')!.available!()).toBe(false); // the palette leaves it out
   });
 });

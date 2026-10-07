@@ -1,10 +1,14 @@
 // @vitest-environment jsdom
 import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { SELECTION_SHORTCUTS, useActions } from '../../src/workbench/actions';
 import { CLICK_TOLERANCE_PX, isClick, useSelectionKeys } from '../../src/workbench/selection';
 
-/** Mount the selection keys with the given state. */
-function Keys(props: { active: boolean; hasSelection: boolean; onClear(): void; onFocus?(): void }) { useSelectionKeys(props); return <input aria-label="field"/>; }
+/** Mount the selection keys with the given state, and the registry's listener that runs them, as a lab does. */
+function Keys(props: { active: boolean; hasSelection: boolean; onClear(): void; onFocus?(): void }) {
+  useSelectionKeys(props); useActions(true, [SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus]);
+  return <input aria-label="field"/>;
+}
 
 describe('selection', () => {
   it('treats small pointer movements as clicks and larger ones as drags', () => {

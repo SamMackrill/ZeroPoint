@@ -2,12 +2,14 @@
 import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AboutSheet, useAbout, type AboutSection, type AboutSectionId } from '../../src/workbench/AboutSheet';
+import { PANEL_SHORTCUTS, useActions } from '../../src/workbench/actions';
 
 const SECTIONS: AboutSection[] = [{ id: 'scenario', content: <p>scenario notes</p> }, { id: 'sources', content: <p>source links</p> }];
 
-/** A lab's About sheet with a button that opens it at a section, as the header chip does. */
+/** A lab's About sheet with a button that opens it at a section, as the header chip does, and the registry's listener. */
 function Lab({ active = true, sections = SECTIONS, at }: { active?: boolean; sections?: AboutSection[]; at?: AboutSectionId }) {
   const about = useAbout();
+  useActions(true, PANEL_SHORTCUTS);
   return <>
     <button type="button" onClick={() => about.show(at)}>open</button><input aria-label="field"/>
     <AboutSheet {...about} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment="Electron in the ZPF" scenario="Spin in the field" sections={sections}/>

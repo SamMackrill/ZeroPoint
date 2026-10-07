@@ -2,13 +2,15 @@
 import { fireEvent, render } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it } from 'vitest';
+import { SPLIT_SHORTCUT, useActions } from '../../src/workbench/actions';
 import { SplitView, type SplitPane } from '../../src/workbench/SplitView';
 
 const PANES: SplitPane[] = [{ id: 'a', label: 'Section', content: <p>section body</p> }, { id: 'b', label: 'Motion', content: <p>motion body</p> }];
 
-/** A SplitView holding its own split and pane state, as the labs do. */
+/** A SplitView holding its own split and pane state, with the registry's listener for its key, as the labs do. */
 function Harness({ panes = PANES, active = true, initial = false }: { panes?: SplitPane[]; active?: boolean; initial?: boolean }) {
   const [split, setSplit] = useState(initial), [pane, setPane] = useState('a');
+  useActions(true, [SPLIT_SHORTCUT]);
   return <><SplitView primary={<p>viewport</p>} panes={panes} split={split} onSplit={setSplit} pane={pane} onPane={setPane} active={active}/><input aria-label="field"/><dialog open><button type="button">in dialog</button></dialog></>;
 }
 
