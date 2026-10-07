@@ -245,7 +245,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
 
   return (
     <div className="casimir-workbench-root" style={{ display: active ? undefined : 'none' }}>
-      <Shell id="casimir" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'loupe', label: 'Lifetime loupe', content: <div className="casimir-loupe-pane"><Lifetime particle={displayed} expired={!inspected}/></div> }]} split={split} onSplit={setSplit} pane="loupe" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+      <Shell active={active} id="casimir" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'loupe', label: 'Lifetime loupe', content: <div className="casimir-loupe-pane"><Lifetime particle={displayed} expired={!inspected}/></div> }]} split={split} onSplit={setSplit} pane="loupe" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={running} items={[`Separation ${params.separation.toFixed(1)} a.u.`, `${model.particles.length} Zeptons`, 'Qualitative pressure · arbitrary spatial units']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}

@@ -1,6 +1,7 @@
 // The action registry (plan §11 "Keyboard map", roadmap P6): every keyboard shortcut is an action with a label, a group
-// and a binding. One listener per visible lab runs them, the Help sheet lists them, and the command palette (UI 15b)
-// searches them.
+// and a binding. One listener per visible lab runs them, including the shared keys that the Shell, split view,
+// selection and Help register with useCommand; the Help sheet lists them, and the command palette (UI 15b) searches
+// them.
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { appliesTo, getPath, type ExperimentDefinition } from './definition';
 
@@ -24,8 +25,14 @@ export interface Action {
   /** Keep firing while the key is held (stepping); others fire once per press. */
   repeat?: boolean;
   /**
-   * Handled by its own component (the split view, selection, the Shell's panels, the Help sheet), so the registry lists
-   * it but does not bind it; from the palette, it presses its key.
+   * Bound only while this returns true. Shared shortcuts (the Shell's panels, the split view, selection, Help) are
+   * available while the visible lab's component that owns the behaviour has registered it (useCommand); otherwise their
+   * keys pass through and the palette leaves them out.
+   */
+  available?(): boolean;
+  /**
+   * Handled by its own component (Setup's Apply, the app's command palette), so the registry lists it but does not
+   * bind it; from the palette, it presses its key.
    */
   listOnly?: boolean;
   /** Not offered in the command palette (e.g. Apply, which needs focus in Setup). */
@@ -81,7 +88,7 @@ export function useActions(active: boolean, actions: readonly Action[]) {
     if (!active) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || busyTarget(event) || ownKey(event)) return;
-      const action = current.current.find(a => !a.listOnly && a.keys?.some(k => matches(k, event)));
+      const action = current.current.find(a => !a.listOnly && (a.available?.() ?? true) && a.keys?.some(k => matches(k, event)));
       if (!action) return;
       event.preventDefault();
       if (action.disabled || (event.repeat && !action.repeat)) return;
@@ -106,23 +113,43 @@ export function press(binding: string) {
 /** A shortcut its own component handles (listOnly), listed so the Help sheet and palette show the whole keyboard map. */
 const listed = (id: string, label: string, group: ActionGroup, key: string): Action => ({ id, label, group, keys: [key], run: () => press(key), listOnly: true });
 
+/** The visible lab's handlers for the shared shortcuts, by action id. */
+const handlers = new Map<string, () => void>();
+/**
+ * Register what a shared shortcut does while `enabled` (its lab is visible and the behaviour applies: a selection to
+ * clear, panes to split). The component that owns the behaviour calls it, and the registry's one listener runs it.
+ */
+export function useCommand(id: string, enabled: boolean, run: () => void) {
+  const latest = useRef(run);
+  useLayoutEffect(() => { latest.current = run; });
+  useEffect(() => {
+    if (!enabled) return;
+    const handler = () => latest.current();
+    handlers.set(id, handler);
+    // Switching labs registers the new lab's handler and removes the old one, in either order.
+    return () => { if (handlers.get(id) === handler) handlers.delete(id); };
+  }, [id, enabled]);
+}
+/** A shortcut whose behaviour a component registers with useCommand; unbound while none has. */
+const shared = (id: string, label: string, group: ActionGroup, key: string): Action => ({ id, label, group, keys: [key], run: () => handlers.get(id)?.(), available: () => handlers.has(id) });
+
 /** Shortcuts every lab has: the Shell's panels and focus mode, and Help. */
 export const PANEL_SHORTCUTS: readonly Action[] = [
-  listed('view.rail', 'Show or hide the rail', 'View', 'Mod+b'),
-  listed('view.inspector', 'Show or hide the inspector', 'View', 'Mod+i'),
-  listed('view.dock', 'Show or hide the dock', 'View', 'Mod+j'),
-  listed('view.focus', 'Focus mode (hide the panels)', 'View', 'Mod+.'),
-  listed('help.open', 'Help: About and shortcuts', 'Help', '?'),
+  shared('view.rail', 'Show or hide the rail', 'View', 'Mod+b'),
+  shared('view.inspector', 'Show or hide the inspector', 'View', 'Mod+i'),
+  shared('view.dock', 'Show or hide the dock', 'View', 'Mod+j'),
+  shared('view.focus', 'Focus mode (hide the panels)', 'View', 'Mod+.'),
+  shared('help.open', 'Help: About and shortcuts', 'Help', '?'),
   { ...listed('help.palette', 'Command palette', 'Help', 'Mod+k'), palette: false },
 ];
 /** SetupPanel's own key, for labs with restart parameters. */
 export const APPLY_SHORTCUT: Action = { ...listed('setup.apply', 'Apply pending changes', 'Setup', 'Mod+Enter'), palette: false };
-/** The split view's own key (SplitView). */
-export const SPLIT_SHORTCUT = listed('view.split', 'Split view', 'View', '\\');
-/** Selection keys (useSelectionKeys); Focus only where the lab has a focus camera. */
+/** The split view's key; SplitView registers it while the scenario has linked panes. */
+export const SPLIT_SHORTCUT = shared('view.split', 'Split view', 'View', '\\');
+/** Selection keys; useSelectionKeys registers them while there is a selection (Focus only where the lab can focus). */
 export const SELECTION_SHORTCUTS = {
-  clear: listed('selection.clear', 'Clear the selection', 'Selection', 'Escape'),
-  focus: listed('selection.focus', 'Focus the selection', 'Selection', 'f'),
+  clear: shared('selection.clear', 'Clear the selection', 'Selection', 'Escape'),
+  focus: shared('selection.focus', 'Focus the selection', 'Selection', 'f'),
 };
 
 /** Camera presets on 1–4, in the order the viewport's camera control lists them. */

@@ -2,7 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
-import { ACTION_GROUPS, keyLabel, type Action } from './actions';
+import { ACTION_GROUPS, keyLabel, useCommand, type Action } from './actions';
 import './about-sheet.css';
 
 /** The Help sheet's sections: About (plan §10) and the keyboard map (§11). Saved views joins them with URL state (UI 16). */
@@ -39,8 +39,6 @@ function ShortcutList({ actions, pointer = [] }: { actions: readonly Action[]; p
   })}<p className="about-shortcuts-note">Shortcuts are ignored while typing in a field or while a dialog is open.</p></>;
 }
 
-/** Whether a key event comes from a text field or a dialog, where ? must keep its usual meaning. */
-const typing = (event: KeyboardEvent) => event.target instanceof HTMLElement && (event.target.isContentEditable || !!event.target.closest('input, textarea, select, [role=dialog], dialog[open]'));
 
 /** Open state for one lab's About sheet: `show()` opens it, at a section if given. */
 export function useAbout() {
@@ -89,15 +87,7 @@ export function AboutSheet({ open, onOpenChange, section, onSection, experiment,
     ...(views?.length ? [{ id: 'views' as const, content: <ul className="about-views">{views.map(v => <li key={v.hash}><a href={v.hash} onClick={() => follow(v)}>{v.title}</a><p>{v.description}</p></li>)}</ul> }] : []),
     ...(shortcuts?.length ? [{ id: 'shortcuts' as const, content: <ShortcutList actions={shortcuts} pointer={pointer}/> }] : []),
   ];
-  useEffect(() => {
-    if (!active || open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key !== '?' || event.ctrlKey || event.metaKey || event.altKey || event.defaultPrevented || typing(event)) return;
-      event.preventDefault(); onOpenChange(true);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [active, open, onOpenChange]);
+  useCommand('help.open', active && !open, () => onOpenChange(true)); // the ? key (PANEL_SHORTCUTS)
   // A sheet left open when its lab is hidden closes, so it does not reappear on return without a new request.
   useEffect(() => { if (!active && open) onOpenChange(false); }, [active, open, onOpenChange]);
   const current = sections.some(s => s.id === section) ? section : sections[0]?.id;

@@ -189,7 +189,7 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
 
   return (
     <div className="vdw-workbench-root" style={{ display: active ? undefined : 'none' }}>
-      <Shell id="vdw" dockStripOnly={stage !== 2} header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={stage === 2 ? [2, 3].map(i => ({ id: `fig-3-${i + 1}`, label: `Fig. 3-${i + 1}`, content: <div className="vdw-figure-pane"><SourceFigure index={i}/></div> })) : []} split={split} onSplit={setSplit} pane={figure} onPane={setFigure}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+      <Shell active={active} id="vdw" dockStripOnly={stage !== 2} header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={stage === 2 ? [2, 3].map(i => ({ id: `fig-3-${i + 1}`, label: `Fig. 3-${i + 1}`, content: <div className="vdw-figure-pane"><SourceFigure index={i}/></div> })) : []} split={split} onSplit={setSplit} pane={figure} onPane={setFigure}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<VdwStatus runtime={runtime} stage={current.title}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}

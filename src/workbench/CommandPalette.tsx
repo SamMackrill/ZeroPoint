@@ -50,7 +50,7 @@ export function CommandPalette({ navigation }: CommandPaletteProps) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
-  const actions = open ? [...navigation, ...visibleActions()].filter(a => a.palette !== false) : [];
+  const actions = open ? [...navigation, ...visibleActions()].filter(a => a.palette !== false && (a.available?.() ?? true)) : [];
   /** Close first, so focus returns to the page, then run the action on the next frame. */
   const choose = (action: Action) => { change(false); requestAnimationFrame(() => action.run()); };
   return (

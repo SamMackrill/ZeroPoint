@@ -276,7 +276,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
 
   return (
     <div className="light-workbench-root" style={{ display: active ? undefined : 'none' }}>
-      <Shell id="light" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'pair', label: `Pair ${inspected.index + 1} close-up`, content: <div className="light-pair-pane">{glyph}</div> }]} split={split} onSplit={setSplit} pane="pair" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+      <Shell active={active} id="light" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'pair', label: `Pair ${inspected.index + 1} close-up`, content: <div className="light-pair-pane">{glyph}</div> }]} split={split} onSplit={setSplit} pane="pair" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={s.running} telemetry={[LIGHT_MODEL]} items={[...(pB ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), <span data-testid="light-tick">Tick {s.tick} · Δt = τ/120</span>, `start x = ${sourceX(p).toFixed(1)} L`, 'Fixed centres · prescribed c · local worker']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}

@@ -342,7 +342,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
 
   return (
     <div className={`electron-workbench-root ${p.mode === 'spin' ? 'electron-spin-view' : ''}`} style={{ display: active ? undefined : 'none' }}>
-      <Shell id="electron" header={headerNode} rail={rail} viewport={<SplitView active={active && !study} primary={viewportNode} panes={panes} split={p.mode === 'spin' ? view.spinDisplay.section : motionSplit} onSplit={p.mode === 'spin' ? setSplit : setMotionSplit} pane={p.mode === 'spin' ? pane : 'motion'} onPane={id => setPane(id as 'section' | 'motion')}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
+      <Shell active={active} id="electron" header={headerNode} rail={rail} viewport={<SplitView active={active && !study} primary={viewportNode} panes={panes} split={p.mode === 'spin' ? view.spinDisplay.section : motionSplit} onSplit={p.mode === 'spin' ? setSplit : setMotionSplit} pane={p.mode === 'spin' ? pane : 'motion'} onPane={id => setPane(id as 'section' | 'motion')}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
         status={<StatusBar running={s.running} telemetry={[ELECTRON_MODEL]} items={[...(pB ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), <span data-testid="electron-tick">Tick {s.tick} · {(time * TAU).toExponential(2)} s</span>, 'τ = R/c', 'Fixed zepton centres · local worker · source-linked model']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
