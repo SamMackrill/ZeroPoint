@@ -20,7 +20,7 @@ describe('experiment definitions', () => {
     const shown = (scenario: string) => electronDefinition.params.filter(p => appliesTo(p, scenario)).map(p => p.key);
     expect(shown('moving')).toContain('beta');
     expect(shown('stationary')).not.toContain('beta');
-    expect(shown('charge-flux')).toEqual([]);
+    expect(shown('charge-flux')).toEqual([]); expect(shown('mass-shell')).toEqual([]);
     expect(electronDefinition.cameras.filter(c => appliesTo(c, 'spin')).map(c => c.id)).toContain('shell');
     expect(vanDerWaalsDefinition.params.filter(p => appliesTo(p, 'pressure')).map(p => p.key)).toEqual(['gap', 'area']);
   });
@@ -34,6 +34,7 @@ describe('experiment definitions', () => {
     expect(electronDefinition.timeline('stationary', electronDefinition.defaultParams).events.map(e => e.tick)).toEqual([42, 360]);
     expect(electronDefinition.timeline('spin', electronDefinition.defaultParams)).toMatchObject({ kind: 'bounded', next: 'jump', events: [] });
     expect(electronDefinition.timeline('radius-limit', electronDefinition.defaultParams).kind).toBe('static');
+    expect(electronDefinition.timeline('mass-shell', electronDefinition.defaultParams).kind).toBe('static');
     expect(mediumDefinition.timeline('balanced', mediumDefinition.defaultParams)).toMatchObject({ kind: 'open', next: 'jump' });
     expect(vanDerWaalsDefinition.timeline('correlated', vanDerWaalsDefinition.defaultParams)).toMatchObject({ kind: 'loop', end: 120 });
     expect(casimirDefinition.speeds).toEqual([0.1, 0.25, 0.5, 1, 2]);

@@ -611,3 +611,34 @@
     font-size: var(--fs-ui);
   }
 }
+
+/* Mass study: excluded energy against mc² (the tick). */
+.electron-mass-bar {
+  position: relative;
+  height: 10px;
+  margin: 6px 0 26px;
+  border-radius: 5px;
+  background: var(--bg-3);
+}
+
+.electron-mass-bar > i {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+}
+
+.electron-mass-bar > b {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 18px;
+  background: var(--text);
+}
+
+.electron-mass-bar > span {
+  position: absolute;
+  top: 16px;
+  transform: translateX(-50%);
+  font-size: var(--fs-micro);
+  color: var(--text-2);
+}

@@ -10,7 +10,7 @@
 
 ## Scale and reference fields
 
-The [video refinement](electron-video-notes.md) adds a magnified, timeline-linked charge-motion view within the spin controls. Choose velocity arrows or signed conventional-current contributions, and use the shared-rotation shortcut to explore the coordination account. The existing alternating-shell option remains a labelled extension. Below the probe history, **Explore the electron’s properties** provides independent stationary Gauss-sphere and effective shell radius/rate investigations. These reference controls do not change the worker, saved state or CSV. The radius/rate graph uses effective shell kinematics; it does not change the local pair speed law.
+The [video refinement](electron-video-notes.md) adds a magnified, timeline-linked charge-motion view within the spin controls. Choose velocity arrows or signed conventional-current contributions, and use the shared-rotation shortcut to explore the coordination account. The existing alternating-shell option remains a labelled extension. **Explore the electron’s properties** provides independent stationary Gauss-sphere and effective shell radius/rate investigations, and (since 10 November 2026) **Mass & excluded energy**, which treats the electron or proton as a shell that excludes a band of zero-point wavelengths and compares the excluded energy with `mc²`, reproducing the figures of chapter 16 of the book ([notes](electron-video-notes.md#mass-as-excluded-zero-point-energy)). These reference controls do not change the worker, saved state or CSV. The radius/rate graph uses effective shell kinematics; it does not change the local pair speed law.
 
 `R = lambda_C/2 = 1.21315511769 pm`, `tau = R/c`, and `c = 299792458 m/s`. At 1× playback, one second of wall time represents one tau (approximately `4.05 × 10^-21 s`). The effective radius argument gives `c/(2*pi*R) ≈ 3.933 × 10^19 Hz`. That is a source reference, not a rigid surface speed in the renderer.
 
@@ -83,7 +83,7 @@ CSV exports the full reference sequence at 0.1-tau intervals, including future s
 
 Implemented: source-linked electric alignment, local preferred turns illustrating Fleming's spin account, moving-electron response, analytic reference fields/flux, fixed probes, lifecycle inspection, transport, replay, state files and exports.
 
-Not yet derived: a microscopic van der Waals torque law, emergent charge/alpha, quantized angular momentum, g-factor corrections, mass-energy from spectral exclusion, shell equilibrium, acceleration/radiation or a causal medium propagation solver. The source papers' missing equations and the differing shell/radius interpretations are recorded in the source notes.
+Not yet derived: a microscopic van der Waals torque law, emergent charge/alpha, quantized angular momentum, g-factor corrections, a shell diameter from first principles (the mass study takes the diameter and mass as inputs), shell equilibrium, acceleration/radiation or a causal medium propagation solver. The source papers' missing equations and the differing shell/radius interpretations are recorded in the source notes.
 
 ## Electron introduction and initial polarization
 

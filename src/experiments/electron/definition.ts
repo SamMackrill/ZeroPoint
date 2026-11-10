@@ -28,6 +28,7 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
     { id: 'moving', title: 'Moving electron', description: 'Pairs turn locally as the electron passes', params: { mode: 'moving' } },
     { id: 'charge-flux', title: 'Charge & flux', description: 'A Gauss sphere of variable radius', static: true },
     { id: 'radius-limit', title: 'Radius limit', description: 'Effective speed against radius', static: true },
+    { id: 'mass-shell', title: 'Mass & excluded energy', description: 'A shell that shuts out a band of fluctuations', static: true },
   ],
   defaultParams: DEFAULT_ELECTRON,
   defaultView: DEFAULT_ELECTRON_VIEW,
@@ -64,7 +65,7 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
   ],
   speeds: SPEEDS,
   validate: validateElectronParameters,
-  timeline: scenario => scenario === 'charge-flux' || scenario === 'radius-limit'
+  timeline: scenario => scenario === 'charge-flux' || scenario === 'radius-limit' || scenario === 'mass-shell'
     ? { kind: 'static', dt: ELECTRON_DT, events: [] }
     : { kind: 'bounded', dt: ELECTRON_DT, end: ELECTRON_END, events: electronMilestones(scenario), next: scenario === 'spin' ? 'jump' : 'event' },
 };

@@ -36,7 +36,7 @@ import { AboutSheet, helpActions, ORBIT_GESTURES, useAbout, type SavedView } fro
 const MODE_OF: Record<string, ElectronMode> = { stationary: 'electric', spin: 'spin', moving: 'moving' };
 const SCENARIO_OF: Record<ElectronMode, string> = { electric: 'stationary', spin: 'spin', moving: 'moving' };
 /** The two static studies, from ElectronProperties. */
-const STUDY_OF: Record<string, 'flux' | 'radius'> = { 'charge-flux': 'flux', 'radius-limit': 'radius' };
+const STUDY_OF: Record<string, 'flux' | 'radius' | 'mass'> = { 'charge-flux': 'flux', 'radius-limit': 'radius', 'mass-shell': 'mass' };
 /** What each timed scenario is about (About this scenario). */
 const DESCRIPTION: Record<ElectronMode, string> = {
   electric: 'Start with an unpolarized cubic medium. The electron appears, and nearby pairs align first as a three-dimensional electric pattern resolves. Every new pair is born at a random angle and turns toward the electron: completely near it, and by a share that thins with distance.',

@@ -92,6 +92,46 @@
     "text": "These controls explore references independently of the main scene and its saved timeline."
   },
   {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "shell: fluctuations with wavelengths between its inner and outer diameters are excluded"
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "Ring: the excluded band · dashed: cannot fit"
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "How much zero-point energy does the shell shut out?"
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "Fluctuations shorter than the inner diameter exist inside the shell and longer than the outer diameter exist outside it. Those in between are excluded. Fleming equates their energy with the particle’s mass-energy."
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "Balanced: the excluded zero-point energy equals the mass-energy."
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "This shell excludes more energy than the particle’s mass-energy."
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "This shell excludes less energy than the particle’s mass-energy."
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "GeV/cm³, which balances at an outer diameter of"
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": ". A virtual pair at the pair-production energy has a wavelength of"
+  },
+  {
+    "file": "src/electron/ElectronProperties.tsx",
+    "text": "The Zero-Point Universe · ch. 16, Mass ↗"
+  },
+  {
     "file": "src/electron/SpinSection.tsx",
     "text": "Positive ends face inward. Curled arrows turn around each fixed pair centre."
   },

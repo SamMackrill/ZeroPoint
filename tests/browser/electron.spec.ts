@@ -65,6 +65,19 @@ test('the static studies compare flux and rate limits, and the spin scenario lin
   await expect(page.getByTestId('property-limit')).toHaveText('2.000');
   await expect(page.getByTestId('property-limit-status')).toContainText('Below the proposed limit');
   await page.getByLabel('Electron property investigations', { exact: true }).screenshot({ path: 'test-results/electron-property-rate.png' });
+  // Mass as excluded zero-point energy (book ch. 16): the default shell balances, and the proton reproduces Fleming's figures.
+  await scenario(page, 'mass-shell');
+  await expect(tid(page, 'transport-run')).toHaveCount(0);
+  await expect(page.getByTestId('mass-ratio')).toHaveText('1.000');
+  await expect(page.getByTestId('mass-density')).toHaveText('6.833 × 10²⁵ GeV/cm³');
+  await expect(page.getByTestId('mass-status')).toContainText('Balanced');
+  await page.getByLabel('Shell thickness', { exact: true }).fill('1.5');
+  await expect(page.getByTestId('mass-status')).toContainText('more energy');
+  await page.getByRole('button', { name: 'Proton', exact: true }).click();
+  await expect(page.getByTestId('mass-diameters')).toHaveText('1.586 / 1.924 fm');
+  await expect(page.getByTestId('mass-density')).toHaveText('3.315 × 10³⁸ GeV/cm³');
+  await expect(page.getByTestId('mass-balance')).toHaveText('0.169 fm');
+  await page.getByLabel('Electron property investigations', { exact: true }).screenshot({ path: 'test-results/electron-property-mass.png' });
   await scenario(page, 'spin');
   await expect(page.getByTestId('electron-tick')).toContainText('Tick 0');
   // The video's shared rotation is a saved view in Help: a link that sets Shared, opens Charge motion and selects a pair.
