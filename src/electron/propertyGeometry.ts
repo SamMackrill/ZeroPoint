@@ -34,5 +34,7 @@ export function latticeTurnVelocity(s: ElectronState, index: number): Vec {
   const before = s.tick >= TURN_STEP ? at(s.tick - TURN_STEP) : null, after = at(s.tick + TURN_STEP);
   const a = before ?? { tick: s.tick, direction: d.direction }, b = after ?? { tick: s.tick, direction: d.direction };
   if (b.tick === a.tick) return [0, 0, 0];
-  return scale(add(b.direction, scale(a.direction, -1)), d.separation / 2 / ((b.tick - a.tick) * ELECTRON_DT));
+  // A turn moves the end at right angles to the pair; the chord of a one-sided step is not quite, so project it.
+  const chord = add(b.direction, scale(a.direction, -1)), turn = add(chord, scale(d.direction, -dot(chord, d.direction)));
+  return scale(turn, d.separation / 2 / ((b.tick - a.tick) * ELECTRON_DT));
 }

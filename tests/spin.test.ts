@@ -1,18 +1,20 @@
 import { describe, expect, it } from 'vitest';
-import { add, cross, DEFAULT_ELECTRON, DEFAULT_ELECTRON_VIEW, DEFAULT_SPIN_DISPLAY, dot, ELECTRON_DT, ELECTRON_MODEL, LATTICE_SAMPLES, norm, parseElectronFile, scale, SHELL_RADII, SAMPLES_PER_SHELL, unit } from '../src/electron/model';
+import { add, cross, DEFAULT_ELECTRON, DEFAULT_ELECTRON_VIEW, DEFAULT_SPIN_DISPLAY, dot, ELECTRON_DT, ELECTRON_FILE_VERSION, ELECTRON_MODEL, LATTICE_SAMPLES, norm, parseElectronFile, scale, SHELL_RADII, SAMPLES_PER_SHELL, unit } from '../src/electron/model';
 import type { ElectronState } from '../src/electron/model';
 import { displayedDipole, localTurnArrow, sectionFrame, sectionIndices, shellCentre } from '../src/electron/spinGeometry';
 
 const state: ElectronState = { model: ELECTRON_MODEL, tick: 120, parameters: { ...DEFAULT_ELECTRON, mode: 'spin' } };
 describe('linked spin shell geometry', () => {
-  it('reverses adjacent complete bands only when requested, and reverses all bands with projection', () => {
+  it('shares one rotation preference by default, reverses adjacent complete bands only when requested, and reverses all bands with projection', () => {
+    expect(DEFAULT_SPIN_DISPLAY.alternating).toBe(false);
+    const alternating = { ...DEFAULT_SPIN_DISPLAY, alternating: true };
     for (let band = 0; band < 4; band++) {
       const index = LATTICE_SAMPLES + band * SAMPLES_PER_SHELL + 34;
-      const d = displayedDipole(state, index, DEFAULT_SPIN_DISPLAY);
+      const d = displayedDipole(state, index, alternating);
       expect(Math.sign(d.spinRate)).toBe(band % 2 ? -1 : 1);
-      const shared = displayedDipole(state, index, { ...DEFAULT_SPIN_DISPLAY, alternating: false });
+      const shared = displayedDipole(state, index, DEFAULT_SPIN_DISPLAY);
       expect(shared.spinRate).toBeGreaterThan(0);
-      const reversed = displayedDipole({ ...state, parameters: { ...state.parameters, spin: -1 } }, index, DEFAULT_SPIN_DISPLAY);
+      const reversed = displayedDipole({ ...state, parameters: { ...state.parameters, spin: -1 } }, index, alternating);
       expect(reversed.spinRate).toBe(-d.spinRate);
       expect(reversed.centre).toEqual(d.centre);
     }
@@ -61,8 +63,8 @@ describe('linked spin shell geometry', () => {
     }
   });
   it('round-trips display controls, defaults old saves and rejects unsafe counts and gains', () => {
-    const view = { ...DEFAULT_ELECTRON_VIEW, spinDisplay: { count: 4, gain: 4, alternating: false, guides: false, section: false } };
-    const file = { format: 'zeropoint-electron', version: 3, state, view };
+    const view = { ...DEFAULT_ELECTRON_VIEW, spinDisplay: { count: 4, gain: 4, alternating: true, guides: false, section: false } };
+    const file = { format: 'zeropoint-electron', version: ELECTRON_FILE_VERSION, state, view };
     expect(parseElectronFile(JSON.stringify(file)).view).toEqual(view);
     const { spinDisplay: _display, ...oldView } = view;
     expect(parseElectronFile(JSON.stringify({ ...file, view: oldView })).view.spinDisplay).toEqual(DEFAULT_SPIN_DISPLAY);

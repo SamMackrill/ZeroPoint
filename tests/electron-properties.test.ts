@@ -42,10 +42,12 @@ describe('electron video investigations', () => {
 describe('lattice charge motion (Stationary and Moving panes)', () => {
   const state = (mode: 'electric' | 'moving', tick: number): ElectronState => ({ model: ELECTRON_MODEL, tick, parameters: { ...DEFAULT_ELECTRON, mode } });
   const speeds = (s: ElectronState) => Array.from({ length: LATTICE_SAMPLES }, (_, i) => norm(latticeTurnVelocity(s, i)));
-  it('turns Stationary pairs only while the polarization builds', () => {
-    expect(Math.max(...speeds(state('electric', 0)))).toBe(0); // before the electron is introduced
-    expect(Math.max(...speeds(state('electric', 240)))).toBeGreaterThan(0); // aligning
-    expect(Math.max(...speeds(state('electric', 2400)))).toBe(0); // aligned: polarized, no current
+  it('turns Stationary pairs once the electron is present, generation after generation', () => {
+    expect(Math.max(...speeds(state('electric', 0)))).toBe(0); // before the electron is introduced: born at random, no turn
+    expect(Math.max(...speeds(state('electric', 240)))).toBeGreaterThan(0); // the polarization building
+    // Each replacement is born at random and turns toward the electron: polarization never comes to rest.
+    const settled = speeds(state('electric', 2400));
+    expect(settled.filter(v => v > 0).length).toBeGreaterThan(LATTICE_SAMPLES / 2); expect(Math.max(...settled)).toBeLessThan(1);
   });
   it('turns Moving pairs as the electron passes, as pure rotations with no jumps', () => {
     for (let tick = 0; tick <= 5760; tick += 480) {

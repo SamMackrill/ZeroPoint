@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CORE_MASK, DEFAULT_ELECTRON, DEFAULT_ELECTRON_VIEW, ELECTRON_MODEL, GRID_SIDE, GRID_SPACING, LATTICE_SAMPLES, SAMPLES_PER_SHELL, ElectronSimulation, add, alignmentProgress, electronPresence, dipoleAt, dot, electronX, enclosedCharge, norm, parseElectronFile, referenceFields, sampleCentre, scale, spinRateAtRadius, unit } from '../src/electron/model';
+import { CORE_MASK, DEFAULT_ELECTRON, DEFAULT_ELECTRON_VIEW, ELECTRON_FILE_VERSION, ELECTRON_MODEL, FULL_ALIGNMENT_RADIUS, GRID_SIDE, GRID_SPACING, LATTICE_SAMPLES, SAMPLES_PER_SHELL, ElectronSimulation, add, alignmentOfShare, alignmentProgress, alignmentWhileTurning, birthDirection, electronPresence, dipoleAt, dot, electronX, enclosedCharge, meanAlignment, norm, parseElectronFile, referenceFields, sampleCentre, scale, shellAlignment, spinRateAtRadius, turnShare, unit } from '../src/electron/model';
 import type { ElectronMode, ElectronState, Vec } from '../src/electron/model';
 import { faradayLines, polarizationGrid, samplePolarization, tracePolarization } from '../src/electron/fieldLines';
 const state = (mode: ElectronMode = 'electric', tick = 360): ElectronState => ({ model: ELECTRON_MODEL, tick, parameters: { ...DEFAULT_ELECTRON, mode } });
@@ -52,6 +52,9 @@ describe('electron polarization experiment', () => {
     const { inspect: _inspect, ...v2View } = DEFAULT_ELECTRON_VIEW;
     const v2 = parseElectronFile(JSON.stringify({ ...legacy, version: 2, state: { ...state('electric'), model: 'electron-polarization/2' }, view: v2View }));
     expect(v2.migrated).toBe(true); expect(v2.view.inspect).toBe(false);
+    const v3 = parseElectronFile(JSON.stringify({ format: 'zeropoint-electron', version: 3, state: { ...state('moving', 900), model: 'electron-polarization/3' }, view: DEFAULT_ELECTRON_VIEW }));
+    expect(v3.migrated).toBe(true); expect(v3.state).toEqual(state('moving', 900));
+    expect(() => parseElectronFile(JSON.stringify({ format: 'zeropoint-electron', version: 3, state: state('moving', 900), view: DEFAULT_ELECTRON_VIEW }))).toThrow('Incompatible');
     expect(() => parseElectronFile(JSON.stringify({ ...legacy, version: 2 }))).toThrow();
     expect(() => parseElectronFile(JSON.stringify({ ...legacy, version: 2, state: state('spin'), view: { ...DEFAULT_ELECTRON_VIEW, shells: 'yes' } }))).toThrow();
   });
@@ -65,16 +68,68 @@ describe('electron polarization experiment', () => {
     expect(dipoleAt(state('spin', 1200), 636).generation).toBeGreaterThan(dipoleAt(state('spin', 0), 636).generation);
     expect(dipoleAt(state('spin', 0), 636).direction).not.toEqual(dipoleAt(state('spin', 120), 636).direction);
   });
-  it('aligns positive ends toward the electron and preserves inverse-square flux', () => {
-    const s = state();
+  it('turns every pair toward the electron, fully near it and by a thinning share farther out', () => {
+    const s = state('electric', 2400);
+    let inner = 0;
     for (let i = 0; i < LATTICE_SAMPLES; i++) {
       const d = dipoleAt(s, i); if (!d.field.valid) continue;
-      expect(dot(d.direction, unit(scale(d.centre, -1)))).toBeCloseTo(1, 12);
-      expect(norm(d.positive)).toBeLessThanOrEqual(norm(d.negative));
+      const inward = unit(scale(d.centre, -1)), born = dot(d.born, inward), now = dot(d.direction, inward);
+      // A pair only ever turns toward the charge, never past it or away from it.
+      expect(now).toBeGreaterThanOrEqual(born - 1e-9); expect(now).toBeLessThanOrEqual(1 + 1e-12);
+      expect(d.share).toBeCloseTo(turnShare(d.field.radius), 12);
+      if (d.field.radius <= FULL_ALIGNMENT_RADIUS) { inner++; expect(d.share).toBe(1); expect(dot(dipoleAt({ ...s, tick: s.tick }, i).aligned, inward)).toBeCloseTo(1, 12); }
+      else expect(d.share).toBeLessThan(1);
+      expect(dot(d.aligned, inward)).toBeCloseTo(1, 12);
     }
+    expect(inner).toBeGreaterThan(20);
+    // Within the full-alignment radius a pair reaches the radial direction as its life ends.
+    const near = Array.from({ length: LATTICE_SAMPLES }, (_, i) => i).find(i => { const r = norm(sampleCentre(i)); return r > CORE_MASK && r < FULL_ALIGNMENT_RADIUS; })!;
+    // The last tick of a generation: the tick before the next replacement appears.
+    let end = 2400; while (dipoleAt(state('electric', end + 1), near).generation === dipoleAt(state('electric', end), near).generation) end++;
+    const last = dipoleAt(state('electric', end), near);
+    expect(last.progress).toBeGreaterThan(.99); expect(dot(last.direction, unit(scale(last.centre, -1)))).toBeGreaterThan(.9999);
     expect(referenceFields(s, [0, 2, 0]).electric[1]).toBeCloseTo(referenceFields(s, [0, 1, 0]).electric[1] / 4);
     for (const mode of ['electric', 'moving'] as const) for (const r of [.4, 1, 3]) expect(enclosedCharge(state(mode), r)).toBeCloseTo(-1, 5);
     expect(referenceFields(s, [0, 0, 0]).valid).toBe(false);
+  });
+  it('gives each generation its own random birth angle, and keeps an unpolarized medium random', () => {
+    const mean = (generation: number) => norm(Array.from({ length: LATTICE_SAMPLES }, (_, i) => birthDirection(i, generation)).reduce((sum, v) => add(sum, v), [0, 0, 0] as Vec)) / LATTICE_SAMPLES;
+    for (const generation of [0, 1, 2, 7, 40]) expect(mean(generation)).toBeLessThan(.03);
+    for (const index of [0, 420, 636]) {
+      expect(norm(birthDirection(index, 3))).toBeCloseTo(1, 12);
+      expect(dot(birthDirection(index, 3), birthDirection(index, 4))).toBeLessThan(.999);
+    }
+    // Before the electron is introduced no pair turns: each stays at its birth angle and is replaced at another.
+    const before = state('electric', 0), d = dipoleAt(before, 636);
+    expect(d.share).toBe(0); expect(d.direction).toEqual(d.born);
+    const total = shellAlignment(before).reduce((sum, shell) => sum + Math.abs(shell.mean), 0);
+    expect(total / shellAlignment(before).length).toBeLessThan(.12);
+  });
+  it('spreads the same total polarization over every sphere: mean alignment falls as the inverse square', () => {
+    expect(meanAlignment(FULL_ALIGNMENT_RADIUS / 2)).toBe(1); expect(meanAlignment(FULL_ALIGNMENT_RADIUS)).toBe(1);
+    expect(meanAlignment(2 * FULL_ALIGNMENT_RADIUS)).toBeCloseTo(.25, 12); expect(meanAlignment(3 * FULL_ALIGNMENT_RADIUS)).toBeCloseTo(1 / 9, 12);
+    // The share each pair turns is chosen so that random birth angles average to that alignment.
+    expect(alignmentOfShare(0)).toBeCloseTo(0, 12); expect(alignmentOfShare(1)).toBeCloseTo(1, 12);
+    for (const radius of [1, 1.6, 2, 3, 4.8, 8]) expect(alignmentOfShare(turnShare(radius))).toBeCloseTo(meanAlignment(radius), 4);
+    for (let w = 0; w < 1; w += .05) expect(alignmentOfShare(w + .05)).toBeGreaterThan(alignmentOfShare(w));
+    // Averaged over many instants, the displayed pairs follow it shell by shell, and the total through each shell
+    // outside the full-alignment radius is level while the number of pairs grows.
+    const ticks = Array.from({ length: 12 }, (_, i) => 1200 + i * 353), shells = shellAlignment(state('electric', ticks[0])).map(shell => ({ ...shell, total: 0 }));
+    for (const tick of ticks) shellAlignment(state('electric', tick)).forEach((shell, i) => { shells[i].total += shell.total / ticks.length; });
+    const outer = shells.filter(shell => shell.radius - GRID_SPACING / 2 >= FULL_ALIGNMENT_RADIUS);
+    expect(outer.length).toBeGreaterThanOrEqual(3);
+    for (const shell of shells.filter(shell => shell.pairs > 20)) {
+      // The displayed pairs match the rule for pairs caught mid-turn, which sits below the alignment they settle to.
+      expect(Math.abs(shell.total - shell.expected) / shell.expected).toBeLessThan(.2);
+      expect(shell.expected).toBeLessThan(shell.settled);
+    }
+    for (const shell of outer) expect(shell.settled / shell.pairs).toBeLessThan(meanAlignment(shell.radius - GRID_SPACING / 2) + 1e-9);
+    expect(alignmentWhileTurning(0)).toBeCloseTo(0, 12); expect(alignmentWhileTurning(1)).toBeLessThan(1); expect(alignmentWhileTurning(1)).toBeGreaterThan(.6);
+    expect(outer.at(-1)!.pairs).toBeGreaterThan(outer[0].pairs * 1.5);
+    const totals = outer.map(shell => shell.total), spread = (Math.max(...totals) - Math.min(...totals)) / (totals.reduce((a, b) => a + b, 0) / totals.length);
+    expect(spread).toBeLessThan(.45);
+    const means = outer.map(shell => shell.total / shell.pairs);
+    for (let i = 1; i < means.length; i++) expect(means[i]).toBeLessThan(means[i - 1]);
   });
   it('separates spin magnetism from the signed velocity response', () => {
     const a = state('moving', 2880), b = { ...a, parameters: { ...a.parameters, beta: -.15 } };
@@ -107,7 +162,7 @@ describe('electron polarization experiment', () => {
   });
   it('replays exact states and rejects invalid imports without changing the run', () => {
     const a = new ElectronSimulation(), b = new ElectronSimulation(); a.configure(state('moving').parameters); a.step(137);
-    const file = parseElectronFile(JSON.stringify({ format: 'zeropoint-electron', version: 3, state: a.snapshot(), view: { ...DEFAULT_ELECTRON_VIEW, faraday: false } }));
+    const file = parseElectronFile(JSON.stringify({ format: 'zeropoint-electron', version: ELECTRON_FILE_VERSION, state: a.snapshot(), view: { ...DEFAULT_ELECTRON_VIEW, faraday: false } }));
     b.restore(file.state); a.step(400); for (let i = 0; i < 400; i++) b.step(); expect(a.snapshot()).toEqual(b.snapshot());
     expect(file.view.faraday).toBe(false); const before = a.snapshot();
     for (const beta of [NaN, Infinity, -.3, .3]) expect(() => a.configure({ ...DEFAULT_ELECTRON, beta })).toThrow();

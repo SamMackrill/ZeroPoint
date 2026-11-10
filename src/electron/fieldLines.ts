@@ -1,11 +1,15 @@
-import { CORE_MASK, GRID_SIDE, GRID_SPACING, GRID_HALF, LATTICE_SAMPLES, alignmentProgress, add, dipoleAt, electronX, norm, scale, unit } from './model';
+import { CORE_MASK, GRID_SIDE, GRID_SPACING, GRID_HALF, LATTICE_SAMPLES, alignmentProgress, add, dipoleAt, electronX, meanAlignment, norm, scale, unit } from './model';
 import type { ElectronState, Vec } from './model';
 
-/** Display polarization: interpolate the actual representative pair moments, not reference E. */
+/**
+ * Display polarization: the mean moment of the lattice pairs at each site, not reference E. Each pair is born at random
+ * and only partly turned, so a single generation is noisy; a Faraday line is the alignment they share. The mean is the
+ * fully polarized direction (with its spin and motion turns) weighted by the mean alignment at that radius.
+ */
 export function polarizationGrid(state: ElectronState): Vec[] {
   return Array.from({ length: LATTICE_SAMPLES }, (_, i) => {
     const pair = dipoleAt(state, i);
-    return scale(pair.direction, pair.field.valid ? pair.separation : 0);
+    return scale(pair.aligned, pair.field.valid ? meanAlignment(pair.field.radius) * alignmentProgress(state, pair.field.radius) : 0);
   });
 }
 

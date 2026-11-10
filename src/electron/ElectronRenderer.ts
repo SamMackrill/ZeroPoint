@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { ELECTRON_SAMPLES, LATTICE_SAMPLES, SHELL_RADII, add, alignmentProgress, electronPresence, cross, electronX, norm, probePosition, referenceFields, scale, spinAxis, unit, velocity } from './model';
+import { ELECTRON_SAMPLES, LATTICE_SAMPLES, SHELL_RADII, add, alignmentProgress, electronPresence, cross, dot, electronX, norm, probePosition, referenceFields, scale, spinAxis, unit, velocity } from './model';
 import type { ElectronSnapshot, ElectronView, Vec } from './model';
 import { faradayLines } from './fieldLines';
 import { displayedDipole, localTurnArrow, sectionFrame, SHELL_COLOURS, shellBand, shellCentre } from './spinGeometry';
@@ -122,7 +122,7 @@ export class ElectronRenderer {
     const frame = sectionFrame(p.axis), basis = new THREE.Matrix4().makeBasis(...frame.map(v => new THREE.Vector3(...v)) as [THREE.Vector3, THREE.Vector3, THREE.Vector3]);
     this.shells.quaternion.setFromRotationMatrix(basis); this.sectionPlane.quaternion.copy(this.shells.quaternion);
     this.sectionPlane.visible = shellView && this.view.spinDisplay.section && !this.view.cutaway; this.sectionPlane.scale.setScalar(SHELL_RADII[this.view.spinDisplay.count - 1] + .2);
-    this.chargeMotion.forEach((line, i) => { line.visible = shellView && this.view.dipoles && (i === 1 || this.view.rotation); }); const motionVertices = [0, 0];
+    this.chargeMotion.forEach((line, i) => { line.visible = this.view.dipoles && (i === 1 || (shellView && this.view.rotation)); }); const motionVertices = [0, 0];
     this.probe.visible = !shellView || this.view.inspect;
     this.electric.visible = this.view.electric && alignmentProgress(s) > .99; this.magnetic.visible = this.view.magnetic && beta !== 0;
     this.intrinsic.visible = this.view.intrinsic && p.mode !== 'electric'; this.rotation.visible = this.view.rotation && p.mode !== 'electric' && !shellView;
@@ -135,14 +135,19 @@ export class ElectronRenderer {
       if ((!d.field.valid && presence > 0) || (this.view.cutaway && Math.abs(shellView ? c[0] * frame[2][0] + c[1] * frame[2][1] + c[2] * frame[2][2] : c[2]) > (shellView ? .08 : .85)) || (this.cameraMode === 'probe' && norm(add(c, scale(target, -1))) > 1)) continue;
       this.keys.push(i); const visibility = this.view.reducedMotion ? .85 : Math.min(1, .2 + Math.sin(Math.PI * d.progress) * 3);
       const equator = shellView && (i - LATTICE_SAMPLES) % 80 >= 32 && (i - LATTICE_SAMPLES) % 80 < 48;
-      this.dummy.scale.setScalar(visibility * (shellView ? (equator ? .5 : .32) : 1)); this.colour.setScalar(shellView ? (equator ? 1 : .25) : .32 + .65 / (1 + d.field.radius * .18));
+      // A lattice pair is as bright as it is aligned with the electron, so the thinning polarization shows at a glance.
+      const alignment = shellView || !d.field.valid ? 0 : presence > 0 ? Math.max(0, dot(d.direction, unit(d.field.electric))) : .45; // an even glow before the electron exists
+      this.dummy.scale.setScalar(visibility * (shellView ? (equator ? .5 : .32) : 1)); this.colour.setScalar(shellView ? (equator ? 1 : .25) : .26 + .74 * alignment);
       for (const [mesh, position] of [[this.positive, d.positive], [this.negative, d.negative]] as const) { this.dummy.position.fromArray(position); this.dummy.updateMatrix(); mesh.setMatrixAt(count, this.dummy.matrix); mesh.setColorAt(count, this.colour); }
       count++;
+      const put = (channel: number, v: Vec) => { const n = motionVertices[channel]++, g = this.chargeMotion[channel].geometry; g.attributes.position.setXYZ(n, ...v); g.attributes.color.setXYZ(n, this.colour.r, this.colour.g, this.colour.b); };
       if (shellView) {
         this.colour.set(SHELL_COLOURS[shellBand(i)]).multiplyScalar(equator ? 1 : .2);
-        const put = (channel: number, v: Vec) => { const n = motionVertices[channel]++, g = this.chargeMotion[channel].geometry; g.attributes.position.setXYZ(n, ...v); g.attributes.color.setXYZ(n, this.colour.r, this.colour.g, this.colour.b); };
         put(1, d.positive); put(1, d.negative);
         if (this.view.rotation) { const points = localTurnArrow(d); for (let j = 1; j < points.length; j++) { put(0, points[j - 1]); put(0, points[j]); } }
+      } else {
+        // One segment joins the two ends of each lattice pair, so its orientation reads as a dipole.
+        this.colour.set(palette.text2).multiplyScalar(.35 + .65 * alignment); put(1, d.positive); put(1, d.negative);
       }
       if (i % 5 !== 0 || arcs >= 80 || d.field.radius > 4.4 || !this.rotation.visible) continue;
       const axis = unit(add(scale(d.localAxis, d.spinTurn), scale(d.motionAxis, d.motionTurn))); if (!norm(axis)) continue;

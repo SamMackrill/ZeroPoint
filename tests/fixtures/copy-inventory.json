@@ -193,11 +193,11 @@
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
-    "text": "Start with an unpolarized cubic medium. The electron appears, and nearby pairs align first as a three-dimensional electric pattern resolves."
+    "text": "Start with an unpolarized cubic medium. The electron appears, and nearby pairs align first as a three-dimensional electric pattern resolves. Every new pair is born at a random angle and turns toward the electron: completely near it, and by a share that thins with distance."
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
-    "text": "Following Fig. 2: neighboring zeptons turn locally as they polarize around the stationary electron. Compare the spherical field and equatorial section, then inspect how opposite charge motions contribute to current. Alternating whole bands is an optional extension."
+    "text": "Following Fig. 2: neighboring zeptons turn locally, in one shared sense, as they polarize around the stationary electron. Compare the spherical field and equatorial section, then inspect how opposite charge motions contribute to current. Alternating whole bands is an optional extension."
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
@@ -218,6 +218,10 @@
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Exported the full analytic reference sequence, including future samples and the separate intrinsic-dipole reference."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "+ ends turn toward the electron, less with distance"
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
@@ -246,6 +250,18 @@
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Electron files must be smaller than 100 KB."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Mean radial alignment of the displayed lattice pairs in each shell, beside the rule they follow and the alignment they settle to"
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Sum of radial alignment over the lattice pairs in each shell: level outside the full-alignment radius"
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "Each shell is 0.8 R thick. Farther shells hold more pairs, each turned less, so the total stays level beyond 1.6 R: the same polarization crosses every sphere. Inside 1.6 R every pair turns fully and the total is limited by the number of pairs. The 1.6 R scale is a magnification."
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
