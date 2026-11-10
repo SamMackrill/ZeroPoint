@@ -190,14 +190,31 @@ export const PICKER_SCREENS = [
   { name: 'tablet-header', title: 'Tablet 1024 px · header, 2× zoom: the same picker', viewport: { width: 1024, height: 768 }, scale: 2, focus: '.workbench-header', prepare: outlineScenario },
   { name: 'phone-tap', title: 'Phone · after tapping the scenario name: the experiment library opens as a sheet (before: nothing to tap)', viewport: { width: 390, height: 844 }, prepare: tapScenario },
 ];
-const SETS = { picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
+/**
+ * The Fleming fidelity review (`--set fidelity`): each laboratory in a state that shows what the model changes did.
+ * "Before" is the checkout the review started from. The findings are in docs/fleming-fidelity-report.html.
+ */
+export const FIDELITY_SCREENS = [
+  { name: 'medium-balanced', title: 'Medium · Balanced, 40 ticks: pairs open to their own wavelength and make a half-turn', steps: 40 },
+  { name: 'medium-slow', title: 'Medium · Slow oscillations: long-lived pairs are long-wavelength pairs', scenario: 'scenario-slow', steps: 40 },
+  { name: 'light-midlife', title: 'Light · tick 60, first pair at midlife: across the path, opened to λ/2, field at its peak', hash: '#/light?t=60&cam=side' },
+  { name: 'light-second-pair', title: 'Light · tick 180, second pair at midlife: polarity and rotation reversed', hash: '#/light?t=180&cam=side' },
+  { name: 'light-handoff', title: 'Light · tick 120, the hand-off: the field is extinguished with the pair', hash: '#/light?t=120&cam=side' },
+  { name: 'light-orbit', title: 'Light · tick 300, orbit view: the surrounding pairs lean toward the active pair', hash: '#/light?t=300' },
+  { name: 'light-plots', title: 'Light · field along the path and at the probe, tick 780', hash: '#/light?t=780', focus: '.light-dock-plots' },
+  { name: 'electron-stationary', title: 'Electron · Stationary, tick 720: polarization thins with distance', hash: '#/electron/stationary?t=720' },
+  { name: 'electron-spin', title: 'Electron · Spin: one shared rotation preference', hash: '#/electron/spin?t=240' },
+  { name: 'casimir-attract', title: 'Extended Casimir · electron and proton, 120 steps', lab: 'lab-casimir', scenario: 'scenario-electron-proton', steps: 120 },
+  { name: 'vdw-plates', title: 'Van der Waals · plates: which zeptons fit the gap', lab: 'lab-vdw', scenario: 'scenario-pressure' },
+];
+const SETS = { fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
 
 /** Start a dev server for a worktree on a free port chosen from a range, returning its URL and server. */
 async function serve(worktree, port) {
-  const server = await createServer({ root: worktree, configFile: join(worktree, 'vite.config.ts'), logLevel: 'error', server: { host: '127.0.0.1', port, strictPort: true } });
+  const server = await createServer({ root: worktree, configFile: join(worktree, 'vite.config.ts'), logLevel: 'error', server: { host: '127.0.0.1', port, strictPort: true, fs: { strict: false } } }); // a "before" worktree may link its dependencies from elsewhere
   await server.listen();
   return { server, url: `http://127.0.0.1:${port}/` };
 }
@@ -240,9 +257,9 @@ ${screens.map(s => { const fit = s.viewport && s.viewport.width < 700 ? ` style=
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const before = option('--before'), out = option('--out'), title = option('--title') ?? 'Change', description = option('--description') ?? '';
-  const screens = SETS[option('--set') ?? 'screens'];
+  const only = option('--only')?.split(','), screens = SETS[option('--set') ?? 'screens']?.filter(screen => !only || only.includes(screen.name));
   if (!screens) throw new Error(`--set must be one of: ${Object.keys(SETS).join(', ')}`);
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.

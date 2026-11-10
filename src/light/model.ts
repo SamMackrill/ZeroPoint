@@ -1,6 +1,6 @@
 import { lifecycleEnvelope } from '../model/pairMotion';
 
-export const LIGHT_MODEL = 'light-induction/1';
+export const LIGHT_MODEL = 'light-induction/2';
 export const LIGHT_DT = 1 / 120;
 export const LIGHT_LENGTH = 12;
 export const LIGHT_END_TICK = 1440;
@@ -36,40 +36,71 @@ export function validateLightState(value: unknown): LightState {
   return { model: LIGHT_MODEL, tick: s.tick, parameters: validateLightParameters(s.parameters) };
 }
 /** Parse and validate a serialized light experiment file. */
-export function parseLightFile(text: string): { state: LightState; view: LightView } {
+export function parseLightFile(text: string): { state: LightState; view: LightView; migrated: boolean } {
   if (text.length > 100_000) throw new Error('Light files must be smaller than 100 KB.');
   const f = JSON.parse(text);
   if (f?.format !== 'zeropoint-light' || f.version !== 1) throw new Error('Choose a ZeroPoint light experiment file.');
-  const state = validateLightState(f.state), view = { ...DEFAULT_LIGHT_VIEW };
+  // Model 1 stored the same tick and parameters; model 2 changed only the pair geometry and the field drawn from it.
+  const migrated = f.state?.model === 'light-induction/1';
+  const state = validateLightState(migrated ? { ...f.state, model: LIGHT_MODEL } : f.state), view = { ...DEFAULT_LIGHT_VIEW };
   for (const key of Object.keys(view) as (keyof LightView)[]) {
     if (typeof f.view?.[key] !== 'boolean') throw new Error(`Invalid ${key} layer setting.`);
     view[key] = f.view[key];
   }
-  return { state, view };
+  return { state, view, migrated };
 }
 export const hopTicks = (p: LightParameters) => Math.round(p.wavelength * 60);
 export const sourceX = (p: LightParameters) => p.offset - p.direction * 6;
 export const pairCount = (p: LightParameters) => Math.ceil(LIGHT_END_TICK / hopTicks(p));
-/** Compute the induced pair state for a handoff at the requested tick. */
+/** The transverse unit vector of the chosen polarization: the axis the electric field alternates along. */
+export const polarizationAxis = (p: LightParameters): [number, number, number] => { const a = p.polarization * Math.PI / 180; return [0, Math.cos(a), Math.sin(a)]; };
+/** A pair opens to its own wavelength, which is half the photon wavelength (Fleming, Photons §2; book Eq. 4-4). */
+export const pairWavelength = (p: LightParameters) => p.wavelength / 2;
+/**
+ * The induced pair for hand-off `index` at the requested tick.
+ *
+ * Fleming's figures (book Figs 4-9 and 5-1; Photons Fig. 3) draw each pair across the path with one field polarity,
+ * alternating pair by pair. So each pair is born along the path, turns 180° in the plane of travel and polarization,
+ * and is transverse at midlife, when it is widest (its wavelength, λ/2). `polarity` alternates; the rotation `sense`
+ * about x̂ × ê follows from it and from the travel direction, so the magnetic field lies along the rotation axis
+ * (right-hand grip, book ch. 6) and E × B points along the travel direction. `phase` offsets every pair's start angle.
+ */
 export function pairAt(p: LightParameters, tick: number, index: number) {
   const duration = hopTicks(p), progress = Math.max(0, Math.min(1, (tick - index * duration) / duration));
-  const sense = index % 2 === 0 ? 1 : -1;
-  const angle = p.phase * Math.PI / 180 + index * Math.PI + sense * Math.PI * progress;
-  const pol = p.polarization * Math.PI / 180;
-  const separation = .42 * lifecycleEnvelope(progress, 1);
+  const polarity = index % 2 === 0 ? 1 : -1, sense = polarity * p.direction;
+  const turn = Math.PI * progress, start = p.phase * Math.PI / 180, theta = start + turn, e = polarizationAxis(p);
+  const axial = p.direction * Math.cos(theta), transverse = polarity * Math.sin(theta);
+  const peak = pairWavelength(p), separation = peak * lifecycleEnvelope(progress, 1);
   const centre = sourceX(p) + p.direction * (index + .5) * p.wavelength / 2;
-  const direction: [number, number, number] = [Math.sin(angle), Math.cos(angle) * Math.cos(pol), Math.cos(angle) * Math.sin(pol)];
-  return { index, centre, progress, sense, angle, direction, separation, age: progress * duration * LIGHT_DT, lifetime: duration * LIGHT_DT, active: tick >= index * duration && tick < (index + 1) * duration && tick < LIGHT_END_TICK };
+  const direction: [number, number, number] = [axial, transverse * e[1], transverse * e[2]];
+  return { index, centre, progress, polarity, sense, turn, angle: start + sense * turn, axial, transverse, direction, separation, peak, age: progress * duration * LIGHT_DT, lifetime: duration * LIGHT_DT, active: tick >= index * duration && tick < (index + 1) * duration && tick < LIGHT_END_TICK };
 }
-/** Prescribed finite envelope, not an electromagnetic field solver. */
-export function waveAt(p: LightParameters, time: number, x: number) {
-  const distance = p.direction * (x - sourceX(p)), local = distance - time;
+/** The pair that is active at a continuous time (in τ), with its progress through its life. */
+function activePair(p: LightParameters, time: number) {
+  const life = p.wavelength / 2, index = Math.min(pairCount(p) - 1, Math.floor(time / life + 1e-9));
+  const progress = Math.max(0, Math.min(1, time / life - index)), polarity = index % 2 === 0 ? 1 : -1;
+  return { index, progress, polarity, centre: sourceX(p) + p.direction * (index + .5) * life };
+}
+/**
+ * The field at a point, taken from the active pair's rotating dipole moment (not an electromagnetic field solver).
+ *
+ * The pair produces the field: its strength is the transverse part of the pair's moment (orientation × separation),
+ * so it swells and collapses with the pair, is zero at each hand-off and reverses for the next pair (book ch. 5:
+ * the field "reverses electric and magnetic polarity"; ch. 19: the fields "are also extinguished each half
+ * wavelength along with the central zepton"). It falls with the inverse square of distance from that pair (ch. 19),
+ * softened inside a quarter-wavelength, and is taken as established at once everywhere in the window, because
+ * Fleming's fields spread far faster than light. `envelope` is the unsigned strength of the response.
+ */
+export function fieldAt(p: LightParameters, time: number, point: readonly [number, number, number]) {
+  const distance = p.direction * (point[0] - sourceX(p));
   if (time < 0 || time >= LIGHT_LENGTH || distance < 0 || distance > LIGHT_LENGTH) return { electric: 0, magnetic: 0, envelope: 0 };
-  const u = Math.abs(local) / (p.wavelength / 2);
-  const envelope = u >= 1 ? 0 : Math.cos(u * Math.PI / 2) ** 2;
-  const electric = envelope * Math.cos(2 * Math.PI * local / p.wavelength + p.phase * Math.PI / 180);
-  return { electric, magnetic: p.direction * electric, envelope };
+  const pair = activePair(p, time), open = lifecycleEnvelope(pair.progress, 1), core = p.wavelength / 4;
+  const r2 = (point[0] - pair.centre) ** 2 + point[1] ** 2 + point[2] ** 2, reach = 1 / (1 + r2 / (core * core));
+  const electric = pair.polarity * Math.sin(p.phase * Math.PI / 180 + Math.PI * pair.progress) * open * reach;
+  return { electric, magnetic: p.direction * electric, envelope: open * reach };
 }
+/** The field on the travel axis at position `x`: see `fieldAt`. */
+export const waveAt = (p: LightParameters, time: number, x: number) => fieldAt(p, time, [x, 0, 0]);
 /** Summarize the current light timeline, position, and energy allocation. */
 export function lightReadout(s: LightState) {
   const p = s.parameters, time = s.tick * LIGHT_DT, finished = s.tick === LIGHT_END_TICK;

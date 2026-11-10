@@ -1,4 +1,4 @@
-# Reduced medium lifecycle model, version 2
+# Reduced medium lifecycle model, version 3
 
 This specifies the implemented first release. The [original blueprint](Ray%20Fleming's%20Zero-Point%20Field%20Physics_%203D%20Simulation%20Blueprint.md) remains unchanged. These engineering choices make its fluctuation lifecycle reproducible; they do not close the full ZPF physics model.
 
@@ -32,7 +32,11 @@ This ledger accounts for assigned fluctuation energy only. It does not calculate
 
 ## Presentation
 
-Each pair retains its birth position as a fixed midpoint for its entire lifetime. There is no translational jitter or drift. Phase is `phase₀ + 2π f × age`; the pair direction rotates in a plane perpendicular to its seeded spin axis. If `p = age/lifetime`, the full lobe-centre separation is `D(p) = Dmax sin(πp)` for 0 < p < 1, with zero at both endpoints. Positions are `centre ± direction × D/2`: the lobes separate symmetrically, reach their widest spacing at midlife, and collapse together. The sinusoidal envelope and one-turn-per-lifetime rotation remain explicit visualization choices, not a new force-law claim. The peak separation slider ranges from 0 to 0.8 L₀ and defaults to 0.3 L₀.
+Each pair retains its birth position as a fixed midpoint for its entire lifetime. There is no translational jitter or drift. Phase is `phase₀ + π f × age`: the pair direction turns through a half-turn (180°) over its lifetime `1/f`, in a plane perpendicular to its seeded axis. This is the most Fleming allows a zepton (*Electron Properties* §6: a quantum dipole "can rotate 180 degrees during its existence"; *The Zero-Point Universe* ch. 4 and ch. 19), and it is what the pair of a half-wavelength photon does. Version 2 turned each pair through a full turn.
+
+If `p = age/lifetime`, the full lobe-centre separation is `D(p) = Dpeak sin(πp)` for 0 < p < 1, with zero at both endpoints. A zepton separates "to the full extent of [its] wavelength" (*Electron Properties* §8), and that wavelength is `λ = c/f` (book Fig. 19-4), so `Dpeak = D₀ / (f/f₀)`: peak separation and lifetime share the factor `1/f`. Energetic pairs are small and brief; low-energy pairs are large and slow. `D₀`, the peak for a pair at `f₀`, is the slider (0 to 0.8 L₀, default 0.3 L₀). The true wavelength at `f₀` is `c/f₀ ≈ 30 L₀`, far wider than the 8 L₀ cell, so the proportion is kept and the size is reduced; the inspector reports each pair's `c/f` beside its drawn separation. Version 2 used one `Dmax` for every pair.
+
+Positions are `centre ± direction × D/2`: the lobes separate symmetrically, reach their widest spacing at midlife, and collapse together. The sinusoidal envelope is an explicit visualization choice, not a new force-law claim.
 
 Lobes retain their ordinary radius through most of life, shrinking only near birth/death by `min(1, sin(πp)/0.2)`. Thus pair separation changes independently of lobe size. Reduced flashing fixes the lobe-size multiplier to 0.8 but still preserves the same rotation and separation/collapse positions. Paused stepping is the fully still inspection mode. A lobe can extend slightly outside the drawn cell when its fixed centre is near an edge; the pair is not independently wrapped or displaced.
 
@@ -48,7 +52,7 @@ The versioned JSON format stores all Float64 state values, free-slot ordering, g
 
 Imports are limited to 8 MB and validate model/schema version, numeric ranges, particle and free-list consistency, lifecycle counters, schedule, unit orientation vectors and the energy ledger. The worker validates again before restoring. Files are read locally; no server or account is involved. CSV exports the most recent 240 displayed diagnostic samples. PNG exports the view with model, seed, tick and scale labels. Diagnostics history and camera orbit are not included in the experiment file; view layers are.
 
-Version 1 experiment files are validated and upgraded to version 2 on import. Their random state, birth/death schedule, energies and fixed birth positions are retained. The retired jitter parameter is discarded, peak separation defaults to 0.3 L₀, and the event log records the upgrade. Older visual trajectories are deliberately not replayed. New saves identify the motion convention as `medium-lifecycle/2`.
+Version 2 experiment files hold the same state as version 3 and open unchanged; the event log records the upgrade to half-turn rotation and wavelength-scaled separation. Version 1 experiment files are validated and upgraded on import. Their random state, birth/death schedule, energies and fixed birth positions are retained. The retired jitter parameter is discarded, peak separation defaults to 0.3 L₀, and the event log records the upgrade. Older visual trajectories are deliberately not replayed. New saves identify the motion convention as `medium-lifecycle/3`.
 
 ## Scope and next gates
 

@@ -1,11 +1,14 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { lightReadout, pairAt, pairCount, sourceX, waveAt } from './model';
+import { fieldAt, lightReadout, pairAt, pairCount, waveAt } from './model';
+import { lifecycleEnvelope } from '../model/pairMotion';
 import type { LightSnapshot, LightView } from './model';
 import { palette, scene } from '../ui/palette';
 import { isClick } from '../workbench/selection';
 
 const SAMPLES = 241, BACKGROUND = 540;
+/** The central pair's lobes are drawn larger than the background samples so the photon's own pair stands out. */
+const CENTRAL_SCALE = 1.9;
 export class LightRenderer {
   readonly renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   private scene = new THREE.Scene();
@@ -19,6 +22,7 @@ export class LightRenderer {
   private response = new THREE.Group();
   private arrows: THREE.ArrowHelper[] = [];
   private envelope: THREE.Mesh;
+  private link: THREE.Line;
   private probe: THREE.Mesh;
   private selection: THREE.Mesh;
   private base = new THREE.Group();
@@ -61,7 +65,10 @@ export class LightRenderer {
     this.probe = new THREE.Mesh(new THREE.TorusGeometry(.9, .009, 4, 48), new THREE.MeshBasicMaterial({ color: palette.dataShell1, transparent: true, opacity: .65 }));
     this.probe.rotation.y = Math.PI / 2;
     this.selection = new THREE.Mesh(new THREE.SphereGeometry(.35, 16, 12), new THREE.MeshBasicMaterial({ color: palette.dataMarkHi, wireframe: true, transparent: true, opacity: .35 }));
-    this.scene.add(this.envelope, this.probe, this.selection);
+    // The central pair is one dipole: a segment joins its two lobes.
+    this.link = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3).setUsage(THREE.DynamicDrawUsage)), new THREE.LineBasicMaterial({ color: palette.text2, transparent: true, opacity: .8 }));
+    this.link.frustumCulled = false;
+    this.scene.add(this.envelope, this.probe, this.selection, this.link);
     const grid = new THREE.GridHelper(12, 24, palette.line2, palette.dataNegDeep); grid.position.y = -1.8; grid.scale.z = .3;
     const path = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6, 0, 0), new THREE.Vector3(6, 0, 0)]), new THREE.LineDashedMaterial({ color: palette.text4, dashSize: .08, gapSize: .06 })); path.computeLineDistances();
     this.base.add(grid, path); this.scene.add(this.base);
@@ -106,21 +113,34 @@ export class LightRenderer {
     const p = state.parameters, d = lightReadout(state), pol = p.polarization * Math.PI / 180;
     const selected = pairAt(p, state.tick, this.selected ?? d.index);
     let count = 0;
-    // Fixed, reproducible spatial sample. Phase and response are prescribed, not integrated forces.
+    // Fixed, reproducible spatial sample of the surrounding medium. Each background pair has its own seeded
+    // orientation and lifetime and makes a half-turn per generation, as in the medium laboratory. Near the central
+    // pair it is biased toward that pair's orientation and turns with it (book Fig. 5-2); the bias is magnified.
+    const lead = d.pair.direction;
     for (let i = 0; i < BACKGROUND; i++) {
       const x = p.offset + (i % 30) * .4 - 5.8, y = (Math.floor(i / 30) % 6) * .55 - 1.375, z = Math.floor(i / 180) * .75 - .75;
       if (this.cameraMode === 'pair' && Math.hypot(x - selected.centre, y, z) > .8) continue;
-      const w = waveAt(p, d.time, x), response = this.options.response ? w.envelope * Math.exp(-(y * y + z * z) / 1.5) : 0;
+      const response = this.options.response && !d.finished ? fieldAt(p, d.time, [x, y, z]).envelope : 0;
       if (!this.options.background && response < .04) continue;
-      const phase = i * 2.39996 + d.time * (1 + (i % 7) / 8), a = phase + response * w.electric;
-      const direction = [Math.sin(a) * (1 - response * .5), Math.cos(a) * Math.cos(pol), Math.cos(a) * Math.sin(pol)];
-      const norm = Math.hypot(...direction); direction.forEach((v, j) => { direction[j] = v / norm; });
-      this.put(count++, x, y, z, direction, (.13 + response * .12) * Math.abs(Math.sin(phase / 2)), .43 + response * .32, .16 + response * .8);
+      const life = 1.1 + (i % 7) * .23, cycles = d.time / life + (i * .61803398875) % 1, generation = Math.floor(cycles), u = cycles - generation;
+      const k = i * 7 + generation * 13 + 1, cz = 1 - 2 * ((k * .7548776662466927) % 1), ca = k * 2.399963229728653, cr = Math.sqrt(1 - cz * cz);
+      const a = [cr * Math.cos(ca), cr * Math.sin(ca), cz], n = [Math.cos(k * 1.7), Math.sin(k * 1.7) * Math.cos(k * .9), Math.sin(k * 1.7) * Math.sin(k * .9)];
+      // b is perpendicular to a; the pair turns from a to −a through b.
+      const dot = a[0] * n[0] + a[1] * n[1] + a[2] * n[2], b = n.map((v, j) => v - dot * a[j]), bl = Math.hypot(b[0], b[1], b[2]) || 1;
+      const bias = Math.min(.9, response * 1.8), turn = Math.PI * u;
+      const direction = a.map((v, j) => (1 - bias) * (v * Math.cos(turn) + b[j] / bl * Math.sin(turn)) + bias * lead[j]);
+      const norm = Math.hypot(direction[0], direction[1], direction[2]) || 1; direction.forEach((v, j) => { direction[j] = v / norm; });
+      this.put(count++, x, y, z, direction, (.13 + response * .12) * lifecycleEnvelope(u, 1), .43 + response * .32, .16 + response * .8);
     }
     if (this.options.pairs && !d.finished) {
       const pair = d.pair;
-      this.put(count++, pair.centre, 0, 0, pair.direction, pair.separation, this.options.reducedMotion ? 1 : Math.min(1, .25 + Math.sin(pair.progress * Math.PI) * 3), 1.5);
+      this.put(count++, pair.centre, 0, 0, pair.direction, pair.separation, CENTRAL_SCALE * (this.options.reducedMotion ? 1 : Math.min(1, .25 + Math.sin(pair.progress * Math.PI) * 3)), 1.5);
+      const ends = this.link.geometry.attributes.position, half = pair.separation / 2;
+      ends.setXYZ(0, pair.centre + pair.direction[0] * half, pair.direction[1] * half, pair.direction[2] * half);
+      ends.setXYZ(1, pair.centre - pair.direction[0] * half, -pair.direction[1] * half, -pair.direction[2] * half);
+      ends.needsUpdate = true;
     }
+    this.link.visible = this.options.pairs && !d.finished;
     this.positive.count = this.negative.count = count;
     for (const mesh of [this.positive, this.negative]) { mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; }
     this.centres.count = pairCount(p); this.centres.visible = this.options.centres;
@@ -128,7 +148,8 @@ export class LightRenderer {
     this.centres.instanceMatrix.needsUpdate = true;
     this.base.position.x = p.offset;
     this.envelope.visible = this.options.envelope && !d.finished && this.cameraMode !== 'pair';
-    this.envelope.position.set(d.x, 0, 0); this.envelope.scale.set(p.wavelength / 2, .85, .85);
+    // The response swells and collapses about the active pair's fixed centre; it does not glide with the energy front.
+    this.envelope.position.set(d.pair.centre, 0, 0); this.envelope.scale.setScalar(p.wavelength / 2 * (.4 + .6 * lifecycleEnvelope(d.pair.progress, 1)));
     this.probe.position.x = p.probe;
     this.selection.visible = this.selected !== null;
     this.selection.position.set(selected.centre, 0, 0);
