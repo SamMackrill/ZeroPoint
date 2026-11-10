@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CasimirModel, extent, parseCasimirFile, STEP, type ChargePair } from '../src/casimir/model';
+import { CasimirModel, CHAIN_SQUEEZE, REACH_PER_LIFETIME, extent, parseCasimirFile, STEP, wavelength, type ChargePair } from '../src/casimir/model';
 
 /** Advance a model by a requested amount of simulation time. */
 const advance = (m: CasimirModel, seconds: number) => { for (let i = 0; i < Math.round(seconds / STEP); i++) m.step(); };
@@ -15,11 +15,40 @@ describe('extended Casimir illustrative lifecycle', () => {
   it('replaces annihilated identities and grows then collapses the lobes', () => {
     const m = new CasimirModel(); const first = { ...m.particles[0] };
     expect(extent({ ...first, age: 0 })).toBe(0);
-    expect(extent({ ...first, age: first.lifetime / 2 })).toBeCloseTo(.19);
+    expect(extent({ ...first, age: first.lifetime / 2 })).toBeCloseTo(REACH_PER_LIFETIME * first.lifetime, 12);
     expect(extent({ ...first, age: first.lifetime })).toBeCloseTo(0);
     advance(m, 5);
     expect(m.particles.some(p => p.id === first.id)).toBe(false);
     expect(m.particles.every(p => p.age < p.lifetime)).toBe(true);
+  });
+  it('opens each Zepton to its own wavelength: a shorter life is a smaller reach', () => {
+    const m = new CasimirModel(), [a, b] = [...m.particles].sort((x, y) => x.lifetime - y.lifetime).filter((_, i, all) => i === 0 || i === all.length - 1);
+    expect(b.lifetime).toBeGreaterThan(a.lifetime);
+    expect(wavelength(b) / wavelength(a)).toBeCloseTo(b.lifetime / a.lifetime, 12);
+    expect(extent({ ...b, age: b.lifetime / 2 }) * 2).toBeCloseTo(wavelength(b), 12);
+    // Gap births between like charges are short-lived, so they are the smallest Zeptons in the scene.
+    advance(m, 8);
+    const gap = m.particles.filter(p => p.gap), ordinary = m.particles.filter(p => !p.gap);
+    expect(gap.length).toBeGreaterThan(0);
+    expect(Math.max(...gap.map(wavelength))).toBeLessThan(Math.max(...ordinary.map(wavelength)));
+  });
+  it('shortens the aligned chain between opposite charges, and nowhere else', () => {
+    const mean = (values: number[]) => values.reduce((a, b) => a + b, 0) / values.length;
+    const attraction = new CasimirModel('electron-proton'); advance(attraction, 14);
+    const chain = attraction.particles.filter(p => attraction.bridge(p) && Math.abs(p.homeY) < .3), outside = attraction.particles.filter(p => !attraction.bridge(p));
+    expect(chain.length).toBeGreaterThan(5); expect(outside.length).toBeGreaterThan(20);
+    // Replacements on the line between the charges are shorter-wavelength than the field around them.
+    expect(mean(chain.map(wavelength))).toBeLessThan(mean(outside.map(wavelength)) * .85);
+    expect(Math.min(...chain.map(p => p.lifetime))).toBeGreaterThanOrEqual(2.4 * CHAIN_SQUEEZE - 1e-12);
+    expect(Math.min(...outside.map(p => p.lifetime))).toBeGreaterThanOrEqual(2.4);
+    // Between like charges nothing closes up: every ordinary Zepton keeps its full range of lifetimes.
+    const repulsion = new CasimirModel('electron-electron'); advance(repulsion, 14);
+    expect(Math.min(...repulsion.particles.filter(p => !p.gap).map(p => p.lifetime))).toBeGreaterThanOrEqual(2.4);
+    for (const p of repulsion.particles) expect(repulsion.squeeze({ ...p, alignment: 1 })).toBe(1);
+    // As released charges approach, the replacements get smaller still.
+    const held = attraction.squeeze({ ...chain[0], alignment: 1 }); attraction.right = attraction.left + attraction.separation * .7;
+    expect(held).toBe(CHAIN_SQUEEZE); expect(attraction.squeeze({ ...chain[0], alignment: 1 })).toBeCloseTo(CHAIN_SQUEEZE * .7, 12);
+    expect(attraction.squeeze({ ...chain[0], alignment: .2 })).toBe(1);
   });
   it.each([4, 5.6, 7])('produces opposite pressure tendencies at separation %s', separation => {
     for (const pair of ['electron-electron', 'electron-proton'] as ChargePair[]) {

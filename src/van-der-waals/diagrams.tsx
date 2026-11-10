@@ -59,22 +59,55 @@ export function PairDiagram({ distance, tick }: { distance: number; tick: number
   </svg>;
 }
 
-/** Illustrate the stress imbalance between two conducting plates. */
+/** Sample fluctuation wavelengths in nm for the plate picture: many short ones, fewer long ones (Fleming's Fig. 3-3). */
+export const SAMPLE_WAVELENGTHS = [30, 42, 58, 80, 110, 150, 200, 260, 340, 440, 560, 700, 850, 1000] as const;
+/** Fleming's rule for the cavity: a fluctuation fits between the plates only if its wavelength is shorter than the gap. */
+export const fitsGap = (wavelengthNm: number, gapNm: number) => wavelengthNm < gapNm;
+/** A repeatable value in [0, 1) for drawing slot `n`. */
+const seeded = (n: number) => { const x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+/** Drawn width of a gap of `nm`: compressed, like the plate spacing itself, so 100–1000 nm stays on the page. */
+const drawnSpan = (nm: number) => nm >= 100 ? 150 + (nm - 100) / 900 * 160 : 1.5 * nm;
+/** Ovals are drawn at this share of the gap's own scale, so one that just fits shows clear space at the plates. */
+const OVAL_SCALE = .4;
+
+/** One fluctuation drawn as an oval as long as its wavelength, at a seeded place and tilt inside a region. */
+function Fluctuation({ slot, wavelength, x0, x1, upright }: { slot: number; wavelength: number; x0: number; x1: number; upright?: boolean }) {
+  const length = OVAL_SCALE * drawnSpan(wavelength), room = x1 - x0;
+  // A long oval is turned along the plates when the region is narrower than it.
+  const tilt = upright || length > room - 6 ? 90 + (seeded(slot * 3 + 2) - .5) * 24 : (seeded(slot * 3 + 2) - .5) * 150;
+  const cx = x0 + room * (.12 + .76 * seeded(slot * 3)), cy = 78 + 184 * seeded(slot * 3 + 1);
+  return <ellipse cx={cx} cy={cy} rx={length / 2} ry={Math.max(1.6, length / 8)} transform={`rotate(${tilt} ${cx} ${cy})`} fill={`${palette.dataNeg}22`} stroke={palette.dataNeg} strokeOpacity=".8" strokeWidth="1"/>;
+}
+
+/**
+ * Two conducting plates in the zero-point field, drawn as Fleming draws them (The Zero-Point Universe Fig. 3-3):
+ * fluctuations of every wavelength outside, and between the plates only those shorter than the gap. The optional
+ * standing-wave curves are a separate, labelled layer.
+ */
 export function PlateDiagram({ gap, modes }: { gap: number; modes: boolean }) {
-  const width = 150 + (gap - 100) / 900 * 160, left = 380 - width / 2, right = 380 + width / 2;
+  const width = drawnSpan(gap), left = 380 - width / 2, right = 380 + width / 2;
   const net = 27 + 18 * Math.log10(Math.abs(casimir(gap, 1).pressure) / .0013);
-  return <svg viewBox="0 0 760 380" role="img" aria-label={`Two conducting plates ${gap} nanometres apart, with balanced background stress and an inward net pressure difference. Mode shapes and arrow scales are illustrative.`}>
-    <defs><pattern id="vdw-field-grid" width="42" height="44" patternUnits="userSpaceOnUse"><ellipse cx="21" cy="22" rx="10" ry="4" transform="rotate(-35 21 22)" fill="none" stroke={palette.text4} strokeWidth="1"/></pattern></defs>
-    <rect x="45" y="63" width={left - 57} height="213" fill="url(#vdw-field-grid)"/><rect x={right + 12} y="63" width={703 - right} height="213" fill="url(#vdw-field-grid)"/>
+  const fitting = SAMPLE_WAVELENGTHS.filter(w => fitsGap(w, gap));
+  // Short wavelengths are the most numerous: several of each, thinning toward the long ones.
+  const copies = (wavelength: number) => wavelength <= 110 ? 3 : wavelength <= 440 ? 2 : 1;
+  return <svg viewBox="0 0 760 380" role="img" aria-label={`Two conducting plates ${gap} nanometres apart. Fluctuations of every wavelength lie outside; only the ${fitting.length} of ${SAMPLE_WAVELENGTHS.length} sample wavelengths shorter than the gap lie between the plates, so the pressure inside is slightly lower and the plates are pushed together. Sizes and arrow scales are illustrative.`}>
+    <defs>
+      <clipPath id="vdw-outside-left"><rect x="45" y="63" width={Math.max(0, left - 57)} height="213"/></clipPath>
+      <clipPath id="vdw-outside-right"><rect x={right + 12} y="63" width={Math.max(0, 703 - right)} height="213"/></clipPath>
+      <clipPath id="vdw-inside"><rect x={left} y="63" width={width} height="213"/></clipPath>
+    </defs>
     <rect x={left} y="63" width={width} height="213" fill={palette.accentBg} fillOpacity=".6"/>
-    <text x="115" y="35" textAnchor="middle">Outside</text><text x="380" y="35" textAnchor="middle">Modified field</text><text x="645" y="35" textAnchor="middle">Outside</text>
+    <text x="115" y="35" textAnchor="middle">Outside</text><text x="380" y="35" textAnchor="middle">Only λ &lt; d</text><text x="645" y="35" textAnchor="middle">Outside</text>
+    <g clipPath="url(#vdw-outside-left)" data-testid="vdw-fluctuations-outside">{SAMPLE_WAVELENGTHS.flatMap((w, i) => Array.from({ length: copies(w) }, (_, k) => <Fluctuation key={`${w}-${k}`} slot={i * 7 + k} wavelength={w} x0={45} x1={left - 12} upright={w > 440}/>))}</g>
+    <g clipPath="url(#vdw-outside-right)">{SAMPLE_WAVELENGTHS.flatMap((w, i) => Array.from({ length: copies(w) }, (_, k) => <Fluctuation key={`${w}-${k}`} slot={500 + i * 7 + k} wavelength={w} x0={right + 12} x1={715} upright={w > 440}/>))}</g>
+    <g clipPath="url(#vdw-inside)" data-testid="vdw-fluctuations-inside">{fitting.flatMap((w, i) => Array.from({ length: copies(w) }, (_, k) => <Fluctuation key={`${w}-${k}`} slot={900 + i * 7 + k} wavelength={w} x0={left + 4} x1={right - 4}/>))}</g>
     {modes && [1, 2, 3].map(n => <g key={n}><polyline points={Array.from({ length: 101 }, (_, i) => `${left + width * i / 100},${72 + n * 49 - 16 * Math.sin(n * Math.PI * i / 100)}`).join(' ')} fill="none" stroke={[palette.accent, palette.dataNeg, palette.dataCoreHi][n - 1]} strokeWidth="2"/><text x="380" y={94 + n * 49} textAnchor="middle" className="vdw-mode-label">n = {n}</text></g>)}
     {[left - 12, right].map(x => <rect key={x} x={x} y="55" width="12" height="231" rx="2" fill={palette.text3}/>)}
     <Arrow x1={left - 102} x2={left - 14} y={302} color={palette.text3} width={5}/><Arrow x1={left + 64} x2={left + 2} y={302} color={palette.text3} width={3}/>
     <Arrow x1={right + 102} x2={right + 14} y={302} color={palette.text3} width={5}/><Arrow x1={right - 64} x2={right - 2} y={302} color={palette.text3} width={3}/>
     <Arrow x1={left} x2={left + net} y={342}/><Arrow x1={right} x2={right - net} y={342}/>
-    <text x="380" y="325" textAnchor="middle" fill={palette.accent}>Net attraction</text>
-    <text x="380" y="373" textAnchor="middle" className="vdw-svg-muted">d = {gap} nm · pressure imbalance exaggerated for visibility</text>
+    <text x="380" y="325" textAnchor="middle" fill={palette.accent}>Net push together</text>
+    <text x="380" y="373" textAnchor="middle" className="vdw-svg-muted" data-testid="vdw-fit-count">d = {gap} nm · {fitting.length} of {SAMPLE_WAVELENGTHS.length} sample wavelengths fit the gap · imbalance exaggerated</text>
   </svg>;
 }
 
