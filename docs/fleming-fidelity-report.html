@@ -16,8 +16,8 @@
     :root {
       --bg: #f5f7f8; --panel: #ffffff; --panel-2: #eef2f4; --line: #d6dee4; --line-2: #b9c6cf;
       --text: #14212b; --text-2: #3b4d5b; --text-3: #5d7080;
-      --accent: #1c7a5c; --accent-bg: #dcf1e9; --warn: #8a5a0b; --warn-bg: #f8ecd2; --danger: #a8381c; --danger-bg: #f9e1da;
-      --pos: #b3531f; --neg: #1a6f9c; --idle: #5d7080; --idle-bg: #e6ecef;
+      --accent: #176a4f; --accent-bg: #dcf1e9; --warn: #8a5a0b; --warn-bg: #f8ecd2; --danger: #a8381c; --danger-bg: #f9e1da;
+      --pos: #b3531f; --neg: #1a6f9c; --idle: #4d5f6e; --idle-bg: #e6ecef;
     }
   }
   * { box-sizing: border-box; }
@@ -162,12 +162,12 @@
   </div>
   <p><b>Fixed.</b> Peak separation scales with each pair's own wavelength (<code>∝ 1/f</code>, the same factor as its lifetime). The slider is now the peak for a pair at the reference frequency <code>f₀</code>. The true scale cannot be drawn (at <code>f₀</code> the wavelength <code>c/f₀</code> is about 30 L₀ and the cell is 8 L₀), so the proportion is kept and the size is reduced; the inspector shows each pair's real <code>c/f</code> beside its drawn separation.</p><p><b>Clarity.</b> A faint line now joins the two lobes of each pair. Without it, widely opened pairs read as a scatter of unrelated dots. The Slow oscillations preset was retuned so its long-wavelength pairs stay inside the cell.</p>
   <div class="shots">
-    <figure><a href="fidelity-previews/medium-balanced-before.jpg"><img src="fidelity-previews/medium-balanced-before.jpg" alt="Before" loading="lazy"></a><figcaption>Before · every pair the same width, lobes unlinked</figcaption></figure>
-    <figure><a href="fidelity-previews/medium-balanced-after.jpg"><img src="fidelity-previews/medium-balanced-after.jpg" alt="After" loading="lazy"></a><figcaption>After · sizes follow wavelength, each pair linked</figcaption></figure>
+    <figure><a href="fidelity-previews/medium-balanced-before.jpg"><img src="fidelity-previews/medium-balanced-before.jpg" alt="Before · every pair the same width, lobes unlinked" loading="lazy"></a><figcaption>Before · every pair the same width, lobes unlinked</figcaption></figure>
+    <figure><a href="fidelity-previews/medium-balanced-after.jpg"><img src="fidelity-previews/medium-balanced-after.jpg" alt="After · sizes follow wavelength, each pair linked" loading="lazy"></a><figcaption>After · sizes follow wavelength, each pair linked</figcaption></figure>
   </div>
   <div class="shots">
-    <figure><a href="fidelity-previews/medium-slow-before.jpg"><img src="fidelity-previews/medium-slow-before.jpg" alt="Before" loading="lazy"></a><figcaption>Before · Slow oscillations preset</figcaption></figure>
-    <figure><a href="fidelity-previews/medium-slow-after.jpg"><img src="fidelity-previews/medium-slow-after.jpg" alt="After" loading="lazy"></a><figcaption>After · long-lived pairs are visibly the long-wavelength ones</figcaption></figure>
+    <figure><a href="fidelity-previews/medium-slow-before.jpg"><img src="fidelity-previews/medium-slow-before.jpg" alt="Before · Slow oscillations preset" loading="lazy"></a><figcaption>Before · Slow oscillations preset</figcaption></figure>
+    <figure><a href="fidelity-previews/medium-slow-after.jpg"><img src="fidelity-previews/medium-slow-after.jpg" alt="After · long-lived pairs are visibly the long-wavelength ones" loading="lazy"></a><figcaption>After · long-lived pairs are visibly the long-wavelength ones</figcaption></figure>
   </div>
   <div class="src">Electron paper §8 (p. 5); Book ch. 3 (Fig. 3-3), ch. 19 (Fig. 19-4)</div>
 </div>
@@ -181,12 +181,12 @@
   </div>
   <p><b>Fixed.</b> The pair opens to <code>λ/2</code>, is born along the path, and lies along the polarization axis at mid-life, alternating polarity pair by pair as in Fleming's figures. Its lobes are drawn larger than the background and joined by a line. <b>Pair start angle</b> chooses where in this half-turn the run begins (at 90° the first pair is across the path, fully open, at tick 0) and never changes a pair's geometry. Model is now <code>light-induction/2</code>; older files open unchanged.</p>
   <div class="shots">
-    <figure><a href="fidelity-previews/light-midlife-before.jpg"><img src="fidelity-previews/light-midlife-before.jpg" alt="Before" loading="lazy"></a><figcaption>Before · tick 60: pair small and along the path</figcaption></figure>
-    <figure><a href="fidelity-previews/light-midlife-after.jpg"><img src="fidelity-previews/light-midlife-after.jpg" alt="After" loading="lazy"></a><figcaption>After · tick 60: pair across the path at λ/2, field at its peak</figcaption></figure>
+    <figure><a href="fidelity-previews/light-midlife-before.jpg"><img src="fidelity-previews/light-midlife-before.jpg" alt="Before · tick 60: pair small and along the path" loading="lazy"></a><figcaption>Before · tick 60: pair small and along the path</figcaption></figure>
+    <figure><a href="fidelity-previews/light-midlife-after.jpg"><img src="fidelity-previews/light-midlife-after.jpg" alt="After · tick 60: pair across the path at λ/2, field at its peak" loading="lazy"></a><figcaption>After · tick 60: pair across the path at λ/2, field at its peak</figcaption></figure>
   </div>
   <div class="shots">
-    <figure><a href="fidelity-previews/light-second-pair-before.jpg"><img src="fidelity-previews/light-second-pair-before.jpg" alt="Before" loading="lazy"></a><figcaption>Before · tick 180</figcaption></figure>
-    <figure><a href="fidelity-previews/light-second-pair-after.jpg"><img src="fidelity-previews/light-second-pair-after.jpg" alt="After" loading="lazy"></a><figcaption>After · tick 180: second pair, polarity and rotation reversed</figcaption></figure>
+    <figure><a href="fidelity-previews/light-second-pair-before.jpg"><img src="fidelity-previews/light-second-pair-before.jpg" alt="Before · tick 180" loading="lazy"></a><figcaption>Before · tick 180</figcaption></figure>
+    <figure><a href="fidelity-previews/light-second-pair-after.jpg"><img src="fidelity-previews/light-second-pair-after.jpg" alt="After · tick 180: second pair, polarity and rotation reversed" loading="lazy"></a><figcaption>After · tick 180: second pair, polarity and rotation reversed</figcaption></figure>
   </div>
   <div class="src">Photon paper §2 (Fig. 3); Book ch. 4 (Fig. 4-9), ch. 5 (Fig. 5-1)</div>
 </div>
@@ -198,12 +198,12 @@
   </div>
   <p><b>Fixed.</b> Field strength and polarity are now the transverse part of the active pair's dipole moment. The field swells and collapses with the pair, is zero at each hand-off, reverses for the next pair, and falls with the square of distance from that pair in every direction. The magnetic field lies along the pair's rotation axis (right-hand grip) and electric × magnetic points along the travel direction; tests check both at every pair start angle, direction and polarization. The field-reach cage shrinks to nothing at each hand-off, with the pair. Surrounding pairs are now randomly oriented and lean toward the active pair only where its field reaches them, as in Fig. 5-2. A fixed probe sees alternating pulses, one per pair, at the photon's frequency.</p>
   <div class="shots">
-    <figure><a href="fidelity-previews/light-handoff-before.jpg"><img src="fidelity-previews/light-handoff-before.jpg" alt="Before" loading="lazy"></a><figcaption>Before · tick 120: the packet glides on unchanged</figcaption></figure>
-    <figure><a href="fidelity-previews/light-handoff-after.jpg"><img src="fidelity-previews/light-handoff-after.jpg" alt="After" loading="lazy"></a><figcaption>After · tick 120, the hand-off: field extinguished with the pair</figcaption></figure>
+    <figure><a href="fidelity-previews/light-handoff-before.jpg"><img src="fidelity-previews/light-handoff-before.jpg" alt="Before · tick 120: the packet glides on unchanged" loading="lazy"></a><figcaption>Before · tick 120: the packet glides on unchanged</figcaption></figure>
+    <figure><a href="fidelity-previews/light-handoff-after.jpg"><img src="fidelity-previews/light-handoff-after.jpg" alt="After · tick 120, the hand-off: field extinguished with the pair" loading="lazy"></a><figcaption>After · tick 120, the hand-off: field extinguished with the pair</figcaption></figure>
   </div>
   <div class="shots">
-    <figure><a href="fidelity-previews/light-plots-before.jpg"><img src="fidelity-previews/light-plots-before.jpg" alt="Before" loading="lazy"></a><figcaption>Before · a fixed wave shape sliding past the probe</figcaption></figure>
-    <figure><a href="fidelity-previews/light-plots-after.jpg"><img src="fidelity-previews/light-plots-after.jpg" alt="After" loading="lazy"></a><figcaption>After · alternating pulses that grow as the chain nears the probe</figcaption></figure>
+    <figure><a href="fidelity-previews/light-plots-before.jpg"><img src="fidelity-previews/light-plots-before.jpg" alt="Before · a fixed wave shape sliding past the probe" loading="lazy"></a><figcaption>Before · a fixed wave shape sliding past the probe</figcaption></figure>
+    <figure><a href="fidelity-previews/light-plots-after.jpg"><img src="fidelity-previews/light-plots-after.jpg" alt="After · alternating pulses that grow as the chain nears the probe" loading="lazy"></a><figcaption>After · alternating pulses that grow as the chain nears the probe</figcaption></figure>
   </div>
   <div class="src">Book ch. 5 (pp. 43–45, Fig. 5-2), ch. 19 (pp. 145–146); Photon paper §1, §5</div>
 </div>
@@ -217,8 +217,8 @@
   </div>
   <p><b>Fixed.</b> Shared preference is the default. Alternating bands remains under <b>Adjacent shells › Alternate</b> and as a saved view in Help, labelled as an extension Fleming does not describe. Saved files that chose alternation keep it.</p>
   <div class="shots">
-    <figure><a href="fidelity-previews/electron-spin-before.jpg"><img src="fidelity-previews/electron-spin-before.jpg" alt="Before" loading="lazy"></a><figcaption>Before · bands turn in opposite senses by default</figcaption></figure>
-    <figure><a href="fidelity-previews/electron-spin-after.jpg"><img src="fidelity-previews/electron-spin-after.jpg" alt="After" loading="lazy"></a><figcaption>After · every band turns the same way, as in Fig. 2</figcaption></figure>
+    <figure><a href="fidelity-previews/electron-spin-before.jpg"><img src="fidelity-previews/electron-spin-before.jpg" alt="Before · bands turn in opposite senses by default" loading="lazy"></a><figcaption>Before · bands turn in opposite senses by default</figcaption></figure>
+    <figure><a href="fidelity-previews/electron-spin-after.jpg"><img src="fidelity-previews/electron-spin-after.jpg" alt="After · every band turns the same way, as in Fig. 2" loading="lazy"></a><figcaption>After · every band turns the same way, as in Fig. 2</figcaption></figure>
   </div>
   <div class="src">Electron paper §3 (Fig. 2), §4</div>
 </div>
@@ -230,8 +230,8 @@
   </div>
   <p><b>Fixed</b> (model <code>electron-polarization/4</code>). Each generation is born at its own random angle and turns toward the electron during its life: all the way inside 1.6 R, and beyond it by a share chosen so the mean alignment falls with the square of distance. Near pairs line up; far pairs stay mostly random with a slight lean. Polarization no longer comes to rest: every replacement turns again, which is the continual process Fleming gives as the origin of spin. A pair is drawn as bright as it is aligned.</p><p><b>New readout.</b> <b>Dock › Polarization</b> sums the alignment of the displayed pairs shell by shell. Farther shells hold more pairs, each turned less, and the total stays level: the same polarization through every sphere, read from the dipoles themselves and not from a reference formula. A test checks the displayed pairs against the rule.</p><p><b>Scale.</b> The 1.6 R radius is a magnification. Fleming says the lean is slight and gives no figure; drawn to scale it would be invisible. Faraday lines now trace the alignment the pairs share (their mean), since any single generation is random.</p>
   <div class="shots">
-    <figure><a href="fidelity-previews/electron-cutaway-before.jpg"><img src="fidelity-previews/electron-cutaway-before.jpg" alt="Before" loading="lazy"></a><figcaption>Before · central slab: every pair exactly radial</figcaption></figure>
-    <figure><a href="fidelity-previews/electron-cutaway-after.jpg"><img src="fidelity-previews/electron-cutaway-after.jpg" alt="After" loading="lazy"></a><figcaption>After · central slab: aligned and bright near the electron, random and dim far out</figcaption></figure>
+    <figure><a href="fidelity-previews/electron-cutaway-before.jpg"><img src="fidelity-previews/electron-cutaway-before.jpg" alt="Before · central slab: every pair exactly radial" loading="lazy"></a><figcaption>Before · central slab: every pair exactly radial</figcaption></figure>
+    <figure><a href="fidelity-previews/electron-cutaway-after.jpg"><img src="fidelity-previews/electron-cutaway-after.jpg" alt="After · central slab: aligned and bright near the electron, random and dim far out" loading="lazy"></a><figcaption>After · central slab: aligned and bright near the electron, random and dim far out</figcaption></figure>
   </div>
   <div class="shots" style="grid-template-columns:1fr">
     <figure><a href="fidelity-previews/electron-polarization-after.jpg"><img src="fidelity-previews/electron-polarization-after.jpg" alt="mean alignment falls with distance (left); the total through each shell levels off (right)" loading="lazy"></a><figcaption>New · mean alignment falls with distance (left); the total through each shell levels off (right)</figcaption></figure>
@@ -275,8 +275,8 @@
   </div>
   <p><b>Fixed.</b> A zepton now opens in proportion to its lifetime, so its drawn width is its wavelength. Between an electron and a proton, the replacement of an aligned zepton in the bridge is shorter-lived and smaller (by a display factor of 0.72), and smaller again as released charges close in, while the field outside keeps its full range. A replacement there is also never longer-lived than the zepton it replaces, so the chain at each place can only shorten; it settles at the shortest the space allows. Between like charges nothing shortens, and each gap-filling birth is smaller than every ordinary zepton. The loupe reports each zepton's wavelength. Pressure signs and the motion they drive are unchanged and still tested.</p>
   <div class="shots">
-    <figure><a href="fidelity-previews/casimir-attract-before.jpg"><img src="fidelity-previews/casimir-attract-before.jpg" alt="Before" loading="lazy"></a><figcaption>Before · electron and proton: every zepton the same width</figcaption></figure>
-    <figure><a href="fidelity-previews/casimir-attract-after.jpg"><img src="fidelity-previews/casimir-attract-after.jpg" alt="After" loading="lazy"></a><figcaption>After · the chain between the charges is made of shorter zeptons</figcaption></figure>
+    <figure><a href="fidelity-previews/casimir-attract-before.jpg"><img src="fidelity-previews/casimir-attract-before.jpg" alt="Before · electron and proton: every zepton the same width" loading="lazy"></a><figcaption>Before · electron and proton: every zepton the same width</figcaption></figure>
+    <figure><a href="fidelity-previews/casimir-attract-after.jpg"><img src="fidelity-previews/casimir-attract-after.jpg" alt="After · the chain between the charges is made of shorter zeptons" loading="lazy"></a><figcaption>After · the chain between the charges is made of shorter zeptons</figcaption></figure>
   </div>
   <div class="src">Book ch. 6 (p. 55, Fig. 6-12); Casimir paper §4</div>
 </div>
@@ -290,8 +290,8 @@
   </div>
   <p><b>Fixed.</b> The plate stage now draws fourteen sample wavelengths (30 to 1000 nm) as ovals of matching length, all of them outside the plates and only those shorter than the gap between them. Move the gap and the count in the caption changes: 4 of 14 fit at 100 nm, 13 of 14 at 1000 nm. The standing-wave curves remain as an optional layer, off by default. The pressure, force and energy readouts are unchanged.</p>
   <div class="shots">
-    <figure><a href="fidelity-previews/vdw-plates-before.jpg"><img src="fidelity-previews/vdw-plates-before.jpg" alt="Before" loading="lazy"></a><figcaption>Before · identical ovals outside, sine curves inside</figcaption></figure>
-    <figure><a href="fidelity-previews/vdw-plates-after.jpg"><img src="fidelity-previews/vdw-plates-after.jpg" alt="After" loading="lazy"></a><figcaption>After · every size outside, only the short ones between the plates</figcaption></figure>
+    <figure><a href="fidelity-previews/vdw-plates-before.jpg"><img src="fidelity-previews/vdw-plates-before.jpg" alt="Before · identical ovals outside, sine curves inside" loading="lazy"></a><figcaption>Before · identical ovals outside, sine curves inside</figcaption></figure>
+    <figure><a href="fidelity-previews/vdw-plates-after.jpg"><img src="fidelity-previews/vdw-plates-after.jpg" alt="After · every size outside, only the short ones between the plates" loading="lazy"></a><figcaption>After · every size outside, only the short ones between the plates</figcaption></figure>
   </div>
   <div class="src">Book ch. 3 (pp. 29–30, Figs 3-3, 3-4)</div>
 </div>
