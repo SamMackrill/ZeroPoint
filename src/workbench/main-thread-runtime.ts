@@ -1,4 +1,4 @@
-// MainThreadRuntime (docs/ui-redesign-plan.html §14): Casimir and van der Waals simulate on the main thread, so this
+// MainThreadRuntime (docs/ui-redesign-plan.html §14): Casimir, van der Waals and the double slit simulate on the main thread, so this
 // driver gives them what the workers already have — a fixed-step accumulator with bounded catch-up, playback speed and
 // a hidden-tab pause — behind the same Runtime interface.
 import { checkSpeed, SPEEDS, UnsupportedCommand, type Capabilities, type Runtime, type RuntimeStatus } from './runtime';
@@ -15,6 +15,10 @@ export interface MainThreadModel<S, P = never, C = never> {
   readonly end?: number;
   /** Playback speeds this experiment offers; the standard set when omitted. */
   readonly speeds?: readonly number[];
+  /** Go straight to a tick (bounded timelines): the scrubber and the event ticks. */
+  seek?(tick: number): void;
+  /** Go to the next named event, or the end when none is left. */
+  nextEvent?(): void;
   /** Restart with new parameters (↻). */
   configure?(parameters: P): void;
   checkpoint?(): C;
@@ -53,7 +57,7 @@ export class MainThreadRuntime<S, P = never, C = never> implements Runtime<S, ne
   private readonly onVisibility = () => { if (this.doc?.hidden) this.run(false); };
 
   constructor(private readonly model: MainThreadModel<S, P, C>, private readonly scheduler: Scheduler = browserScheduler, private readonly doc: Document | undefined = globalThis.document) {
-    this.capabilities = { run: true, step: true, jump: true, nextEvent: false, seek: false, reset: true, speed: true, live: false, configure: Boolean(model.configure), checkpoint: Boolean(model.checkpoint), restore: Boolean(model.restore) };
+    this.capabilities = { run: true, step: true, jump: true, nextEvent: Boolean(model.nextEvent), seek: Boolean(model.seek), reset: true, speed: true, live: false, configure: Boolean(model.configure), checkpoint: Boolean(model.checkpoint), restore: Boolean(model.restore) };
     this.current = model.snapshot();
   }
 
@@ -97,8 +101,20 @@ export class MainThreadRuntime<S, P = never, C = never> implements Runtime<S, ne
 
   step() { this.advance(1); }
   jump(tau: number) { this.advance(Math.round(tau / this.model.dt)); }
-  nextEvent(): never { throw new UnsupportedCommand('next event'); }
-  seek(): never { throw new UnsupportedCommand('seek'); }
+  nextEvent() {
+    if (!this.model.nextEvent) throw new UnsupportedCommand('next event');
+    this.run(false);
+    this.model.nextEvent();
+    this.emit();
+  }
+
+  seek(tick: number) {
+    if (!this.model.seek) throw new UnsupportedCommand('seek');
+    if (!Number.isInteger(tick) || tick < 0 || (this.model.end !== undefined && tick > this.model.end)) throw new Error(`Invalid timeline position ${tick}.`);
+    this.run(false);
+    this.model.seek(tick);
+    this.emit();
+  }
   reset() { this.run(false); this.model.reset(); this.emit(); }
   speed(value: number) { this.rate = checkSpeed(value, this.model.speeds ?? SPEEDS); this.emit(); }
   setLive(): never { throw new UnsupportedCommand('live parameters'); }

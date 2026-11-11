@@ -1,4 +1,4 @@
-// MainThreadModel adapters for the two labs that simulate on the main thread. Their models are unchanged: Casimir's
+// MainThreadModel adapters for the labs that simulate on the main thread. Their models are unchanged: Casimir's
 // CasimirModel is recreated on reset or reconfigure (as the lab does today), and the van der Waals correlated-dipole
 // clock is a 120-tick loop that the lab advanced with a 50 ms interval (0.05 τ per tick at 1×).
 import { CasimirModel, STEP, type CasimirState, type ChargePair } from '../casimir/model';
@@ -42,5 +42,29 @@ export function dipoleClockModel(): MainThreadModel<DipoleClock> {
     reset: () => { tick = 0; },
     tick: () => tick,
     snapshot: () => ({ tick, phase: tick * 360 / VDW_LOOP_TICKS }),
+  };
+}
+
+/** A bounded clock's state: just its tick. Labs whose scene is a pure function of time and parameters render from it. */
+export interface BoundedClock { tick: number }
+
+/**
+ * A clock from tick 0 to `end` that can be scrubbed, as a main-thread model (the double slit). `events` returns the
+ * ticks of the current timeline's named events, so Next goes to the one after the current tick, or to the end.
+ */
+export function boundedClockModel(dt: number, end: number, events: () => readonly number[] = () => []): MainThreadModel<BoundedClock, never, number> {
+  let tick = 0;
+  /** Keep a requested tick on the timeline. */
+  const clamp = (value: number) => Math.min(end, Math.max(0, Math.round(value)));
+  return {
+    dt, end,
+    step: () => { tick = clamp(tick + 1); },
+    reset: () => { tick = 0; },
+    tick: () => tick,
+    snapshot: () => ({ tick }),
+    seek: value => { tick = clamp(value); },
+    nextEvent: () => { tick = clamp(events().filter(e => e > tick).sort((a, b) => a - b)[0] ?? end); },
+    checkpoint: () => tick,
+    restore: value => { tick = clamp(value); },
   };
 }

@@ -4,7 +4,7 @@ import { LIGHT_END_TICK, type LightSnapshot } from '../src/light/model';
 import type { ElectronSnapshot } from '../src/electron/model';
 import { electronRuntime, lightRuntime, mediumRuntime, UnsupportedCommand, type WorkerChannel } from '../src/workbench/runtime';
 import { MAX_STEPS_PER_FRAME, MainThreadRuntime, type MainThreadModel, type Scheduler } from '../src/workbench/main-thread-runtime';
-import { casimirModel, dipoleClockModel, VDW_LOOP_TICKS } from '../src/workbench/main-thread-models';
+import { boundedClockModel, casimirModel, dipoleClockModel, VDW_LOOP_TICKS } from '../src/workbench/main-thread-models';
 
 /** A fake worker channel that records commands and lets tests push states through the sink. */
 function channel<C, S>(state: S | null = null) {
@@ -197,7 +197,9 @@ describe('MainThreadRuntime', () => {
     expect(m.ticks).toBe(31);
     rt.reset();
     expect(rt.latest()).toBe(0);
-    expect(() => rt.seek()).toThrow(UnsupportedCommand);
+    expect(() => rt.seek(0)).toThrow(UnsupportedCommand);
+    expect(() => rt.nextEvent()).toThrow(UnsupportedCommand);
+    expect(rt.capabilities).toMatchObject({ seek: false, nextEvent: false });
     expect(() => rt.configure(undefined as never)).toThrow(UnsupportedCommand);
     return expect(rt.checkpoint()).rejects.toThrow(UnsupportedCommand);
   });
@@ -227,6 +229,22 @@ describe('main-thread models', () => {
     expect(rt.latest()).toMatchObject({ tick: 0, pair: 'electron-proton', separation: 6 });
     rt.step(); rt.reset();
     expect(rt.latest()).toMatchObject({ tick: 0, pair: 'electron-proton' });
+  });
+  it('a bounded clock seeks, goes to the next event and stops at its end', () => {
+    const s = fakeScheduler(), rt = new MainThreadRuntime(boundedClockModel(1 / 60, 480, () => [480, 240]), s, undefined);
+    expect(rt.capabilities).toMatchObject({ seek: true, nextEvent: true, checkpoint: true, restore: true });
+    rt.run(true); rt.seek(100);
+    expect(rt.status()).toMatchObject({ running: false, tick: 100, finished: false });
+    expect(s.pending()).toBe(0);
+    rt.nextEvent();
+    expect(rt.latest()).toEqual({ tick: 240 });
+    rt.nextEvent(); rt.nextEvent();
+    expect(rt.status()).toMatchObject({ tick: 480, finished: true });
+    expect(() => rt.seek(481)).toThrow('Invalid timeline position 481.');
+    expect(() => rt.seek(1.5)).toThrow('Invalid timeline position 1.5.');
+    rt.restore(30);
+    expect(rt.latest()).toEqual({ tick: 30 });
+    return expect(rt.checkpoint()).resolves.toBe(30);
   });
   it('the van der Waals dipole clock loops every 120 ticks', () => {
     const rt = new MainThreadRuntime(dipoleClockModel(), fakeScheduler(), undefined);
