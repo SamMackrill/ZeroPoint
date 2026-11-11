@@ -7,10 +7,10 @@ const LIVE = ['stationary', 'spin', 'moving'] as const;
 
 /**
  * Milestones per scenario, at the ticks the current replay buttons seek to: the electron appears over its first
- * 0.35 τ and the field is fully aligned at 3 τ (tick 360); a moving electron passes the path centre at 24 τ.
+ * 0.35 τ and the polarization is established at 3 τ (tick 360); a moving electron passes the path centre at 24 τ.
  */
 export function electronMilestones(scenario: string): TimelineEvent[] {
-  if (scenario === 'stationary') return [{ tick: Math.round(0.35 / ELECTRON_DT), label: 'Electron introduced', id: 'introduced' }, { tick: 360, label: 'Fully aligned', id: 'aligned' }];
+  if (scenario === 'stationary') return [{ tick: Math.round(0.35 / ELECTRON_DT), label: 'Electron introduced', id: 'introduced' }, { tick: 360, label: 'Polarization established', id: 'aligned' }];
   if (scenario === 'moving') return [{ tick: 2880, label: 'Path centre', id: 'path-centre' }];
   return [];
 }
@@ -28,6 +28,7 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
     { id: 'moving', title: 'Moving electron', description: 'Pairs turn locally as the electron passes', params: { mode: 'moving' } },
     { id: 'charge-flux', title: 'Charge & flux', description: 'A Gauss sphere of variable radius', static: true },
     { id: 'radius-limit', title: 'Radius limit', description: 'Effective speed against radius', static: true },
+    { id: 'mass-shell', title: 'Mass & excluded energy', description: 'A shell that shuts out a band of fluctuations', static: true },
   ],
   defaultParams: DEFAULT_ELECTRON,
   defaultView: DEFAULT_ELECTRON_VIEW,
@@ -41,11 +42,11 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
   ],
   viewControls: [
     { kind: 'choice', key: 'spinDisplay.count', label: 'Visible shells', group: 'Shell display', apply: 'live', scenarios: ['spin'], options: [1, 2, 3, 4].map(n => ({ value: n, label: String(n) })) },
-    { kind: 'choice', key: 'spinDisplay.alternating', label: 'Adjacent shells', group: 'Shell display', apply: 'live', scenarios: ['spin'], info: 'Shared follows Fig. 2: neighbouring shells turn the same way. Alternating whole bands is an optional extension.', options: [{ value: false, label: 'Shared' }, { value: true, label: 'Alternate' }] },
+    { kind: 'choice', key: 'spinDisplay.alternating', label: 'Adjacent shells', group: 'Shell display', apply: 'live', scenarios: ['spin'], info: 'Shared follows Fig. 2: neighbouring shells turn the same way, and is the default. Alternating whole bands is an optional extension that Fleming does not describe.', options: [{ value: false, label: 'Shared' }, { value: true, label: 'Alternate' }] },
     { kind: 'choice', key: 'spinDisplay.gain', label: 'Turn gain', group: 'Shell display', apply: 'live', scenarios: ['spin'], info: 'Magnifies each local turn for visibility. Display only; does not change the model.', options: [1, 2, 4].map(n => ({ value: n, label: `${n}×` })) },
   ],
   layers: [
-    { key: 'dipoles', label: 'Zepton pairs', group: 'Medium', scenarios: LIVE },
+    { key: 'dipoles', label: 'Zepton pairs', group: 'Medium', scenarios: LIVE, info: 'Each generation is born at a random angle and turns toward the electron, less with distance.' },
     { key: 'shells', label: 'Zepton shells', group: 'Medium', scenarios: ['spin'] },
     { key: 'faraday', label: 'Faraday lines', group: 'Fields', scenarios: LIVE, info: 'The neighbouring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative.' },
     { key: 'electric', label: 'Radial E reference', group: 'Fields', scenarios: LIVE },
@@ -64,7 +65,7 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
   ],
   speeds: SPEEDS,
   validate: validateElectronParameters,
-  timeline: scenario => scenario === 'charge-flux' || scenario === 'radius-limit'
+  timeline: scenario => scenario === 'charge-flux' || scenario === 'radius-limit' || scenario === 'mass-shell'
     ? { kind: 'static', dt: ELECTRON_DT, events: [] }
     : { kind: 'bounded', dt: ELECTRON_DT, end: ELECTRON_END, events: electronMilestones(scenario), next: scenario === 'spin' ? 'jump' : 'event' },
 };

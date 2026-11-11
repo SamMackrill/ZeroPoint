@@ -65,6 +65,19 @@ test('the static studies compare flux and rate limits, and the spin scenario lin
   await expect(page.getByTestId('property-limit')).toHaveText('2.000');
   await expect(page.getByTestId('property-limit-status')).toContainText('Below the proposed limit');
   await page.getByLabel('Electron property investigations', { exact: true }).screenshot({ path: 'test-results/electron-property-rate.png' });
+  // Mass as excluded zero-point energy (book ch. 16): the default shell balances, and the proton reproduces Fleming's figures.
+  await scenario(page, 'mass-shell');
+  await expect(tid(page, 'transport-run')).toHaveCount(0);
+  await expect(page.getByTestId('mass-ratio')).toHaveText('1.000');
+  await expect(page.getByTestId('mass-density')).toHaveText('6.833 × 10²⁵ GeV/cm³');
+  await expect(page.getByTestId('mass-status')).toContainText('Balanced');
+  await page.getByLabel('Shell thickness', { exact: true }).fill('1.5');
+  await expect(page.getByTestId('mass-status')).toContainText('more energy');
+  await page.getByRole('button', { name: 'Proton', exact: true }).click();
+  await expect(page.getByTestId('mass-diameters')).toHaveText('1.586 / 1.924 fm');
+  await expect(page.getByTestId('mass-density')).toHaveText('3.315 × 10³⁸ GeV/cm³');
+  await expect(page.getByTestId('mass-balance')).toHaveText('0.169 fm');
+  await page.getByLabel('Electron property investigations', { exact: true }).screenshot({ path: 'test-results/electron-property-mass.png' });
   await scenario(page, 'spin');
   await expect(page.getByTestId('electron-tick')).toContainText('Tick 0');
   // The video's shared rotation is a saved view in Help: a link that sets Shared, opens Charge motion and selects a pair.
@@ -94,7 +107,7 @@ test('the static studies compare flux and rate limits, and the spin scenario lin
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
-test('spin shells link 2D and 3D, alternate local turns and preserve display controls', async ({ page }) => {
+test('spin shells link 2D and 3D, share one turn preference unless asked to alternate, and preserve display controls', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await openElectron(page); await scenario(page, 'spin');
   await expect(page.getByLabel('Linked 2D spin section')).toBeVisible();
@@ -118,7 +131,11 @@ test('spin shells link 2D and 3D, alternate local turns and preserve display con
   await inspector(page, 'Setup'); await choose(page, '4');
   await expect(page.locator('[data-testid="spin-section"] [data-sample]')).toHaveCount(64);
   await page.getByRole('button', { name: 'Inspect spin band at 2.8 R', exact: true }).click();
-  await expect(page.getByTestId('electron-spin-rate')).toHaveText('-0.88° / τ');
+  // Shared preference is the default (Fleming's Fig. 2): the fourth band turns the same way as the first.
+  await expect(page.getByTestId('electron-spin-rate')).toHaveText('0.88° / τ');
+  await expect(page.locator('.electron-section-key')).toContainText('↺ Shell 2');
+  await inspector(page, 'Setup'); await choose(page, 'Alternate');
+  await inspector(page, 'Selection'); await expect(page.getByTestId('electron-spin-rate')).toHaveText('-0.88° / τ');
   await inspector(page, 'View'); await tid(page, 'layer-cutaway').click(); await expect(tid(page, 'layer-cutaway')).toHaveAttribute('aria-pressed', 'false');
   await inspector(page, 'Setup'); await choose(page, 'spin down');
   await tid(page, 'params-apply').click();
@@ -141,7 +158,7 @@ test('spin shells link 2D and 3D, alternate local turns and preserve display con
   const download = page.waitForEvent('download'); await tid(page, 'file-save').click();
   const saved = JSON.parse(await readFile((await (await download).path())!, 'utf8'));
   expect(saved.view.spinDisplay).toEqual({ count: 4, gain: 1, alternating: false, section: true, guides: true });
-  expect(saved.version).toBe(3); expect(saved.state.model).toBe('electron-polarization/3');
+  expect(saved.version).toBe(4); expect(saved.state.model).toBe('electron-polarization/4');
   saved.version = 1; saved.state.model = 'electron-polarization/1'; delete saved.view.shells;
   await tid(page, 'file-input').setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(saved)) });
   await expect(tid(page, 'notice')).toContainText('Updated an older experiment');

@@ -1,7 +1,7 @@
 import { Focus, Info, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { downloadFile } from '../../persistence/experiment';
-import { ALPHA, C, DEFAULT_ELECTRON_VIEW, ELECTRON_DT, ELECTRON_END, ELECTRON_MODEL, G_FACTOR, LATTICE_SAMPLES, RADIUS, SAMPLES_PER_SHELL, SHELL_RADII, TAU, alignmentProgress, electronPresence, electronX, enclosedCharge, parseElectronFile, probePosition, referenceFields, spinRateAtRadius, velocity, type ElectronMode, type ElectronParameters, type ElectronState, type ElectronView } from '../../electron/model';
+import { ALPHA, C, DEFAULT_ELECTRON_VIEW, ELECTRON_DT, ELECTRON_END, ELECTRON_FILE_VERSION, ELECTRON_MODEL, G_FACTOR, LATTICE_SAMPLES, RADIUS, SAMPLES_PER_SHELL, SHELL_RADII, TAU, alignmentProgress, dot, electronPresence, electronX, enclosedCharge, parseElectronFile, probePosition, referenceFields, shellAlignment, spinRateAtRadius, unit, velocity, type ElectronMode, type ElectronParameters, type ElectronState, type ElectronView } from '../../electron/model';
 import type { ElectronRenderer } from '../../electron/ElectronRenderer';
 import { ChargeMotion } from '../../electron/ChargeMotion';
 import { ElectronProperties } from '../../electron/ElectronProperties';
@@ -36,11 +36,11 @@ import { AboutSheet, helpActions, ORBIT_GESTURES, useAbout, type SavedView } fro
 const MODE_OF: Record<string, ElectronMode> = { stationary: 'electric', spin: 'spin', moving: 'moving' };
 const SCENARIO_OF: Record<ElectronMode, string> = { electric: 'stationary', spin: 'spin', moving: 'moving' };
 /** The two static studies, from ElectronProperties. */
-const STUDY_OF: Record<string, 'flux' | 'radius'> = { 'charge-flux': 'flux', 'radius-limit': 'radius' };
+const STUDY_OF: Record<string, 'flux' | 'radius' | 'mass'> = { 'charge-flux': 'flux', 'radius-limit': 'radius', 'mass-shell': 'mass' };
 /** What each timed scenario is about (About this scenario). */
 const DESCRIPTION: Record<ElectronMode, string> = {
-  electric: 'Start with an unpolarized cubic medium. The electron appears, and nearby pairs align first as a three-dimensional electric pattern resolves.',
-  spin: 'Following Fig. 2: neighboring zeptons turn locally as they polarize around the stationary electron. Compare the spherical field and equatorial section, then inspect how opposite charge motions contribute to current. Alternating whole bands is an optional extension.',
+  electric: 'Start with an unpolarized cubic medium. The electron appears, and nearby pairs align first as a three-dimensional electric pattern resolves. Every new pair is born at a random angle and turns toward the electron: completely near it, and by a share that thins with distance.',
+  spin: 'Following Fig. 2: neighboring zeptons turn locally, in one shared sense, as they polarize around the stationary electron. Compare the spherical field and equatorial section, then inspect how opposite charge motions contribute to current. Alternating whole bands is an optional extension.',
   moving: 'As the electron passes, nearby pairs turn locally. Reverse its velocity to reverse the motion-induced magnetic field.',
 };
 /** Help › Saved views: states worth returning to, as links (plan §10). */
@@ -48,6 +48,10 @@ const SAVED_VIEWS: readonly SavedView[] = [{
   title: 'The video’s shared rotation (4:44)',
   description: 'Shared local preference selected, following the video’s coordination explanation at 4:44.',
   hash: `#/electron/spin?spinDisplay.alternating=0&split=motion&sel=${LATTICE_SAMPLES + 34}`,
+}, {
+  title: 'Alternating bands (an extension)',
+  description: 'Successive whole bands reverse their turn. Fleming does not describe this; it is kept for comparison with the shared preference.',
+  hash: '#/electron/spin?spinDisplay.alternating=1',
 }];
 const vector = (v: number[]) => v.map(n => Math.abs(n) < 1e-9 ? '0' : n.toFixed(4)).join(', ');
 type Camera = 'front' | 'orbit' | 'probe' | 'shell';
@@ -155,7 +159,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   /** Download the current electron experiment state. */
   function save() {
     if (!latest.current) return; const { model, tick, parameters } = latest.current;
-    downloadFile(`zeropoint-electron-${p.mode}-tick-${tick}.json`, JSON.stringify({ format: 'zeropoint-electron', version: 3, state: { model, tick, parameters }, view }), 'application/json'); setNotice(`Saved electron state at tick ${tick}.`);
+    downloadFile(`zeropoint-electron-${p.mode}-tick-${tick}.json`, JSON.stringify({ format: 'zeropoint-electron', version: ELECTRON_FILE_VERSION, state: { model, tick, parameters }, view }), 'application/json'); setNotice(`Saved electron state at tick ${tick}.`);
   }
   /** Load and restore an electron experiment file selected by the user. */
   async function load(file: File) {
@@ -191,8 +195,10 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     { label: 'Spin', value: st.parameters.spin > 0 ? '+½' : '−½', unit: 'ℏ' },
   ];
   const traceTimes = Array.from({ length: 161 }, (_, i) => time * i / 160);
-  const stageNote = p.mode === 'electric' ? (s.tick === 0 ? 'Unpolarized ZPF · electron not yet introduced' : electronPresence(s) < 1 ? 'Introducing the negative electron' : '+ ends align toward the electron') : p.mode === 'spin' ? 'Local turns around a stationary core' : 'The electron moves; the medium responds';
-  const stageLabel = p.mode === 'electric' ? `Alignment ${(alignmentProgress(s) * 100).toFixed(0)}%` : p.mode === 'spin' ? '3D shells' : `${velocity(p).toFixed(2)} c along X`;
+  // Summed over all 2,197 lattice pairs, so only while its tab is showing.
+  const shells = useMemo(() => dockTab === 'polarization' && !study ? shellAlignment(s).filter(shell => shell.pairs > 0) : [], [dockTab, study, s.tick, s.parameters]);
+  const stageNote = p.mode === 'electric' ? (s.tick === 0 ? 'Unpolarized ZPF · electron not yet introduced' : electronPresence(s) < 1 ? 'Introducing the negative electron' : '+ ends turn toward the electron, less with distance') : p.mode === 'spin' ? 'Local turns around a stationary core' : 'The electron moves; the medium responds';
+  const stageLabel = p.mode === 'electric' ? `Polarization ${(alignmentProgress(s) * 100).toFixed(0)}%` : p.mode === 'spin' ? '3D shells' : `${velocity(p).toFixed(2)} c along X`;
   const setSplit = useCallback((on: boolean) => setView(v => ({ ...v, spinDisplay: { ...v.spinDisplay, section: on } })), []);
   const scenarioTitle = electronDefinition.scenarios.find(x => x.id === scenario)?.title;
 
@@ -272,6 +278,11 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
         ...(study || phone ? [] : [{ id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={electronDefinition} scenario={scenario} a={p} b={pB}
           onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}
           onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Electron files must be smaller than 100 KB.'); const saved = parseElectronFile(await file.text()); if (saved.state.parameters.mode !== p.mode) throw new Error('that file is from another scenario'); compare.pin(saved.state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> }]),
+        { id: 'polarization', label: 'Polarization', content: <div className="electron-probe">
+          <div><h4>Mean alignment of a pair, by distance</h4><Plot label="Mean radial alignment of the displayed lattice pairs in each shell, beside the rule they follow and the alignment they settle to" x={shells.map(shell => shell.radius)} series={[{ key: 'mean', label: 'Displayed pairs', color: palette.dataE, values: shells.map(shell => shell.mean) }, { key: 'rule', label: 'Rule, pairs mid-turn', color: palette.dataMark, values: shells.map(shell => shell.pairs ? shell.expected / shell.pairs : null) }, { key: 'settled', label: 'Settled, (1.6 R / r)²', color: palette.dataB, values: shells.map(shell => shell.pairs ? shell.settled / shell.pairs : null) }]} xUnit="R" yDomain={[-.1, 1.05]} reference={0} formatX={v => v.toFixed(1)} height={84} testId="electron-alignment-plot"/></div>
+          <div><h4>Total alignment through each shell</h4><Plot label="Sum of radial alignment over the lattice pairs in each shell: level outside the full-alignment radius" x={shells.map(shell => shell.radius)} series={[{ key: 'total', label: 'Displayed pairs', color: palette.dataE, values: shells.map(shell => shell.total) }, { key: 'rule', label: 'Rule, pairs mid-turn', color: palette.dataMark, values: shells.map(shell => shell.expected) }]} xUnit="R" yDomain={[0, Math.max(1, ...shells.map(shell => shell.expected)) * 1.3]} formatX={v => v.toFixed(1)} height={84} testId="electron-shell-total-plot"/>
+            <p className="light-small">Each shell is 0.8 R thick. Farther shells hold more pairs, each turned less, so the total stays level beyond 1.6 R: the same polarization crosses every sphere. Inside 1.6 R every pair turns fully and the total is limited by the number of pairs. The 1.6 R scale is a magnification.</p></div>
+        </div> },
         ...(p.mode === 'spin' ? [{ id: 'shells', label: 'Shell rates', content: <div className="electron-shell-rates">
           <div className="electron-rate-profile" aria-label="Illustrative shell rotation profile">{SHELL_RADII.slice(0, view.spinDisplay.count).map((r, i) => {
             const pair = displayedDipole(s, LATTICE_SAMPLES + i * SAMPLES_PER_SHELL + 34, view.spinDisplay);
@@ -290,7 +301,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
 
   const aboutNode = (
     <AboutSheet {...about} shortcuts={actions} pointer={study ? undefined : ORBIT_GESTURES} views={SAVED_VIEWS} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={scenarioTitle} sections={[
-      ...(MODE_OF[scenario] ? [{ id: 'scenario' as const, content: <><p>{DESCRIPTION[MODE_OF[scenario]]} {p.mode === 'electric' ? 'The electron appears during the first 0.35 τ; nearby pairs then align before distant ones. The 3 τ introduction is an illustrative transition, not a calculated propagation time. Probe numbers are final-field analytic references.' : p.mode === 'spin' ? 'Each replacement pair starts partly aligned, turns toward the electron, and collapses. Both views show the same equatorial sites and generations. Outer pairs turn more slowly under the chosen display law; no centre orbits the electron.' : 'The path marks the prescribed electron trajectory. It is not a permanent magnetic wake; the reference field changes as the electron passes.'}</p><h3>Reading the scene</h3><p>Faraday lines trace the neighboring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative. Magnetic guides follow the motion-induced rotation direction.</p></> }] : []),
+      ...(MODE_OF[scenario] ? [{ id: 'scenario' as const, content: <><p>{DESCRIPTION[MODE_OF[scenario]]} {p.mode === 'electric' ? 'The electron appears during the first 0.35 τ; nearby pairs then align before distant ones. The 3 τ introduction is an illustrative transition, not a calculated propagation time. Probe numbers are final-field analytic references. Inside 1.6 R a pair turns all the way to the electron; beyond it the share falls so that the mean alignment thins with the square of distance and the same total crosses every sphere (Dock › Polarization). The 1.6 R scale magnifies a polarization far too slight to see.' : p.mode === 'spin' ? 'Each replacement pair starts partly aligned, turns toward the electron, and collapses. Both views show the same equatorial sites and generations. Outer pairs turn more slowly under the chosen display law; no centre orbits the electron.' : 'The path marks the prescribed electron trajectory. It is not a permanent magnetic wake; the reference field changes as the electron passes.'}</p><h3>Reading the scene</h3><p>Faraday lines trace the neighboring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative. Magnetic guides follow the motion-induced rotation direction.</p></> }] : []),
       { id: 'units', content: <><h3>Source scale &amp; constants</h3><dl className="light-readouts"><div><dt>R = λC/2</dt><dd>{(RADIUS * 1e12).toFixed(6)} pm</dd></div><div><dt>c/(2πR)</dt><dd>{(C / (2 * Math.PI * RADIUS)).toExponential(3)} Hz</dd></div><div><dt>α</dt><dd>1 / {(1 / ALPHA).toFixed(6)}</dd></div><div><dt>μ along preferred axis</dt><dd>{(-p.spin * G_FACTOR / 2).toFixed(6)} μB</dd></div></dl><p className="light-small">Reference inputs, not fitted outputs. Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions.</p><a href="./docs/electron-source-notes.md" target="_blank" rel="noreferrer">Read extracted source details & model decisions ↗</a></> },
       { id: 'sources', content: <div className="electron-sources electron-about-sources">
           <article><strong>Polarization → electric field</strong><p>A bare negative polarizer aligns positive dipole ends inward. Fleming relates the surrounding polarization flux to unit charge.</p><a href="./docs/papers/Electron%20Properties%20Explained%20as%20Quantum%20Field%20Effects.pdf#page=2" target="_blank" rel="noreferrer">Electron properties · §2 ↗</a></article>
@@ -306,7 +317,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
       <div className="light-selection-head"><h3>{picked ? `Zepton ${picked.index}` : 'Inspect a zepton'}</h3><button type="button" className="inspector-link" disabled={!!study} onClick={inspectProbe}>Nearest to probe</button></div>
       {picked ? <>
         <div className="electron-pair-signs"><span>+</span><i/><span>−</span></div>
-        <dl className="light-readouts"><div><dt>Sample / generation</dt><dd>{picked.index} / {picked.generation}</dd></div><div><dt>Fixed centre (R)</dt><dd data-testid="electron-pair-centre">{vector(picked.centre)}</dd></div><div><dt>Age / lifetime (τ)</dt><dd>{picked.age.toFixed(2)} / {picked.lifetime.toFixed(2)}</dd></div><div><dt>Full separation</dt><dd>{picked.separation.toFixed(3)} R</dd></div><div><dt>Local spin turn</dt><dd data-testid="electron-local-spin">{(picked.spinTurn * 180 / Math.PI).toFixed(2)}° / lifecycle</dd></div><div><dt>Spin rate (illustrative)</dt><dd data-testid="electron-spin-rate">{(picked.spinRate * 180 / Math.PI).toFixed(2)}° / τ</dd></div><div><dt>Motion turn</dt><dd>{(picked.motionTurn * 180 / Math.PI).toFixed(2)}° / lifecycle</dd></div></dl>
+        <dl className="light-readouts"><div><dt>Sample / generation</dt><dd>{picked.index} / {picked.generation}</dd></div><div><dt>Fixed centre (R)</dt><dd data-testid="electron-pair-centre">{vector(picked.centre)}</dd></div><div><dt>Age / lifetime (τ)</dt><dd>{picked.age.toFixed(2)} / {picked.lifetime.toFixed(2)}</dd></div><div><dt>Full separation</dt><dd>{picked.separation.toFixed(3)} R</dd></div>{picked.index < LATTICE_SAMPLES && picked.field.valid && <><div><dt>Born at</dt><dd>{(Math.acos(Math.max(-1, Math.min(1, dot(picked.born, unit(picked.field.electric))))) * 180 / Math.PI).toFixed(0)}° from the electron</dd></div><div><dt>Now at</dt><dd data-testid="electron-pair-angle">{(Math.acos(Math.max(-1, Math.min(1, dot(picked.direction, unit(picked.field.electric))))) * 180 / Math.PI).toFixed(0)}° · turns {(picked.share * 100).toFixed(0)}% of the way</dd></div></>}<div><dt>Local spin turn</dt><dd data-testid="electron-local-spin">{(picked.spinTurn * 180 / Math.PI).toFixed(2)}° / lifecycle</dd></div><div><dt>Spin rate (illustrative)</dt><dd data-testid="electron-spin-rate">{(picked.spinRate * 180 / Math.PI).toFixed(2)}° / τ</dd></div><div><dt>Motion turn</dt><dd>{(picked.motionTurn * 180 / Math.PI).toFixed(2)}° / lifecycle</dd></div></dl>
         {!picked.field.valid && <p className="light-small">This sample is currently inside the electron’s numerical mask.</p>}
         <div className="electron-selection-actions"><button type="button" className="light-focus" onClick={focusSelection}><Focus size={14}/>Focus this fixed centre <kbd>F</kbd></button><button type="button" className="inspector-link" onClick={clearSelection}>Clear <kbd>Esc</kbd></button></div>
       </> : <p className="light-small">Click a pair to inspect its fixed centre, in the field or the section, or choose Nearest to probe. Selection pins a fixed sampling location across successive pair generations.</p>}

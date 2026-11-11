@@ -12,8 +12,10 @@ export function rotate(v: Vec, axis: Vec, angle: number): Vec {
   const a = unit(axis);
   return add(add(scale(v, Math.cos(angle)), scale(cross(a, v), Math.sin(angle))), scale(a, dot(a, v) * (1 - Math.cos(angle))));
 }
-export const ELECTRON_MODEL = 'electron-polarization/3';
+export const ELECTRON_MODEL = 'electron-polarization/4';
 export const ELECTRON_DT = 1 / 120, ELECTRON_END = 5760, CORE_MASK = .3;
+/** The saved-file version, which follows the model's version number. */
+export const ELECTRON_FILE_VERSION = 4;
 export const C = 299792458, RADIUS = 2.42631023538e-12 / 2, TAU = RADIUS / C;
 export const ALPHA = 7.2973525643e-3, G_FACTOR = 2.00231930436;
 export type ElectronMode = 'electric' | 'spin' | 'moving';
@@ -22,7 +24,8 @@ export const DEFAULT_ELECTRON: ElectronParameters = { mode: 'electric', beta: .1
 export interface ElectronState { model: typeof ELECTRON_MODEL; tick: number; parameters: ElectronParameters }
 export interface ElectronSnapshot extends ElectronState { running: boolean; speed: number }
 export interface SpinDisplay { count: number; alternating: boolean; gain: number; section: boolean; guides: boolean }
-export const DEFAULT_SPIN_DISPLAY: SpinDisplay = { count: 2, alternating: true, gain: 2, section: true, guides: true };
+/** Shared preference is Fleming's account (Electron Properties §3, Fig. 2); alternating whole bands is an extension. */
+export const DEFAULT_SPIN_DISPLAY: SpinDisplay = { count: 2, alternating: false, gain: 2, section: true, guides: true };
 export interface ElectronView { dipoles: boolean; inspect: boolean; shells: boolean; faraday: boolean; electric: boolean; rotation: boolean; magnetic: boolean; intrinsic: boolean; radius: boolean; cutaway: boolean; reducedMotion: boolean; spinDisplay: SpinDisplay }
 export type ElectronLayer = Exclude<keyof ElectronView, 'spinDisplay'>;
 export const DEFAULT_ELECTRON_VIEW: ElectronView = { dipoles: true, inspect: false, shells: true, faraday: true, electric: false, rotation: true, magnetic: true, intrinsic: false, radius: false, cutaway: false, reducedMotion: false, spinDisplay: DEFAULT_SPIN_DISPLAY };
@@ -48,9 +51,10 @@ export function validateElectronState(value: unknown): ElectronState {
 export function parseElectronFile(text: string): { state: ElectronState; view: ElectronView; migrated: boolean } {
   if (text.length > 100000) throw new Error('Electron files must be smaller than 100 KB.');
   const f = JSON.parse(text);
-  if (f?.format !== 'zeropoint-electron' || ![1, 2, 3].includes(f.version)) throw new Error('Choose a ZeroPoint electron experiment file.');
-  const migrated = [1, 2].includes(f.version) && f.state?.model === `electron-polarization/${f.version}`;
-  if (!migrated && f.version !== 3) throw new Error('Incompatible electron file version.');
+  if (f?.format !== 'zeropoint-electron' || ![1, 2, 3, 4].includes(f.version)) throw new Error('Choose a ZeroPoint electron experiment file.');
+  // Versions 1 to 3 hold the same tick and parameters; version 4 changed how the lattice pairs polarize.
+  const migrated = [1, 2, 3].includes(f.version) && f.state?.model === `electron-polarization/${f.version}`;
+  if (!migrated && f.version !== ELECTRON_FILE_VERSION) throw new Error('Incompatible electron file version.');
   const state = validateElectronState(migrated ? { ...f.state, model: ELECTRON_MODEL } : f.state), view = { ...DEFAULT_ELECTRON_VIEW };
   for (const k of Object.keys(view).filter(k => k !== 'spinDisplay') as ElectronLayer[]) { if (migrated && (k === 'inspect' || (f.version === 1 && k === 'shells'))) continue; if (typeof f.view?.[k] !== 'boolean') throw new Error(`Invalid ${k} layer.`); view[k] = f.view[k]; }
   const display = f.view?.spinDisplay;
@@ -93,7 +97,70 @@ export function sampleCentre(index: number): Vec {
   }
   return [(index % GRID_SIDE - GRID_HALF) * GRID_SPACING, (Math.floor(index / GRID_SIDE) % GRID_SIDE - GRID_HALF) * GRID_SPACING, (Math.floor(index / (GRID_SIDE ** 2)) - GRID_HALF) * GRID_SPACING];
 }
-/** Derive the representative dipole geometry and fields at a sample site. */
+/**
+ * Radius (in R) inside which a lattice pair turns all the way to the charge. Fleming gives no scale: the polarization
+ * of a unit charge is far weaker than this, so the radius is a magnification, like the spin gain.
+ */
+export const FULL_ALIGNMENT_RADIUS = 1.6;
+/**
+ * Mean radial alignment ⟨cos⟩ of the pairs at a radius. "The same total amount of polarization occurs at each distance
+ * away from the charge; it is just spread out over increasingly larger volumes" (The Zero-Point Universe ch. 6), so the
+ * mean falls with the inverse square of distance and the total through every sphere is the same.
+ */
+export const meanAlignment = (radius: number) => Math.min(1, (FULL_ALIGNMENT_RADIUS / Math.max(radius, 1e-9)) ** 2);
+/** ⟨cos⟩ of the final angle when uniformly random directions each turn the share `w` of their way to a common axis. */
+export function alignmentOfShare(w: number) {
+  const a = 1 - Math.max(0, Math.min(1, w));
+  // (1 + cos aπ) / (2(1 − a²)), with its limit π²(1 − a)/(4(1 + a)) as a → 1.
+  return 1 - a < 1e-6 ? Math.PI ** 2 * (1 - a) / (4 * (1 + a)) : (1 + Math.cos(a * Math.PI)) / (2 * (1 - a * a));
+}
+const SHARE_STEPS = 512;
+/** Inverse of `alignmentOfShare`, tabulated: the share each pair must turn for a given mean alignment. */
+const SHARE_TABLE = Array.from({ length: SHARE_STEPS + 1 }, (_, i) => {
+  const target = i / SHARE_STEPS; let lo = 0, hi = 1;
+  for (let n = 0; n < 40; n++) { const mid = (lo + hi) / 2; if (alignmentOfShare(mid) < target) lo = mid; else hi = mid; }
+  return (lo + hi) / 2;
+});
+/** The share of its way to the charge that each pair at a radius turns, so that the mean alignment is `meanAlignment`. */
+export function turnShare(radius: number) {
+  const mean = meanAlignment(radius);
+  if (mean >= 1) return 1;
+  const x = mean * SHARE_STEPS, i = Math.min(SHARE_STEPS - 1, Math.floor(x));
+  return SHARE_TABLE[i] + (SHARE_TABLE[i + 1] - SHARE_TABLE[i]) * (x - i);
+}
+/** A pair turns quickly at first and settles as it opens; it never overshoots. */
+const settle = (u: number) => 1 - (1 - u) ** 2;
+const TURN_STEPS = 64;
+/** Mean alignment of pairs caught at every stage of their turn, for each final share (tabulated over the lifetime). */
+const TURNING_TABLE = Array.from({ length: TURN_STEPS + 1 }, (_, i) => {
+  let sum = 0; for (let n = 0; n < 200; n++) sum += alignmentOfShare(i / TURN_STEPS * settle((n + .5) / 200));
+  return sum / 200;
+});
+/**
+ * Mean alignment of the pairs on display when each will finally turn the share `w`: at any instant they are spread
+ * over every stage of that turn, so this is lower than the settled `alignmentOfShare(w)`.
+ */
+export function alignmentWhileTurning(w: number) {
+  const x = Math.max(0, Math.min(1, w)) * TURN_STEPS, i = Math.min(TURN_STEPS - 1, Math.floor(x));
+  return TURNING_TABLE[i] + (TURNING_TABLE[i + 1] - TURNING_TABLE[i]) * (x - i);
+}
+/**
+ * The orientation a generation is born with. Pairs "are continually being produced in somewhat random orientations"
+ * (Electron Properties §3): each site's successive generations get their own seeded direction, uniform on the sphere.
+ */
+export function birthDirection(index: number, generation: number): Vec {
+  const z = 1 - 2 * ((index * .7548776662466927 + generation * .5698402909980532 + .31) % 1), angle = index * 2.399963229728653 + generation * 1.9416110387254666;
+  return [Math.sqrt(1 - z * z) * Math.cos(angle), Math.sqrt(1 - z * z) * Math.sin(angle), z];
+}
+/**
+ * Derive the representative dipole geometry and fields at a sample site.
+ *
+ * Lattice pairs polarize the way Fleming describes: each generation is born at its own random angle and turns toward
+ * the charge during its life, completely inside `FULL_ALIGNMENT_RADIUS` and by a share that thins with distance
+ * outside it, so most distant pairs are "only oriented to a slight degree". `aligned` is the direction a fully
+ * polarized pair would have (with the spin and motion turns); `direction` is where this generation actually points.
+ * Shell samples (the spin close-up) keep the ordered Fig. 2 geometry and start from `aligned`.
+ */
 export function dipoleAt(s: ElectronState, index: number) {
   const centre = sampleCentre(index), field = referenceFields(s, centre), inward = unit(field.electric);
   const lifetime = Math.PI * (.8 + (index % 11) / 25), cycles = s.tick * ELECTRON_DT / lifetime + (index * .61803398875) % 1;
@@ -103,19 +170,39 @@ export function dipoleAt(s: ElectronState, index: number) {
   const spinTurn = s.parameters.mode === 'electric' ? 0 : s.parameters.spin * Math.min(Math.PI / 2, spinRateAtRadius(field.radius) * lifetime);
   const spinRate = norm(localAxis) ? spinTurn / lifetime : 0;
   const motionAxis = unit(field.motion), motionTurn = Math.min(.3, 1.5 * norm(field.motion));
-  let direction = rotate(inward, localAxis, spinTurn * (u - .5));
-  direction = rotate(direction, motionAxis, -motionTurn * (1 - u));
-  if (s.parameters.mode === 'electric') {
-    const z = 1 - 2 * ((index * .7548776662466927 + .31) % 1), angle = index * 2.399963229728653;
-    const initial: Vec = [Math.sqrt(1 - z * z) * Math.cos(angle), Math.sqrt(1 - z * z) * Math.sin(angle), z];
-    const axis = unit(cross(initial, inward)), progress = alignmentProgress(s, field.radius);
-    direction = norm(inward) ? rotate(initial, norm(axis) ? axis : unit(cross(initial, [1, .2, .3])), Math.acos(Math.max(-1, Math.min(1, dot(initial, inward)))) * progress) : initial;
+  const turns = (from: Vec) => rotate(rotate(from, localAxis, spinTurn * (u - .5)), motionAxis, -motionTurn * (1 - u));
+  const aligned = turns(inward), born = birthDirection(index, generation);
+  let direction = aligned, share = 1;
+  if (index < LATTICE_SAMPLES) {
+    // Before the electron is introduced the share is zero: an unpolarized medium that keeps renewing at random.
+    share = norm(inward) ? turnShare(field.radius) * alignmentProgress(s, field.radius) : 0;
+    const axis = unit(cross(born, inward)), angle = Math.acos(Math.max(-1, Math.min(1, dot(born, inward))));
+    direction = turns(share ? rotate(born, norm(axis) ? axis : unit(cross(born, [1, .2, .3])), angle * share * settle(u)) : born);
   }
   const separation = .22 * lifecycleEnvelope(u, 1);
   // Rotation-only lobe velocity; excludes the separately illustrated radial separation/collapse.
   const spinPositiveVelocity = scale(cross(localAxis, direction), spinRate * separation / 2);
-  return { index, centre, field, direction, separation, generation, age: u * lifetime, lifetime, progress: u, localAxis, motionAxis, spinTurn, spinRate, motionTurn, spinPositiveVelocity, spinNegativeVelocity: scale(spinPositiveVelocity, -1),
+  return { index, centre, field, direction, aligned, born, share, separation, generation, age: u * lifetime, lifetime, progress: u, localAxis, motionAxis, spinTurn, spinRate, motionTurn, spinPositiveVelocity, spinNegativeVelocity: scale(spinPositiveVelocity, -1),
     positive: add(centre, scale(direction, separation / 2)), negative: add(centre, scale(direction, -separation / 2)) };
+}
+/**
+ * The total radial alignment of the displayed lattice pairs, shell by shell: the sum of each pair's direction along the
+ * inward radius, in bins of `width`. Outside `FULL_ALIGNMENT_RADIUS` the sum is level, because the number of pairs
+ * grows as r² while their mean alignment falls as 1/r²: Gauss's law read from the dipoles themselves. `expected` is
+ * what the rule predicts for pairs caught mid-turn, and `settled` what they reach by the end of their lives. The
+ * outermost bins, which the cubic sample cuts off, are left out.
+ */
+export function shellAlignment(s: ElectronState, width = GRID_SPACING) {
+  const bins = Math.floor(GRID_HALF * GRID_SPACING / width), core: Vec = [electronX(s), 0, 0];
+  const shells = Array.from({ length: bins }, (_, i) => ({ radius: (i + .5) * width, pairs: 0, total: 0, mean: 0, expected: 0, settled: 0 }));
+  for (let i = 0; i < LATTICE_SAMPLES; i++) {
+    const d = dipoleAt(s, i), out = add(d.centre, scale(core, -1)), bin = Math.floor(norm(out) / width);
+    if (!d.field.valid || bin >= bins) continue;
+    shells[bin].pairs++; shells[bin].total += dot(d.direction, unit(scale(out, -1)));
+    shells[bin].expected += alignmentWhileTurning(d.share); shells[bin].settled += alignmentOfShare(d.share);
+  }
+  for (const shell of shells) shell.mean = shell.pairs ? shell.total / shell.pairs : 0;
+  return shells;
 }
 /** Equal-area sphere quadrature: flux of normalized E divided by 4π, in charge units. */
 export function enclosedCharge(s: ElectronState, radius: number, samples = 256) {
