@@ -14,6 +14,9 @@ export function validateCheckpoint(value: unknown): Checkpoint {
     };
     c = { ...c, model: MODEL_VERSION, parameters: upgrade(c.parameters), initialParameters: upgrade(c.initialParameters) };
   }
+  // Version 2 stored the same state; only the drawn motion changed (half-turn rotation, wavelength-scaled separation).
+  const fullTurn = (value as { model?: string }).model === 'medium-lifecycle/2';
+  if (fullTurn) c = { ...c, model: MODEL_VERSION };
   if (c.model !== MODEL_VERSION) throw new Error('This file uses an unsupported simulation model.');
   validateSeed(c.seed); validateSeed(c.rng); validateParameters(c.parameters); validateParameters(c.initialParameters);
   for (const key of ['tick', 'births', 'deaths', 'rejected', 'parameterVersion'] as const) if (!integer(c[key], key === 'tick' ? MAX_TICK : Number.MAX_SAFE_INTEGER)) throw new Error(`Invalid checkpoint ${key}.`);
@@ -35,6 +38,7 @@ export function validateCheckpoint(value: unknown): Checkpoint {
   if (c.births - c.deaths !== CAPACITY - c.free.length || Math.abs(energy + c.reservoir - CAPACITY * 5) > 1e-5) throw new Error('Checkpoint energy or lifecycle ledger does not balance.');
   if (!Array.isArray(c.events) || c.events.length > 100 || c.events.some(e => !e || !integer(e.tick, c.tick) || !['reset','parameters','checkpoint','restored'].includes(e.kind) || typeof e.text !== 'string' || e.text.length > 500)) throw new Error('Invalid event history.');
   if (legacy) c = { ...c, events: [...c.events, { tick: c.tick, kind: 'restored' as const, text: 'Upgraded to fixed-centre rotation and pair separation; legacy translational jitter removed.' }].slice(-100) };
+  if (fullTurn) c = { ...c, events: [...c.events, { tick: c.tick, kind: 'restored' as const, text: 'Upgraded to half-turn rotation and wavelength-scaled pair separation.' }].slice(-100) };
   return c;
 }
 /** Validate persisted renderer settings, falling back to defaults when absent. */

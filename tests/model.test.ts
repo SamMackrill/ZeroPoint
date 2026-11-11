@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Medium } from '../src/model/Medium';
 import { CAPACITY, DEFAULT_PARAMETERS, DEFAULT_VIEW, DT, MODEL_VERSION, SNAPSHOT_STRIDE, STATE_STRIDE } from '../src/model/types';
-import { lifecycleEnvelope, lobeScale } from '../src/model/pairMotion';
+import { lifecycleEnvelope, lobeScale, peakSeparation } from '../src/model/pairMotion';
 import { parseExperiment, validateCheckpoint } from '../src/persistence/experiment';
 describe('reference lifecycle model', () => {
   it('replays the same seed, including zero, independently of stepping batches', () => {
@@ -59,6 +59,13 @@ describe('untrusted experiment files', () => {
     expect(restored.diagnostics()).toEqual(original.diagnostics()); expect(restored.particles).toEqual(original.particles);
     expect(() => validateCheckpoint({ ...legacy, parameters: { ...legacy.parameters, jitter: -1 } })).toThrow('legacy');
   });
+  it('upgrades version 2 files to the half-turn model without changing their state', () => {
+    const original = new Medium(); original.step(90); const c = original.serialize();
+    const file = parseExperiment(JSON.stringify({ format: 'zeropoint-experiment', version: 1, checkpoint: { ...c, model: 'medium-lifecycle/2' }, view: DEFAULT_VIEW }));
+    expect(file.checkpoint.model).toBe(MODEL_VERSION); expect(file.checkpoint.particles).toEqual(c.particles); expect(file.checkpoint.rng).toBe(c.rng);
+    expect(file.checkpoint.events.at(-1)?.text).toContain('half-turn');
+    expect(() => validateCheckpoint({ ...c, model: 'medium-lifecycle/9' })).toThrow('unsupported');
+  });
   it('rejects unsupported versions, malformed state and a tampered energy ledger', () => {
     expect(() => parseExperiment('{')).toThrow('valid JSON');
     expect(() => parseExperiment('{"format":"zeropoint-experiment","version":20}')).toThrow('Unsupported');
@@ -108,6 +115,24 @@ describe('fixed-centre pair motion', () => {
         expect((positive + negative) / 2).toBeCloseTo(row[k], 10);
       }
     }
+  });
+  it('turns each pair through a half-turn, never more, over its lifetime', () => {
+    const m = fixture(), start = sample(m, 0), middle = sample(m, 60), end = sample(m, 119);
+    const dot = (a: Float32Array, b: Float32Array) => a[3] * b[3] + a[4] * b[4] + a[5] * b[5];
+    expect(dot(start, middle)).toBeCloseTo(0, 5);
+    expect(dot(start, end)).toBeCloseTo(Math.cos(Math.PI * 119 / 120), 5); expect(dot(start, end)).toBeLessThan(-.999);
+    // The turn is monotonic: the angle from the birth orientation only grows.
+    let last = 0;
+    for (let tick = 1; tick < 120; tick++) { const angle = Math.acos(Math.max(-1, Math.min(1, dot(start, sample(m, tick))))); expect(angle).toBeGreaterThan(last); last = angle; }
+    expect(last).toBeLessThanOrEqual(Math.PI);
+  });
+  it('opens each pair to its own wavelength: peak separation is inversely proportional to frequency', () => {
+    expect(peakSeparation(.3, 1)).toBe(.3); expect(peakSeparation(.3, 2)).toBeCloseTo(.15, 12); expect(peakSeparation(.3, .5)).toBeCloseTo(.6, 12); expect(peakSeparation(.3, 0)).toBe(0);
+    const fast = fixture(); fast.particles[6] = 2; const slow = fixture(); slow.particles[6] = .5;
+    // Midlife is tick 30 for a pair at 2 f₀ and tick 120 for one at 0.5 f₀.
+    expect(sample(fast, 30)[6]).toBeCloseTo(.15, 6); expect(sample(slow, 120)[6]).toBeCloseTo(.6, 6);
+    // Lifetime and peak separation share the factor 1/f, so their ratio is the same for every pair.
+    expect(sample(fast, 30)[6] / sample(fast, 30)[9]).toBeCloseTo(sample(slow, 120)[6] / sample(slow, 120)[9], 6);
   });
   it('changes separation without changing midpoints, lifetimes or the energy ledger', () => {
     const m = new Medium(), before = new Float32Array(CAPACITY * SNAPSHOT_STRIDE); const count = m.snapshot(before); const energy = m.diagnostics().fieldEnergy;

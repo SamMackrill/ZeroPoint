@@ -1,8 +1,10 @@
-export const MODEL_VERSION = 'medium-lifecycle/2';
+export const MODEL_VERSION = 'medium-lifecycle/3';
 export const CAPACITY = 10000;
 export const DT = 1 / 120;
 export const FREQUENCY_UNIT = 1e20;
 export const ENERGY_UNIT = 6.62607015e-34 * FREQUENCY_UNIT;
+/** Wavelength c/f of a pair at f₀, in L₀ = 10⁻¹³ m. Drawn separations are this reduced by the display scale. */
+export const WAVELENGTH_AT_F0 = 299792458 / FREQUENCY_UNIT / 1e-13;
 export const SNAPSHOT_STRIDE = 12;
 export const STATE_STRIDE = 10;
 export const MAX_TICK = 10_000_000;

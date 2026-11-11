@@ -34,8 +34,8 @@ describe('global settings', () => {
   });
 
   it('toggles reduced motion and telemetry from the header popover; the status bar shows telemetry only when on', () => {
-    render(<><SettingsMenu/><StatusBar running={false} items={['Seed 42']} telemetry={['medium-lifecycle/2']}/></>);
-    expect(screen.queryByText('medium-lifecycle/2')).toBeNull();
+    render(<><SettingsMenu/><StatusBar running={false} items={['Seed 42']} telemetry={['medium-lifecycle/3']}/></>);
+    expect(screen.queryByText('medium-lifecycle/3')).toBeNull();
     fireEvent.click(screen.getByTestId('settings'));
     const motion = screen.getByTestId('setting-reduced-motion') as HTMLInputElement, telemetry = screen.getByTestId('setting-telemetry') as HTMLInputElement;
     const reduced = motion.checked;
@@ -43,7 +43,7 @@ describe('global settings', () => {
     expect(getSettings().reducedMotion).toBe(!reduced);
     act(() => { fireEvent.click(telemetry); });
     expect(telemetry.checked).toBe(true);
-    expect(screen.getByText('medium-lifecycle/2')).toBeTruthy();
+    expect(screen.getByText('medium-lifecycle/3')).toBeTruthy();
     expect(screen.getByText('Seed 42')).toBeTruthy();
   });
 });

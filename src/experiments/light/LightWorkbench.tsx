@@ -1,7 +1,7 @@
 import { Focus, Info, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { downloadFile } from '../../persistence/experiment';
-import { DEFAULT_LIGHT_VIEW, LIGHT_DT, LIGHT_END_TICK, LIGHT_MODEL, TIME_SECONDS, hopTicks, lightReadout, pairAt, pairCount, parseLightFile, sourceX, waveAt, type LightParameters, type LightState, type LightView } from '../../light/model';
+import { DEFAULT_LIGHT_VIEW, LIGHT_DT, LIGHT_END_TICK, LIGHT_MODEL, TIME_SECONDS, hopTicks, isHandoff, lightReadout, pairAt, pairCount, pairStartTick, parseLightFile, sourceX, waveAt, type LightParameters, type LightState, type LightView } from '../../light/model';
 import type { LightRenderer } from '../../light/LightRenderer';
 import { useLight } from '../../light/useLight';
 import { palette } from '../../ui/palette';
@@ -135,7 +135,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
       if (file.size > 100_000) throw new Error('Light files must be smaller than 100 KB.');
       const saved = parseLightFile(await file.text());
       runtime.restore(saved.state); setView(saved.view); setSelected(null);
-      setNotice(`Loaded tick ${saved.state.tick}. Playback is paused.`);
+      setNotice(`Loaded tick ${saved.state.tick}${saved.migrated ? ', upgraded to the pair-produced field of model 2' : ''}. Playback is paused.`);
     } catch (e) { setNotice(`Could not load: ${e instanceof Error ? e.message : String(e)}`); }
   }
   /** Export the full light handoff timeline as CSV. */
@@ -159,8 +159,8 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
     { label: 'Handoffs', value: String(r.handoffs) },
     { label: 'Excess energy', value: r.energy.toFixed(3), unit: 'eV' },
   ];
-  const pairX = 100 + Math.sin(inspected.angle) * inspected.separation * 140, pairY = 66 - Math.cos(inspected.angle) * inspected.separation * 140;
-  const stateLine = d.finished ? 'SEQUENCE COMPLETE' : `Pair ${d.index + 1} / ${pairCount(p)} · ${d.pair.sense > 0 ? '↺ positive' : '↻ negative'}`;
+  const glyphReach = inspected.separation / inspected.peak * 46, pairX = 100 + inspected.axial * glyphReach, pairY = 66 - inspected.transverse * glyphReach;
+  const stateLine = d.finished ? 'SEQUENCE COMPLETE' : `Pair ${d.index + 1} / ${pairCount(p)} · ${d.pair.sense > 0 ? '↺ positive' : '↻ negative'} · E ${d.pair.polarity > 0 ? '+' : '−'}`;
 
   const timeline = lightDefinition.timeline('induction', p);
   const exportItems: ExportItem[] = [{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError }, { id: 'csv', label: 'CSV (full sequence)', onSelect: exportCSV }];
@@ -197,13 +197,13 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
     </section>
   );
 
-  const events = Array.from({ length: pairCount(p) }, (_, i) => ({ index: i, tick: i * hopTicks(p) }));
+  const events = Array.from({ length: pairCount(p) }, (_, i) => ({ index: i, tick: Math.max(0, pairStartTick(p, i)) }));
   const dockNode = (
     <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={dockTab} onTab={setDockTab}
       readouts={withDeltas(stripFor(d, p), pB && dB ? stripFor(dB, pB) : null)}
       tabs={[
         { id: 'plots', label: 'Plots', content: <div className="light-dock-plots">
-          <div><h4>Spatial profile · current instant</h4><WavePlot x={spatialX} values={spatial} valuesB={spatialB} label="Spatial electric wave projection" unit="L" domain={[p.offset - 6, p.offset + 6]} marker={p.probe}/></div>
+          <div><h4>Field along the path · current instant</h4><WavePlot x={spatialX} values={spatial} valuesB={spatialB} label="Spatial electric wave projection" unit="L" domain={[p.offset - 6, p.offset + 6]} marker={p.probe}/></div>
           <div><h4>Probe trace · x = {p.probe.toFixed(1)} L{pB && pB.probe !== p.probe && ` · B x = ${pB.probe.toFixed(1)} L`}</h4><WavePlot x={historyX} values={history} valuesB={historyB} label="Electric projection at the fixed probe over elapsed time" unit="τ" domain={[0, Math.max(d.time, 0.01)]}/></div>
         </div> },
         ...(phone ? [] : [{ id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={lightDefinition} scenario="induction" a={p} b={pB}
@@ -218,14 +218,14 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
             { label: 'Propagation speed', value: s.tick ? '1.000' : '—', unit: 'c' },
           ]}/>
           <span className="visually-hidden" data-testid="light-energy-residual">{(d.pairEnergy + d.fieldEnergy + d.departedEnergy - d.energy).toExponential(1)} eV</span>
-          <p className="light-small">Assigned energy bookkeeping. Field energy and angular momentum are not calculated from a force solver. Wave, field response and energy partition are prescribed illustrations of Fleming’s mechanism.</p>
+          <p className="light-small">Assigned energy bookkeeping. Field energy and angular momentum are not calculated from a force solver. The field strength follows the active pair’s rotating dipole moment; its fall-off with distance and the energy partition are prescribed illustrations of Fleming’s mechanism.</p>
         </div> },
         { id: 'events', label: 'Events', content: <ol className="light-event-list">
           {events.map(e => <li key={e.index} className={e.index === d.index && !d.finished ? 'is-current' : ''}>
             <button type="button" data-testid={`event-pair-${e.index + 1}`} aria-label={`Inspect pair ${e.index + 1} at induction`} disabled={!ready} onClick={() => { setSelected(e.index); runtime.seek(e.tick); }}>
-              <span>{e.index % 2 ? '↻' : '↺'}</span><strong>Pair {e.index + 1}</strong><small>{(e.tick * LIGHT_DT).toFixed(2)} τ</small>
+              <span>{pairAt(p, 0, e.index).sense > 0 ? '↺' : '↻'}</span><strong>Pair {e.index + 1}</strong><small>{(e.tick * LIGHT_DT).toFixed(2)} τ</small>
             </button>
-            {e.index === d.index && !d.finished && <p>{s.tick > 0 && s.tick % hopTicks(p) === 0 ? `Pair ${d.index} has collapsed; pair ${d.index + 1} is induced at its own fixed centre, with the opposite rotation sense.` : `Pair ${d.index + 1} rotates through 180° during ${(hopTicks(p) * LIGHT_DT).toFixed(2)} τ. Step or scrub to inspect its separation and collapse.`}</p>}
+            {e.index === d.index && !d.finished && <p>{isHandoff(p, s.tick) ? `Pair ${d.index} has collapsed and its field with it; pair ${d.index + 1} is induced at its own fixed centre, with the opposite rotation sense and the field reversed.` : `Pair ${d.index + 1} rotates through 180° during ${(hopTicks(p) * LIGHT_DT).toFixed(2)} τ, opening to its wavelength λ/2 across the path at midlife. Step or scrub to inspect its separation and collapse.`}</p>}
           </li>)}
           {d.finished && <li><p>The packet crossed the window boundary. Its budget is now recorded as departed energy; this is not an absorption event.</p></li>}
         </ol> },
@@ -233,11 +233,11 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   );
 
   const glyph = (
-    <svg className="light-pair-glyph" viewBox="0 0 200 135" role="img" aria-label="Selected pair in its rotation plane; fixed midpoint and opposite charge lobes"><circle cx="100" cy="66" r="59" fill="none" stroke={palette.line2} strokeDasharray="3 5"/><path d="M93 66H107M100 59V73" stroke={palette.dataShell3}/><line x1={pairX} y1={pairY} x2={200 - pairX} y2={132 - pairY} stroke={palette.text4}/>{inspected.active && <><circle cx={pairX} cy={pairY} r="10" fill={palette.danger}/><text x={pairX} y={pairY + 4} textAnchor="middle" fill={palette.bg2} fontSize="14">+</text><circle cx={200 - pairX} cy={132 - pairY} r="10" fill={palette.dataNeg}/><text x={200 - pairX} y={136 - pairY} textAnchor="middle" fill={palette.bg2} fontSize="14">−</text></>}<text x="100" y="130" textAnchor="middle" fill={palette.accent2} fontSize="9">Rotation plane · geometry exaggerated</text></svg>
+    <svg className="light-pair-glyph" viewBox="0 0 200 135" role="img" aria-label="Selected pair in its rotation plane; fixed midpoint and opposite charge lobes"><circle cx="100" cy="66" r="46" fill="none" stroke={palette.line2} strokeDasharray="3 5"/><path d="M93 66H107M100 59V73" stroke={palette.dataShell3}/><line x1={pairX} y1={pairY} x2={200 - pairX} y2={132 - pairY} stroke={palette.text4}/>{inspected.active && <><circle cx={pairX} cy={pairY} r="10" fill={palette.danger}/><text x={pairX} y={pairY + 4} textAnchor="middle" fill={palette.bg2} fontSize="14">+</text><circle cx={200 - pairX} cy={132 - pairY} r="10" fill={palette.dataNeg}/><text x={200 - pairX} y={136 - pairY} textAnchor="middle" fill={palette.bg2} fontSize="14">−</text></>}<text x="100" y="130" textAnchor="middle" fill={palette.accent2} fontSize="9">Rotation plane · travel →, polarization ↑ · circle = λ/2</text></svg>
   );
   const aboutNode = (
     <AboutSheet {...about} shortcuts={actions} pointer={ORBIT_GESTURES} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} sections={[
-      { id: 'scenario', content: <><p>Successive dipoles make half-turns over half-wavelength intervals. The surrounding response and finite pulse shape are visual conventions. Follow an energy wave through successive, locally rotating pairs.</p><p>{`Paused stepping is available. At 1×, one second of playback represents ${(TIME_SECONDS * 1e15).toFixed(3)} fs.`}</p><p>Changes start a new paused sequence.</p></> },
+      { id: 'scenario', content: <><p>Successive dipoles make half-turns over half-wavelength intervals. Each opens to its own wavelength, half the photon wavelength, and lies across the path at midlife. The field is produced by the active pair: it swells and collapses with that pair and reverses at every hand-off. Its fall-off with distance and the size of the surrounding response are visual conventions. Follow an energy wave through successive, locally rotating pairs.</p><p>{`Paused stepping is available. At 1×, one second of playback represents ${(TIME_SECONDS * 1e15).toFixed(3)} fs.`}</p><p>Changes start a new paused sequence.</p></> },
       { id: 'sources', content: <div className="about-links"><a href="./docs/light-model.md" target="_blank" rel="noreferrer">Model equations & limitations ↗</a><a href="./docs/papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf#page=4" target="_blank" rel="noreferrer">Fleming’s paper · self-induction, p. 4 ↗</a></div> },
     ]}/>
   );
@@ -247,11 +247,12 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
       <div className="light-selection-head"><h3>Pair {inspected.index + 1}</h3><button type="button" className="inspector-link" onClick={() => setSelected(selected === null ? d.index : null)}>{selected === null ? 'Pin pair' : 'Follow active'}</button></div>
       {(!split || phone) && glyph}
       <dl className="light-readouts">
-        <div><dt>State</dt><dd>{inspected.active ? 'Induced' : s.tick < inspected.index * hopTicks(p) ? 'Awaiting induction' : inspected.progress < 1 ? 'Window exited' : 'Collapsed / retired'}</dd></div>
+        <div><dt>State</dt><dd>{inspected.active ? 'Induced' : s.tick < pairStartTick(p, inspected.index) ? 'Awaiting induction' : inspected.progress < 1 ? 'Window exited' : 'Collapsed / retired'}</dd></div>
         <div><dt>Fixed centre</dt><dd data-testid="light-pair-centre">{inspected.centre.toFixed(3)} L</dd></div>
         <div><dt>Pair age / lifetime</dt><dd>{inspected.age.toFixed(3)} / {inspected.lifetime.toFixed(3)} τ</dd></div>
         <div><dt>Signed rotation</dt><dd data-testid="light-rotation">{(inspected.sense * inspected.progress * 180).toFixed(1)}° / {inspected.sense * 180}°</dd></div>
-        <div><dt>Full separation</dt><dd>{inspected.separation.toFixed(3)} L</dd></div>
+        <div><dt>Full separation</dt><dd data-testid="light-separation">{inspected.separation.toFixed(3)} / {inspected.peak.toFixed(2)} L</dd></div>
+        <div><dt>Field polarity</dt><dd data-testid="light-polarity">{`E ${inspected.polarity > 0 ? '+' : '−'}, B ${inspected.polarity * p.direction > 0 ? '+' : '−'}`} · reverses each pair</dd></div>
       </dl>
       <button type="button" className="light-focus" onClick={() => { setSelected(inspected.index); focusSelection(); }}><Focus size={14}/>Focus this fixed centre <kbd>F</kbd></button>
     </div>
@@ -277,7 +278,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   return (
     <div className="light-workbench-root" style={{ display: active ? undefined : 'none' }}>
       <Shell active={active} id="light" header={headerNode} rail={rail} viewport={<SplitView active={active} primary={viewportNode} panes={[{ id: 'pair', label: `Pair ${inspected.index + 1} close-up`, content: <div className="light-pair-pane">{glyph}</div> }]} split={split} onSplit={setSplit} pane="pair" onPane={() => undefined}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
-        status={<StatusBar running={s.running} telemetry={[LIGHT_MODEL]} items={[...(pB ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), <span data-testid="light-tick">Tick {s.tick} · Δt = τ/120</span>, `start x = ${sourceX(p).toFixed(1)} L`, 'Fixed centres · prescribed c · local worker']}/>}/>
+        status={<StatusBar running={s.running} telemetry={[LIGHT_MODEL]} items={[...(pB ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), <span data-testid="light-tick">Tick {s.tick} · Δt = τ/120</span>, `start x = ${sourceX(p).toFixed(1)} L`, 'Fixed centres · prescribed c · field from the active pair']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
     </div>

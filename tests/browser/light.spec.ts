@@ -48,7 +48,11 @@ test('light handoffs, fixed-centre inspection, replay, files and switching prese
   await expect.poll(async () => parseInt((await page.getByTestId('light-tick').innerText()).split(' ')[1])).toBeGreaterThan(121);
   await tid(page, 'transport-run').click();
   await expect(tid(page, 'transport-run')).toContainText('Run');
-  const paused = await page.getByTestId('light-tick').innerText(); await page.waitForTimeout(180); await expect(page.getByTestId('light-tick')).toHaveText(paused);
+  // The button shows the pause at once; the worker's last snapshot can land a frame later, so wait for the tick to
+  // settle, then check that it stays put.
+  const tick = () => page.getByTestId('light-tick').innerText();
+  await expect.poll(async () => { const before = await tick(); await page.waitForTimeout(180); return (await tick()) === before; }).toBe(true);
+  const paused = await tick(); await page.waitForTimeout(180); await expect(page.getByTestId('light-tick')).toHaveText(paused);
   await tid(page, 'export-menu').click(); const imagePromise = page.waitForEvent('download'); await tid(page, 'export-png').click(); expect((await imagePromise).suggestedFilename()).toBe('zeropoint-light.png');
   await tid(page, 'timeline').press('End');
   await expect(page.getByTestId('light-tick')).toContainText('Tick 1440'); await expect(tid(page, 'transport-run')).toBeDisabled();
@@ -75,7 +79,7 @@ test('light configuration, layers, mobile layout and exports work together', asy
   const before = await page.getByTestId('light-tick').innerText(); await page.waitForTimeout(200); await expect(page.getByTestId('light-tick')).toHaveText(before);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await tid(page, 'export-menu').click(); const csv = page.waitForEvent('download'); await tid(page, 'export-csv').click(); expect((await csv).suggestedFilename()).toContain('illustrative-sequence.csv');
-  const doc = await page.request.get('/docs/light-model.md'); expect(doc.ok()).toBe(true); expect(await doc.text()).toContain('light-induction/1');
+  const doc = await page.request.get('/docs/light-model.md'); expect(doc.ok()).toBe(true); expect(await doc.text()).toContain('light-induction/2');
   await page.screenshot({ path: 'test-results/light-mobile.png', fullPage: true });
 });
 

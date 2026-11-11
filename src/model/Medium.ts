@@ -1,6 +1,6 @@
 import { CAPACITY, DEFAULT_PARAMETERS, DT, MAX_TICK, MODEL_VERSION, SNAPSHOT_STRIDE, STATE_STRIDE, validateParameters, validateSeed } from './types';
 import type { Checkpoint, Diagnostics, ModelEvent, Parameters } from './types';
-import { lifecycleEnvelope } from './pairMotion';
+import { HALF_TURN, lifecycleEnvelope, peakSeparation } from './pairMotion';
 
 // Coordinates: a periodic 8 × 8 × 8 normalized cell. No interparticle force law.
 export class Medium {
@@ -48,7 +48,7 @@ export class Medium {
     const p = validateParameters(value), rateChanged = p.birthRate !== this.parameters.birthRate;
     this.parameters = p; this.parameterVersion++;
     if (rateChanged) this.scheduleBirth(this.tick * DT);
-    this.events.push({ tick: this.tick, kind: 'parameters', text: `Parameters v${this.parameterVersion} · rate ${p.birthRate}/τ · frequency ${p.frequency} f₀ · peak separation ${p.separation} L₀` });
+    this.events.push({ tick: this.tick, kind: 'parameters', text: `Parameters v${this.parameterVersion} · rate ${p.birthRate}/τ · frequency ${p.frequency} f₀ · peak separation ${p.separation} L₀ at f₀` });
     this.events = this.events.slice(-100);
   }
   diagnostics(): Diagnostics {
@@ -60,7 +60,8 @@ export class Medium {
     let count = 0; const p = this.particles, time = this.tick * DT;
     for (let slot = 0; slot < CAPACITY; slot++) {
       const b = slot * STATE_STRIDE, f = p[b + 6]; if (f === 0) continue;
-      const age = time - p[b + 7], phase = p[b + 8] + 2 * Math.PI * f * age, n = count++ * SNAPSHOT_STRIDE;
+      // A zepton turns through at most 180° in its lifetime 1/f (Fleming, Electron Properties §6; book ch. 19).
+      const age = time - p[b + 7], phase = p[b + 8] + HALF_TURN * f * age, n = count++ * SNAPSHOT_STRIDE;
       // The pair midpoint stays at its birth position throughout this generation.
       target[n] = p[b]; target[n + 1] = p[b + 1]; target[n + 2] = p[b + 2];
       // Each pair rotates in a plane perpendicular to its seeded spin axis.
@@ -69,8 +70,9 @@ export class Medium {
       const vx = ay * uz, vy = az * ux - ax * uz, vz = -ay * ux;
       const c = Math.cos(phase), s = Math.sin(phase);
       target[n + 3] = ux * c + vx * s; target[n + 4] = vy * s; target[n + 5] = uz * c + vz * s;
-      // Snapshot field 6 is the full lobe-centre separation, in normalized length.
-      target[n + 6] = this.parameters.separation * lifecycleEnvelope(age, 1 / f); target[n + 7] = f;
+      // Snapshot field 6 is the full lobe-centre separation, in normalized length. A pair opens to its own
+      // wavelength c/f, so the peak scales with 1/f; the parameter is the peak for a pair at f₀ (book Fig. 19-4).
+      target[n + 6] = peakSeparation(this.parameters.separation, f) * lifecycleEnvelope(age, 1 / f); target[n + 7] = f;
       target[n + 8] = age; target[n + 9] = 1 / f; target[n + 10] = slot; target[n + 11] = p[b + 9];
     }
     return count;

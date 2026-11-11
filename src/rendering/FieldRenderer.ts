@@ -6,12 +6,22 @@ import { lobeScale } from '../model/pairMotion';
 import { palette, scene } from '../ui/palette';
 import { isClick } from '../workbench/selection';
 export interface PickedDipole { slot: number; generation: number; frequency: number; age: number; lifetime: number; separation: number; position: [number, number, number] }
+/** The closest a focused view comes to its target. */
+export const FOCUS_DISTANCE = 4;
+/**
+ * How far the camera sits from a focused point so that a selection `span` wide fits whichever way it lies, with a
+ * quarter of margin for the lobes: `fov` is the vertical angle in degrees, and a tall view is narrower still.
+ */
+export function focusDistance(span: number, fov: number, aspect: number) {
+  const half = Math.tan(fov * Math.PI / 360) * Math.min(1, aspect);
+  return Math.max(FOCUS_DISTANCE, span * 1.25 / (2 * half));
+}
 export class FieldRenderer {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(43, 1, .1, 150);
   readonly controls: OrbitControls;
-  private positive: THREE.InstancedMesh; private negative: THREE.InstancedMesh; private points: THREE.Points;
+  private positive: THREE.InstancedMesh; private negative: THREE.InstancedMesh; private points: THREE.Points; private links: THREE.LineSegments;
   private bounds = new THREE.Group(); private selection: THREE.Mesh;
   private slice: THREE.Mesh; private texture: THREE.DataTexture;
   private dummy = new THREE.Object3D(); private up = new THREE.Vector3(0, 1, 0); private axis = new THREE.Vector3();
@@ -39,6 +49,9 @@ export class FieldRenderer {
     for (const mesh of [this.positive, this.negative]) { mesh.count = 0; mesh.frustumCulled = false; mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); this.scene.add(mesh); }
     const pointGeometry = new THREE.BufferGeometry(); pointGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(CAPACITY * 3), 3).setUsage(THREE.DynamicDrawUsage)); pointGeometry.setDrawRange(0, 0);
     this.points = new THREE.Points(pointGeometry, new THREE.PointsMaterial({ color: palette.dataNeg, size: .065, sizeAttenuation: true })); this.points.frustumCulled = false; this.scene.add(this.points);
+    // One faint segment joins the two lobes of each pair, so a widely opened pair still reads as one dipole.
+    const linkGeometry = new THREE.BufferGeometry(); linkGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(CAPACITY * 6), 3).setUsage(THREE.DynamicDrawUsage)); linkGeometry.setDrawRange(0, 0);
+    this.links = new THREE.LineSegments(linkGeometry, new THREE.LineBasicMaterial({ color: palette.text3, transparent: true, opacity: .42 })); this.links.frustumCulled = false; this.scene.add(this.links);
     const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(8, 8, 8)), new THREE.LineBasicMaterial({ color: palette.line2, transparent: true, opacity: .48 }));
     const grid = new THREE.GridHelper(8, 8, palette.line2, palette.line); grid.position.y = -4;
     this.bounds.add(edges, grid); this.scene.add(this.bounds);
@@ -65,9 +78,13 @@ export class FieldRenderer {
     this.select(index === undefined ? null : this.keys[index]);
   };
   select(key: string | null) { this.selected = key; this.refreshSelection(); }
-  /** Orbit around a point (the selected dipole's fixed centre), moving in to a close-up distance along the current view. */
-  focusOn(point: readonly [number, number, number]) {
-    const target = new THREE.Vector3(...point), offset = this.camera.position.clone().sub(this.controls.target).normalize().multiplyScalar(4);
+  /**
+   * Orbit around a point (the selected dipole's fixed centre), moving in along the current view to a close-up distance.
+   * `span` is the widest the selection gets (a pair's peak separation); the distance grows so that it still fits.
+   */
+  focusOn(point: readonly [number, number, number], span = 0) {
+    const distance = focusDistance(span, this.camera.fov, this.camera.aspect);
+    const target = new THREE.Vector3(...point), offset = this.camera.position.clone().sub(this.controls.target).normalize().multiplyScalar(distance);
     this.controls.target.copy(target); this.camera.position.copy(target).add(offset); this.controls.update();
   }
   inspectFirst() { this.select(this.keys[0] ?? null); }
@@ -84,7 +101,7 @@ export class FieldRenderer {
     if (this.disposed) return;
     this.data = data; const count = data.length / SNAPSHOT_STRIDE; this.keys = new Array(count);
     this.positive.count = count; this.negative.count = count;
-    const positions = this.points.geometry.attributes.position.array as Float32Array;
+    const positions = this.points.geometry.attributes.position.array as Float32Array, links = this.links.geometry.attributes.position.array as Float32Array;
     const density = new Float32Array(32 * 32);
     for (let i = 0; i < count; i++) {
       const n = i * SNAPSHOT_STRIDE, x = data[n], y = data[n + 1], z = data[n + 2]; this.keys[i] = `${data[n + 10]}:${data[n + 11]}`;
@@ -93,6 +110,9 @@ export class FieldRenderer {
       this.dummy.position.set(x, y, z).addScaledVector(this.axis, data[n + 6] / 2); this.dummy.updateMatrix(); this.positive.setMatrixAt(i, this.dummy.matrix);
       this.dummy.position.set(x, y, z).addScaledVector(this.axis, -data[n + 6] / 2); this.dummy.updateMatrix(); this.negative.setMatrixAt(i, this.dummy.matrix);
       positions[i * 3] = x; positions[i * 3 + 1] = y; positions[i * 3 + 2] = z;
+      const half = data[n + 6] / 2;
+      links[i * 6] = x + this.axis.x * half; links[i * 6 + 1] = y + this.axis.y * half; links[i * 6 + 2] = z + this.axis.z * half;
+      links[i * 6 + 3] = x - this.axis.x * half; links[i * 6 + 4] = y - this.axis.y * half; links[i * 6 + 5] = z - this.axis.z * half;
       const sliceDistance = Math.abs(z - this.options.sliceZ);
       if (this.options.slice && Math.min(sliceDistance, 8 - sliceDistance) < .25) {
         const gx = Math.min(31, Math.max(0, Math.floor((x + 4) * 4))), gy = Math.min(31, Math.max(0, Math.floor((y + 4) * 4)));
@@ -101,6 +121,7 @@ export class FieldRenderer {
     }
     this.positive.instanceMatrix.needsUpdate = true; this.negative.instanceMatrix.needsUpdate = true;
     this.points.geometry.attributes.position.needsUpdate = true; this.points.geometry.setDrawRange(0, count);
+    this.links.geometry.attributes.position.needsUpdate = true; this.links.geometry.setDrawRange(0, count * 2);
     if (this.options.slice) {
       this.sliceMax = Math.max(1, ...density); const pixels = this.texture.image.data as Uint8Array;
       for (let i = 0; i < density.length; i++) { const v = Math.sqrt(density[i] / this.sliceMax); pixels[i * 4] = 40 + v * 175; pixels[i * 4 + 1] = 85 + v * 150; pixels[i * 4 + 2] = 110 + v * 60; pixels[i * 4 + 3] = 25 + v * 205; }
@@ -109,7 +130,7 @@ export class FieldRenderer {
     this.refreshSelection();
   }
   getSliceMax() { return this.sliceMax; }
-  setOptions(options: ViewSettings) { this.options = options; this.positive.visible = this.negative.visible = options.medium && options.representation === 'dipoles'; this.points.visible = options.medium && options.representation === 'points'; this.bounds.visible = options.bounds; this.slice.visible = options.slice; this.slice.position.z = options.sliceZ; if (this.data.length) this.update(this.data); }
+  setOptions(options: ViewSettings) { this.options = options; this.positive.visible = this.negative.visible = this.links.visible = options.medium && options.representation === 'dipoles'; this.points.visible = options.medium && options.representation === 'points'; this.bounds.visible = options.bounds; this.slice.visible = options.slice; this.slice.position.z = options.sliceZ; if (this.data.length) this.update(this.data); }
   cameraPreset(preset: 'perspective' | 'top' | 'front') { this.camera.position.copy(preset === 'top' ? new THREE.Vector3(0, 16, .01) : preset === 'front' ? new THREE.Vector3(0, 0, 17) : new THREE.Vector3(10, 6.8, 11.5)); this.controls.target.set(0, 0, 0); this.controls.update(); }
   private animate = () => {
     if (this.disposed) return;
