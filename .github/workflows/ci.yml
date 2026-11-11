@@ -25,7 +25,15 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm test
-      - run: npx playwright install --with-deps chromium
+      # --with-deps needs the Ubuntu apt mirror. When that is unreachable, apt hangs until the job
+      # times out, so cap it and fall back to the browser alone: ubuntu-latest already carries
+      # Chromium's system libraries. If they were ever missing, test:e2e fails loudly.
+      - name: Install Playwright Chromium
+        timeout-minutes: 8
+        run: |
+          timeout 240 npx playwright install --with-deps chromium && exit 0
+          echo "::warning::playwright install --with-deps failed (apt mirror unreachable?); installing the browser alone"
+          npx playwright install chromium
       # Missing visual baselines are recorded by tests/visual/labs.spec.ts and uploaded below; changed ones fail.
       - run: npm run test:e2e
       - run: npm run build
