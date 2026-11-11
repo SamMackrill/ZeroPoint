@@ -1,4 +1,5 @@
 // The van der Waals lab's diagrams and pressure plot (the workbench in src/experiments/van-der-waals lays them out).
+import { useId } from 'react';
 import { casimir, pressureSweep } from './model';
 import './van-der-waals.css';
 import { palette } from '../ui/palette';
@@ -88,19 +89,21 @@ export function PlateDiagram({ gap, modes }: { gap: number; modes: boolean }) {
   const width = drawnSpan(gap), left = 380 - width / 2, right = 380 + width / 2;
   const net = 27 + 18 * Math.log10(Math.abs(casimir(gap, 1).pressure) / .0013);
   const fitting = SAMPLE_WAVELENGTHS.filter(w => fitsGap(w, gap));
+  // Clip ids are document-wide, so each mounted drawing gets its own.
+  const clip = `vdw-${useId().replace(/[^\w-]/g, '')}`;
   // Short wavelengths are the most numerous: several of each, thinning toward the long ones.
   const copies = (wavelength: number) => wavelength <= 110 ? 3 : wavelength <= 440 ? 2 : 1;
   return <svg viewBox="0 0 760 380" role="img" aria-label={`Two conducting plates ${gap} nanometres apart. Fluctuations of every wavelength lie outside; only the ${fitting.length} of ${SAMPLE_WAVELENGTHS.length} sample wavelengths shorter than the gap lie between the plates, so the pressure inside is slightly lower and the plates are pushed together. Sizes and arrow scales are illustrative.`}>
     <defs>
-      <clipPath id="vdw-outside-left"><rect x="45" y="63" width={Math.max(0, left - 57)} height="213"/></clipPath>
-      <clipPath id="vdw-outside-right"><rect x={right + 12} y="63" width={Math.max(0, 703 - right)} height="213"/></clipPath>
-      <clipPath id="vdw-inside"><rect x={left} y="63" width={width} height="213"/></clipPath>
+      <clipPath id={`${clip}-outside-left`}><rect x="45" y="63" width={Math.max(0, left - 57)} height="213"/></clipPath>
+      <clipPath id={`${clip}-outside-right`}><rect x={right + 12} y="63" width={Math.max(0, 703 - right)} height="213"/></clipPath>
+      <clipPath id={`${clip}-inside`}><rect x={left} y="63" width={width} height="213"/></clipPath>
     </defs>
     <rect x={left} y="63" width={width} height="213" fill={palette.accentBg} fillOpacity=".6"/>
     <text x="115" y="35" textAnchor="middle">Outside</text><text x="380" y="35" textAnchor="middle">Only λ &lt; d</text><text x="645" y="35" textAnchor="middle">Outside</text>
-    <g clipPath="url(#vdw-outside-left)" data-testid="vdw-fluctuations-outside">{SAMPLE_WAVELENGTHS.flatMap((w, i) => Array.from({ length: copies(w) }, (_, k) => <Fluctuation key={`${w}-${k}`} slot={i * 7 + k} wavelength={w} x0={45} x1={left - 12} upright={w > 440}/>))}</g>
-    <g clipPath="url(#vdw-outside-right)">{SAMPLE_WAVELENGTHS.flatMap((w, i) => Array.from({ length: copies(w) }, (_, k) => <Fluctuation key={`${w}-${k}`} slot={500 + i * 7 + k} wavelength={w} x0={right + 12} x1={715} upright={w > 440}/>))}</g>
-    <g clipPath="url(#vdw-inside)" data-testid="vdw-fluctuations-inside">{fitting.flatMap((w, i) => Array.from({ length: copies(w) }, (_, k) => <Fluctuation key={`${w}-${k}`} slot={900 + i * 7 + k} wavelength={w} x0={left + 4} x1={right - 4}/>))}</g>
+    <g clipPath={`url(#${clip}-outside-left)`} data-testid="vdw-fluctuations-outside">{SAMPLE_WAVELENGTHS.flatMap((w, i) => Array.from({ length: copies(w) }, (_, k) => <Fluctuation key={`${w}-${k}`} slot={i * 7 + k} wavelength={w} x0={45} x1={left - 12} upright={w > 440}/>))}</g>
+    <g clipPath={`url(#${clip}-outside-right)`}>{SAMPLE_WAVELENGTHS.flatMap((w, i) => Array.from({ length: copies(w) }, (_, k) => <Fluctuation key={`${w}-${k}`} slot={500 + i * 7 + k} wavelength={w} x0={right + 12} x1={715} upright={w > 440}/>))}</g>
+    <g clipPath={`url(#${clip}-inside)`} data-testid="vdw-fluctuations-inside">{fitting.flatMap((w, i) => Array.from({ length: copies(w) }, (_, k) => <Fluctuation key={`${w}-${k}`} slot={900 + i * 7 + k} wavelength={w} x0={left + 4} x1={right - 4}/>))}</g>
     {modes && [1, 2, 3].map(n => <g key={n}><polyline points={Array.from({ length: 101 }, (_, i) => `${left + width * i / 100},${72 + n * 49 - 16 * Math.sin(n * Math.PI * i / 100)}`).join(' ')} fill="none" stroke={[palette.accent, palette.dataNeg, palette.dataCoreHi][n - 1]} strokeWidth="2"/><text x="380" y={94 + n * 49} textAnchor="middle" className="vdw-mode-label">n = {n}</text></g>)}
     {[left - 12, right].map(x => <rect key={x} x={x} y="55" width="12" height="231" rx="2" fill={palette.text3}/>)}
     <Arrow x1={left - 102} x2={left - 14} y={302} color={palette.text3} width={5}/><Arrow x1={left + 64} x2={left + 2} y={302} color={palette.text3} width={3}/>

@@ -20,6 +20,14 @@ export const phase = (p: Zepton) => clamp(p.age / p.lifetime, 0, 1);
 export const REACH_PER_LIFETIME = .06;
 /** How much shorter a replacement is where the aligned chain between opposite charges is closing up. Display choice. */
 export const CHAIN_SQUEEZE = .72;
+/** Lifetime of an ordinary birth: the shortest, and the random span above it. Arbitrary observation-time units. */
+export const ORDINARY_LIFETIME = { shortest: 2.4, span: 1.5 } as const;
+/** Lifetime of a gap birth. Its longest is below the shortest ordinary one, so a gap birth is always the smaller. */
+export const GAP_LIFETIME = { shortest: 1.5, span: .8 } as const;
+/** The closest released charges get, as a share of their starting separation, for the chain's shortening. */
+export const CLOSEST_SHARE = .5;
+/** The shortest life a chain replacement can have: 26 fixed steps, enough to open, turn and collapse on screen. */
+export const SHORTEST_CHAIN_LIFETIME = ORDINARY_LIFETIME.shortest * CHAIN_SQUEEZE * CLOSEST_SHARE;
 /** Return the current half-separation of a Zepton's charge lobes. */
 export const extent = (p: Zepton) => REACH_PER_LIFETIME * p.lifetime * Math.sin(Math.PI * phase(p));
 /** A Zepton's wavelength in scene units: its full separation at midlife. */
@@ -81,10 +89,14 @@ export class CasimirModel {
   private log(text: string) {
     this.events = [{ id: this.eventId++, time: this.time, text }, ...this.events].slice(0, 5);
   }
-  /** Add a newly created Zepton at a field or gap site. */
-  private birth(site: number, x: number, y: number, gap: boolean, squeeze = 1) {
+  /**
+   * Add a newly created Zepton at a field or gap site. `squeeze` scales its lifetime, and `longest` caps it: a
+   * replacement in the closing chain never outlives the Zepton it replaces.
+   */
+  private birth(site: number, x: number, y: number, gap: boolean, squeeze = 1, longest = Infinity) {
+    const { shortest, span } = gap ? GAP_LIFETIME : ORDINARY_LIFETIME;
     const p: Zepton = { id: this.nextId++, site, x, y, homeX: x, homeY: y,
-      angle: this.random() * Math.PI * 2, age: 0, lifetime: (gap ? 1.5 + this.random() : 2.4 + this.random() * 1.5) * squeeze,
+      angle: this.random() * Math.PI * 2, age: 0, lifetime: Math.min((shortest + this.random() * span) * squeeze, longest),
       alignment: 0, gap, deflected: false, contribution: 0, neighbor: null };
     this.particles.push(p); this.births++;
     if (gap) { this.gapBirths++; this.log(`Gap filled by Zepton #${p.id} · random orientation`); }
@@ -107,7 +119,16 @@ export class CasimirModel {
    */
   squeeze(p: Zepton) {
     if (this.pair !== 'electron-proton' || p.alignment < .6 || !this.bridge(p)) return 1;
-    return CHAIN_SQUEEZE * clamp((this.right - this.left) / this.separation, .5, 1);
+    return CHAIN_SQUEEZE * clamp((this.right - this.left) / this.separation, CLOSEST_SHARE, 1);
+  }
+  /**
+   * Replace a Zepton that has just vanished at its birth site. Where the chain is closing the replacement is squeezed
+   * and also no longer-lived than its predecessor, so the chain at a site only ever shortens; it stops at
+   * `SHORTEST_CHAIN_LIFETIME`.
+   */
+  private replace(p: Zepton) {
+    const squeeze = this.squeeze(p);
+    return this.birth(p.site, p.homeX, p.homeY, false, squeeze, squeeze < 1 ? p.lifetime : Infinity);
   }
   /** Report whether a Zepton lies in the interaction region between charges. */
   bridge(p: Zepton) { return p.x > this.left + .35 && p.x < this.right - .35 && Math.abs(p.y) < 1.5; }
@@ -129,7 +150,7 @@ export class CasimirModel {
     this.particles = this.particles.filter(p => p.age < p.lifetime);
     for (const p of dead) {
       this.deaths++;
-      if (!p.gap) this.birth(p.site, p.homeX, p.homeY, false, this.squeeze(p));
+      if (!p.gap) this.replace(p);
     }
     const gaps: { x: number; y: number }[] = [];
     for (const p of this.particles) {
