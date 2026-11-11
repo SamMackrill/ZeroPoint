@@ -147,9 +147,11 @@ export class LightRenderer {
     for (let i = 0; i < this.centres.count; i++) { this.dummy.position.set(pairAt(p, state.tick, i).centre, 0, 0); this.dummy.scale.setScalar(1); this.dummy.updateMatrix(); this.centres.setMatrixAt(i, this.dummy.matrix); }
     this.centres.instanceMatrix.needsUpdate = true;
     this.base.position.x = p.offset;
-    this.envelope.visible = this.options.envelope && !d.finished && this.cameraMode !== 'pair';
     // The response swells and collapses about the active pair's fixed centre; it does not glide with the energy front.
-    this.envelope.position.set(d.pair.centre, 0, 0); this.envelope.scale.setScalar(p.wavelength / 2 * (.4 + .6 * lifecycleEnvelope(d.pair.progress, 1)));
+    // At a hand-off the pair and its field are gone, so nothing is drawn.
+    const open = lifecycleEnvelope(d.pair.progress, 1);
+    this.envelope.visible = this.options.envelope && !d.finished && this.cameraMode !== 'pair' && open > 0;
+    this.envelope.position.set(d.pair.centre, 0, 0); this.envelope.scale.setScalar(Math.max(1e-6, p.wavelength / 2 * open));
     this.probe.position.x = p.probe;
     this.selection.visible = this.selected !== null;
     this.selection.position.set(selected.centre, 0, 0);

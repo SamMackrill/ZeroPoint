@@ -325,10 +325,6 @@
   },
   {
     "file": "src/experiments/light/LightWorkbench.tsx",
-    "text": "(e.index % 2 ? -1 : 1) * p.direction"
-  },
-  {
-    "file": "src/experiments/light/LightWorkbench.tsx",
     "text": "is induced at its own fixed centre, with the opposite rotation sense and the field reversed."
   },
   {

@@ -8,7 +8,8 @@ import { WAVELENGTH_AT_F0 } from '../../model/types';
  */
 export function DipoleCloseUp({ picked }: { picked: PickedDipole | null }) {
   if (!picked) return <p className="split-empty">Select a dipole (click the field, or Select first in the Selection tab) to see it here.</p>;
-  const life = Math.min(1, picked.age / picked.lifetime), half = Math.sin(Math.PI * life) * 110;
+  // Drawn against the pair's own peak; with the separation control at zero the lobes coincide, as in the field.
+  const life = Math.min(1, picked.age / picked.lifetime), half = picked.separation > 0 ? Math.sin(Math.PI * life) * 110 : 0;
   // c/f in L₀ (c = 299 792 458 m/s, f₀ = 10²⁰ Hz, L₀ = 10⁻¹³ m): the wavelength the pair opens to before reduction.
   const wavelength = WAVELENGTH_AT_F0 / picked.frequency;
   return (

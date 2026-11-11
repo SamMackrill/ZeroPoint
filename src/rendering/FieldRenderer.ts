@@ -6,6 +6,16 @@ import { lobeScale } from '../model/pairMotion';
 import { palette, scene } from '../ui/palette';
 import { isClick } from '../workbench/selection';
 export interface PickedDipole { slot: number; generation: number; frequency: number; age: number; lifetime: number; separation: number; position: [number, number, number] }
+/** The closest a focused view comes to its target. */
+export const FOCUS_DISTANCE = 4;
+/**
+ * How far the camera sits from a focused point so that a selection `span` wide fits whichever way it lies, with a
+ * quarter of margin for the lobes: `fov` is the vertical angle in degrees, and a tall view is narrower still.
+ */
+export function focusDistance(span: number, fov: number, aspect: number) {
+  const half = Math.tan(fov * Math.PI / 360) * Math.min(1, aspect);
+  return Math.max(FOCUS_DISTANCE, span * 1.25 / (2 * half));
+}
 export class FieldRenderer {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
@@ -68,9 +78,13 @@ export class FieldRenderer {
     this.select(index === undefined ? null : this.keys[index]);
   };
   select(key: string | null) { this.selected = key; this.refreshSelection(); }
-  /** Orbit around a point (the selected dipole's fixed centre), moving in to a close-up distance along the current view. */
-  focusOn(point: readonly [number, number, number]) {
-    const target = new THREE.Vector3(...point), offset = this.camera.position.clone().sub(this.controls.target).normalize().multiplyScalar(4);
+  /**
+   * Orbit around a point (the selected dipole's fixed centre), moving in along the current view to a close-up distance.
+   * `span` is the widest the selection gets (a pair's peak separation); the distance grows so that it still fits.
+   */
+  focusOn(point: readonly [number, number, number], span = 0) {
+    const distance = focusDistance(span, this.camera.fov, this.camera.aspect);
+    const target = new THREE.Vector3(...point), offset = this.camera.position.clone().sub(this.controls.target).normalize().multiplyScalar(distance);
     this.controls.target.copy(target); this.camera.position.copy(target).add(offset); this.controls.update();
   }
   inspectFirst() { this.select(this.keys[0] ?? null); }

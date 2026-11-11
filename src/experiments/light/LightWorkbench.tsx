@@ -1,7 +1,7 @@
 import { Focus, Info, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { downloadFile } from '../../persistence/experiment';
-import { DEFAULT_LIGHT_VIEW, LIGHT_DT, LIGHT_END_TICK, LIGHT_MODEL, TIME_SECONDS, hopTicks, lightReadout, pairAt, pairCount, parseLightFile, sourceX, waveAt, type LightParameters, type LightState, type LightView } from '../../light/model';
+import { DEFAULT_LIGHT_VIEW, LIGHT_DT, LIGHT_END_TICK, LIGHT_MODEL, TIME_SECONDS, hopTicks, isHandoff, lightReadout, pairAt, pairCount, pairStartTick, parseLightFile, sourceX, waveAt, type LightParameters, type LightState, type LightView } from '../../light/model';
 import type { LightRenderer } from '../../light/LightRenderer';
 import { useLight } from '../../light/useLight';
 import { palette } from '../../ui/palette';
@@ -197,7 +197,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
     </section>
   );
 
-  const events = Array.from({ length: pairCount(p) }, (_, i) => ({ index: i, tick: i * hopTicks(p) }));
+  const events = Array.from({ length: pairCount(p) }, (_, i) => ({ index: i, tick: Math.max(0, pairStartTick(p, i)) }));
   const dockNode = (
     <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={dockTab} onTab={setDockTab}
       readouts={withDeltas(stripFor(d, p), pB && dB ? stripFor(dB, pB) : null)}
@@ -223,9 +223,9 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
         { id: 'events', label: 'Events', content: <ol className="light-event-list">
           {events.map(e => <li key={e.index} className={e.index === d.index && !d.finished ? 'is-current' : ''}>
             <button type="button" data-testid={`event-pair-${e.index + 1}`} aria-label={`Inspect pair ${e.index + 1} at induction`} disabled={!ready} onClick={() => { setSelected(e.index); runtime.seek(e.tick); }}>
-              <span>{(e.index % 2 ? -1 : 1) * p.direction > 0 ? '↺' : '↻'}</span><strong>Pair {e.index + 1}</strong><small>{(e.tick * LIGHT_DT).toFixed(2)} τ</small>
+              <span>{pairAt(p, 0, e.index).sense > 0 ? '↺' : '↻'}</span><strong>Pair {e.index + 1}</strong><small>{(e.tick * LIGHT_DT).toFixed(2)} τ</small>
             </button>
-            {e.index === d.index && !d.finished && <p>{s.tick > 0 && s.tick % hopTicks(p) === 0 ? `Pair ${d.index} has collapsed and its field with it; pair ${d.index + 1} is induced at its own fixed centre, with the opposite rotation sense and the field reversed.` : `Pair ${d.index + 1} rotates through 180° during ${(hopTicks(p) * LIGHT_DT).toFixed(2)} τ, opening to its wavelength λ/2 across the path at midlife. Step or scrub to inspect its separation and collapse.`}</p>}
+            {e.index === d.index && !d.finished && <p>{isHandoff(p, s.tick) ? `Pair ${d.index} has collapsed and its field with it; pair ${d.index + 1} is induced at its own fixed centre, with the opposite rotation sense and the field reversed.` : `Pair ${d.index + 1} rotates through 180° during ${(hopTicks(p) * LIGHT_DT).toFixed(2)} τ, opening to its wavelength λ/2 across the path at midlife. Step or scrub to inspect its separation and collapse.`}</p>}
           </li>)}
           {d.finished && <li><p>The packet crossed the window boundary. Its budget is now recorded as departed energy; this is not an absorption event.</p></li>}
         </ol> },
@@ -247,12 +247,12 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
       <div className="light-selection-head"><h3>Pair {inspected.index + 1}</h3><button type="button" className="inspector-link" onClick={() => setSelected(selected === null ? d.index : null)}>{selected === null ? 'Pin pair' : 'Follow active'}</button></div>
       {(!split || phone) && glyph}
       <dl className="light-readouts">
-        <div><dt>State</dt><dd>{inspected.active ? 'Induced' : s.tick < inspected.index * hopTicks(p) ? 'Awaiting induction' : inspected.progress < 1 ? 'Window exited' : 'Collapsed / retired'}</dd></div>
+        <div><dt>State</dt><dd>{inspected.active ? 'Induced' : s.tick < pairStartTick(p, inspected.index) ? 'Awaiting induction' : inspected.progress < 1 ? 'Window exited' : 'Collapsed / retired'}</dd></div>
         <div><dt>Fixed centre</dt><dd data-testid="light-pair-centre">{inspected.centre.toFixed(3)} L</dd></div>
         <div><dt>Pair age / lifetime</dt><dd>{inspected.age.toFixed(3)} / {inspected.lifetime.toFixed(3)} τ</dd></div>
         <div><dt>Signed rotation</dt><dd data-testid="light-rotation">{(inspected.sense * inspected.progress * 180).toFixed(1)}° / {inspected.sense * 180}°</dd></div>
         <div><dt>Full separation</dt><dd data-testid="light-separation">{inspected.separation.toFixed(3)} / {inspected.peak.toFixed(2)} L</dd></div>
-        <div><dt>Field polarity</dt><dd>{inspected.polarity > 0 ? 'E +, B +' : 'E −, B −'} · reverses each pair</dd></div>
+        <div><dt>Field polarity</dt><dd data-testid="light-polarity">{`E ${inspected.polarity > 0 ? '+' : '−'}, B ${inspected.polarity * p.direction > 0 ? '+' : '−'}`} · reverses each pair</dd></div>
       </dl>
       <button type="button" className="light-focus" onClick={() => { setSelected(inspected.index); focusSelection(); }}><Focus size={14}/>Focus this fixed centre <kbd>F</kbd></button>
     </div>

@@ -27,6 +27,7 @@ import { SplitView } from '../../workbench/SplitView';
 import { CompareTab, withDeltas } from '../../workbench/compare';
 import { useMediumCompare } from '../../simulation/useMediumCompare';
 import { DipoleCloseUp } from './DipoleCloseUp';
+import { peakSeparation } from '../../model/pairMotion';
 
 /** At most this many ◆ checkpoints are kept, for every experiment (§09). */
 export const CHECKPOINT_LIMIT = 8;
@@ -145,7 +146,8 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
   useEffect(() => { onPresetChange?.(preset); }, [preset, onPresetChange]);
 
   const clearSelection = useCallback(() => viewport.current?.select(null), []);
-  const focusSelection = useCallback(() => { if (picked) viewport.current?.focusOn(picked.position); }, [picked]);
+  // Far enough back to hold the pair at its widest: its peak separation, not the separation at this instant.
+  const focusSelection = useCallback(() => { if (picked) viewport.current?.focusOn(picked.position, peakSeparation(parameters.separation, picked.frequency)); }, [picked, parameters.separation]);
   useSelectionKeys({ active, hasSelection: !!picked, onClear: clearSelection, onFocus: focusSelection });
   const setOption = (key: string, value: unknown) => setView(v => withPaths(v, { [key]: value }));
   /** Apply a live parameter change; the scenario label becomes "modified". */
