@@ -97,12 +97,19 @@ export function centralPair(p: SlitParameters, tick: number) {
 /** Which side of the wall a height is on: −1 toward A, +1 toward B. */
 const side = (y: number) => (y > WALL_AT ? 1 : -1);
 
-/** The shortest route between two points on opposite sides of the wall that passes through one opening. */
-function routeThrough([from, to]: Point, a: Point, b: Point): number {
-  const crossing = a[0] + (WALL_AT - a[1]) / (b[1] - a[1]) * (b[0] - a[0]);
-  if (crossing >= from && crossing <= to) return Math.hypot(b[0] - a[0], b[1] - a[1]);
-  const edge = crossing < from ? from : to;
-  return Math.hypot(edge - a[0], WALL_AT - a[1]) + Math.hypot(b[0] - edge, b[1] - WALL_AT);
+/**
+ * Where the shortest route between two points on opposite sides of the wall crosses it within one opening: on the
+ * straight line between them where that passes through the opening, otherwise at the opening's nearer edge.
+ */
+export function wallCrossing([from, to]: Point, a: Point, b: Point): number {
+  const straight = a[0] + (WALL_AT - a[1]) / (b[1] - a[1]) * (b[0] - a[0]);
+  return Math.min(to, Math.max(from, straight));
+}
+
+/** The length of the shortest route between two points on opposite sides of the wall through one opening. */
+function routeThrough(opening: Point, a: Point, b: Point): number {
+  const x = wallCrossing(opening, a, b);
+  return Math.hypot(x - a[0], WALL_AT - a[1]) + Math.hypot(b[0] - x, b[1] - WALL_AT);
 }
 
 /** The field's fall-off after a route of length `r`: inverse-square at distance (ch. 19), softened inside the core. */

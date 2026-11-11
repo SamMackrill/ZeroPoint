@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_SLITS, LIGHT_REACH, PAIR_TICKS, PATH_LENGTH, SLIT_END_TICK, WALL_AT, centralPair, fieldAt, fieldOnWall, fieldPasses, haltTick, innerEdge, openings,
-  pairCount, routeViaSlit, slitCsv, slitEvents, slitReadout, validateSlitParameters, type SlitParameters,
+  pairCount, routeViaSlit, slitCsv, slitEvents, slitReadout, validateSlitParameters, wallCrossing, type SlitParameters,
 } from '../src/double-slit/model';
 
 const slits = DEFAULT_SLITS;
@@ -19,6 +19,13 @@ describe('double-slit geometry', () => {
   it('makes the route through a slit longer than the straight path', () => {
     expect(routeViaSlit(slits)).toBe(10);
     expect(routeViaSlit(slits)).toBeGreaterThan(PATH_LENGTH);
+  });
+  it('crosses the wall on the straight line where a slit allows it, otherwise at the nearer edge', () => {
+    const [left, right] = openings(slits);
+    expect(wallCrossing(right, [0, 2], [6, 6])).toBe(3);
+    expect(wallCrossing(right, [0, 2], [0, 8])).toBe(2.5);
+    expect(wallCrossing(left, [0, 2], [0, 8])).toBe(-2.5);
+    expect(wallCrossing(right, [0, 3], [20, 5])).toBe(3.5);
   });
   it('validates parameters', () => {
     expect(validateSlitParameters({ ...slits, extra: 1 })).toEqual(slits);
