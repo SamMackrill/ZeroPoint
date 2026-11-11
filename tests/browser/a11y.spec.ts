@@ -8,7 +8,7 @@ async function audit(page: Page) {
   return results.violations.map(v => `${v.id} (${v.impact}): ${v.nodes.slice(0, 3).map(n => n.target.join(' ')).join(' | ')}`);
 }
 
-const labs = [['medium', ''], ['light', 'lab-light'], ['electron', 'lab-electron'], ['casimir', 'lab-casimir'], ['vdw', 'lab-vdw']] as const;
+const labs = [['medium', ''], ['light', 'lab-light'], ['double slit', 'lab-double-slit'], ['electron', 'lab-electron'], ['casimir', 'lab-casimir'], ['vdw', 'lab-vdw']] as const;
 
 for (const [name, lab] of labs) {
   test(`${name} has no WCAG A/AA violations`, async ({ page }) => {

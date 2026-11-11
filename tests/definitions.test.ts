@@ -8,8 +8,8 @@ describe('experiment definitions', () => {
   it.each(EXPERIMENTS.map(d => [d.title, d] as const))('%s is valid', (_title, definition) => {
     expect(validateDefinition(definition as ExperimentDefinition)).toEqual([]);
   });
-  it('lists the five experiments with unique ids, in rail order', () => {
-    expect(EXPERIMENTS.map(d => d.id)).toEqual(['medium', 'light', 'electron', 'casimir', 'vdw']);
+  it('lists the six experiments with unique ids, in rail order', () => {
+    expect(EXPERIMENTS.map(d => d.id)).toEqual(['medium', 'light', 'double-slit', 'electron', 'casimir', 'vdw']);
   });
   it('applies scenario overrides to the defaults', () => {
     expect(scenarioState(mediumDefinition, 'sparse').params).toMatchObject({ birthRate: 200, frequency: 0.6, seed: 2026 });

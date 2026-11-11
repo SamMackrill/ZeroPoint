@@ -10,7 +10,7 @@ const BUDGET_FILE = new URL('../fixtures/render-budget.json', import.meta.url);
 const STEPS = 10;
 type Counts = Record<string, number>;
 const budgets: Record<string, Counts> = existsSync(BUDGET_FILE) ? JSON.parse(readFileSync(BUDGET_FILE, 'utf8')) : {};
-const LABS = { light: 'lab-light', electron: 'lab-electron', casimir: 'lab-casimir', vdw: 'lab-vdw' };
+const LABS = { light: 'lab-light', slit: 'lab-double-slit', electron: 'lab-electron', casimir: 'lab-casimir', vdw: 'lab-vdw' };
 
 /** Load the app and mount every lab (each mounts on first visit), ending back on Medium. */
 async function mountAllLabs(page: Page) {
@@ -77,6 +77,12 @@ test('light steps stay within the render budget', async ({ page }) => {
   await tid(page, LABS.light).click();
   await expect(tid(page, 'transport-run')).toBeEnabled();
   checkBudget('light', await rendersForSteps(page, tid(page, 'transport-step'), () => page.getByTestId('light-tick').innerText()));
+});
+
+test('double slit steps stay within the render budget', async ({ page }) => {
+  await mountAllLabs(page);
+  await tid(page, LABS.slit).click();
+  checkBudget('double-slit', await rendersForSteps(page, tid(page, 'transport-step'), () => page.getByTestId('slit-tick').innerText()));
 });
 
 test('electron steps stay within the render budget', async ({ page }) => {

@@ -1,25 +1,14 @@
-# Planned experiment: double slit
+# Double slit: what is built and what remains
 
-**Status: planned, not implemented.** Build an inspectable wave/interference experiment showing how slit geometry and observation conditions affect the screen pattern.
+**Status: the single-photon argument is implemented** as the Double slit laboratory (model `double-slit/1`). See [the model notes](../double-slit-model.md). It follows Fleming's own treatment in chapter 19 of *The Zero-Point Universe* (Fig. 19-3): a photon from A to B past two slits, arriving in the straight-line time because its fields spread far faster than light, and never arriving if they are held to light speed.
 
-## Question and scene
+The earlier plan for this page described a conventional interference experiment with a reference model. That is not what Fleming's sources give, so the lab was built from his figure and text instead.
 
-How does a two-slit arrangement produce a screen distribution compared with one slit, and what changes when which-path information is introduced? Show the source, slits, propagation region and screen, with the accumulated pattern separated from individual event traces.
+## Not yet built
 
-## Controls
+These are possible extensions. Each needs a rule that chapter 19 does not state, so each would have to be labelled as a construction or wait for a source.
 
-- Wavelength, slit separation, slit width, source distance and screen distance.
-- One-slit, two-slit and which-path comparison modes.
-- Wave/intensity view, individual arrival view, exposure time and reproducible seed.
-- A screen-profile plot and CSV export for direct comparison between runs.
-
-## Reference and proposed mechanism
-
-Start with a clearly labelled reference interference model and preserve the distinction between a probability/intensity pattern and individual detection events. A future Fleming/zero-point-field interpretation must be shown as a separate hypothesis; the animation alone cannot establish a mechanism or replace a quantitative comparison.
-
-## Implementation gates and acceptance
-
-1. Define the propagation model, boundary conditions, units and detector sampling rule.
-2. Reproduce the one-slit and two-slit reference patterns across wavelength and geometry changes.
-3. Make the which-path change explicit and compare its screen profile with the two-slit case.
-4. Add any proposed medium response only after its dynamics, noise assumptions and convergence tests are specified.
+1. **A screen and its pattern.** Fleming says diffraction patterns lie more than half a wavelength from the photon, and takes them as evidence for fast fields. He does not derive fringes. The current field is established at once with one polarity per central pair, so the two slits' contributions never cancel.
+2. **One slit, and unequal slits.** The figure has two slits equidistant from the path. With one slit, or slits at different distances, the lab would need a rule for where the next central pair is induced beyond the wall.
+3. **Which-path detection.** Not discussed in the sources held here.
+4. **A finite field speed** between the two cases Fleming gives.

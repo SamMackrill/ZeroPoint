@@ -22,5 +22,10 @@
     "vdw": 16,
     "app": 16,
     "medium": 0
+  },
+  "double-slit": {
+    "double-slit": 10,
+    "app": 10,
+    "medium": 0
   }
 }

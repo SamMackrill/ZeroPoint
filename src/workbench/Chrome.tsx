@@ -1,6 +1,6 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Popover from '@radix-ui/react-popover';
-import { ArrowDownToLine, ArrowUpFromLine, Atom, ChevronDown, ChevronRight, CircleHelp, FlaskConical, Info, Lightbulb, Magnet, PanelLeftClose, PanelLeftOpen, Search, Settings, Waves } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, Atom, ChevronDown, ChevronRight, CircleHelp, FlaskConical, Info, Lightbulb, Magnet, PanelLeftClose, PanelLeftOpen, Search, Settings, Split, Waves } from 'lucide-react';
 import { useContext, type ReactNode, type Ref, type RefObject } from 'react';
 import { keyLabel, press, type Action } from './actions';
 import { BrandMark } from '../app/BrandMark';
@@ -92,7 +92,7 @@ export interface RailProps {
 }
 
 /** Rail icons by experiment id; the collapsed rail shows only these. */
-const ICONS: Record<string, typeof Waves> = { medium: Waves, light: Lightbulb, electron: Atom, casimir: Magnet, vdw: FlaskConical };
+const ICONS: Record<string, typeof Waves> = { medium: Waves, light: Lightbulb, 'double-slit': Split, electron: Atom, casimir: Magnet, vdw: FlaskConical };
 
 /**
  * The switcher rail (§05 B): experiments, with the active one expanded to its scenarios, then greyed planned

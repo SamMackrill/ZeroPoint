@@ -5,10 +5,6 @@
   },
   {
     "file": "src/app/App.tsx",
-    "text": "Slit geometry and observation conditions against the screen pattern."
-  },
-  {
-    "file": "src/app/App.tsx",
     "text": "Unshifted reference levels beside the small Lamb shift."
   },
   {
@@ -278,6 +274,54 @@
   {
     "file": "src/experiments/casimir/CasimirWorkbench.tsx",
     "text": "Section 4 · Figures 3 & 4 ↗"
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "The field passes both slits and the photon arrives on time"
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "Fleming’s photon is a sequence of central pairs, each lasting while the photon covers half a wavelength, with the zeptons around it turning to follow its field. A wall with two slits stands between A and B, the slits equidistant from the straight path. The field spreads sideways far faster than light, passes through both slits and induces the next central pair beyond the wall, so the photon reaches B in the same time as with nothing in the way."
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "Held to light speed, the field never reaches a slit"
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "Fleming’s counterfactual. A central pair lasts for half a wavelength of travel, so a field spreading at the speed of light gets only half a wavelength to either side of the path before it is extinguished. It never reaches a slit, so the fields, and thus the photon, could never make it through. That light does pass two slits, and diffracts, is his evidence that fields spread much faster than light."
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "Speed to reach a slit in one pair’s life"
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "The photon arrives in the straight-line time although the only way past the wall is through the slits, off the straight path. A central pair lasts for half a wavelength of travel, so a field moving at c would spread half a wavelength before it was extinguished."
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "With nothing in the way the arrival time is the distance over the speed of light. This is the time the wall and slits leave unchanged."
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "Double-slit files must be smaller than 20 KB."
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "The page is the plane of zepton rotation · not to scale"
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": ", chapter 19, “The Speed of the Zero-Point Universe”. Page numbers are PDF page positions. The interactive diagram is an adaptation."
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "A photon’s central zepton, surrounded by zeptons oriented and rotating with its fields."
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "A photon moving from A to B past two slits, polarized in the plane of the page."
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
