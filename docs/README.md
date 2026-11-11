@@ -19,6 +19,17 @@ The original `index.html` and `dipole-worker.js` are archived in `docs/legacy/`.
 
 Verification: the blueprint copy matches its source SHA-256; local HTML links and anchors resolve; inline plan JavaScript and the spike pass JavaScript syntax checks; the scenario descriptions respond in the browser. The plan was checked for document overflow at desktop width and in a 390-pixel iframe (no horizontal document overflow; navigation becomes static). Renderer evidence and preview limitations are recorded with the investigation. Printing is provided through the browser; exported PDF appearance has not been inspected.
 
+The [Fleming fidelity review](fleming-fidelity-report.html) (10 November 2026) records a source-by-source reading of the papers and book, an audit of each laboratory against them, the model changes that followed and [before/after screens](fidelity-previews/index.html). "Before" is the commit the review started from, `c424ae7`. To capture the screens again, check that commit out beside this one and name it as the "before" worktree:
+
+```sh
+git worktree add ../zeropoint-before c424ae7
+npm ci --prefix ../zeropoint-before
+BEFORE_WORKTREE=../zeropoint-before
+node scripts/compare-screens.mjs --before "$BEFORE_WORKTREE" --out docs/fidelity-previews --set fidelity --title 'Fleming fidelity review'
+```
+
+The previews page prints the full command it was made with, including its description.
+
 Additional experiments:
 
 - [Van der Waals & vacuum pressure](van-der-waals-model.md): implemented polarization, correlated-dipole and plate-pressure stages based on Chapter 3, with original extracted figures, analytic references and a CSV gap sweep.

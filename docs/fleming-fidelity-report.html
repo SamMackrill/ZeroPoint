@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>if (location.search === '?live') setTimeout(() => location.reload(), 120000); // opt-in, so a reader is never interrupted</script>
+<title>Fleming fidelity review</title>
+<style>
+  :root {
+    --bg: #0a1017; --panel: #0d151e; --panel-2: #132030; --line: #253646; --line-2: #34495b;
+    --text: #e3ebf1; --text-2: #aebfcc; --text-3: #8397a8;
+    --accent: #8fe0c2; --accent-bg: #1d3a33; --warn: #f0c98a; --warn-bg: #3a2f1c; --danger: #f39a82; --danger-bg: #3d221c;
+    --pos: #f2a67f; --neg: #7fc8ec; --idle: #8397a8; --idle-bg: #1b2b3a;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #f5f7f8; --panel: #ffffff; --panel-2: #eef2f4; --line: #d6dee4; --line-2: #b9c6cf;
+      --text: #14212b; --text-2: #3b4d5b; --text-3: #5d7080;
+      --accent: #176a4f; --accent-bg: #dcf1e9; --warn: #8a5a0b; --warn-bg: #f8ecd2; --danger: #a8381c; --danger-bg: #f9e1da;
+      --pos: #b3531f; --neg: #1a6f9c; --idle: #4d5f6e; --idle-bg: #e6ecef;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.55 "DM Sans", "Segoe UI", system-ui, sans-serif; }
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 28px 20px 80px; }
+  header.top { border-bottom: 1px solid var(--line); padding-bottom: 18px; margin-bottom: 22px; }
+  .eyebrow { font: 600 11px/1 "IBM Plex Mono", ui-monospace, Consolas, monospace; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  h1 { font-size: 30px; line-height: 1.15; margin: 10px 0 8px; letter-spacing: -.01em; text-wrap: balance; }
+  h2 { font-size: 20px; margin: 44px 0 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+  h3 { font-size: 16px; margin: 26px 0 6px; }
+  p { margin: 8px 0; max-width: 78ch; }
+  .lede { color: var(--text-2); font-size: 16px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font: 12px/1.4 "IBM Plex Mono", ui-monospace, Consolas, monospace; color: var(--text-3); }
+  .meta b { color: var(--text); font-weight: 600; }
+  nav.toc { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0 0; }
+  nav.toc a { color: var(--text-2); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 3px 11px; font-size: 13px; }
+  nav.toc a:hover { border-color: var(--accent); color: var(--accent); }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 16px 0; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .card .n { font: 600 26px/1 "IBM Plex Mono", ui-monospace, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .card .l { color: var(--text-3); font-size: 12px; margin-top: 6px; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 14px; }
+  th, td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  th { font: 600 11px/1.3 "IBM Plex Mono", ui-monospace, Consolas, monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); white-space: nowrap; }
+  td.id { font: 600 12px/1.6 "IBM Plex Mono", ui-monospace, Consolas, monospace; white-space: nowrap; color: var(--text-2); }
+  .chip { display: inline-block; border-radius: 999px; padding: 1px 9px; font: 600 11px/1.7 "IBM Plex Mono", ui-monospace, Consolas, monospace; white-space: nowrap; }
+  .done { background: var(--accent-bg); color: var(--accent); }
+  .doing { background: var(--warn-bg); color: var(--warn); }
+  .queued { background: var(--idle-bg); color: var(--idle); }
+  .ask { background: var(--danger-bg); color: var(--danger); }
+  .src { color: var(--text-3); font-size: 13px; }
+  .src::before { content: "Source · "; font: 600 10px/1 "IBM Plex Mono", ui-monospace, Consolas, monospace; letter-spacing: .1em; text-transform: uppercase; }
+  .finding { background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--line-2); border-radius: 8px; padding: 14px 16px; margin: 12px 0; }
+  .finding.fixed { border-left-color: var(--accent); }
+  .finding.open { border-left-color: var(--warn); }
+  .finding h4 { margin: 0 0 4px; font-size: 15px; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
+  .finding h4 .id { font: 600 12px/1 "IBM Plex Mono", ui-monospace, Consolas, monospace; color: var(--text-3); }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
+  @media (max-width: 720px) { .two { grid-template-columns: 1fr; } }
+  .two > div { background: var(--panel-2); border-radius: 6px; padding: 10px 12px; }
+  .two .k { font: 600 10px/1 "IBM Plex Mono", ui-monospace, Consolas, monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); margin-bottom: 5px; }
+  blockquote { margin: 8px 0; padding: 2px 0 2px 12px; border-left: 2px solid var(--line-2); color: var(--text-2); font-style: italic; }
+  code { font: 13px "IBM Plex Mono", ui-monospace, Consolas, monospace; background: var(--panel-2); padding: 1px 5px; border-radius: 4px; }
+  ul { padding-left: 20px; margin: 8px 0; } li { margin: 4px 0; max-width: 76ch; }
+  .tenets { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; }
+  .tenet { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; }
+  .tenet b { display: block; margin-bottom: 3px; }
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .shots figure { margin: 0; } .shots img { width: 100%; border: 1px solid var(--line); border-radius: 6px; display: block; }
+  .shots figcaption { font-size: 12px; color: var(--text-3); margin-top: 4px; }
+  .log { font: 13px/1.6 "IBM Plex Mono", ui-monospace, Consolas, monospace; color: var(--text-2); }
+  .log time { color: var(--accent); margin-right: 10px; }
+  a { color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="top">
+  <div class="eyebrow">ZeroPoint laboratory · fidelity review</div>
+  <h1>How closely do the simulations follow Ray Fleming's zero-point model?</h1>
+  <p class="lede">A reading of Fleming's papers and <i>The Zero-Point Universe</i>, an audit of the five laboratories against them, and a running log of the fixes. The yardstick is Fleming's own account and figures, nothing else.</p>
+  <div class="meta">
+    <span>Last updated <b id="updated">11 Nov 2026, 13:45 GMT</b></span>
+    <span>Pull requests <b>#53 to #56</b></span>
+    <span>Status <b>all ten items done · second review round answered · re-reviews queued</b></span>
+    <span>Add <code>?live</code> to the address to reload every 2 minutes</span>
+  </div>
+  <nav class="toc">
+    <a href="#progress">Progress</a><a href="#model">Fleming's model</a><a href="#findings">Findings &amp; fixes</a><a href="#good">What already matches</a><a href="#choices">Choices to review</a><a href="#next">Next steps</a><a href="#open">Open questions</a><a href="#log">Update log</a>
+  </nav>
+</header>
+
+<section id="progress">
+  <div class="cards">
+    <div class="card"><div class="n">7</div><div class="l">source documents read (6 papers, 9 book chapters)</div></div>
+    <div class="card"><div class="n">5</div><div class="l">laboratories audited</div></div>
+    <div class="card"><div class="n">10</div><div class="l">departures from Fleming found</div></div>
+    <div class="card"><div class="n" id="fixed-count">10</div><div class="l">fixed so far</div></div>
+  </div>
+
+  <div class="scroll">
+  <table>
+    <thead><tr><th>ID</th><th>Lab</th><th>Change</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td class="id">M1</td><td>Medium</td><td>A zepton turns through at most a half-turn (180°) in its lifetime, not a full turn</td><td><span class="chip done">done</span></td></tr>
+      <tr><td class="id">M2</td><td>Medium</td><td>A zepton opens to its own wavelength, so slow low-energy pairs are large and fast energetic ones are small</td><td><span class="chip done">done</span></td></tr>
+      <tr><td class="id">L1</td><td>Light</td><td>The central pair opens to its wavelength (half the photon wavelength) and is transverse when widest</td><td><span class="chip done">done</span></td></tr>
+      <tr><td class="id">L2</td><td>Light</td><td>The electric and magnetic field belong to the current central pair: they grow and collapse with it and reverse at each hand-off</td><td><span class="chip done">done</span></td></tr>
+      <tr><td class="id">E1</td><td>Electron</td><td>Spin: one shared rotation preference by default (alternating bands stays as a labelled extension)</td><td><span class="chip done">done</span></td></tr>
+      <tr><td class="id">E2</td><td>Electron</td><td>Partial polarization that thins with distance; each new generation is born at random and turns toward the charge</td><td><span class="chip done">done</span></td></tr>
+      <tr><td class="id">E3</td><td>Electron</td><td>New investigation: mass as the zero-point energy a shell excludes (book ch. 16), reproducing Fleming's figures</td><td><span class="chip done">done</span></td></tr>
+      <tr><td class="id">C1</td><td>Extended Casimir</td><td>Zepton size follows its lifetime; between opposite charges the replacements get smaller as the gap closes</td><td><span class="chip done">done</span></td></tr>
+      <tr><td class="id">V1</td><td>Van der Waals</td><td>Plate stage drawn as Fleming's Fig. 3-3: zeptons of every size outside, only short ones between the plates</td><td><span class="chip done">done</span></td></tr>
+      <tr><td class="id">D1</td><td>Docs</td><td>Model notes and tests brought in line with each change</td><td><span class="chip done">done</span></td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<h2 id="model">Fleming's model, as the sources give it</h2>
+<p>These are the load-bearing statements the simulations should honour. Each is tied to where Fleming says it.</p>
+<div class="tenets">
+  <div class="tenet"><b>Space is a sea of zeptons</b>Short-lived, massless particle–antiparticle pairs that are true electric dipoles (an electron-like end and a positron-like end). They exist over a continuum of energies. <div class="src">Book ch. 4–5; Photon paper §3</div></div>
+  <div class="tenet"><b>Each zepton is a Planck oscillator</b>Energy <code>E = hf/2</code>, and it can last no longer than <code>ΔE·Δt = h/2</code>, so its lifetime is one period, <code>1/f</code>. <div class="src">Book ch. 2 (Eq. 2-4), ch. 4; Casimir paper §8</div></div>
+  <div class="tenet"><b>A zepton's life has a shape</b>The pair is produced at a point, separates to the full extent of its wavelength, then collapses back and annihilates. Its wavelength is as far as it can reach in its lifetime: <code>λ = c/f</code>. <div class="src">Electron paper §8; Book ch. 6 (p. 55), ch. 19 (Fig. 19-4)</div></div>
+  <div class="tenet"><b>A zepton can turn 180° at most</b>Half a turn in a lifetime is the limit, and reaching it is what the speed of light is. Fields need only a tiny fraction of that. <div class="src">Electron paper §6; Book ch. 4, ch. 19</div></div>
+  <div class="tenet"><b>The electric field is zeptons aligned</b>Positive ends face a negative charge. Only a small share of zeptons turn, and only slightly. The same total polarization crosses every sphere around the charge, spread ever thinner. <div class="src">Book ch. 6 (Figs 6-2, 6-4, 6-7); Electron paper §2</div></div>
+  <div class="tenet"><b>Charge belongs to the field</b>A particle is a bare point polarizer. Unit charge is the same for every particle because the polarizability of the field is the same everywhere. <div class="src">Electron paper §2; Fine-structure paper §3</div></div>
+  <div class="tenet"><b>The magnetic field is zeptons rotating</b>They turn to stay aligned with a moving charge, on opposite sides in opposite senses. The field direction is the rotation axis (right-hand grip). Replacements carry the rotation on. <div class="src">Book ch. 6 (Figs 6-14 to 6-16)</div></div>
+  <div class="tenet"><b>Spin is rotation during polarization</b>New zeptons are born at random angles and turn toward alignment. Neighbours turning the same way cost least energy, so there is one preferred sense. Nothing orbits; dipole centres stay put. <div class="src">Electron paper §3 (Fig. 2), §6; Radii paper §1</div></div>
+  <div class="tenet"><b>g ≈ 2 from both charges</b>A rotating dipole carries a positive end inside and a negative end outside, moving oppositely: two counter-rotating shells of opposite charge. <div class="src">Electron paper §4; Radii paper §1</div></div>
+  <div class="tenet"><b>Mass is excluded zero-point energy</b>Treat the particle as a shell that excludes zeptons with wavelengths between its inner and outer diameters. The energy excluded equals <code>mc²</code>; for the electron the shell sits at the Compton wavelength. <div class="src">Book ch. 16 (Eq. 16-1); Electron paper §5</div></div>
+  <div class="tenet"><b>A photon is a chain of induced zeptons</b>One central pair per half-wavelength, each rotating 180°, each counter-rotating to the last. The pair carries half the energy; the surrounding field of slightly biased zeptons carries the rest. <div class="src">Photon paper §2, §5 (Fig. 3); Book ch. 5 (Figs 5-1, 5-2)</div></div>
+  <div class="tenet"><b>A photon's field lives and dies with each pair</b>The field is extinguished every half-wavelength with the central zepton, then reverses polarity and induces the next pair. <div class="src">Book ch. 5 (p. 44), ch. 19 (p. 146)</div></div>
+  <div class="tenet"><b>Two speeds</b>Pairs and matter are limited to <code>c</code> (a full 180° turn). Fields spread dipole to dipole far faster, because each dipole turns only a sliver. <div class="src">Photon paper §6; Book ch. 19</div></div>
+  <div class="tenet"><b>All force is push</b>Zeptons press on matter from every side. Motion comes from a pressure difference, as between Casimir plates where long wavelengths are shut out. <div class="src">Book ch. 3 (Figs 3-3, 3-4); Casimir paper §2</div></div>
+  <div class="tenet"><b>Attraction: the chain shortens</b>Between opposite charges the aligned zeptons collapse, neighbours fill in, and each replacement has less room, so pressure between the charges drops. <div class="src">Casimir paper §4 (Fig. 3); Book ch. 6 (Fig. 6-12)</div></div>
+  <div class="tenet"><b>Repulsion: the gap fills</b>Between like charges the aligned zeptons meet like-end to like-end, deflect, and open gaps. New randomly oriented zeptons fill them and push in all directions. <div class="src">Casimir paper §4 (Fig. 4); Book ch. 6 (Figs 6-9, 6-10)</div></div>
+</div>
+
+<h2 id="findings">Findings and fixes</h2>
+<p>Each card says what Fleming states, what the laboratory did, and what changes. Cards turn green as fixes land.</p>
+
+<h3>Medium</h3>
+<div class="finding fixed" id="M1">
+  <h4><span class="id">M1</span> Zeptons spun a full turn; Fleming allows half <span class="chip done">done</span></h4>
+  <div class="two">
+    <div><div class="k">Fleming</div>A zepton <q>can rotate 180 degrees during its existence</q>; a half-wavelength of light is <q>a virtual electron-positron pair that rotates 180 degrees</q>; <q>they cannot rotate farther or faster than that</q>.</div>
+    <div><div class="k">Laboratory before</div>Every pair rotated <code>2π·f·age</code>: one complete 360° turn per lifetime, twice the limit that Fleming identifies with the speed of light.</div>
+  </div>
+  <p><b>Fixed.</b> Each pair turns through a half-turn over its life (<code>phase = phase₀ + π·f·age</code>). The model is now <code>medium-lifecycle/3</code>; version 1 and 2 files open and are upgraded with a note in the event log. A new test checks the turn is monotonic and never exceeds 180°.</p>
+  <div class="src">Electron paper §6 (p. 5); Book ch. 4 (p. 39), ch. 19 (pp. 147–148)</div>
+</div>
+<div class="finding fixed" id="M2">
+  <h4><span class="id">M2</span> Every zepton opened to the same width, whatever its energy <span class="chip done">done</span></h4>
+  <div class="two">
+    <div><div class="k">Fleming</div>The pair separates <q>to the full extent of their wavelength</q>, and <q>the maximum distance a zepton can occupy in space during the time it exists is equal to its wavelength</q>, <code>λ = c/f</code>. Fig. 3-3 draws the fluctuations as ovals of many sizes.</div>
+    <div><div class="k">Laboratory before</div>One slider set a single peak separation for all pairs. A pair at three times the frequency lived a third as long but opened just as wide.</div>
+  </div>
+  <p><b>Fixed.</b> Peak separation scales with each pair's own wavelength (<code>∝ 1/f</code>, the same factor as its lifetime). The slider is now the peak for a pair at the reference frequency <code>f₀</code>. The true scale cannot be drawn (at <code>f₀</code> the wavelength <code>c/f₀</code> is about 30 L₀ and the cell is 8 L₀), so the proportion is kept and the size is reduced; the inspector shows each pair's real <code>c/f</code> beside its drawn separation.</p><p><b>Clarity.</b> A faint line now joins the two lobes of each pair. Without it, widely opened pairs read as a scatter of unrelated dots. The Slow oscillations preset was retuned so its long-wavelength pairs stay inside the cell.</p>
+  <div class="shots">
+    <figure><a href="fidelity-previews/medium-balanced-before.jpg"><img src="fidelity-previews/medium-balanced-before.jpg" alt="Before · every pair the same width, lobes unlinked" loading="lazy"></a><figcaption>Before · every pair the same width, lobes unlinked</figcaption></figure>
+    <figure><a href="fidelity-previews/medium-balanced-after.jpg"><img src="fidelity-previews/medium-balanced-after.jpg" alt="After · sizes follow wavelength, each pair linked" loading="lazy"></a><figcaption>After · sizes follow wavelength, each pair linked</figcaption></figure>
+  </div>
+  <div class="shots">
+    <figure><a href="fidelity-previews/medium-slow-before.jpg"><img src="fidelity-previews/medium-slow-before.jpg" alt="Before · Slow oscillations preset" loading="lazy"></a><figcaption>Before · Slow oscillations preset</figcaption></figure>
+    <figure><a href="fidelity-previews/medium-slow-after.jpg"><img src="fidelity-previews/medium-slow-after.jpg" alt="After · long-lived pairs are visibly the long-wavelength ones" loading="lazy"></a><figcaption>After · long-lived pairs are visibly the long-wavelength ones</figcaption></figure>
+  </div>
+  <div class="src">Electron paper §8 (p. 5); Book ch. 3 (Fig. 3-3), ch. 19 (Fig. 19-4)</div>
+</div>
+
+<h3>Light</h3>
+<div class="finding fixed" id="L1">
+  <h4><span class="id">L1</span> The central pair was a fixed size and lay along the path when widest <span class="chip done">done</span></h4>
+  <div class="two">
+    <div><div class="k">Fleming</div><q>The dipole wavelength is equal to the distance traveled by a photon during a half-wavelength.</q> Figs 4-9, 5-1 and Fig. 3 of the photon paper draw each pair across the path, with the electric field along the pair and one polarity per pair.</div>
+    <div><div class="k">Laboratory before</div>Peak separation was a fixed 0.42 L at every wavelength. At the default phase the pair was transverse only at birth and death, when it has no width, and lay along the direction of travel at mid-life.</div>
+  </div>
+  <p><b>Fixed.</b> The pair opens to <code>λ/2</code>, is born along the path, and lies along the polarization axis at mid-life, alternating polarity pair by pair as in Fleming's figures. Its lobes are drawn larger than the background and joined by a line. <b>Pair start angle</b> chooses where in this half-turn the run begins (at 90° the first pair is across the path, fully open, at tick 0) and never changes a pair's geometry. Model is now <code>light-induction/2</code>; older files open unchanged.</p>
+  <div class="shots">
+    <figure><a href="fidelity-previews/light-midlife-before.jpg"><img src="fidelity-previews/light-midlife-before.jpg" alt="Before · tick 60: pair small and along the path" loading="lazy"></a><figcaption>Before · tick 60: pair small and along the path</figcaption></figure>
+    <figure><a href="fidelity-previews/light-midlife-after.jpg"><img src="fidelity-previews/light-midlife-after.jpg" alt="After · tick 60: pair across the path at λ/2, field at its peak" loading="lazy"></a><figcaption>After · tick 60: pair across the path at λ/2, field at its peak</figcaption></figure>
+  </div>
+  <div class="shots">
+    <figure><a href="fidelity-previews/light-second-pair-before.jpg"><img src="fidelity-previews/light-second-pair-before.jpg" alt="Before · tick 180" loading="lazy"></a><figcaption>Before · tick 180</figcaption></figure>
+    <figure><a href="fidelity-previews/light-second-pair-after.jpg"><img src="fidelity-previews/light-second-pair-after.jpg" alt="After · tick 180: second pair, polarity and rotation reversed" loading="lazy"></a><figcaption>After · tick 180: second pair, polarity and rotation reversed</figcaption></figure>
+  </div>
+  <div class="src">Photon paper §2 (Fig. 3); Book ch. 4 (Fig. 4-9), ch. 5 (Fig. 5-1)</div>
+</div>
+<div class="finding fixed" id="L2">
+  <h4><span class="id">L2</span> The field was a frozen wave-packet gliding along, unconnected to the pairs <span class="chip done">done</span></h4>
+  <div class="two">
+    <div><div class="k">Fleming</div>The rotating pair <em>produces</em> the field. <q>The fields are also extinguished each half wavelength along with the central zepton.</q> <q>When that pair is annihilated, the surrounding field reverses electric and magnetic polarity … Those fields induce a new central particle pair.</q> The field <q>radiates outward from the central zepton and declines … [as] the inverse of the distance squared</q>.</div>
+    <div><div class="k">Laboratory before</div>A prescribed one-cycle envelope slid along at <code>c</code> with a fixed shape. At the moving centre the field never changed, whatever the pair was doing.</div>
+  </div>
+  <p><b>Fixed.</b> Field strength and polarity are now the transverse part of the active pair's dipole moment. The field swells and collapses with the pair, is zero at each hand-off, reverses for the next pair, and falls with the square of distance from that pair in every direction. The magnetic field lies along the pair's rotation axis (right-hand grip) and electric × magnetic points along the travel direction; tests check both at every pair start angle, direction and polarization. The field-reach cage shrinks to nothing at each hand-off, with the pair. Surrounding pairs are now randomly oriented and lean toward the active pair only where its field reaches them, as in Fig. 5-2. A fixed probe sees alternating pulses, one per pair, at the photon's frequency.</p>
+  <div class="shots">
+    <figure><a href="fidelity-previews/light-handoff-before.jpg"><img src="fidelity-previews/light-handoff-before.jpg" alt="Before · tick 120: the packet glides on unchanged" loading="lazy"></a><figcaption>Before · tick 120: the packet glides on unchanged</figcaption></figure>
+    <figure><a href="fidelity-previews/light-handoff-after.jpg"><img src="fidelity-previews/light-handoff-after.jpg" alt="After · tick 120, the hand-off: field extinguished with the pair" loading="lazy"></a><figcaption>After · tick 120, the hand-off: field extinguished with the pair</figcaption></figure>
+  </div>
+  <div class="shots">
+    <figure><a href="fidelity-previews/light-plots-before.jpg"><img src="fidelity-previews/light-plots-before.jpg" alt="Before · a fixed wave shape sliding past the probe" loading="lazy"></a><figcaption>Before · a fixed wave shape sliding past the probe</figcaption></figure>
+    <figure><a href="fidelity-previews/light-plots-after.jpg"><img src="fidelity-previews/light-plots-after.jpg" alt="After · alternating pulses that grow as the chain nears the probe" loading="lazy"></a><figcaption>After · alternating pulses that grow as the chain nears the probe</figcaption></figure>
+  </div>
+  <div class="src">Book ch. 5 (pp. 43–45, Fig. 5-2), ch. 19 (pp. 145–146); Photon paper §1, §5</div>
+</div>
+
+<h3>Electron</h3>
+<div class="finding fixed" id="E1">
+  <h4><span class="id">E1</span> Spin opened on alternating bands, which Fleming does not describe <span class="chip done">done</span></h4>
+  <div class="two">
+    <div><div class="k">Fleming</div><q>Quantum dipoles tend to rotate in the same direction while being polarized.</q> Fig. 2 shows every dipole round the charge curling the same way. The two counter-moving layers of §4 are the two <em>ends</em> of each dipole, not successive bands.</div>
+    <div><div class="k">Laboratory before</div>The default reversed the turn of each complete band; the shared preference was the alternative. The notes already label alternation an extension.</div>
+  </div>
+  <p><b>Fixed.</b> Shared preference is the default. Alternating bands remains under <b>Adjacent shells › Alternate</b> and as a saved view in Help, labelled as an extension Fleming does not describe. Saved files that chose alternation keep it.</p>
+  <div class="shots">
+    <figure><a href="fidelity-previews/electron-spin-before.jpg"><img src="fidelity-previews/electron-spin-before.jpg" alt="Before · bands turn in opposite senses by default" loading="lazy"></a><figcaption>Before · bands turn in opposite senses by default</figcaption></figure>
+    <figure><a href="fidelity-previews/electron-spin-after.jpg"><img src="fidelity-previews/electron-spin-after.jpg" alt="After · every band turns the same way, as in Fig. 2" loading="lazy"></a><figcaption>After · every band turns the same way, as in Fig. 2</figcaption></figure>
+  </div>
+  <div class="src">Electron paper §3 (Fig. 2), §4</div>
+</div>
+<div class="finding fixed" id="E2">
+  <h4><span class="id">E2</span> Every pair snapped fully into line at every distance <span class="chip done">done</span></h4>
+  <div class="two">
+    <div><div class="k">Fleming</div><q>A small amount of charge only causes a small percentage of zeptons to orient … and most are only oriented to a slight degree.</q> <q>The same total amount of polarization occurs at each distance away from the charge; it is just spread out over increasingly larger volumes.</q> Pairs are <q>continually being produced in somewhat random orientations</q>.</div>
+    <div><div class="k">Laboratory before</div>All 2,197 sample pairs ended exactly radial, near and far alike, and every replacement was born already aligned. The inverse-square thinning lived only in the separate analytic arrows.</div>
+  </div>
+  <p><b>Fixed</b> (model <code>electron-polarization/4</code>). Each generation is born at its own random angle and turns toward the electron during its life: all the way inside 1.6 R, and beyond it by a share chosen so the mean alignment falls with the square of distance. Near pairs line up; far pairs stay mostly random with a slight lean. Polarization no longer comes to rest: every replacement turns again, which is the continual process Fleming gives as the origin of spin. A pair is drawn as bright as it is aligned.</p><p><b>New readout.</b> <b>Dock › Polarization</b> sums the alignment of the displayed pairs shell by shell. Farther shells hold more pairs, each turned less, and the total stays level: the same polarization through every sphere, read from the dipoles themselves and not from a reference formula. A test checks the displayed pairs against the rule.</p><p><b>Scale.</b> The 1.6 R radius is a magnification. Fleming says the lean is slight and gives no figure; drawn to scale it would be invisible. Faraday lines now trace the alignment the pairs share (their mean), since any single generation is random.</p>
+  <div class="shots">
+    <figure><a href="fidelity-previews/electron-cutaway-before.jpg"><img src="fidelity-previews/electron-cutaway-before.jpg" alt="Before · central slab: every pair exactly radial" loading="lazy"></a><figcaption>Before · central slab: every pair exactly radial</figcaption></figure>
+    <figure><a href="fidelity-previews/electron-cutaway-after.jpg"><img src="fidelity-previews/electron-cutaway-after.jpg" alt="After · central slab: aligned and bright near the electron, random and dim far out" loading="lazy"></a><figcaption>After · central slab: aligned and bright near the electron, random and dim far out</figcaption></figure>
+  </div>
+  <div class="shots" style="grid-template-columns:1fr">
+    <figure><a href="fidelity-previews/electron-polarization-after.jpg"><img src="fidelity-previews/electron-polarization-after.jpg" alt="mean alignment falls with distance (left); the total through each shell levels off (right)" loading="lazy"></a><figcaption>New · mean alignment falls with distance (left); the total through each shell levels off (right)</figcaption></figure>
+  </div>
+  <div class="src">Book ch. 6 (pp. 49–53); Electron paper §2–3</div>
+</div>
+<div class="finding fixed" id="E3">
+  <h4><span class="id">E3</span> Mass from excluded energy was listed as blocked, but the book gives the recipe <span class="chip done">done</span></h4>
+  <div class="two">
+    <div><div class="k">Fleming</div>Chapter 16 gives the excluded energy density between two shell diameters and worked numbers: electron 6.833×10²⁵ GeV/cm³ at a Compton-wavelength diameter, inner 2.123 pm, outer 2.472 pm; proton 3.315×10³⁸ GeV/cm³, inner 1.586 fm, outer 1.924 fm.</div>
+    <div><div class="k">Laboratory before</div>The video notes list the mass budget as waiting on a paper that is not in the repository. I checked: <code>ρ = ħ(ω₂⁴ − ω₁⁴)/(8π²c³)</code> with <code>ω = 2πc/d</code> reproduces the book's 1.124×10²⁶ GeV/cm³ exactly.</div>
+  </div>
+  <p><b>Added.</b> A new static scenario, <b>Electron › Mass &amp; excluded energy</b>. Choose electron or proton, slide the shell's mean diameter and thickness, and compare the zero-point energy it shuts out with <code>mc²</code>. The drawing follows Fig. 16-1: short fluctuations inside the shell, long ones outside, and the band in between excluded.</p>
+  <p><b>Check against the book.</b> Ten of Fleming's eleven worked figures reproduce to the digits he prints:</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Quantity</th><th>Book</th><th>Study</th></tr></thead>
+    <tbody>
+      <tr><td>Proton mass-energy density at 1.755 fm</td><td>3.315 × 10³⁸ GeV/cm³</td><td>3.315 × 10³⁸</td></tr>
+      <tr><td>All wavelengths from 1.755 fm up</td><td>4.106 × 10³⁸</td><td>4.106 × 10³⁸</td></tr>
+      <tr><td>Proton outer diameter that balances</td><td>2.649 fm</td><td>2.649</td></tr>
+      <tr><td>Proton shell: inner / outer / thickness</td><td>1.586 / 1.924 / 0.169 fm</td><td>1.586 / 1.924 / 0.169</td></tr>
+      <tr><td>Electron mass-energy density at the Compton wavelength</td><td>6.833 × 10²⁵ GeV/cm³</td><td>6.833 × 10²⁵</td></tr>
+      <tr><td>All wavelengths from the Compton wavelength up</td><td>1.124 × 10²⁶</td><td>1.124 × 10²⁶</td></tr>
+      <tr><td>Electron outer diameter that balances</td><td>3.066 pm</td><td>3.066</td></tr>
+      <tr><td>Pair wavelength at pair-production energy</td><td>0.6066 pm · 0.330 fm</td><td>0.6066 · 0.330</td></tr>
+      <tr><td>Electron shell with diameters 0.6066 pm apart</td><td>r 1.592, 2.880 / 3.487 pm</td><td>1.592, 2.880 / 3.487</td></tr>
+      <tr><td>Electron shell about the Compton wavelength</td><td>2.123 / 2.472 pm</td><td><b>2.247 / 2.606</b></td></tr>
+    </tbody>
+  </table></div>
+  <p>The last row is the one difference. The book says the two diameters average to the Compton wavelength (2.426 pm), but 2.123 and 2.472 average to 2.298. The recipe that gives every other row, the proton's shell included, gives 2.247 and 2.606 pm. The study shows the computed values and the notes record the discrepancy.</p>
+  <div class="shots" style="grid-template-columns:1fr"><figure><a href="fidelity-previews/electron-mass-after.jpg"><img src="fidelity-previews/electron-mass-after.jpg" alt="Mass and excluded energy study" loading="lazy"></a><figcaption>New · the electron's shell at the Compton wavelength, balanced at a thickness of 0.179 pm</figcaption></figure></div>
+  <div class="src">Book ch. 16 (pp. 122–125); Electron paper §5</div>
+</div>
+
+<h3>Extended Casimir</h3>
+<div class="finding fixed" id="C1">
+  <h4><span class="id">C1</span> Attraction did not show the chain shortening <span class="chip done">done</span></h4>
+  <div class="two">
+    <div><div class="k">Fleming</div><q>When each successive zepton vanishes, the space available for the next pair is smaller, so smaller wavelength zeptons take its place … Over time, the length of the chain of zeptons is shortened.</q></div>
+    <div><div class="k">Laboratory before</div>All zeptons opened to one fixed width whatever their lifetime, and replacements in the bridge were the same size as their predecessors.</div>
+  </div>
+  <p><b>Fixed.</b> A zepton now opens in proportion to its lifetime, so its drawn width is its wavelength. Between an electron and a proton, the replacement of an aligned zepton in the bridge is shorter-lived and smaller (by a display factor of 0.72), and smaller again as released charges close in, while the field outside keeps its full range. A replacement there is also never longer-lived than the zepton it replaces, so the chain at each place can only shorten; it settles at the shortest the space allows. Between like charges nothing shortens, and each gap-filling birth is smaller than every ordinary zepton. The loupe reports each zepton's wavelength. Pressure signs and the motion they drive are unchanged and still tested.</p>
+  <div class="shots">
+    <figure><a href="fidelity-previews/casimir-attract-before.jpg"><img src="fidelity-previews/casimir-attract-before.jpg" alt="Before · electron and proton: every zepton the same width" loading="lazy"></a><figcaption>Before · electron and proton: every zepton the same width</figcaption></figure>
+    <figure><a href="fidelity-previews/casimir-attract-after.jpg"><img src="fidelity-previews/casimir-attract-after.jpg" alt="After · the chain between the charges is made of shorter zeptons" loading="lazy"></a><figcaption>After · the chain between the charges is made of shorter zeptons</figcaption></figure>
+  </div>
+  <div class="src">Book ch. 6 (p. 55, Fig. 6-12); Casimir paper §4</div>
+</div>
+
+<h3>Van der Waals and plates</h3>
+<div class="finding fixed" id="V1">
+  <h4><span class="id">V1</span> The plate picture used standing waves where Fleming draws excluded zeptons <span class="chip done">done</span></h4>
+  <div class="two">
+    <div><div class="k">Fleming</div>Fig. 3-3: ovals of every size outside the plates, only small ones between. <q>Vacuum fluctuations with wavelengths that are longer than the distance between the plates will be excluded from that space.</q></div>
+    <div><div class="k">Laboratory before</div>A uniform pattern of identical ovals outside, and three sine curves labelled n = 1, 2, 3 between the plates.</div>
+  </div>
+  <p><b>Fixed.</b> The plate stage now draws fourteen sample wavelengths (30 to 1000 nm) as ovals of matching length, all of them outside the plates and only those shorter than the gap between them. Move the gap and the count in the caption changes: 4 of 14 fit at 100 nm, 13 of 14 at 1000 nm. The standing-wave curves remain as an optional layer, off by default. The pressure, force and energy readouts are unchanged.</p>
+  <div class="shots">
+    <figure><a href="fidelity-previews/vdw-plates-before.jpg"><img src="fidelity-previews/vdw-plates-before.jpg" alt="Before · identical ovals outside, sine curves inside" loading="lazy"></a><figcaption>Before · identical ovals outside, sine curves inside</figcaption></figure>
+    <figure><a href="fidelity-previews/vdw-plates-after.jpg"><img src="fidelity-previews/vdw-plates-after.jpg" alt="After · every size outside, only the short ones between the plates" loading="lazy"></a><figcaption>After · every size outside, only the short ones between the plates</figcaption></figure>
+  </div>
+  <div class="src">Book ch. 3 (pp. 29–30, Figs 3-3, 3-4)</div>
+</div>
+
+<h2 id="good">What already matches Fleming</h2>
+<ul>
+  <li><b>Zepton energy and lifetime.</b> The medium assigns <code>E = hf/2</code> and lifetime <code>1/f</code>, with an energy ledger that balances.</li>
+  <li><b>Birth, separation, collapse.</b> Pairs appear at a point, open, and close on a fixed centre in every lab.</li>
+  <li><b>Positive ends toward the electron</b>, and Faraday lines traced from the pair orientations themselves.</li>
+  <li><b>Nothing orbits.</b> Spin is shown as local turns at fixed centres with replacement generations, as §3 and §6 require.</li>
+  <li><b>Both charge ends counter-move</b> in the charge-motion close-up, the basis of Fleming's g ≈ 2.</li>
+  <li><b>Photon as a chain.</b> One induced pair per half-wavelength, each a half-turn, alternating sense, half the energy in the pair and half in the field.</li>
+  <li><b>Like and unlike charges.</b> Deflection and gap-filling between electrons, collapsing aligned neighbours between electron and proton, motion from the pressure difference only.</li>
+  <li><b>Tracking a moving charge.</b> Pairs above and below the path turn in opposite senses as the electron passes (Fig. 6-14).</li>
+</ul>
+
+<h2 id="choices">Choices I made that you may want to change</h2>
+<p>Each of these is a judgement where Fleming gives a direction but not a number, or where an earlier decision of yours was changed. All are easy to reverse.</p>
+<div class="scroll"><table>
+  <thead><tr><th>Choice</th><th>Why</th><th>To reverse</th></tr></thead>
+  <tbody>
+    <tr><td>Spin opens on <b>Shared</b> preference, not alternating bands</td><td>Fig. 2 and §3. Alternating was your earlier default for exploration.</td><td><code>DEFAULT_SPIN_DISPLAY</code> in <code>src/electron/model.ts</code></td></tr>
+    <tr><td>Pairs round the electron align fully inside <b>1.6 R</b></td><td>Fleming says the lean is slight and gives no scale. 1.6 R shows the thinning across the visible cube.</td><td><code>FULL_ALIGNMENT_RADIUS</code></td></tr>
+    <tr><td>Idle zeptons in the medium all make the full <b>half-turn</b></td><td>180° is the limit and what a virtual half-wavelength photon does; how far an undisturbed zepton turns is not stated.</td><td><code>HALF_TURN</code> in <code>src/model/pairMotion.ts</code></td></tr>
+    <tr><td>The photon's field falls off inside a <b>quarter-wavelength</b> core</td><td>Fleming gives the inverse square at distance; the softening near the pair keeps the centre finite.</td><td><code>fieldAt</code> in <code>src/light/model.ts</code></td></tr>
+    <tr><td>Light's <b>Initial phase</b> control became <b>Pair start angle</b></td><td>The pair's rotation sets the field, so a wave phase has no meaning of its own. The control now chooses where in the pairs' cycle the run begins: the first pair has already turned through that angle, and from 180° the run begins one pair later with every polarity reversed. Every pair still makes Fleming's half-turn, so his field relations hold at every setting. (As first written, the control tilted every pair, which broke them away from 0°; the second review caught it.)</td><td>Label and info in the light definition</td></tr>
+    <tr><td>Replacements in the attracting chain are <b>0.72×</b> the size</td><td>The book says they are smaller; it gives no ratio.</td><td><code>CHAIN_SQUEEZE</code> in <code>src/casimir/model.ts</code></td></tr>
+    <tr><td>Standing-wave curves on the plates are <b>off</b> by default</td><td>Fleming's picture is the excluded ovals of Fig. 3-3.</td><td><code>defaultView</code> in the van der Waals definition</td></tr>
+    <tr><td>Medium's <b>Slow oscillations</b> preset uses a smaller separation (0.2)</td><td>Its pairs are now long-wavelength, and at 0.4 they outgrew the cell.</td><td>Preset in the medium definition</td></tr>
+  </tbody>
+</table></div>
+
+<h2 id="next">Suggested next steps</h2>
+<p>In rough order of how directly Fleming's sources support them.</p>
+<ul>
+  <li><b>Absorption in the Light lab.</b> End the run at an absorber and show the field's energy collapsing into it with the central pair, the event Fleming uses to argue that fields outrun light (Photon paper §1, §6, Fig. 1).</li>
+  <li><b>The proton as a second polarizer.</b> Reverse the orientation of the surrounding pairs, shrink the shell to the charge radius, and show the polarization rate 1,386 times the electron's (Radii paper §2–4). The mass study already handles the proton.</li>
+  <li><b>Double slit.</b> Chapter 19 gives a concrete picture: the central pair goes straight while its field passes both slits (Fig. 19-3). It is on the planned list and now has a field model to build on.</li>
+  <li><b>Magnetic attraction and repulsion</b> in the Extended Casimir lab, which §4 describes with the same two mechanisms as the electric cases.</li>
+  <li><b>Zero-point spectrum in the medium.</b> Sample frequencies with the density Fleming uses for energy (more short wavelengths than long), instead of evenly across a band.</li>
+</ul>
+
+<h2 id="open">Open questions and observations</h2>
+<ul>
+  <li><b>One set of printed numbers in chapter 16 does not follow from its own recipe</b> (the electron shell about the Compton wavelength; see E3). Everything else in the chapter reproduces.</li>
+  <li><b>Sign conventions in the photon figures disagree.</b> Book Fig. 4-9 and 5-1 draw the electric arrow toward the positive end of the pair; Fig. 3 of the photon paper draws it away. The caption of Fig. 4-9 says the magnetic field points into the page while its symbol is the usual one for out. I follow the book's stated rule (field toward the positive end, magnetic field along the rotation axis by the right-hand grip) and keep electric × magnetic along the direction of travel.</li>
+  <li><b>How far an idle zepton turns is not stated.</b> Fleming gives 180° as the limit and as what a photon's pair does. For the undisturbed medium I use the half-turn for every pair, the virtual half-wavelength photon of chapter 4.</li>
+  <li><b>Not yet attempted</b> (each needs a law Fleming leaves open): the van der Waals torque that sets the polarization rate, the inverse-square pressure law, the 782 keV exchange events, tired light. The proton as a second polarizer, and the faster-than-light field response on absorption, are feasible next steps.</li>
+</ul>
+
+<h2 id="delivery">State of the work</h2>
+<ul>
+  <li><b>Four stacked pull requests</b>, each based on the one below: <a href="https://github.com/SamMackrill/ZeroPoint/pull/53">#53 Medium and Light</a>, <a href="https://github.com/SamMackrill/ZeroPoint/pull/54">#54 Electron and the mass study</a>, <a href="https://github.com/SamMackrill/ZeroPoint/pull/55">#55 Casimir and plates</a>, <a href="https://github.com/SamMackrill/ZeroPoint/pull/56">#56 this review record</a>. You approved the visible changes of the first three on 10 November.</li>
+  <li><b>Review:</b> each pull request is reviewed by CodeRabbit before it merges. First round: #54 came back clean; #53, #55 and #56 had nine findings between them, all fixed. Second round on #53: fourteen findings, all answered (see the log). A changed layer is reviewed again, one review an hour, bottom layer first.</li>
+  <li><b>Where this record lives:</b> this page, the before/after screens and the comparison script's changes are now added by #56 alone. The three layers below carry only models, interface, tests and model documents, so each is reviewed against a finished state.</li>
+  <li><b>Checks:</b> type check clean, 563 unit tests pass, production build succeeds, the full browser suite passes (50 tests; the 6 visual comparisons run on Linux CI only).</li>
+  <li><b>Saved files:</b> experiments saved by the earlier models of every lab still open; each is upgraded with a notice.</li>
+  <li><b>Visual baselines:</b> ten of the twelve CI screenshots no longer matched (labels, the new scenario and dock tab, the plate drawing). Each layer removes the ones it changes so CI records fresh ones, which are then committed to that layer.</li>
+  <li><b>To look for yourself:</b> <code>npm run dev</code>, then open <code>http://127.0.0.1:5174</code>. Good starting points: <code>#/light?t=60&amp;cam=side</code>, <code>#/electron/stationary?t=720</code> with Dock › Polarization, <code>#/electron/mass-shell</code>, <code>#/vdw/pressure</code>.</li>
+  <li><b>All screens together:</b> <a href="fidelity-previews/index.html">before and after, every lab</a>.</li>
+</ul>
+
+<h2 id="log">Update log</h2>
+<div class="log">
+  <div><time>10 Nov 11:28</time>First version. Sources read, five labs audited, ten departures listed, fixes starting with the medium.</div>
+  <div><time>10 Nov 11:39</time>M1, M2, L1 and L2 fixed, tested and documented, with before and after screens. Pair link lines added in Medium for clarity. Electron next.</div>
+  <div><time>10 Nov 11:44</time>Medium and Light committed locally as layer 1 (25 browser tests passing).</div>
+  <div><time>10 Nov 16:20</time>Work resumed after the session was interrupted for about four hours. E1 and E2 fixed: shared spin preference by default, partial polarization with a per-shell total readout. 535 unit tests passing. Mass investigation next.</div>
+  <div><time>10 Nov 16:31</time>E3 added: the mass study reproduces the book's chapter 16 figures and exposes one printed inconsistency. 548 unit tests and the electron, URL and accessibility browser tests pass. Electron committed locally as layers 2 and 3. Casimir next.</div>
+  <div><time>10 Nov 16:40</time>C1 and V1 fixed. 554 unit tests and the Casimir, van der Waals and accessibility browser tests pass. Committed locally as layer 4. Final full run next.</div>
+  <div><time>10 Nov 21:16</time>Final pass: README and docs index updated, stale visual baselines removed, full build and browser suite run (the full browser suite passes (50 tests; the 6 visual comparisons run on Linux CI only)). Committed locally as layer 5. Waiting for your review.</div>
+  <div><time>10 Nov 21:30</time>You chose stacked pull requests, the Shared spin default, and all three next steps. The work is pushed as #53 to #56; the visible layers are held for your approval of the before/after page.</div>
+  <div><time>11 Nov 03:10</time>CodeRabbit finished the first round. #54: no findings. #53: a machine path in the generated previews page, a page that reloaded itself, and two gaps in the comparison script's <code>--only</code> option. #55: a chain replacement could outlive the zepton it replaced, a gap birth could be drawn larger than an ordinary zepton, and this page's count was one short. #56: a regeneration command that could not run as written.</div>
+  <div><time>11 Nov 08:50</time>Work resumed after a five-hour interruption. All nine findings fixed and pushed. In the Casimir lab a chain replacement is now never longer-lived than its predecessor (it settles at the shortest the space allows) and every gap birth is smaller than every ordinary zepton; both are tested over long runs. This page reloads only when opened with <code>?live</code>. 557 unit tests pass. Re-reviews of #53, #55 and #56 are queued, one an hour.</div>
+  <div><time>11 Nov 13:45</time>Work resumed after two interruptions (about 09:15 to 13:30). CodeRabbit's second pass on #53 raised fourteen points. The serious one: away from 0°, Light's pair start angle put the magnetic field against the pair's rotation axis. The control now only chooses where in the pairs' cycle the run begins, so every pair keeps Fleming's half-turn and the field relations are tested at every start angle. Also fixed: the field-reach cage now vanishes at a hand-off; the inspector's B sign follows the travel direction; Medium's close-up shows coincident lobes at zero separation; Focus backs off to fit a wide pair; the separation control says the drawn peak is a scaled wavelength. The screenshots are re-taken with the final code: the script now waits for the requested tick and shows the Light plots whole. This record moved out of the lower layers into #56. 563 unit tests pass.</div>
+</div>
+
+</div>
+</body>
+</html>
