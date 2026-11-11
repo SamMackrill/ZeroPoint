@@ -4,6 +4,10 @@ This is a visualisation laboratory for exploring the work of Ray Fleming, detail
 
 The current laboratory is a single-page workbench for the **reduced medium lifecycle model** described in [the model specification](docs/model-specification.md), based on the [supplied ZPF blueprint](docs/Ray%20Fleming's%20Zero-Point%20Field%20Physics_%203D%20Simulation%20Blueprint.md).
 
+## Fidelity to Fleming
+
+On 10 November 2026 the five laboratories were audited against Fleming's papers and *The Zero-Point Universe*, and changed where they departed from his text and figures. The reading, the findings and before/after screens are in [the fidelity review](docs/fleming-fidelity-report.html). In short: a zepton makes a half-turn in its lifetime and opens to its own wavelength; a photon's central pair spans half the photon wavelength and produces the field, which collapses and reverses at each hand-off; pairs round an electron are born at random and polarize by a share that thins with distance, with one shared rotation preference; mass can be explored as the zero-point energy a shell excludes; the chain of zeptons between opposite charges shortens; and the Casimir plates are drawn with every wavelength outside and only the short ones between.
+
 ## Planned experiments
 
 The roadmap includes visualisations of:

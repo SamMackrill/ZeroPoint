@@ -3,7 +3,7 @@
 // own dev server, and the same screens are captured in each.
 // Usage: node scripts/compare-screens.mjs --before ../01f-remedial-tooling --out docs/ui-previews/type-scale --title "Type scale"
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 import { createServer } from 'vite';
@@ -190,16 +190,50 @@ export const PICKER_SCREENS = [
   { name: 'tablet-header', title: 'Tablet 1024 px · header, 2× zoom: the same picker', viewport: { width: 1024, height: 768 }, scale: 2, focus: '.workbench-header', prepare: outlineScenario },
   { name: 'phone-tap', title: 'Phone · after tapping the scenario name: the experiment library opens as a sheet (before: nothing to tap)', viewport: { width: 390, height: 844 }, prepare: tapScenario },
 ];
-const SETS = { picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
+/**
+ * The Fleming fidelity review (`--set fidelity`): each laboratory in a state that shows what the model changes did.
+ * "Before" is the checkout the review started from. The findings are in docs/fleming-fidelity-report.html.
+ */
+/** The dock is short at the capture size and clips its plots, so its body is lifted clear of the layout to show them whole. */
+const liftDock = page => page.addStyleTag({ content: '.dock-body { position: fixed !important; left: 200px; right: 290px; bottom: 34px; height: 330px; z-index: 50; background: #0d151e; }' });
+export const FIDELITY_SCREENS = [
+  { name: 'medium-balanced', title: 'Medium · Balanced, 40 ticks: pairs open to their own wavelength and make a half-turn', steps: 40 },
+  { name: 'medium-slow', title: 'Medium · Slow oscillations: long-lived pairs are long-wavelength pairs', scenario: 'scenario-slow', steps: 40 },
+  { name: 'light-midlife', title: 'Light · tick 60, first pair at midlife: across the path, opened to λ/2, field at its peak', hash: '#/light?t=60&cam=side' },
+  { name: 'light-second-pair', title: 'Light · tick 180, second pair at midlife: polarity and rotation reversed', hash: '#/light?t=180&cam=side' },
+  { name: 'light-handoff', title: 'Light · tick 120, the hand-off: the field is extinguished with the pair', hash: '#/light?t=120&cam=side' },
+  { name: 'light-orbit', title: 'Light · tick 300, orbit view: the surrounding pairs lean toward the active pair', hash: '#/light?t=300' },
+  { name: 'light-plots', title: 'Light · field along the path and at the probe, tick 780', hash: '#/light?t=780', prepare: liftDock, focus: '.dock-body' },
+  { name: 'electron-stationary', title: 'Electron · Stationary, tick 720: polarization thins with distance', hash: '#/electron/stationary?t=720' },
+  { name: 'electron-cutaway', title: 'Electron · Stationary, central slab: near pairs point at the electron, far pairs barely lean', hash: '#/electron/stationary?t=720&cam=front', prepare: async page => { await page.getByRole('tab', { name: 'View', exact: true }).filter({ visible: true }).click(); await page.getByTestId('layer-cutaway').filter({ visible: true }).click(); } },
+  { name: 'electron-polarization', title: 'Electron · Dock › Polarization: the same total through every shell', hash: '#/electron/stationary?t=1500', prepare: async page => { const tab = page.getByTestId('dock-polarization').filter({ visible: true }); if (await tab.count()) await tab.click(); await liftDock(page); }, focus: '.dock-body' },
+  { name: 'electron-spin', title: 'Electron · Spin: one shared rotation preference', hash: '#/electron/spin?t=240' },
+  { name: 'electron-mass', title: 'Electron · Mass & excluded energy (new; before: the scenario did not exist)', hash: '#/electron/mass-shell' },
+  { name: 'casimir-attract', title: 'Extended Casimir · electron and proton, 120 steps', lab: 'lab-casimir', scenario: 'scenario-electron-proton', steps: 120 },
+  { name: 'vdw-plates', title: 'Van der Waals · plates: which zeptons fit the gap', lab: 'lab-vdw', scenario: 'scenario-pressure' },
+];
+const SETS = { fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
 
 /** Start a dev server for a worktree on a free port chosen from a range, returning its URL and server. */
 async function serve(worktree, port) {
-  const server = await createServer({ root: worktree, configFile: join(worktree, 'vite.config.ts'), logLevel: 'error', server: { host: '127.0.0.1', port, strictPort: true } });
+  const server = await createServer({ root: worktree, configFile: join(worktree, 'vite.config.ts'), logLevel: 'error', server: { host: '127.0.0.1', port, strictPort: true, fs: { strict: false } } }); // a "before" worktree may link its dependencies from elsewhere
   await server.listen();
   return { server, url: `http://127.0.0.1:${port}/` };
+}
+
+/** The tick a screen's link asks for (`?t=`), or null. */
+export const requestedTick = hash => { const match = /[?&]t=(\d+)/.exec(hash ?? ''); return match ? Number(match[1]) : null; };
+
+/**
+ * Wait until the visible timeline shows the tick a link asked for (its end, for a tick beyond it). The worker applies
+ * a link's seek some time after the status bar appears, so a fixed delay could capture an earlier state.
+ */
+async function waitForTick(page, tick, name) {
+  const shown = t => [...document.querySelectorAll('[data-testid="timeline"]')].some(el => el.offsetParent !== null && Number(el.value) === Math.min(t, Number(el.max)));
+  await page.waitForFunction(shown, tick, { timeout: 15_000 }).catch(() => { throw new Error(`${name}: the timeline never reached tick ${tick}`); });
 }
 
 /** Open one screen (lab and scenario by test id), optionally step it, and capture the viewport or its focus section. */
@@ -213,6 +247,8 @@ async function capture(browser, url, screen, path) {
   const rail = async id => { if (narrow) await page.getByTestId('nav-open').filter({ visible: true }).click(); await page.getByTestId(id).filter({ visible: true }).click(); };
   if (screen.lab) await rail(screen.lab);
   if (screen.scenario) await rail(screen.scenario);
+  const tick = requestedTick(screen.hash);
+  if (tick !== null) await waitForTick(page, tick, screen.name);
   for (let i = 0; i < (screen.steps ?? 0); i++) await page.getByTestId('transport-step').filter({ visible: true }).first().click();
   if (screen.prepare) await screen.prepare(page);
   await page.waitForTimeout(1200);
@@ -232,7 +268,7 @@ const escapeHtml = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').rep
 export function reviewPage(title, description, screens, command = 'node scripts/compare-screens.mjs') {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ZeroPoint · ${title}: before and after</title>
 <style>body{margin:0;background:#0c131b;color:#e3ebf1;font:14px/1.55 'DM Sans',system-ui,'Segoe UI',sans-serif}main{max-width:1400px;margin:auto;padding:36px 28px 70px}h1{font-size:30px;letter-spacing:-.8px;margin:0 0 8px}h2{font-size:16px;margin:26px 0 8px}p{color:#aebfcc;max-width:900px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}figure{margin:0}img{width:100%;display:block;border:1px solid #34495b;border-radius:8px}figcaption{font:600 11px ui-monospace,Consolas,monospace;letter-spacing:1px;text-transform:uppercase;color:#8397a8;margin-top:6px}</style></head>
-<body><main><h1>${title}: before and after</h1><p>${description}</p><p>Real screens: "before" runs the layer below, and "after" runs this layer. Click an image to open it at full size. Regenerate with <code>${escapeHtml(command)}</code>.</p>
+<body><main><h1>${title}: before and after</h1><p>${description}</p><p>Real screens: "before" runs the worktree given as <code>--before</code> (usually the layer below), and "after" runs this one. Click an image to open it at full size. Regenerate with <code>${escapeHtml(command)}</code>${command.includes('$BEFORE_WORKTREE') ? ', where <code>BEFORE_WORKTREE</code> is a checkout of the "before" commit with its dependencies installed' : ''}.</p>
 ${screens.map(s => { const fit = s.viewport && s.viewport.width < 700 ? ` style="max-width:${s.viewport.width}px"` : ''; return `<h2>${s.title}</h2><div class="pair"><figure><a href="${s.name}-before.jpg"><img src="${s.name}-before.jpg" alt="${s.title}, before" loading="lazy"${fit}></a><figcaption>Before</figcaption></figure><figure><a href="${s.name}-after.jpg"><img src="${s.name}-after.jpg" alt="${s.title}, after" loading="lazy"${fit}></a><figcaption>After</figcaption></figure></div>`; }).join('\n')}
 </main></body></html>
 `;
@@ -240,9 +276,10 @@ ${screens.map(s => { const fit = s.viewport && s.viewport.width < 700 ? ` style=
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const before = option('--before'), out = option('--out'), title = option('--title') ?? 'Change', description = option('--description') ?? '';
-  const screens = SETS[option('--set') ?? 'screens'];
+  const only = option('--only')?.split(',').map(name => name.trim()).filter(Boolean), screens = SETS[option('--set') ?? 'screens']?.filter(screen => !only || only.includes(screen.name));
   if (!screens) throw new Error(`--set must be one of: ${Object.keys(SETS).join(', ')}`);
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
+  if (!screens.length) throw new Error(`--only matched no screen in the set. Its names: ${SETS[option('--set') ?? 'screens'].map(screen => screen.name).join(', ')}`);
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--only name,name] [--set fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.
@@ -263,7 +300,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   // The command that regenerates this page, quoted for a POSIX shell (Git Bash on Windows).
   const quote = text => `'${text.replace(/'/g, `'\\''`)}'`;
   const word = text => (/^[\w./:@-]+$/.test(text) ? text : quote(text)); // paths stay bare unless they need quoting
-  const command = ['node scripts/compare-screens.mjs', '--before', word(before), '--out', word(out), '--set', option('--set') ?? 'screens', '--title', quote(title), '--description', quote(description)].join(' ');
+  // An absolute path names one machine (and its user), so the page shows a shell variable in its place.
+  const shownBefore = isAbsolute(before) ? '"$BEFORE_WORKTREE"' : word(before);
+  const command = ['node scripts/compare-screens.mjs', '--before', shownBefore, '--out', word(out), '--set', option('--set') ?? 'screens', ...(only ? ['--only', word(only.join(','))] : []), '--title', quote(title), '--description', quote(description)].join(' ');
   writeFileSync(join(target, 'index.html'), reviewPage(title, description, screens, command));
   console.log(`Review page: ${relative(root, join(target, 'index.html'))}`);
 }
