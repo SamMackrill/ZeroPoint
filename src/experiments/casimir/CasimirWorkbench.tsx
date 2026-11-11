@@ -1,6 +1,6 @@
 import { ArrowLeftRight, Info, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { CASIMIR_FILE_LIMIT, extent, lifeStage, parseCasimirFile, phase, STEP, type CasimirModel, type Zepton } from '../../casimir/model';
+import { CASIMIR_FILE_LIMIT, extent, lifeStage, parseCasimirFile, phase, STEP, wavelength, type CasimirModel, type Zepton } from '../../casimir/model';
 import { downloadFile } from '../../persistence/experiment';
 import { Scene, type SceneLayers } from '../../casimir/Scene';
 import { palette } from '../../ui/palette';
@@ -52,6 +52,7 @@ function Lifetime({ particle, expired }: { particle: Zepton | null; expired: boo
     <p className="casimir-stage">{lifeStage(p)}</p>
     <dl className="casimir-readings">
       <div><dt>Age / lifetime</dt><dd>{p.age.toFixed(2)} / {p.lifetime.toFixed(2)} τ</dd></div>
+      <div><dt>Wavelength · peak separation</dt><dd data-testid="casimir-wavelength">{wavelength(p).toFixed(3)} a.u.</dd></div>
       <div><dt>Alignment</dt><dd>{expired ? '—' : `${Math.round(p.alignment * 100)}%`}</dd></div>
       <div><dt>Pressure contribution</dt><dd>{expired ? 'Ended' : `${signed(p.contribution)} a.u.`}</dd></div>
       <div><dt>Interaction</dt><dd>{expired ? 'Pair no longer exists' : p.gap ? 'Pushes in all directions' : p.neighbor !== null ? `Contracts toward #${p.neighbor}` : p.deflected ? 'Deflects · opens a gap' : 'Turns toward local field'}</dd></div>
@@ -220,14 +221,14 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   const aboutNode = (
     <AboutSheet {...about} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={casimirDefinition.scenarios.find(s => s.id === scenario)?.title} sections={[
       { id: 'scenario', content: <div className="casimir-about">
-          <p>This experiment animates Fleming’s proposed mechanism in Section 4, Figures 3–4. Pressure kernels, lifetimes and motion gain are illustrative choices; this is not a validated derivation of electrostatic force. Section 5 leaves the quantitative force law unresolved. τ is an expanded observation clock, not seconds. Dipole sizes and spacing are exaggerated.</p>
+          <p>This experiment animates Fleming’s proposed mechanism in Section 4, Figures 3–4. Pressure kernels, lifetimes and motion gain are illustrative choices; this is not a validated derivation of electrostatic force. Section 5 leaves the quantitative force law unresolved. τ is an expanded observation clock, not seconds. Dipole sizes and spacing are exaggerated, but each opens in proportion to its lifetime, as a Zepton’s wavelength is as far as it can reach while it lasts.</p>
           <section className="casimir-explanation" aria-label="Mechanism sequence">{(like ? [
             ['01', 'Born, then aligned', 'Dipoles continually appear with random orientations and turn in the field of each electron.'],
             ['02', 'Deflect, then refill', 'Opposing alignments deflect near the middle. Fresh dipoles fill gaps and expand against neighbours.'],
             ['03', 'A greater inner push', 'Repeated gap births sustain higher local pressure, producing an outward motion tendency.'],
           ] : [
             ['01', 'A connected alignment', 'Between opposite charges, dipoles orient in a continuous chain.'],
-            ['02', 'Grow, then contract', 'New pairs push back as they grow. During collapse, adjacent pairs shift inward toward the voids.'],
+            ['02', 'Grow, then contract', 'New pairs push back as they grow. During collapse, adjacent pairs shift inward toward the voids, and the next pair has less room: shorter-wavelength pairs take its place and the chain shortens.'],
             ['03', 'A greater outer push', 'Contraction outweighs growth in this illustration. Higher outer pressure pushes the charges together.'],
           ]).map(([n, title, text]) => <div key={n}><span>{n}</span><h2>{title}</h2><p>{text}</p></div>)}</section>
           <p>{like ? 'A weak or neutral midpoint leaves new dipoles disordered. Neighbouring dipoles turn toward their local field.' : 'Each new pair first expands and pushes back, then contracts. Dashed links show neighbouring pairs moving inward.'}</p>

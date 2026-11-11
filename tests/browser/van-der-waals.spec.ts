@@ -73,14 +73,17 @@ test('plate gap and area change pressure and force, with source figures, CSV and
   await expect(value(page, 'vdw-force')).toHaveText('-26.00 μN');
   await expect(value(page, 'vdw-pressure')).toHaveText('-13.00 Pa');
   await page.getByRole('tab', { name: 'View', exact: true }).click();
-  await tid(page, 'layer-modes').click(); await expect(tid(page, 'layer-modes')).toHaveAttribute('aria-pressed', 'false');
+  // The plate picture shows which fluctuations fit the gap; the standing-wave curves are an optional layer, off at first.
+  await expect(page.getByTestId('vdw-fit-count')).toContainText('4 of 14 sample wavelengths fit');
+  await expect(tid(page, 'layer-modes')).toHaveAttribute('aria-pressed', 'false');
+  await tid(page, 'layer-modes').click(); await expect(tid(page, 'layer-modes')).toHaveAttribute('aria-pressed', 'true');
   await expect(value(page, 'vdw-pressure')).toHaveText('-13.00 Pa');
   await set(page, 'Plate gap', '200');
   await expect(value(page, 'vdw-pressure')).toHaveText('-0.8126 Pa');
   await tid(page, 'export-menu').click(); const pending = page.waitForEvent('download'); await tid(page, 'export-csv').click();
   expect((await pending).suggestedFilename()).toBe('van-der-waals-pressure-sweep.csv');
   const saving = page.waitForEvent('download'); await tid(page, 'file-save').click(); const file = await (await saving).path();
-  expect(JSON.parse(await readFile(file!, 'utf8'))).toMatchObject({ format: 'zeropoint-vdw', scenario: 'pressure', params: { gap: 200, area: 2 }, view: { modes: false } });
+  expect(JSON.parse(await readFile(file!, 'utf8'))).toMatchObject({ format: 'zeropoint-vdw', scenario: 'pressure', params: { gap: 200, area: 2 }, view: { modes: true } });
   await stage(page, 'induced');
   await tid(page, 'file-input').setInputFiles(file!);
   await expect(tid(page, 'notice')).toContainText('Loaded the reveal the pressure stage');

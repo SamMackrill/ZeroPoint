@@ -201,7 +201,7 @@
   },
   {
     "file": "src/experiments/casimir/CasimirWorkbench.tsx",
-    "text": "New pairs push back as they grow. During collapse, adjacent pairs shift inward toward the voids."
+    "text": "New pairs push back as they grow. During collapse, adjacent pairs shift inward toward the voids, and the next pair has less room: shorter-wavelength pairs take its place and the chain shortens."
   },
   {
     "file": "src/experiments/casimir/CasimirWorkbench.tsx",
@@ -545,7 +545,11 @@
   },
   {
     "file": "src/van-der-waals/diagrams.tsx",
-    "text": "nanometres apart, with balanced background stress and an inward net pressure difference. Mode shapes and arrow scales are illustrative."
+    "text": "sample wavelengths shorter than the gap lie between the plates, so the pressure inside is slightly lower and the plates are pushed together. Sizes and arrow scales are illustrative."
+  },
+  {
+    "file": "src/van-der-waals/diagrams.tsx",
+    "text": "sample wavelengths fit the gap · imbalance exaggerated"
   },
   {
     "file": "src/van-der-waals/diagrams.tsx",
