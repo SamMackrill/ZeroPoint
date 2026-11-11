@@ -3,7 +3,7 @@
 // own dev server, and the same screens are captured in each.
 // Usage: node scripts/compare-screens.mjs --before ../01f-remedial-tooling --out docs/ui-previews/type-scale --title "Type scale"
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 import { createServer } from 'vite';
@@ -249,7 +249,7 @@ const escapeHtml = text => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').rep
 export function reviewPage(title, description, screens, command = 'node scripts/compare-screens.mjs') {
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ZeroPoint · ${title}: before and after</title>
 <style>body{margin:0;background:#0c131b;color:#e3ebf1;font:14px/1.55 'DM Sans',system-ui,'Segoe UI',sans-serif}main{max-width:1400px;margin:auto;padding:36px 28px 70px}h1{font-size:30px;letter-spacing:-.8px;margin:0 0 8px}h2{font-size:16px;margin:26px 0 8px}p{color:#aebfcc;max-width:900px}.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}figure{margin:0}img{width:100%;display:block;border:1px solid #34495b;border-radius:8px}figcaption{font:600 11px ui-monospace,Consolas,monospace;letter-spacing:1px;text-transform:uppercase;color:#8397a8;margin-top:6px}</style></head>
-<body><main><h1>${title}: before and after</h1><p>${description}</p><p>Real screens: "before" runs the layer below, and "after" runs this layer. Click an image to open it at full size. Regenerate with <code>${escapeHtml(command)}</code>.</p>
+<body><main><h1>${title}: before and after</h1><p>${description}</p><p>Real screens: "before" runs the layer below, and "after" runs this layer. Click an image to open it at full size. Regenerate with <code>${escapeHtml(command)}</code>${command.includes('$BEFORE_WORKTREE') ? ', where <code>BEFORE_WORKTREE</code> is a checkout of the "before" commit with its dependencies installed' : ''}.</p>
 ${screens.map(s => { const fit = s.viewport && s.viewport.width < 700 ? ` style="max-width:${s.viewport.width}px"` : ''; return `<h2>${s.title}</h2><div class="pair"><figure><a href="${s.name}-before.jpg"><img src="${s.name}-before.jpg" alt="${s.title}, before" loading="lazy"${fit}></a><figcaption>Before</figcaption></figure><figure><a href="${s.name}-after.jpg"><img src="${s.name}-after.jpg" alt="${s.title}, after" loading="lazy"${fit}></a><figcaption>After</figcaption></figure></div>`; }).join('\n')}
 </main></body></html>
 `;
@@ -257,9 +257,10 @@ ${screens.map(s => { const fit = s.viewport && s.viewport.width < 700 ? ` style=
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const before = option('--before'), out = option('--out'), title = option('--title') ?? 'Change', description = option('--description') ?? '';
-  const only = option('--only')?.split(','), screens = SETS[option('--set') ?? 'screens']?.filter(screen => !only || only.includes(screen.name));
+  const only = option('--only')?.split(',').map(name => name.trim()).filter(Boolean), screens = SETS[option('--set') ?? 'screens']?.filter(screen => !only || only.includes(screen.name));
   if (!screens) throw new Error(`--set must be one of: ${Object.keys(SETS).join(', ')}`);
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--set fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
+  if (!screens.length) throw new Error(`--only matched no screen in the set. Its names: ${SETS[option('--set') ?? 'screens'].map(screen => screen.name).join(', ')}`);
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--only name,name] [--set fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.
@@ -280,7 +281,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   // The command that regenerates this page, quoted for a POSIX shell (Git Bash on Windows).
   const quote = text => `'${text.replace(/'/g, `'\\''`)}'`;
   const word = text => (/^[\w./:@-]+$/.test(text) ? text : quote(text)); // paths stay bare unless they need quoting
-  const command = ['node scripts/compare-screens.mjs', '--before', word(before), '--out', word(out), '--set', option('--set') ?? 'screens', '--title', quote(title), '--description', quote(description)].join(' ');
+  // An absolute path names one machine (and its user), so the page shows a shell variable in its place.
+  const shownBefore = isAbsolute(before) ? '"$BEFORE_WORKTREE"' : word(before);
+  const command = ['node scripts/compare-screens.mjs', '--before', shownBefore, '--out', word(out), '--set', option('--set') ?? 'screens', ...(only ? ['--only', word(only.join(','))] : []), '--title', quote(title), '--description', quote(description)].join(' ');
   writeFileSync(join(target, 'index.html'), reviewPage(title, description, screens, command));
   console.log(`Review page: ${relative(root, join(target, 'index.html'))}`);
 }
