@@ -125,17 +125,19 @@ const fallOff = (p: SlitParameters, r: number) => (p.fields === 'light' && r > L
  * shortest route through each opening, and the two openings carry half each (`left` and `right`), so a wall never
  * strengthens the field beyond it and the two shares are equal on the straight path. Fleming does not say how the
  * field divides between the slits; the route rule and the equal shares are this model's construction. Held to light
- * speed, a field stops half a wavelength from its pair. `envelope` is the unsigned strength.
+ * speed, a field stops half a wavelength from its pair. `envelope` is the unsigned strength, and `direct`, `left` and
+ * `right` are its unsigned parts; `transverse` is the signed factor that turns any of them into its share of `electric`.
  */
 export function fieldAt(p: SlitParameters, tick: number, point: Point) {
-  const pair = centralPair(p, tick), none = { electric: 0, envelope: 0, direct: 0, left: 0, right: 0 };
+  const pair = centralPair(p, tick), none = { electric: 0, envelope: 0, transverse: 0, direct: 0, left: 0, right: 0 };
   if (!pair.active) return none;
   const open = lifecycleEnvelope(pair.progress, 1);
   let direct = 0, left = 0, right = 0;
   if (p.wall === 'open' || side(point[1]) === side(pair.centre[1])) direct = fallOff(p, Math.hypot(point[0] - pair.centre[0], point[1] - pair.centre[1]));
   else { const [l, r] = openings(p); left = fallOff(p, routeThrough(l, pair.centre, point)) / 2; right = fallOff(p, routeThrough(r, pair.centre, point)) / 2; }
   const envelope = open * (direct + left + right);
-  return { electric: pair.polarity * Math.sin(pair.turn) * envelope, envelope, direct: open * direct, left: open * left, right: open * right };
+  const transverse = pair.polarity * Math.sin(pair.turn);
+  return { electric: transverse * envelope, envelope, transverse, direct: open * direct, left: open * left, right: open * right };
 }
 
 /** The field on the face of the wall nearest the active pair, at `x` across the path. */
@@ -170,13 +172,16 @@ export function slitEvents(p: SlitParameters): { tick: number; label: string; id
   return [{ tick: wall, label: 'Next pair induced beyond the wall', id: 'wall' }, { tick: SLIT_END_TICK, label: 'Absorbed at B', id: 'arrive' }];
 }
 
-/** Every tick of the run as CSV: the photon's place, its central pair and the field at B and on the wall at the slits. */
+/**
+ * Every tick of the run as CSV: the photon's place, its central pair and the field at B and on the wall at the slits.
+ * Every field column is signed, so the two slit columns add up to the field at B while the pair is short of the wall.
+ */
 export function slitCsv(p: SlitParameters): string {
   const rows = ['model,tick,time_tau,status,position_lambda,pair,pair_polarity,field_at_B,field_at_B_via_left_slit,field_at_B_via_right_slit,field_on_wall_at_slit_centre'];
   for (let tick = 0; tick <= SLIT_END_TICK; tick++) {
     const r = slitReadout(p, tick);
     rows.push([SLIT_MODEL, tick, r.time.toFixed(4), r.status, r.position.toFixed(4), r.pair.active ? r.pair.index + 1 : '', r.pair.active ? r.pair.polarity : '',
-      r.atB.electric.toExponential(4), r.atB.left.toExponential(4), r.atB.right.toExponential(4), fieldOnWall(p, tick, p.slitOffset).electric.toExponential(4)].join(','));
+      r.atB.electric.toExponential(4), (r.atB.transverse * r.atB.left).toExponential(4), (r.atB.transverse * r.atB.right).toExponential(4), fieldOnWall(p, tick, p.slitOffset).electric.toExponential(4)].join(','));
   }
   return rows.join('\n');
 }

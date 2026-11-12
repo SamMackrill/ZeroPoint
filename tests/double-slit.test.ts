@@ -153,4 +153,16 @@ describe('timeline events and export', () => {
     expect(rows.at(-1)).toMatch(/^double-slit\/1,480,8\.0000,absorbed,8\.0000,,,/);
     expect(slitCsv(held).split('\n').at(-1)).toContain(',halted,4.0000,');
   });
+  it('exports each slit\u2019s share with the sign of the field it is part of', () => {
+    const cells = (tick: number) => slitCsv(slits).split('\n')[tick + 1].split(',').map(Number);
+    // Tick 105: pair 4 at midlife, negative polarity, short of the wall. Both shares are negative and add up to the total.
+    const [, , , , , , polarity, atB, left, right] = cells(105);
+    expect(polarity).toBe(-1); expect(atB).toBeLessThan(0); expect(left).toBeLessThan(0); expect(right).toBe(left);
+    expect(left + right).toBeCloseTo(atB, 6);
+    // Beyond the wall the field at B is direct, so neither slit carries any of it.
+    const beyond = cells(285);
+    expect(beyond[7]).not.toBe(0); expect(beyond[8]).toBe(0); expect(beyond[9]).toBe(0);
+    const field = fieldAt(slits, 105, [0, PATH_LENGTH]);
+    expect(field.transverse * field.envelope).toBe(field.electric);
+  });
 });
