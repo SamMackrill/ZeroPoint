@@ -1,10 +1,12 @@
 # Light through the zero-point field — illustrative model
 
-Implemented model ID: **`light-induction/2`**. Open **Light through the zero-point field** in the experiment library. The medium and light laboratories retain their separate state when switching; switching pauses the outgoing experiment and releases its viewport.
+Implemented model ID: **`light-induction/3`**. Open **Light through the zero-point field** in the experiment library. The medium and light laboratories retain their separate state when switching; switching pauses the outgoing experiment and releases its viewport.
 
-This implements the illustrative sequence in steps 1–2 of the [experiment plan](planned-experiments/light-through-zero-point.md). It follows Fleming's account of successive induced, counter-rotating dipoles and surrounding polarization/rotation in [Photons as Quantum Electron-Positron Composites](papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf), especially sections 2 and 4–6. Induction and the fall-off of the field with distance are prescribed; the field's strength and polarity are taken from the active pair. This release does not calculate coupling forces, torque, an emergent light speed, or absorption.
+This implements the illustrative sequence in steps 1–2 of the [experiment plan](planned-experiments/light-through-zero-point.md). It follows Fleming's account of successive induced, counter-rotating dipoles and surrounding polarization/rotation in [Photons as Quantum Electron-Positron Composites](papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf), especially sections 2 and 4–6. Induction and the fall-off of the field with distance are prescribed; the field's strength and polarity are taken from the active pair. This release does not calculate coupling forces, torque or an emergent light speed.
 
-Model 2 (10 November 2026) changed two things to follow Fleming's figures and text more closely: the central pair now opens to its own wavelength and lies across the path at midlife, and the field is produced by that pair instead of being a separate wave-packet gliding along. Model 1 files hold the same state and open as model 2.
+Model 2 (10 November 2026) changed two things to follow Fleming's figures and text more closely: the central pair now opens to its own wavelength and lies across the path at midlife, and the field is produced by that pair instead of being a separate wave-packet gliding along. Model 1 files hold the same state and open as the current model.
+
+Model 3 (11 November 2026) adds an optional absorbing wall, described under [Absorption](#absorption-at-a-wall). Model 1 and 2 files open as model 3 with no wall.
 
 ## Units and timing decision
 
@@ -50,11 +52,26 @@ A fixed probe therefore sees alternating pulses, one per pair, growing as the ch
 
 The renderer displays 540 deterministic background pair samples at fixed centres in a shallow 3D cutaway. Each has its own seeded orientation and lifetime and makes a half-turn per generation, as in the medium laboratory. Near the active pair they are biased toward its orientation and turn with it, by an amount proportional to the unsigned field strength; far away they stay random. Fleming: the surrounding pairs are "somewhat randomized and only slightly biased in the direction consistent with the photon's central pair" (ch. 5, Fig. 5-2). The bias is magnified for visibility. This is a prescribed visual response, not reuse of the medium laboratory's stochastic population or energy reservoir. The **Field reach** cage is a sphere about the active pair that swells and collapses with it; its radius is a display choice.
 
+## Absorption at a wall
+
+With the wall on (`absorber: true`) the run ends in an absorption instead of a window exit. The sources:
+
+- "A photon never loses a part of its energy; it is always absorbed all at once. The magnetic and electric fields do not exist prior to the origination of the photon, nor after the photon is absorbed" (book ch. 19).
+- "When a photon is absorbed its energy is absorbed in an instant, while almost all of the energy in a photon's fields is outside the photon's light cone at that instant" (*Photons* §1, Fig. 1). If fields were limited to the speed of light, "during the last half-wavelength of a photon's existence, only the field energy within a half-wavelength can make it back to be absorbed".
+- "The field energy gets absorbed along with the energy of the central quantum particle pair dipole" (*Photons* §6).
+- Photons are absorbed "when the positron from the quantum dipole within a photon annihilates with a stable electron"; the photon's quantum electron "gains the mass-energy from the orbital electron that was annihilated in addition to retaining the photon's energy", and is then stable (*Photons* §7).
+
+The wall stands where the last pair that completes inside the 12 L window ends its half wavelength: at the far edge of the window when the pairs divide it evenly (the default 500 nm gives 12 pairs and a wall at 12 L), and a little short of it otherwise. With pair start angle fraction `a` and `Tpair` ticks per pair, the last pair is `k = floor((1440 + a*Tpair) / Tpair) - 1` and the absorption tick is `(k + 1 - a) * Tpair`. **Placing the wall at a hand-off is this model's choice**: Fleming speaks of "the last half-wavelength of a photon's existence" and does not describe a photon meeting an absorber partway through a pair's life.
+
+At the absorption tick the last pair is gone, no further pair is induced, and the field is zero everywhere at once. The whole budget moves to **absorbed energy** in that one tick: the central pair's `E/2` and the field's `E/2` together. Nothing is recorded as departed. The timeline still runs to 12 τ; after the absorption nothing remains in the window.
+
+Not modelled: the annihilation itself (which charge of the last pair meets the stable electron), the electron's new state, and how much field energy would be lost if fields were limited to light speed. Fleming gives no number for the last; a figure would depend on the softening radius chosen here for the field.
+
 ## Assigned excess-energy ledger
 
-The packet budget is `E = hc/lambda`, converted to eV. Until the excitation exits the window, the central-pair budget and surrounding-field budget each equal `E/2`, following section 2 of the paper. Every induction handoff carries this same budget forward; it does not create another packet's energy. At window exit the budget transfers to **departed energy**, with both in-window entries zero.
+The packet budget is `E = hc/lambda`, converted to eV. Until the excitation exits the window, the central-pair budget and surrounding-field budget each equal `E/2`, following section 2 of the paper. Every induction handoff carries this same budget forward; it does not create another packet's energy. At window exit the budget transfers to **departed energy**, with both in-window entries zero; with an absorbing wall it transfers to **absorbed energy** at the absorption tick instead.
 
-The residual is `central + field + departed - initialPacketEnergy`. It checks this assignment bookkeeping, not energy calculated by integrating the plotted field or a mechanical force solver. The field fall-off, geometric lobe separation, clipped window and ledger are separate illustrative conventions. Angular-momentum conservation is not calculated; alternating rotation alone does not establish it.
+The residual is `central + field + absorbed + departed - initialPacketEnergy`. It checks this assignment bookkeeping, not energy calculated by integrating the plotted field or a mechanical force solver. The field fall-off, geometric lobe separation, clipped window and ledger are separate illustrative conventions. Angular-momentum conservation is not calculated; alternating rotation alone does not establish it.
 
 ## Controls, storage and recovery
 
@@ -66,4 +83,4 @@ CSV exports all 1441 samples of the configured prescribed sequence, including fu
 
 ## Remaining physics
 
-Calculated induction needs an interaction law, birth/phase handoff dynamics, torque and energy/momentum transfer equations. Emission, stable-electron exchange and absorption remain later steps. Fleming's faster field response is represented only by drawing the field as established at once across the window; its propagation is not modelled, and it is not used as the photon speed. Absorption, where the field's energy collapses into the absorber with the central pair, is not yet shown. The source paper's numerical example is documented in the experiment plan.
+Calculated induction needs an interaction law, birth/phase handoff dynamics, torque and energy/momentum transfer equations. Emission and the stable-electron exchange at absorption remain later steps. Fleming's faster field response is represented only by drawing the field as established at once across the window; its propagation is not modelled, and it is not used as the photon speed. The source paper's numerical example is documented in the experiment plan.

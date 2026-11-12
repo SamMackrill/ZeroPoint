@@ -135,7 +135,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
       if (file.size > 100_000) throw new Error('Light files must be smaller than 100 KB.');
       const saved = parseLightFile(await file.text());
       runtime.restore(saved.state); setView(saved.view); setSelected(null);
-      setNotice(`Loaded tick ${saved.state.tick}${saved.migrated ? ', upgraded to the pair-produced field of model 2' : ''}. Playback is paused.`);
+      setNotice(`Loaded tick ${saved.state.tick}${saved.migrated ? ', opened as model 3, with no absorbing wall' : ''}. Playback is paused.`);
     } catch (e) { setNotice(`Could not load: ${e instanceof Error ? e.message : String(e)}`); }
   }
   /** Export the full light handoff timeline as CSV. */

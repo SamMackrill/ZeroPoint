@@ -79,7 +79,7 @@ test('light configuration, layers, mobile layout and exports work together', asy
   const before = await page.getByTestId('light-tick').innerText(); await page.waitForTimeout(200); await expect(page.getByTestId('light-tick')).toHaveText(before);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await tid(page, 'export-menu').click(); const csv = page.waitForEvent('download'); await tid(page, 'export-csv').click(); expect((await csv).suggestedFilename()).toContain('illustrative-sequence.csv');
-  const doc = await page.request.get('/docs/light-model.md'); expect(doc.ok()).toBe(true); expect(await doc.text()).toContain('light-induction/2');
+  const doc = await page.request.get('/docs/light-model.md'); expect(doc.ok()).toBe(true); expect(await doc.text()).toContain('light-induction/3');
   await page.screenshot({ path: 'test-results/light-mobile.png', fullPage: true });
 });
 
