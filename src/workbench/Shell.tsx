@@ -101,6 +101,7 @@ function WideShell({ id, header, rail, viewport, timeline, dock, dockStripOnly, 
   const toggle = (name: keyof typeof panels) => { const p = panels[name].current; if (!p) return; if (p.isCollapsed()) p.expand(); else p.collapse(); };
   useCommand('view.rail', active, () => toggle('rail'));
   useCommand('view.inspector', active, () => toggle('inspector'));
+  useCommand('inspector.show', active, () => panels.inspector.current?.expand());
   useCommand('view.dock', active, () => toggle('dock'));
   useCommand('view.focus', active, () => {
     if (beforeFocus.current) { for (const name of beforeFocus.current) panels[name as keyof typeof panels].current?.expand(); beforeFocus.current = null; }
@@ -158,8 +159,10 @@ function Drawer({ side, label, closeLabel, trigger, open, onOpenChange, onClickC
  * The narrow shell: header, viewport, timeline and dock stacked in a scrolling page, with the rail and inspector opening
  * as modal drawers. Choosing an experiment or scenario in the rail closes its drawer.
  */
-function NarrowShell({ header, rail, viewport, timeline, dock, inspector, status }: ShellProps) {
+function NarrowShell({ header, rail, viewport, timeline, dock, inspector, status, active = true }: ShellProps) {
   const [drawer, setDrawer] = useState<'rail' | 'inspector' | null>(null);
+  // `l` and Palette › Parameters choose an inspector tab; on a narrow layout the drawer has to open for it to show.
+  useCommand('inspector.show', active && !!inspector, () => setDrawer('inspector'));
   const openChange = (which: 'rail' | 'inspector') => (open: boolean) => setDrawer(open ? which : null);
   const openLibrary = useCallback(() => setDrawer('rail'), []);
   return (

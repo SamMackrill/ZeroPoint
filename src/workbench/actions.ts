@@ -130,6 +130,16 @@ export function useCommand(id: string, enabled: boolean, run: () => void) {
     return () => { if (handlers.get(id) === handler) handlers.delete(id); };
   }, [id, enabled]);
 }
+/**
+ * Make sure the inspector is showing: the Shell registers `inspector.show`, which expands a collapsed inspector panel on
+ * wide layouts and opens the inspector drawer on narrow ones. Labs call it before choosing an inspector tab, so the tab
+ * they pick is on screen.
+ */
+export const showInspector = () => handlers.get('inspector.show')?.();
+
+/** Open View › Layers (the `l` key): show the inspector, then select its View tab. */
+export const layersAction = (openView: () => void): Action => ({ id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => { showInspector(); openView(); } });
+
 /** A shortcut whose behaviour a component registers with useCommand; unbound while none has. */
 const shared = (id: string, label: string, group: ActionGroup, key: string): Action => ({ id, label, group, keys: [key], run: () => handlers.get(id)?.(), available: () => handlers.has(id) });
 
@@ -165,11 +175,11 @@ export function layerActions(definition: ExperimentDefinition, scenario: string,
   });
 }
 
-/** Jump to a parameter's value field (palette › Parameters): open Setup, then focus and select the visible field. */
+/** Jump to a parameter's value field (palette › Parameters): show the inspector at Setup, then focus and select the visible field. */
 export function parameterActions(definition: ExperimentDefinition, scenario: string, openSetup: () => void): Action[] {
   return definition.params.filter(p => p.kind === 'range' && appliesTo(p, scenario)).map(param => ({
     id: `param.${param.key}`, label: param.label, group: 'Parameters', run: () => {
-      openSetup();
+      showInspector(); openSetup();
       const focus = (tries: number) => {
         const field = [...document.querySelectorAll<HTMLInputElement>(`[data-testid="param-${param.key}"] input`)].find(f => f.offsetParent !== null);
         if (field) { field.focus(); field.select(); } else if (tries > 0) requestAnimationFrame(() => focus(tries - 1));

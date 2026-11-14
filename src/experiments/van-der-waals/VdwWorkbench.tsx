@@ -17,7 +17,7 @@ import { dockStartsCollapsed, Shell } from '../../workbench/Shell';
 import { SplitView } from '../../workbench/SplitView';
 import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
-import { layerActions, PANEL_SHORTCUTS, parameterActions, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
+import { layerActions, PANEL_SHORTCUTS, parameterActions, SPLIT_SHORTCUT, useActions, type Action, layersAction } from '../../workbench/actions';
 import { vanDerWaalsDefinition, type VdwParams, type VdwView } from './definition';
 import '../../van-der-waals/van-der-waals.css';
 import './vdw-workbench.css';
@@ -126,7 +126,7 @@ export function VdwWorkbench({ active, rail, header, scenarioRequest, onScenario
   const timeline = vanDerWaalsDefinition.timeline(scenario, params);
   const actions: Action[] = [
     ...transportActions(runtime, timeline, SPEEDS),
-    ...(stage === 2 ? [{ id: 'view.layers', label: 'Open View › Layers', group: 'View' as const, keys: ['l'], run: () => setTab('view') }, SPLIT_SHORTCUT] : []),
+    ...(stage === 2 ? [layersAction(() => setTab('view')), SPLIT_SHORTCUT] : []),
     ...fileShortcuts(save, fileInput),
     ...PANEL_SHORTCUTS,
     copyLinkAction(urlHash, setNotice),
