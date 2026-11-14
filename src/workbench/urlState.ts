@@ -2,7 +2,7 @@
 // non-default parts of its state, as a hash route the static host can serve:
 //   #/electron/spin?spin=-1&axis=x&cam=shell&split=section&t=691&sel=2231&L=+radius,-faraday
 // Values are validated against the experiment's definition on the way in; anything unknown or out of range is dropped.
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Action } from './actions';
 import { appliesTo, getPath, scenarioState, withPaths, type ControlSpec, type ExperimentDefinition } from './definition';
 
@@ -191,6 +191,19 @@ export function useLinkSeek(pending: PendingLink | null, done: () => void, state
     return () => { clearTimeout(release); clearTimeout(expire); };
   }, [pending, done]);
   return !!pending && holding;
+}
+
+/**
+ * A pending link that can be cancelled at once. `set` records the link in a ref as well as in state, and `seek` only
+ * passes a tick on while that same link is still pending, so a seek queued by a render that saw an older link (say,
+ * one the rail has just replaced with a fresh run) is dropped instead of moving the new run.
+ */
+export function usePendingLink(seekNow: (tick: number) => void) {
+  const [link, setState] = useState<PendingLink | null>(null), current = useRef<PendingLink | null>(null);
+  const set = useCallback((next: PendingLink | null) => { current.current = next; setState(next); }, []);
+  const done = useCallback(() => set(null), [set]);
+  const seek = useCallback((tick: number) => { if (current.current && current.current.tick === tick) seekNow(tick); }, [seekNow]);
+  return { link, set, done, seek };
 }
 
 /**

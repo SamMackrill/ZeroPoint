@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { act, render } from '@testing-library/react';
+import { act, render, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useLinkSeek, type PendingLink } from '../../src/workbench/urlState';
+import { useLinkSeek, usePendingLink, type PendingLink } from '../../src/workbench/urlState';
 
 /** A lab's link wait, reporting whether the URL writer is held. */
 function Lab({ pending, state, seek, done, onHold }: { pending: PendingLink | null; state: { parameters: object } | null; seek(tick: number): void; done(): void; onHold(hold: boolean): void }) {
@@ -43,5 +43,28 @@ describe('useUrlWriter', () => {
     history.replaceState(null, '', '#/light?sel=3'); window.dispatchEvent(new HashChangeEvent('hashchange')); // a link arrives
     act(() => { vi.advanceTimersByTime(400); });
     expect(location.hash).toBe('#/light?sel=3');
+  });
+});
+
+describe('usePendingLink', () => {
+  it('drops a seek for a link that was cancelled in the same render, before the state update lands', () => {
+    const seekNow = vi.fn(), { result } = renderHook(() => usePendingLink(seekNow));
+    const link = { params: { wavelength: 3 }, tick: 600 };
+    act(() => result.current.set(link));
+    // A rail choice cancels the link; an effect from the render that still saw it then asks for its seek.
+    const staleSeek = result.current.seek;
+    act(() => { result.current.set(null); staleSeek(600); });
+    expect(seekNow).not.toHaveBeenCalled();
+    expect(result.current.link).toBeNull();
+  });
+  it('passes the seek on while its link is still pending, and not for the tick of another link', () => {
+    const seekNow = vi.fn(), { result } = renderHook(() => usePendingLink(seekNow));
+    act(() => result.current.set({ params: {}, tick: 240 }));
+    act(() => result.current.seek(600));
+    expect(seekNow).not.toHaveBeenCalled();
+    act(() => result.current.seek(240));
+    expect(seekNow).toHaveBeenCalledWith(240);
+    act(() => result.current.done());
+    expect(result.current.link).toBeNull();
   });
 });

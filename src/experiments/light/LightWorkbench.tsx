@@ -21,7 +21,7 @@ import { lightDefinition } from './definition';
 import '../../light/light.css';
 import './light-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
-import { copyLinkAction, encodeUrl, routeFor, useLinkSeek, useUrlWriter, type PendingLink, type ScenarioRequest } from '../../workbench/urlState';
+import { copyLinkAction, encodeUrl, routeFor, useLinkSeek, usePendingLink, useUrlWriter, type ScenarioRequest } from '../../workbench/urlState';
 import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView } from '../../workbench/SplitView';
@@ -106,7 +106,8 @@ export function LightWorkbench({ active, rail, header, scenarioRequest, onScenar
   const pairs = d.wall ? d.wall.pair + 1 : pairCount(p), gone = d.finished || d.absorbed;
   // The rail restarts the sequence in the other scenario, keeping the wave. A link restarts it with its parameters and
   // view, then seeks to its tick once the worker has them.
-  const [link, setLink] = useState<PendingLink | null>(null), linkDone = useCallback(() => setLink(null), []);
+  // The pending link lives in a ref too, so a rail choice cancels its seek at once (see usePendingLink).
+  const { link, set: setLink, done: linkDone, seek } = usePendingLink(useCallback((tick: number) => runtime.seek(tick), [runtime]));
   const applyLink = (request: ScenarioRequest) => {
     const url = request.url, dropped = [...(request.dropped ?? [])], start = scenarioState(lightDefinition, request.id).params;
     // Every rail choice restarts the run in its scenario. The worker's reply may lag, so this never compares with the
@@ -126,7 +127,6 @@ export function LightWorkbench({ active, rail, header, scenarioRequest, onScenar
   };
   const applyRef = useRef(applyLink); applyRef.current = applyLink;
   useEffect(() => { if (scenarioRequest) applyRef.current(scenarioRequest); }, [scenarioRequest]);
-  const seek = useCallback((tick: number) => runtime.seek(tick), [runtime]);
   const linkHold = useLinkSeek(link, linkDone, state, seek);
   // Links to the first scenario keep their short form (#/light?…), as before the lab had a second.
   const route = routeFor(lightDefinition, scenario, p, view, { camera: camera === 'orbit' ? undefined : camera, split: split ? 'pair' : undefined, tick: s.tick || undefined, selection: selected ?? undefined });
