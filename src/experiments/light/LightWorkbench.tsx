@@ -154,7 +154,8 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   const spatialB = pB && dB ? spatialX.map(x => waveAt(pB, dB.time, x).electric) : undefined, historyB = pB ? historyX.map(t => waveAt(pB, t, pB.probe).electric) : undefined;
   /** The readout strip for one configuration. */
   const stripFor = (r: ReturnType<typeof lightReadout>, q: LightParameters) => [
-    { label: 'Travelled', value: r.time.toFixed(3), unit: `L · ${(r.time * 250).toFixed(0)} nm ${q.direction > 0 ? '+X' : '−X'}` },
+    // The distance covered, which stops at the wall when the photon is absorbed there.
+    { label: 'Travelled', value: Math.abs(r.x - sourceX(q)).toFixed(3), unit: `L · ${(Math.abs(r.x - sourceX(q)) * 250).toFixed(0)} nm ${q.direction > 0 ? '+X' : '−X'}` },
     { label: 'Time', value: (r.time * TIME_SECONDS * 1e15).toFixed(3), unit: 'fs' },
     { label: 'Handoffs', value: String(r.handoffs) },
     { label: 'Excess energy', value: r.energy.toFixed(3), unit: 'eV' },

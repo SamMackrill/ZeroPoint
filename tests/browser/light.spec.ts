@@ -119,5 +119,10 @@ test('a file with the absorbing wall shows its absorbed energy in the ledger and
   await tid(page, 'export-menu').click(); const csv = page.waitForEvent('download'); await tid(page, 'export-csv').click();
   const rows = (await (await import('node:fs/promises')).readFile((await (await csv).path())!, 'utf8')).trim().split('\n');
   expect(rows[0].split(',').at(-1)).toBe('absorbed_energy_eV');
+  // 775 nm pairs do not divide the window: the wall takes the photon at tick 1302, after 10.85 L, and Travelled stops there.
+  await tid(page, 'file-input').setInputFiles({ name: 'wall-775.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ format: 'zeropoint-light', version: 1, state: { model: 'light-induction/3', tick: 1440, parameters: { ...parameters, wavelength: 3.1 } }, view })) });
+  await expect(tid(page, 'notice')).toContainText('Loaded tick 1440');
+  await expect(page.locator('.dock-strip').filter({ visible: true }).first()).toContainText('10.850');
+  await expect(page.locator('.dock-strip').filter({ visible: true }).first()).toContainText('2713 nm');
   expect(Number(rows.at(-1)!.split(',').at(-1))).toBeCloseTo(2.4797, 4);
 });
