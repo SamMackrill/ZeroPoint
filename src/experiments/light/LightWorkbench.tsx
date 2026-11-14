@@ -140,8 +140,8 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   }
   /** Export the full light handoff timeline as CSV. */
   function exportCSV() {
-    const rows = ['tick,time_s,distance_m,excitation_x_L,handoffs,pair_energy_eV,field_energy_eV,departed_energy_eV,probe_E_normalized'];
-    for (let tick = 0; tick <= LIGHT_END_TICK; tick++) { const r = lightReadout({ ...s, tick }); rows.push([tick, r.time * TIME_SECONDS, r.time * 250e-9, r.x, r.handoffs, r.pairEnergy, r.fieldEnergy, r.departedEnergy, r.probe.electric].join(',')); }
+    const rows = ['tick,time_s,distance_m,excitation_x_L,handoffs,pair_energy_eV,field_energy_eV,departed_energy_eV,probe_E_normalized,absorbed_energy_eV'];
+    for (let tick = 0; tick <= LIGHT_END_TICK; tick++) { const r = lightReadout({ ...s, tick }); rows.push([tick, r.time * TIME_SECONDS, Math.abs(r.x - sourceX(p)) * 250e-9, r.x, r.handoffs, r.pairEnergy, r.fieldEnergy, r.departedEnergy, r.probe.electric, r.absorbedEnergy].join(',')); }
     downloadFile('zeropoint-light-illustrative-sequence.csv', rows.join('\n'), 'text/csv'); setNotice('Exported the complete prescribed sequence, including future timeline samples.');
   }
   /** Capture the current state as a ◆ checkpoint. */
@@ -213,11 +213,12 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
           <Readouts items={[
             { label: 'Central pair · hf/2', value: d.pairEnergy.toFixed(4), unit: 'eV' },
             { label: 'Surrounding field · hf/2', value: d.fieldEnergy.toFixed(4), unit: 'eV' },
-            { label: 'Departed window', value: d.departedEnergy.toFixed(4), unit: 'eV' },
-            { label: 'Budget residual', value: (d.pairEnergy + d.fieldEnergy + d.departedEnergy - d.energy).toExponential(1), unit: 'eV' },
+            d.wall ? { label: 'Absorbed at the wall', value: d.absorbedEnergy.toFixed(4), unit: 'eV', testId: 'light-absorbed' } : { label: 'Departed window', value: d.departedEnergy.toFixed(4), unit: 'eV' },
+            { label: 'Budget residual', value: (d.pairEnergy + d.fieldEnergy + d.absorbedEnergy + d.departedEnergy - d.energy).toExponential(1), unit: 'eV' },
             { label: 'Propagation speed', value: s.tick ? '1.000' : '—', unit: 'c' },
           ]}/>
-          <span className="visually-hidden" data-testid="light-energy-residual">{(d.pairEnergy + d.fieldEnergy + d.departedEnergy - d.energy).toExponential(1)} eV</span>
+          <span className="visually-hidden" data-testid="light-energy-residual">{(d.pairEnergy + d.fieldEnergy + d.absorbedEnergy + d.departedEnergy - d.energy).toExponential(1)} eV</span>
+          {d.wall && <p className="light-small">At the wall the whole budget is absorbed in one tick: the field’s half together with the central pair’s half. No part of it is left behind in the field.</p>}
           <p className="light-small">Assigned energy bookkeeping. Field energy and angular momentum are not calculated from a force solver. The field strength follows the active pair’s rotating dipole moment; its fall-off with distance and the energy partition are prescribed illustrations of Fleming’s mechanism.</p>
         </div> },
         { id: 'events', label: 'Events', content: <ol className="light-event-list">
@@ -227,7 +228,8 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
             </button>
             {e.index === d.index && !d.finished && <p>{isHandoff(p, s.tick) ? `Pair ${d.index} has collapsed and its field with it; pair ${d.index + 1} is induced at its own fixed centre, with the opposite rotation sense and the field reversed.` : `Pair ${d.index + 1} rotates through 180° during ${(hopTicks(p) * LIGHT_DT).toFixed(2)} τ, opening to its wavelength λ/2 across the path at midlife. Step or scrub to inspect its separation and collapse.`}</p>}
           </li>)}
-          {d.finished && <li><p>The packet crossed the window boundary. Its budget is now recorded as departed energy; this is not an absorption event.</p></li>}
+          {d.absorbed && <li><p>The last pair met the wall’s stable electron and the photon was absorbed all at once. The field is gone everywhere at the same tick, and its half of the energy went with the central pair’s.</p></li>}
+          {d.finished && !d.wall && <li><p>The packet crossed the window boundary. Its budget is now recorded as departed energy; this is not an absorption event.</p></li>}
         </ol> },
       ]}/>
   );

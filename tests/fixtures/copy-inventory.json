@@ -477,7 +477,15 @@
   },
   {
     "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "At the wall the whole budget is absorbed in one tick: the field’s half together with the central pair’s half. No part of it is left behind in the field."
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
     "text": "is induced at its own fixed centre, with the opposite rotation sense and the field reversed."
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "The last pair met the wall’s stable electron and the photon was absorbed all at once. The field is gone everywhere at the same tick, and its half of the energy went with the central pair’s."
   },
   {
     "file": "src/experiments/light/LightWorkbench.tsx",

@@ -103,3 +103,21 @@ test('light pauses when hidden and recovers graphics without losing its timeline
   await expect(page.getByTestId('light-tick')).toContainText('Tick 780');
   await page.screenshot({ path: 'test-results/light-desktop.png', fullPage: true });
 });
+
+test('a file with the absorbing wall shows its absorbed energy in the ledger and events', async ({ page }) => {
+  await openLight(page);
+  const parameters = { wavelength: 2, polarization: 0, phase: 0, direction: 1, offset: 0, probe: 0, absorber: true };
+  const view = { background: true, pairs: true, response: true, fields: true, envelope: true, centres: true, reducedMotion: false };
+  await tid(page, 'file-input').setInputFiles({ name: 'wall.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ format: 'zeropoint-light', version: 1, state: { model: 'light-induction/3', tick: 1440, parameters }, view })) });
+  await expect(tid(page, 'notice')).toContainText('Loaded tick 1440');
+  // The whole budget is absorbed at the wall, so the residual is zero rather than minus the budget.
+  await tid(page, 'dock-ledger').click();
+  await expect(page.getByTestId('light-absorbed')).toContainText('2.4797');
+  await expect(page.getByTestId('light-energy-residual')).toHaveText('0.0e+0 eV');
+  await tid(page, 'dock-events').click();
+  await expect(page.locator('.light-event-list')).toContainText('absorbed all at once');
+  await tid(page, 'export-menu').click(); const csv = page.waitForEvent('download'); await tid(page, 'export-csv').click();
+  const rows = (await (await import('node:fs/promises')).readFile((await (await csv).path())!, 'utf8')).trim().split('\n');
+  expect(rows[0].split(',').at(-1)).toBe('absorbed_energy_eV');
+  expect(Number(rows.at(-1)!.split(',').at(-1))).toBeCloseTo(2.4797, 4);
+});
