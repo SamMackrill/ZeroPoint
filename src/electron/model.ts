@@ -12,15 +12,41 @@ export function rotate(v: Vec, axis: Vec, angle: number): Vec {
   const a = unit(axis);
   return add(add(scale(v, Math.cos(angle)), scale(cross(a, v), Math.sin(angle))), scale(a, dot(a, v) * (1 - Math.cos(angle))));
 }
-export const ELECTRON_MODEL = 'electron-polarization/4';
+export const ELECTRON_MODEL = 'electron-polarization/5';
 export const ELECTRON_DT = 1 / 120, ELECTRON_END = 5760, CORE_MASK = .3;
 /** The saved-file version, which follows the model's version number. */
-export const ELECTRON_FILE_VERSION = 4;
+export const ELECTRON_FILE_VERSION = 5;
 export const C = 299792458, RADIUS = 2.42631023538e-12 / 2, TAU = RADIUS / C;
 export const ALPHA = 7.2973525643e-3, G_FACTOR = 2.00231930436;
+/** The polarizer at the centre: the bare particle whose charge polarizes the field around it. */
+export type Particle = 'electron' | 'proton';
+/**
+ * Each polarizer's charge, radius and g-factor, from Fleming's "Electron and proton radii are due to quantum
+ * polarization rate and the speed of light" (§1–4). Lengths in the lab are in units of the particle's own radius R and
+ * times in τ = R/c, so the two field structures are drawn at the same size: both reach the speed of light at R.
+ *
+ * - Electron: R is half the Compton wavelength; g = 2.0023 (in Bohr magnetons).
+ * - Proton: R is the charge radius, 0.8751 fm as Fleming quotes it (CODATA, Radii §1), and g = 2.1086 in "proton
+ *   magnetons" computed with that radius in place of the Compton wavelength (Radii Eq. 2). Fleming's 2012 mass paper,
+ *   which the mass study follows, quotes 0.8775 fm; the two papers differ, and each study keeps its own paper's value.
+ * - The proton polarizes "proton-like" pairs, positive charge and matter on one end, with its positive charge, so the
+ *   pairs around it point the other way: positive ends outward (Radii §3).
+ */
+export const POLARIZERS: Record<Particle, { label: string; charge: 1 | -1; radius: number; g: number; radiusName: string }> = {
+  electron: { label: 'Electron', charge: -1, radius: RADIUS, g: G_FACTOR, radiusName: 'half the Compton wavelength' },
+  proton: { label: 'Proton', charge: 1, radius: 0.8751e-15, g: 2.1086, radiusName: 'the charge radius' },
+};
+/** The particle's radius R in metres, and τ = R/c in seconds. */
+export const radiusOf = (particle: Particle) => POLARIZERS[particle].radius;
+export const tauOf = (particle: Particle) => POLARIZERS[particle].radius / C;
+/**
+ * Turns per second of a shell whose edge moves at the speed of light: c over its circumference (Radii §4). About
+ * 3.933 × 10¹⁹ for the electron and 5.452 × 10²² for the proton, about 1386 times as fast, the ratio of the radii.
+ */
+export const polarizationRate = (particle: Particle) => C / (2 * Math.PI * radiusOf(particle));
 export type ElectronMode = 'electric' | 'spin' | 'moving';
-export interface ElectronParameters { mode: ElectronMode; beta: number; spin: 1 | -1; axis: 'x' | 'y' | 'z'; probeX: number; probeY: number; probeZ: number }
-export const DEFAULT_ELECTRON: ElectronParameters = { mode: 'electric', beta: .15, spin: 1, axis: 'z', probeX: 0, probeY: 1.8, probeZ: 0 };
+export interface ElectronParameters { mode: ElectronMode; beta: number; spin: 1 | -1; axis: 'x' | 'y' | 'z'; probeX: number; probeY: number; probeZ: number; particle: Particle }
+export const DEFAULT_ELECTRON: ElectronParameters = { mode: 'electric', beta: .15, spin: 1, axis: 'z', probeX: 0, probeY: 1.8, probeZ: 0, particle: 'electron' };
 export interface ElectronState { model: typeof ELECTRON_MODEL; tick: number; parameters: ElectronParameters }
 export interface ElectronSnapshot extends ElectronState { running: boolean; speed: number }
 export interface SpinDisplay { count: number; alternating: boolean; gain: number; section: boolean; guides: boolean }
@@ -36,10 +62,11 @@ export function validateElectronParameters(value: unknown): ElectronParameters {
   if (!value || typeof value !== 'object') throw new Error('Missing electron parameters.');
   const p = value as ElectronParameters;
   if (!['electric', 'spin', 'moving'].includes(p.mode) || !['x', 'y', 'z'].includes(p.axis) || ![1, -1].includes(p.spin)) throw new Error('Invalid electron mode or spin direction.');
+  if (p.particle !== 'electron' && p.particle !== 'proton') throw new Error('The particle must be an electron or a proton.');
   for (const [key, min, max] of [['beta', -.2, .2], ['probeX', -5, 5], ['probeY', -4, 4], ['probeZ', -3, 3]] as const) {
     if (typeof p[key] !== 'number' || !Number.isFinite(p[key]) || p[key] < min || p[key] > max) throw new Error(`${key} must be between ${min} and ${max}.`);
   }
-  return { mode: p.mode, beta: p.beta, spin: p.spin, axis: p.axis, probeX: p.probeX, probeY: p.probeY, probeZ: p.probeZ };
+  return { mode: p.mode, beta: p.beta, spin: p.spin, axis: p.axis, probeX: p.probeX, probeY: p.probeY, probeZ: p.probeZ, particle: p.particle };
 }
 /** Validate a serialized electron simulation state. */
 export function validateElectronState(value: unknown): ElectronState {
@@ -51,11 +78,12 @@ export function validateElectronState(value: unknown): ElectronState {
 export function parseElectronFile(text: string): { state: ElectronState; view: ElectronView; migrated: boolean } {
   if (text.length > 100000) throw new Error('Electron files must be smaller than 100 KB.');
   const f = JSON.parse(text);
-  if (f?.format !== 'zeropoint-electron' || ![1, 2, 3, 4].includes(f.version)) throw new Error('Choose a ZeroPoint electron experiment file.');
-  // Versions 1 to 3 hold the same tick and parameters; version 4 changed how the lattice pairs polarize.
-  const migrated = [1, 2, 3].includes(f.version) && f.state?.model === `electron-polarization/${f.version}`;
+  if (f?.format !== 'zeropoint-electron' || ![1, 2, 3, 4, 5].includes(f.version)) throw new Error('Choose a ZeroPoint electron experiment file.');
+  // Versions 1 to 4 hold the same tick and parameters for an electron; version 4 changed how the lattice pairs
+  // polarize, and version 5 added the proton. Older files open as an electron.
+  const migrated = [1, 2, 3, 4].includes(f.version) && f.state?.model === `electron-polarization/${f.version}`;
   if (!migrated && f.version !== ELECTRON_FILE_VERSION) throw new Error('Incompatible electron file version.');
-  const state = validateElectronState(migrated ? { ...f.state, model: ELECTRON_MODEL } : f.state), view = { ...DEFAULT_ELECTRON_VIEW };
+  const state = validateElectronState(migrated ? { ...f.state, model: ELECTRON_MODEL, parameters: { ...f.state.parameters, particle: 'electron' } } : f.state), view = { ...DEFAULT_ELECTRON_VIEW };
   for (const k of Object.keys(view).filter(k => k !== 'spinDisplay') as ElectronLayer[]) { if (migrated && (k === 'inspect' || (f.version === 1 && k === 'shells'))) continue; if (typeof f.view?.[k] !== 'boolean') throw new Error(`Invalid ${k} layer.`); view[k] = f.view[k]; }
   const display = f.view?.spinDisplay;
   if (display !== undefined && (!display || !Number.isInteger(display.count) || display.count < 1 || display.count > 4 || ![1, 2, 4].includes(display.gain) || ['alternating', 'section', 'guides'].some(k => typeof display[k] !== 'boolean'))) throw new Error('Invalid spin display settings.');
@@ -69,14 +97,19 @@ export const probePosition = (p: ElectronParameters): Vec => [p.probeX, p.probeY
 const smooth = (x: number) => { const t = Math.max(0, Math.min(1, x)); return t * t * (3 - 2 * t); };
 export const electronPresence = (s: ElectronState) => s.parameters.mode === 'electric' ? smooth(s.tick * ELECTRON_DT / .35) : 1;
 export const alignmentProgress = (s: ElectronState, radius = 0) => s.parameters.mode === 'electric' ? smooth((s.tick * ELECTRON_DT - .35 - .08 * radius) / (2.65 - .08 * radius)) : 1;
-/** Analytic reference: a uniformly moving negative point charge; no acceleration/radiation. */
+/**
+ * Analytic reference: a uniformly moving point charge, negative for the electron and positive for the proton; no
+ * acceleration or radiation. The intrinsic moment is antiparallel to the spin for the electron and parallel for the
+ * proton, with each particle's g-factor, in units of its own radius.
+ */
 export function referenceFields(s: ElectronState, point: Vec) {
   const r: Vec = [point[0] - electronX(s), point[1], point[2]], radius = norm(r), beta = velocity(s.parameters);
   const valid = radius >= CORE_MASK;
   if (!valid) return { valid, radius, electric: [0, 0, 0] as Vec, motion: [0, 0, 0] as Vec, intrinsic: [0, 0, 0] as Vec };
-  const electric = scale(r, -(1 - beta * beta) / (dot(r, r) - beta * beta * (r[1] ** 2 + r[2] ** 2)) ** 1.5);
+  const { charge, g } = POLARIZERS[s.parameters.particle];
+  const electric = scale(r, charge * (1 - beta * beta) / (dot(r, r) - beta * beta * (r[1] ** 2 + r[2] ** 2)) ** 1.5);
   const motion = cross([beta, 0, 0], electric), n = unit(r);
-  const moment = scale(spinAxis(s.parameters), -s.parameters.spin * G_FACTOR / (4 * Math.PI));
+  const moment = scale(spinAxis(s.parameters), charge * s.parameters.spin * g / (4 * Math.PI));
   const intrinsic = scale(add(scale(n, 3 * dot(moment, n)), scale(moment, -1)), 1 / radius ** 3);
   return { valid, radius, electric, motion, intrinsic };
 }
@@ -155,13 +188,14 @@ export function birthDirection(index: number, generation: number): Vec {
 /**
  * Derive the representative dipole geometry and fields at a sample site.
  *
- * Lattice pairs polarize the way Fleming describes: each generation is born at its own random angle and turns toward
- * the charge during its life, completely inside `FULL_ALIGNMENT_RADIUS` and by a share that thins with distance
+ * Lattice pairs polarize the way Fleming describes: each generation is born at its own random angle and turns its
+ * positive end along the field during its life (toward an electron, away from a proton), completely inside `FULL_ALIGNMENT_RADIUS` and by a share that thins with distance
  * outside it, so most distant pairs are "only oriented to a slight degree". `aligned` is the direction a fully
  * polarized pair would have (with the spin and motion turns); `direction` is where this generation actually points.
  * Shell samples (the spin close-up) keep the ordered Fig. 2 geometry and start from `aligned`.
  */
 export function dipoleAt(s: ElectronState, index: number) {
+  // `inward` is the field's direction, where the positive end points: toward an electron, away from a proton.
   const centre = sampleCentre(index), field = referenceFields(s, centre), inward = unit(field.electric);
   const lifetime = Math.PI * (.8 + (index % 11) / 25), cycles = s.tick * ELECTRON_DT / lifetime + (index * .61803398875) % 1;
   const generation = Math.floor(cycles), u = cycles - generation;
@@ -187,24 +221,24 @@ export function dipoleAt(s: ElectronState, index: number) {
 }
 /**
  * The total radial alignment of the displayed lattice pairs, shell by shell: the sum of each pair's direction along the
- * inward radius, in bins of `width`. Outside `FULL_ALIGNMENT_RADIUS` the sum is level, because the number of pairs
+ * field's radial direction (inward for an electron, outward for a proton), in bins of `width`. Outside `FULL_ALIGNMENT_RADIUS` the sum is level, because the number of pairs
  * grows as r² while their mean alignment falls as 1/r²: Gauss's law read from the dipoles themselves. `expected` is
  * what the rule predicts for pairs caught mid-turn, and `settled` what they reach by the end of their lives. The
  * outermost bins, which the cubic sample cuts off, are left out.
  */
 export function shellAlignment(s: ElectronState, width = GRID_SPACING) {
-  const bins = Math.floor(GRID_HALF * GRID_SPACING / width), core: Vec = [electronX(s), 0, 0];
+  const bins = Math.floor(GRID_HALF * GRID_SPACING / width), core: Vec = [electronX(s), 0, 0], charge = POLARIZERS[s.parameters.particle].charge;
   const shells = Array.from({ length: bins }, (_, i) => ({ radius: (i + .5) * width, pairs: 0, total: 0, mean: 0, expected: 0, settled: 0 }));
   for (let i = 0; i < LATTICE_SAMPLES; i++) {
     const d = dipoleAt(s, i), out = add(d.centre, scale(core, -1)), bin = Math.floor(norm(out) / width);
     if (!d.field.valid || bin >= bins) continue;
-    shells[bin].pairs++; shells[bin].total += dot(d.direction, unit(scale(out, -1)));
+    shells[bin].pairs++; shells[bin].total += dot(d.direction, unit(scale(out, charge)));
     shells[bin].expected += alignmentWhileTurning(d.share); shells[bin].settled += alignmentOfShare(d.share);
   }
   for (const shell of shells) shell.mean = shell.pairs ? shell.total / shell.pairs : 0;
   return shells;
 }
-/** Equal-area sphere quadrature: flux of normalized E divided by 4π, in charge units. */
+/** Equal-area sphere quadrature: flux of normalized E divided by 4π, in charge units (−1 for an electron, +1 for a proton). */
 export function enclosedCharge(s: ElectronState, radius: number, samples = 256) {
   if (!Number.isFinite(radius) || radius < CORE_MASK) throw new Error('Flux sphere must enclose the numerical mask.');
   let flux = 0;

@@ -158,7 +158,7 @@ test('spin shells link 2D and 3D, share one turn preference unless asked to alte
   const download = page.waitForEvent('download'); await tid(page, 'file-save').click();
   const saved = JSON.parse(await readFile((await (await download).path())!, 'utf8'));
   expect(saved.view.spinDisplay).toEqual({ count: 4, gain: 1, alternating: false, section: true, guides: true });
-  expect(saved.version).toBe(4); expect(saved.state.model).toBe('electron-polarization/4');
+  expect(saved.version).toBe(5); expect(saved.state.model).toBe('electron-polarization/5');
   saved.version = 1; saved.state.model = 'electron-polarization/1'; delete saved.view.shells;
   await tid(page, 'file-input').setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(saved)) });
   await expect(tid(page, 'notice')).toContainText('Updated an older experiment');

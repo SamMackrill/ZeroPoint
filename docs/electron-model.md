@@ -1,12 +1,26 @@
 # Electron polarization experiment
 
-**Implemented model: `electron-polarization/4`.** Open **Electron in the zero-point field** from the experiment library. See [extracted source details](electron-source-notes.md) for the three supplied papers, page references, equations and decisions.
+**Implemented model: `electron-polarization/5`.** Open **Electron in the zero-point field** from the experiment library. See [extracted source details](electron-source-notes.md) for the three supplied papers, page references, equations and decisions.
 
 ## Three views
 
 1. **Stationary electron:** the unpolarized cube is shown first, with the electron absent at tick zero. The negative-marked core appears at the origin over 0.35 tau. From then on every new pair is born at its own random angle and turns toward the electron during its life: all the way inside 1.6 R, and by a share that thins with distance beyond it (see *Partial polarization* below). Near sites begin earlier than distant sites, and the polarization is established at 3 tau. It never comes to rest: each replacement generation is born at random and turns again. Optional electric reference arrows appear once the polarization is nearly established; the three-unit transition is illustrative, not a measured field-propagation time.
 2. **Spin in the surrounding field:** a stationary core with linked 3D shells and a 2D equatorial section, inspired by §3 and Fig. 2. Default: every band shares one local turn preference, as §3 argues and Fig. 2 draws. Whole-band alternation is an explicitly labelled extension, selectable as **Alternate** for comparison (it was the default before model 4). One to four shells, turn magnification, spin projection/axis, local arrows, shell guides and equatorial cutaway are selectable. Both views share pair sites, phases, timeline and selection. Entering spin hides Faraday lines, intrinsic arrows and the radius guide; these can be re-enabled.
 3. **Moving electron:** a prescribed, uniformly moving negative polarizer crosses the medium. Its signed velocity controls the motion-induced magnetic reference and the associated local turn preference. Pair centres stay fixed in laboratory coordinates. The local rotation associated with spin remains distinct from the motion response. Intrinsic magnetic arrows can be enabled separately.
+
+## The proton as a second polarizer (model 5)
+
+Model 5 (14 November 2026) adds a `particle` parameter, `electron` or `proton`, after Fleming's *Electron and proton radii are due to quantum polarization rate and the speed of light*. Older files hold an electron and open as model 5 with `particle: electron`. The lab's scenarios set the particle; the model alone changes nothing that is drawn for an electron.
+
+- **Both are bare point-like polarizers** surrounded by the polarized field (§1), so the proton uses the same partial-polarization rule, turn share and lifetimes as the electron.
+- **The pairs point the other way.** "A proton with positive charge and matter, preferentially polarizes proton-like quantum fluctuations", dipoles with "positive charge and matter on one end and negative charge and antimatter on the other end" (§3). With a positive charge at the centre the field points outward, and each pair's positive end turns outward, where round an electron it turns inward. The reference field, enclosed charge (+1), moving-charge field and shell alignment all change sign with the charge.
+- **Each in its own radius.** The electron's structure has the radius of half the Compton wavelength, the proton's its charge radius (§1–2). Lengths are in units of the particle's own radius R and times in τ = R/c, so the two structures are drawn at the same size: "the size of both particles is due to the radius where they reach the speed of light limit" (§2). For the proton R = 0.8751 fm, the CODATA value Fleming quotes, and τ = 2.92 × 10⁻²⁴ s.
+- **Polarization rate.** A shell whose edge moves at c turns c/(2πR) times a second: 3.933 × 10¹⁹ for the electron and 5.452 × 10²² for the proton, about 1386 times as fast, the ratio of the radii (§4). The same drawing therefore runs 1386 times faster in seconds for the proton.
+- **Magnetic moment.** The proton's moment is parallel to its spin (the electron's is antiparallel), with g = 2.1086 "proton magnetons" computed with the charge radius (§1, Eq. 2) in place of the electron's 2.0023.
+
+**Recorded disagreement.** The radii paper quotes the proton charge radius as 0.8751 fm; Fleming's 2012 mass paper, which the Mass & excluded energy study follows, uses 0.8775 fm. Each study keeps its own paper's value.
+
+Not modelled: why the polarization rates differ (Fleming ties it to matter and antimatter, §3), the shell thickness that makes the mass ratio 1836 rather than 1386 (§4), and the neutron (§5).
 
 ## Scale and reference fields
 
