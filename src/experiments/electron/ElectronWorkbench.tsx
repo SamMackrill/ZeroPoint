@@ -26,7 +26,7 @@ import '../../electron/electron.css';
 import './electron-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
 import { copyLinkAction, encodeUrl, routeFor, splitValue, useLinkSeek, useUrlWriter, type PendingLink, type ScenarioRequest } from '../../workbench/urlState';
-import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
+import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action, layersAction } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView, type SplitPane } from '../../workbench/SplitView';
 import { CompareTab, useCompare, withDeltas } from '../../workbench/compare';
@@ -228,7 +228,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const actions: Action[] = [
     ...transportActions(runtime, timeline, SPEEDS, { onCapture: capture, runDisabled: contextLost, disabled: !ready }),
     ...(study ? [] : cameraActions(electronDefinition.cameras.filter(c => appliesTo(c, scenario)), chooseCamera)),
-    ...(study ? [] : [{ id: 'view.layers', label: 'Open View › Layers', group: 'View' as const, keys: ['l'], run: () => setTab('view') }]),
+    ...(study ? [] : [layersAction(() => setTab('view'))]),
     ...fileShortcuts(save, fileInput, !ready),
     ...(study ? [] : [SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus]), APPLY_SHORTCUT, ...(!study ? [SPLIT_SHORTCUT] : []), ...PANEL_SHORTCUTS,
     copyLinkAction(urlHash, setNotice),
