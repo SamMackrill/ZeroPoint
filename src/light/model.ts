@@ -14,8 +14,8 @@ export interface LightParameters {
 }
 export const DEFAULT_LIGHT: LightParameters = { wavelength: 2, polarization: 0, phase: 0, direction: 1, offset: 0, probe: 0, absorber: false };
 export interface LightState { model: typeof LIGHT_MODEL; tick: number; parameters: LightParameters }
-export interface LightView { background: boolean; pairs: boolean; response: boolean; fields: boolean; envelope: boolean; centres: boolean; reducedMotion: boolean }
-export const DEFAULT_LIGHT_VIEW: LightView = { background: true, pairs: true, response: true, fields: true, envelope: true, centres: true, reducedMotion: false };
+export interface LightView { background: boolean; pairs: boolean; response: boolean; fields: boolean; envelope: boolean; centres: boolean; cone: boolean; reducedMotion: boolean }
+export const DEFAULT_LIGHT_VIEW: LightView = { background: true, pairs: true, response: true, fields: true, envelope: true, centres: true, cone: true, reducedMotion: false };
 export interface LightSnapshot extends LightState { running: boolean; speed: number }
 export type LightCommand = { type: 'run'; value: boolean } | { type: 'step' | 'next' | 'reset' | 'ack' } | { type: 'speed'; value: number } | { type: 'configure'; parameters: LightParameters } | { type: 'seek'; tick: number } | { type: 'restore'; state: LightState };
 export type LightReply = { type: 'state'; state: LightSnapshot } | { type: 'error'; message: string };
@@ -50,6 +50,8 @@ export function parseLightFile(text: string): { state: LightState; view: LightVi
   const migrated = f.state?.model === 'light-induction/1' || f.state?.model === 'light-induction/2';
   const state = validateLightState(migrated ? { ...f.state, model: LIGHT_MODEL, parameters: { ...f.state.parameters, absorber: false } } : f.state), view = { ...DEFAULT_LIGHT_VIEW };
   for (const key of Object.keys(view) as (keyof LightView)[]) {
+    // The light cone came with the absorbing wall; a file saved before it keeps the default.
+    if (key === 'cone' && f.view?.cone === undefined) continue;
     if (typeof f.view?.[key] !== 'boolean') throw new Error(`Invalid ${key} layer setting.`);
     view[key] = f.view[key];
   }

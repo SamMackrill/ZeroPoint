@@ -233,7 +233,23 @@ export const DOUBLE_SLIT_SCREENS = [
   { name: 'about', title: 'Help › This scenario: what is drawn and what Fleming leaves open', hash: '#/double-slit/slits?t=105', beforeMissing: noSlitLab, prepare: openAbout() },
   { name: 'phone', title: 'On a phone (390 px)', hash: '#/double-slit/slits?t=105', beforeMissing: noSlitLab, viewport: { width: 390, height: 844 }, fullPage: true },
 ];
-const SETS = { 'double-slit': DOUBLE_SLIT_SCREENS, fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
+/**
+ * Absorption in the Light lab (`--set absorption`): a new scenario, so "before" shows the Light lab as it was, where a
+ * link to the scenario opens the induction sequence. Book ch. 19 and the Photons paper (§1, §6, §7, Fig. 1).
+ */
+const noAbsorption = 'the Light lab had no absorption scenario';
+export const ABSORPTION_SCREENS = [
+  { name: 'rail', title: 'The rail: Light gains a second scenario, Absorption at a wall', lab: 'lab-light' },
+  { name: 'approach', title: 'Absorption · tick 1380, the last pair at midlife: the wall, its electron and Fleming\u2019s light cone', hash: '#/light/absorption?t=1380', beforeMissing: noAbsorption },
+  { name: 'approach-side', title: 'Absorption · tick 1380, side view: almost all of the field lies outside the cone', hash: '#/light/absorption?t=1380&cam=side', beforeMissing: noAbsorption },
+  { name: 'absorbed', title: 'Absorption · tick 1440: absorbed all at once, field and pair; the electron ringed', hash: '#/light/absorption?t=1440', beforeMissing: noAbsorption },
+  { name: 'short-of-edge', title: 'Absorption · 425 nm, tick 1428: the pairs do not divide the window, so the wall stands short of its edge', hash: '#/light/absorption?wavelength=1.7&t=1428', beforeMissing: noAbsorption },
+  { name: 'ledger', title: 'Dock \u203a Ledger after the absorption: the whole budget absorbed, residual zero', hash: '#/light/absorption?t=1440', beforeMissing: noAbsorption, prepare: async page => { await page.getByTestId('dock-ledger').filter({ visible: true }).click(); await liftDock(page); }, focus: '.dock-body' },
+  { name: 'events', title: 'Dock \u203a Events after the absorption', hash: '#/light/absorption?t=1440', beforeMissing: noAbsorption, prepare: async page => { await page.getByTestId('dock-events').filter({ visible: true }).click(); await liftDock(page); }, focus: '.dock-body' },
+  { name: 'about', title: 'Help \u203a This scenario: the absorption and what is not modelled', hash: '#/light/absorption?t=1380', beforeMissing: noAbsorption, prepare: openAbout() },
+  { name: 'induction-end', title: 'Induction sequence · tick 1440: unchanged, the pulse leaves the window', hash: '#/light?t=1440' },
+];
+const SETS = { absorption: ABSORPTION_SCREENS, 'double-slit': DOUBLE_SLIT_SCREENS, fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -311,7 +327,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (only && (!only.length || unknown.length)) throw new Error(`--only ${unknown.length ? `names screens not in the set: ${unknown.join(', ')}` : 'names no screen'}. The set's names: ${names.join(', ')}`);
   // --only recaptures a subset; the page still shows the whole set, from the images already in --out.
   const screens = set.filter(screen => !only || only.includes(screen.name));
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--only name,name] [--set double-slit|fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--only name,name] [--set absorption|double-slit|fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.

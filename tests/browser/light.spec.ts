@@ -126,3 +126,33 @@ test('a file with the absorbing wall shows its absorbed energy in the ledger and
   await expect(page.locator('.dock-strip').filter({ visible: true }).first()).toContainText('2713 nm');
   expect(Number(rows.at(-1)!.split(',').at(-1))).toBeCloseTo(2.4797, 4);
 });
+
+test('the absorption scenario ends the run at a wall, all at once, and the rail switches back keeping the wave', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/#/light/absorption?wavelength=1.7');
+  const tick = page.getByTestId('light-tick'), top = page.locator('.light-view-top');
+  await expect(tick).toContainText('Tick 0 ');
+  await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toHaveText('Absorption at a wall');
+  await expect(page.getByTestId('light-wall-legend')).toBeVisible();
+  // 1.7 L pairs do not divide the window: the wall stands at the 14th hand-off, tick 1428, before the window's end.
+  await tid(page, 'event-absorb').click();
+  await expect(tick).toContainText('Tick 1428');
+  await expect(top).toContainText('ABSORBED AT THE WALL');
+  await tid(page, 'dock-ledger').click();
+  await expect(page.getByTestId('light-energy-residual')).toHaveText('0.0e+0 eV');
+  await tid(page, 'transport-step').click();
+  await expect(tick).toContainText('Tick 1429');
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/light/absorption?wavelength=1.7&t=1429');
+  // The light cone is a guide layer of this scenario only.
+  await page.getByRole('tab', { name: 'View', exact: true }).filter({ visible: true }).click();
+  await expect(tid(page, 'layer-cone')).toHaveAttribute('aria-pressed', 'true');
+  // The rail restarts the sequence without the wall and keeps the wavelength.
+  await tid(page, 'scenario-induction').click();
+  await expect(tick).toContainText('Tick 0 ');
+  await expect(page.getByTestId('light-wall-legend')).toHaveCount(0);
+  await expect(tid(page, 'layer-cone')).toHaveCount(0);
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/light?wavelength=1.7');
+  await tid(page, 'scenario-absorption').click();
+  await expect(page.getByTestId('light-wall-legend')).toBeVisible();
+  expect(errors).toEqual([]);
+});

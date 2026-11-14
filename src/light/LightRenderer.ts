@@ -7,6 +7,8 @@ import { palette, scene } from '../ui/palette';
 import { isClick } from '../workbench/selection';
 
 const SAMPLES = 241, BACKGROUND = 540;
+/** Length of the light cone drawn at the wall, in L. Fleming's Fig. 1 draws it open-ended; the length is a display choice. */
+const CONE_LENGTH = 3;
 /** The central pair's lobes are drawn larger than the background samples so the photon's own pair stands out. */
 const CENTRAL_SCALE = 1.9;
 export class LightRenderer {
@@ -25,6 +27,12 @@ export class LightRenderer {
   private link: THREE.Line;
   private probe: THREE.Mesh;
   private selection: THREE.Mesh;
+  /** The absorbing wall, placed at the absorption point: its slab, its stable electron, the ring shown once it has absorbed, and the light cone. */
+  private wall = new THREE.Group();
+  private slab = new THREE.Group();
+  private electron: THREE.Mesh<THREE.SphereGeometry, THREE.MeshStandardMaterial>;
+  private absorbedRing: THREE.Mesh;
+  private cone: THREE.Mesh;
   private base = new THREE.Group();
   private dummy = new THREE.Object3D();
   private colour = new THREE.Color();
@@ -69,6 +77,17 @@ export class LightRenderer {
     this.link = new THREE.Line(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3).setUsage(THREE.DynamicDrawUsage)), new THREE.LineBasicMaterial({ color: palette.text2, transparent: true, opacity: .8 }));
     this.link.frustumCulled = false;
     this.scene.add(this.envelope, this.probe, this.selection, this.link);
+    // The wall is a translucent slab just beyond the last pair's cell, with one stable electron where the path meets it:
+    // a photon is absorbed "when the positron from the quantum dipole within a photon annihilates with a stable electron"
+    // (Photons §7). The cone is Fleming's Fig. 1: apex at the absorption point, opening back along the path at 45°.
+    const box = new THREE.BoxGeometry(.05, 3.3, 2.1);
+    this.slab.add(new THREE.Mesh(box, new THREE.MeshBasicMaterial({ color: palette.text3, transparent: true, opacity: .16, depthWrite: false })),
+      new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({ color: palette.text3, transparent: true, opacity: .7 })));
+    this.electron = new THREE.Mesh(new THREE.SphereGeometry(.1, 14, 10), new THREE.MeshStandardMaterial({ color: palette.dataNegHi, emissive: scene.negGlowLight, emissiveIntensity: .4 }));
+    this.absorbedRing = new THREE.Mesh(new THREE.TorusGeometry(.24, .014, 6, 40), new THREE.MeshBasicMaterial({ color: palette.dataMarkHi }));
+    this.absorbedRing.rotation.y = Math.PI / 2;
+    this.cone = new THREE.Mesh(new THREE.ConeGeometry(CONE_LENGTH, CONE_LENGTH, 28, 1, true), new THREE.MeshBasicMaterial({ color: palette.dataMark, wireframe: true, transparent: true, opacity: .16, depthWrite: false }));
+    this.wall.add(this.slab, this.electron, this.absorbedRing, this.cone); this.wall.visible = false; this.scene.add(this.wall);
     const grid = new THREE.GridHelper(12, 24, palette.line2, palette.dataNegDeep); grid.position.y = -1.8; grid.scale.z = .3;
     const path = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-6, 0, 0), new THREE.Vector3(6, 0, 0)]), new THREE.LineDashedMaterial({ color: palette.text4, dashSize: .08, gapSize: .06 })); path.computeLineDistances();
     this.base.add(grid, path); this.scene.add(this.base);
@@ -111,6 +130,8 @@ export class LightRenderer {
     if (this.disposed) return;
     this.data = state;
     const p = state.parameters, d = lightReadout(state), pol = p.polarization * Math.PI / 180;
+    // Absorbed at the wall or out of the window: either way no pair and no field remain.
+    const gone = d.finished || d.absorbed;
     const selected = pairAt(p, state.tick, this.selected ?? d.index);
     let count = 0;
     // Fixed, reproducible spatial sample of the surrounding medium. Each background pair has its own seeded
@@ -120,7 +141,7 @@ export class LightRenderer {
     for (let i = 0; i < BACKGROUND; i++) {
       const x = p.offset + (i % 30) * .4 - 5.8, y = (Math.floor(i / 30) % 6) * .55 - 1.375, z = Math.floor(i / 180) * .75 - .75;
       if (this.cameraMode === 'pair' && Math.hypot(x - selected.centre, y, z) > .8) continue;
-      const response = this.options.response && !d.finished ? fieldAt(p, d.time, [x, y, z]).envelope : 0;
+      const response = this.options.response && !gone ? fieldAt(p, d.time, [x, y, z]).envelope : 0;
       if (!this.options.background && response < .04) continue;
       const life = 1.1 + (i % 7) * .23, cycles = d.time / life + (i * .61803398875) % 1, generation = Math.floor(cycles), u = cycles - generation;
       const k = i * 7 + generation * 13 + 1, cz = 1 - 2 * ((k * .7548776662466927) % 1), ca = k * 2.399963229728653, cr = Math.sqrt(1 - cz * cz);
@@ -132,7 +153,7 @@ export class LightRenderer {
       const norm = Math.hypot(direction[0], direction[1], direction[2]) || 1; direction.forEach((v, j) => { direction[j] = v / norm; });
       this.put(count++, x, y, z, direction, (.13 + response * .12) * lifecycleEnvelope(u, 1), .43 + response * .32, .16 + response * .8);
     }
-    if (this.options.pairs && !d.finished) {
+    if (this.options.pairs && !gone) {
       const pair = d.pair;
       this.put(count++, pair.centre, 0, 0, pair.direction, pair.separation, CENTRAL_SCALE * (this.options.reducedMotion ? 1 : Math.min(1, .25 + Math.sin(pair.progress * Math.PI) * 3)), 1.5);
       const ends = this.link.geometry.attributes.position, half = pair.separation / 2;
@@ -140,19 +161,29 @@ export class LightRenderer {
       ends.setXYZ(1, pair.centre - pair.direction[0] * half, -pair.direction[1] * half, -pair.direction[2] * half);
       ends.needsUpdate = true;
     }
-    this.link.visible = this.options.pairs && !d.finished;
+    this.link.visible = this.options.pairs && !gone;
     this.positive.count = this.negative.count = count;
     for (const mesh of [this.positive, this.negative]) { mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; }
-    this.centres.count = pairCount(p); this.centres.visible = this.options.centres;
+    this.centres.count = d.wall ? d.wall.pair + 1 : pairCount(p); this.centres.visible = this.options.centres;
     for (let i = 0; i < this.centres.count; i++) { this.dummy.position.set(pairAt(p, state.tick, i).centre, 0, 0); this.dummy.scale.setScalar(1); this.dummy.updateMatrix(); this.centres.setMatrixAt(i, this.dummy.matrix); }
     this.centres.instanceMatrix.needsUpdate = true;
     this.base.position.x = p.offset;
     // The response swells and collapses about the active pair's fixed centre; it does not glide with the energy front.
     // At a hand-off the pair and its field are gone, so nothing is drawn.
     const open = lifecycleEnvelope(d.pair.progress, 1);
-    this.envelope.visible = this.options.envelope && !d.finished && this.cameraMode !== 'pair' && open > 0;
+    this.envelope.visible = this.options.envelope && !gone && this.cameraMode !== 'pair' && open > 0;
     this.envelope.position.set(d.pair.centre, 0, 0); this.envelope.scale.setScalar(Math.max(1e-6, p.wavelength / 2 * open));
     this.probe.position.x = p.probe;
+    this.wall.visible = !!d.wall;
+    if (d.wall) {
+      this.wall.position.x = d.wall.x;
+      this.slab.position.x = p.direction * .03;
+      // The electron that absorbed the photon carries its energy: it brightens and gains a ring.
+      this.electron.material.emissiveIntensity = d.absorbed ? 1.8 : .4; this.electron.scale.setScalar(d.absorbed ? 1.35 : 1);
+      this.absorbedRing.visible = d.absorbed;
+      this.cone.visible = this.options.cone && this.cameraMode !== 'pair';
+      this.cone.rotation.z = -p.direction * Math.PI / 2; this.cone.position.x = -p.direction * CONE_LENGTH / 2;
+    }
     this.selection.visible = this.selected !== null;
     this.selection.position.set(selected.centre, 0, 0);
     if (this.cameraMode === 'pair') { const dx = selected.centre - this.controls.target.x; this.controls.target.x += dx; this.camera.position.x += dx; }

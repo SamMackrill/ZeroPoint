@@ -33,7 +33,7 @@ export function App() {
   const [visited, setVisited] = useState<Record<ExperimentId, boolean>>(() => ({ medium: true, light: false, 'double-slit': false, electron: false, casimir: false, vdw: false, ...(link ? { [link.experiment]: true } : {}) }));
   const open = useCallback((id: ExperimentId) => { setVisited(v => (v[id] ? v : { ...v, [id]: true })); setExperiment(id); }, []);
   // Labs whose scenarios the rail switches; each reports its current scenario back for the rail's highlight.
-  const [current, setCurrent] = useState<Partial<Record<ExperimentId, string>>>({ medium: 'balanced', 'double-slit': 'slits', electron: 'stationary', casimir: 'electron-electron', vdw: 'induced' });
+  const [current, setCurrent] = useState<Partial<Record<ExperimentId, string>>>({ medium: 'balanced', light: 'induction', 'double-slit': 'slits', electron: 'stationary', casimir: 'electron-electron', vdw: 'induced' });
   const [requests, setRequests] = useState<Partial<Record<ExperimentId, ScenarioRequest>>>(() => (link ? { [link.experiment]: link.request } : {}));
   // Editing the address bar, or following a saved view, routes the same way.
   useEffect(() => {
@@ -42,6 +42,7 @@ export function App() {
     return () => window.removeEventListener('hashchange', onHash);
   }, [open]);
   const onPresetChange = useCallback((id: string) => setCurrent(c => ({ ...c, medium: id })), []);
+  const onLightScenario = useCallback((id: string) => setCurrent(c => ({ ...c, light: id })), []);
   const onSlitScenario = useCallback((id: string) => setCurrent(c => ({ ...c, 'double-slit': id })), []);
   const onElectronScenario = useCallback((id: string) => setCurrent(c => ({ ...c, electron: id })), []);
   const onCasimirScenario = useCallback((id: string) => setCurrent(c => ({ ...c, casimir: id })), []);
@@ -61,7 +62,7 @@ export function App() {
     <CommandPalette navigation={navigation}/>
     <DevProfiler id="medium"><MediumWorkbench active={experiment === 'medium'} rail={rail} header={{ experiment: mediumDefinition.title }} scenarioRequest={requests.medium}
       onPresetChange={onPresetChange} onOpenLight={() => open('light')} onOpenElectron={() => open('electron')} onOpenVdw={() => open('vdw')}/></DevProfiler>
-    {visited.light && <DevProfiler id="light"><LightWorkbench active={experiment === 'light'} rail={rail} header={{ experiment: lightDefinition.title }} scenarioRequest={requests.light}/></DevProfiler>}
+    {visited.light && <DevProfiler id="light"><LightWorkbench active={experiment === 'light'} rail={rail} header={{ experiment: lightDefinition.title }} scenarioRequest={requests.light} onScenarioChange={onLightScenario}/></DevProfiler>}
     {visited['double-slit'] && <DevProfiler id="double-slit"><DoubleSlitWorkbench active={experiment === 'double-slit'} rail={rail} header={{ experiment: doubleSlitDefinition.title }} scenarioRequest={requests['double-slit']} onScenarioChange={onSlitScenario}/></DevProfiler>}
     {visited.electron && <DevProfiler id="electron"><ElectronWorkbench active={experiment === 'electron'} rail={rail} header={{ experiment: electronDefinition.title }} scenarioRequest={requests.electron} onScenarioChange={onElectronScenario}/></DevProfiler>}
     {visited.casimir && <DevProfiler id="casimir"><CasimirWorkbench active={experiment === 'casimir'} rail={rail} header={{ experiment: casimirDefinition.title }} scenarioRequest={requests.casimir} onScenarioChange={onCasimirScenario}/></DevProfiler>}

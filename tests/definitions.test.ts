@@ -39,6 +39,20 @@ describe('experiment definitions', () => {
     expect(vanDerWaalsDefinition.timeline('correlated', vanDerWaalsDefinition.defaultParams)).toMatchObject({ kind: 'loop', end: 120 });
     expect(casimirDefinition.speeds).toEqual([0.1, 0.25, 0.5, 1, 2]);
   });
+  it('gives Light an absorption scenario whose timeline ends with the absorption', () => {
+    expect(lightDefinition.scenarios.map(s => s.id)).toEqual(['induction', 'absorption']);
+    const wall = scenarioState(lightDefinition, 'absorption');
+    expect(wall.params.absorber).toBe(true); expect(scenarioState(lightDefinition, 'induction').params.absorber).toBe(false);
+    const events = lightDefinition.timeline('absorption', wall.params).events;
+    expect(events.at(-1)).toEqual({ tick: 1440, label: 'Absorbed at the wall', id: 'absorb' });
+    expect(events.slice(0, -1)).toEqual(lightDefinition.timeline('induction', DEFAULT_LIGHT).events);
+    // When the pairs do not divide the window, the wall comes first and no pair is induced after it.
+    const odd = { ...wall.params, wavelength: 1.7 }, oddEvents = lightDefinition.timeline('absorption', odd).events;
+    expect(oddEvents.at(-1)!.tick).toBe(1428);
+    expect(oddEvents.every(e => e.tick <= 1428)).toBe(true);
+    expect(lightDefinition.layers.filter(l => appliesTo(l, 'induction')).map(l => l.key)).not.toContain('cone');
+    expect(lightDefinition.layers.filter(l => appliesTo(l, 'absorption')).map(l => l.key)).toContain('cone');
+  });
   it('converts Light wavelengths between L and nm', () => {
     const wavelength = lightDefinition.params.find(p => p.key === 'wavelength');
     expect(wavelength?.kind === 'range' && wavelength.display?.toDisplay(2)).toBe(500);

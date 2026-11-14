@@ -201,6 +201,12 @@ describe('absorption at a wall', () => {
     m.next(); expect(m.state.tick).toBe(LIGHT_END_TICK);
     m.next(); expect(m.state.tick).toBe(LIGHT_END_TICK);
   });
+  it('opens files saved before the light-cone layer with the cone shown', () => {
+    const { cone: _none, ...older } = DEFAULT_LIGHT_VIEW, m = new LightSimulation(); m.configure(wall);
+    const saved = parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: { ...older, pairs: false } }));
+    expect(saved.view).toEqual({ ...DEFAULT_LIGHT_VIEW, pairs: false, cone: true });
+    expect(() => parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: { ...DEFAULT_LIGHT_VIEW, cone: 'yes' } }))).toThrow('Invalid cone layer setting.');
+  });
   it('keeps the wall in saved files and rejects a missing or malformed setting', () => {
     const m = new LightSimulation(); m.configure(wall); m.step(300);
     const saved = parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: DEFAULT_LIGHT_VIEW }));

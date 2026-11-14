@@ -51,6 +51,10 @@ test('light through the zero-point field', async ({ page }) => {
   await openLab(page, 'lab-light');
   await expect(tid(page, 'transport-run')).toBeEnabled();
   await snapshot(page, 'light');
+  // The absorption scenario after the photon has been absorbed: the status, legend and ledger strip change.
+  await page.goto('/#/light/absorption?t=1440');
+  await expect(page.getByTestId('light-tick')).toContainText('Tick 1440');
+  await snapshot(page, 'light-absorbed');
 });
 
 // Each double-slit scenario at the middle of its fourth central pair, with the field at its strongest. One test per

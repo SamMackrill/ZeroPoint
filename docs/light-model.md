@@ -6,7 +6,7 @@ This implements the illustrative sequence in steps 1–2 of the [experiment plan
 
 Model 2 (10 November 2026) changed two things to follow Fleming's figures and text more closely: the central pair now opens to its own wavelength and lies across the path at midlife, and the field is produced by that pair instead of being a separate wave-packet gliding along. Model 1 files hold the same state and open as the current model.
 
-Model 3 (11 November 2026) adds an optional absorbing wall, described under [Absorption](#absorption-at-a-wall). Model 1 and 2 files open as model 3 with no wall.
+Model 3 (11 November 2026) adds an optional absorbing wall, described under [Absorption](#absorption-at-a-wall). Model 1 and 2 files open as model 3 with no wall. The lab has two scenarios in the rail: **Induction sequence** (no wall; links stay `#/light?…`) and **Absorption at a wall** (`#/light/absorption?…`). Switching between them in the rail restarts the sequence and keeps the wave's settings.
 
 ## Units and timing decision
 
@@ -64,6 +64,13 @@ With the wall on (`absorber: true`) the run ends in an absorption instead of a w
 The wall stands where the last pair that completes inside the 12 L window ends its half wavelength: at the far edge of the window when the pairs divide it evenly (the default 500 nm gives 12 pairs and a wall at 12 L), and a little short of it otherwise. With pair start angle fraction `a` and `Tpair` ticks per pair, the last pair is `k = floor((1440 + a*Tpair) / Tpair) - 1` and the absorption tick is `(k + 1 - a) * Tpair`. **Placing the wall at a hand-off is this model's choice**: Fleming speaks of "the last half-wavelength of a photon's existence" and does not describe a photon meeting an absorber partway through a pair's life.
 
 At the absorption tick the last pair is gone, no further pair is induced, and the field is zero everywhere at once. The whole budget moves to **absorbed energy** in that one tick: the central pair's `E/2` and the field's `E/2` together. Nothing is recorded as departed. The timeline still runs to 12 τ; after the absorption nothing remains in the window.
+
+### What is drawn
+
+- **The wall**: a translucent slab just beyond the absorption point, with one stable electron where the path meets it. From the absorption tick the electron brightens and gains a ring: it has taken the photon's energy. The ring is a marker, not a model of the electron's new state.
+- **Light cone at the wall** (a Guides layer of this scenario, on by default): Fleming's *Photons* Fig. 1, apex at the absorption point and opening back along the path at 45°, the region from which field energy could reach the wall if fields spread only at the speed of light. Its drawn length (3 L) is a display choice; Fleming's figure is open-ended. The field drawn outside the cone is the energy his argument says would otherwise be lost.
+- From the absorption tick there is no central pair, no field reach, no field along the path and no turned background pair. The status reads **Absorbed at the wall · all at once · field and pair**.
+- The ledger shows **Absorbed at the wall** in place of **Departed window**, and the events list ends with the absorption. Files saved before the light-cone layer existed open with it shown.
 
 Not modelled: the annihilation itself (which charge of the last pair meets the stable electron), the electron's new state, and how much field energy would be lost if fields were limited to light speed. Fleming gives no number for the last; a figure would depend on the softening radius chosen here for the field.
 
