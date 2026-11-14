@@ -22,7 +22,7 @@ import '../../light/light.css';
 import './light-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
 import { copyLinkAction, encodeUrl, routeFor, useLinkSeek, usePendingLink, useUrlWriter, type ScenarioRequest } from '../../workbench/urlState';
-import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
+import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action, layersAction } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView } from '../../workbench/SplitView';
 import { CompareTab, useCompare, withDeltas } from '../../workbench/compare';
@@ -183,7 +183,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest, onScenar
   const actions: Action[] = [
     ...transportActions(runtime, timeline, SPEEDS, { onCapture: capture, runDisabled: contextLost, disabled: !ready }),
     ...cameraActions(lightDefinition.cameras, id => setCamera(id as typeof camera)),
-    { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
+    layersAction(() => setTab('view')),
     ...fileShortcuts(save, fileInput, !ready),
     SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
     copyLinkAction(urlHash, setNotice),

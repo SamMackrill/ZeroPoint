@@ -12,6 +12,24 @@ test('tablets get the overlay rail and inspector, a full-height viewport and the
   await expect(page.locator('.medium-workbench').getByTestId('split-toggle')).toBeVisible(); // tablets keep the split view
 });
 
+test('on a tablet, L and Palette › Parameters open the closed inspector drawer at the tab they choose', async ({ page }) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto('/'); await expect(tid(page, 'transport-run').filter({ visible: true })).toBeEnabled();
+  const drawer = page.getByRole('dialog', { name: 'Inspector' });
+  await expect(drawer).toHaveCount(0);
+  // L: the drawer opens at View.
+  await page.locator('body').press('l');
+  await expect(drawer).toBeVisible();
+  await expect(drawer.getByRole('tab', { name: 'View', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await page.keyboard.press('Escape'); await expect(drawer).toHaveCount(0);
+  // Palette › Parameters: the drawer opens at Setup with the field focused.
+  await page.keyboard.press('Control+k');
+  await page.getByRole('combobox', { name: 'Command palette' }).fill('frequency centre');
+  await page.keyboard.press('Enter');
+  await expect(drawer).toBeVisible();
+  await expect(drawer.locator('[data-testid="param-frequency"] input')).toBeFocused();
+});
+
 test('phones are a basic viewer: no split view, Compare or palette, and the inspector is a bottom sheet', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/'); await expect(tid(page, 'transport-run').filter({ visible: true })).toBeEnabled();
