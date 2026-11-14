@@ -4,7 +4,7 @@ import {
   norm, parseElectronFile, polarizationRate, radiusOf, referenceFields, sampleCentre, scale, shellAlignment, tauOf, unit, validateElectronParameters,
   type ElectronMode, type ElectronState, type Particle,
 } from '../src/electron/model';
-import { faradayLines } from '../src/electron/fieldLines';
+import { faradayLines, tracePolarization } from '../src/electron/fieldLines';
 
 /** A state for a particle in a mode at a tick (the polarization is established by tick 360). */
 const state = (particle: Particle, mode: ElectronMode = 'electric', tick = 360): ElectronState => ({ model: ELECTRON_MODEL, tick, parameters: { ...DEFAULT_ELECTRON, mode, particle } });
@@ -77,6 +77,14 @@ describe('the proton as a second polarizer', () => {
       const long = lines.filter(line => line.length > 20);
       expect(long.length).toBeGreaterThan(30);
       for (const line of long) expect(norm(line.at(-1)!)).toBeGreaterThan(norm(line[0]) + 1);
+    }
+  });
+  it('stops a field line that loops back on itself, whichever way it is traced', () => {
+    // A circulating polarization: the tracer must notice it has come round again, for a proton as for an electron.
+    const grid = Array.from({ length: LATTICE_SAMPLES }, (_, i) => { const [x, y] = sampleCentre(i); return [-y, x, 0] as [number, number, number]; });
+    for (const sense of [-1, 1] as const) {
+      const line = tracePolarization(grid, [2, 0, 0], [0, 0, 0], 400, sense);
+      expect(line.length).toBeLessThan(400);
     }
   });
 });

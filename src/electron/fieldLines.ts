@@ -42,7 +42,7 @@ export function tracePolarization(grid: Vec[], seed: Vec, core: Vec, steps = 160
     const next = add(p, scale(tangent, -h));
     if (norm(add(next, scale(core, -1))) < CORE_MASK || !norm(samplePolarization(grid, next))) break;
     // Stop stalled paths / loops in a disordered initial pattern.
-    if (points.some((old, j) => j < points.length - 5 && j % 3 === 0 && Math.hypot(old[0] - next[0], old[1] - next[1], old[2] - next[2]) < h * .6)) break;
+    if (points.some((old, j) => j < points.length - 5 && j % 3 === 0 && Math.hypot(old[0] - next[0], old[1] - next[1], old[2] - next[2]) < Math.abs(h) * .6)) break;
     points.push(next);
   }
   return points;

@@ -353,6 +353,10 @@
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "this lab runs the proton only in its stationary scenario (Proton polarizer)."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Updated an older experiment to the cubic medium and revised polarization sequence."
   },
   {

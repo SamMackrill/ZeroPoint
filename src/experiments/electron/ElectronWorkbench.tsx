@@ -37,6 +37,8 @@ const MODE_OF: Record<string, ElectronMode> = { stationary: 'electric', spin: 's
 const SCENARIO_OF: Record<ElectronMode, string> = { electric: 'stationary', spin: 'spin', moving: 'moving' };
 /** The timed scenario for a set of parameters: the proton has its own, and the electron's follow the mode. */
 const scenarioOf = (p: ElectronParameters) => (p.particle === 'proton' ? 'proton' : SCENARIO_OF[p.mode]);
+/** Whether a run fits a scenario this lab offers: the proton has only the stationary sequence. */
+const offered = (q: ElectronParameters) => q.particle !== 'proton' || q.mode === 'electric';
 /** The particle a timed scenario polarizes around. */
 const particleOf = (scenario: string): Particle => (scenario === 'proton' ? 'proton' : 'electron');
 /** The two static studies, from ElectronProperties. */
@@ -171,7 +173,9 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   async function load(file: File) {
     try {
       if (file.size > 100000) throw new Error('File exceeds 100 KB.');
-      const saved = parseElectronFile(await file.text()); runtime.restore(saved.state); setView({ ...saved.view, inspect: true }); setScenario(scenarioOf(saved.state.parameters)); compare.clear(); // B is pinned within one scenario
+      const saved = parseElectronFile(await file.text());
+      if (!offered(saved.state.parameters)) throw new Error('this lab runs the proton only in its stationary scenario (Proton polarizer).');
+      runtime.restore(saved.state); setView({ ...saved.view, inspect: true }); setScenario(scenarioOf(saved.state.parameters)); compare.clear(); // B is pinned within one scenario
       setNotice(`Loaded electron tick ${saved.state.tick}. Playback is paused.${saved.migrated ? ' Updated an older experiment to the cubic medium and revised polarization sequence.' : ''}`);
     } catch (e) { setNotice(`Could not load: ${e instanceof Error ? e.message : String(e)}`); }
   }
@@ -190,7 +194,8 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   /** The fixed probe's reference components over elapsed time, for one configuration at A's tick. */
   const tracesFor = (q: ElectronParameters) => Array.from({ length: 161 }, (_, i) => { const f = referenceFields({ ...s, parameters: q, tick: Math.round(s.tick * i / 160) }, probePosition(q)); return f.valid ? [f.electric[1], f.motion[2], q.mode === 'electric' ? 0 : f.intrinsic[2]] : null; });
   // B: the same analytic references with B's parameters, in lock-step with A's tick (no second worker needed).
-  const pB = !phone && compare.b && compare.b.mode === p.mode ? compare.b : null, sB = pB && { ...s, parameters: pB };
+  // B is compared within one scenario: the same mode and the same particle.
+  const pB = !phone && compare.b && compare.b.mode === p.mode && compare.b.particle === p.particle ? compare.b : null, sB = pB && { ...s, parameters: pB };
   const traces = tracesFor(p), tracesB = pB ? tracesFor(pB) : null;
   const max = Math.max(.01, ...traces.flatMap(v => v?.map(Math.abs) ?? []), ...(tracesB ?? []).flatMap(v => v?.map(Math.abs) ?? []));
   /** The readout strip for one configuration. */
@@ -285,7 +290,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
         </div> },
         ...(study || phone ? [] : [{ id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={electronDefinition} scenario={scenario} a={p} b={pB}
           onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}
-          onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Electron files must be smaller than 100 KB.'); const saved = parseElectronFile(await file.text()); if (saved.state.parameters.mode !== p.mode) throw new Error('that file is from another scenario'); compare.pin(saved.state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> }]),
+          onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Electron files must be smaller than 100 KB.'); const saved = parseElectronFile(await file.text()); if (saved.state.parameters.mode !== p.mode || saved.state.parameters.particle !== p.particle) throw new Error('that file is from another scenario'); compare.pin(saved.state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> }]),
         { id: 'polarization', label: 'Polarization', content: <div className="electron-probe">
           <div><h4>Mean alignment of a pair, by distance</h4><Plot label="Mean radial alignment of the displayed lattice pairs in each shell, beside the rule they follow and the alignment they settle to" x={shells.map(shell => shell.radius)} series={[{ key: 'mean', label: 'Displayed pairs', color: palette.dataE, values: shells.map(shell => shell.mean) }, { key: 'rule', label: 'Rule, pairs mid-turn', color: palette.dataMark, values: shells.map(shell => shell.pairs ? shell.expected / shell.pairs : null) }, { key: 'settled', label: 'Settled, (1.6 R / r)²', color: palette.dataB, values: shells.map(shell => shell.pairs ? shell.settled / shell.pairs : null) }]} xUnit="R" yDomain={[-.1, 1.05]} reference={0} formatX={v => v.toFixed(1)} height={84} testId="electron-alignment-plot"/></div>
           <div><h4>Total alignment through each shell</h4><Plot label="Sum of radial alignment over the lattice pairs in each shell: level outside the full-alignment radius" x={shells.map(shell => shell.radius)} series={[{ key: 'total', label: 'Displayed pairs', color: palette.dataE, values: shells.map(shell => shell.total) }, { key: 'rule', label: 'Rule, pairs mid-turn', color: palette.dataMark, values: shells.map(shell => shell.expected) }]} xUnit="R" yDomain={[0, Math.max(1, ...shells.map(shell => shell.expected)) * 1.3]} formatX={v => v.toFixed(1)} height={84} testId="electron-shell-total-plot"/>
@@ -357,8 +362,9 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   const timelineNode = state && !study && (
     <TimelineBar runtime={runtime} timeline={timeline} speeds={SPEEDS}
       markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `electron tick ${c.tick}` }))}
-      onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) runtime.restore(c); }}
-      onMarkerPin={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (!c) return; if (c.parameters.mode !== p.mode) { setNotice('Could not pin as B: that checkpoint is from another scenario.'); return; } compare.pin(c.parameters); setNotice('Pinned the checkpoint’s parameters as B.'); }} onCapture={capture} runDisabled={contextLost}/>
+      // A checkpoint brings its scenario back with it (an electron's checkpoint restored from Proton polarizer opens Stationary electron).
+      onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) { runtime.restore(c); if (scenarioOf(c.parameters) !== scenario) { setScenario(scenarioOf(c.parameters)); compare.clear(); } } }}
+      onMarkerPin={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (!c) return; if (c.parameters.mode !== p.mode || c.parameters.particle !== p.particle) { setNotice('Could not pin as B: that checkpoint is from another scenario.'); return; } compare.pin(c.parameters); setNotice('Pinned the checkpoint’s parameters as B.'); }} onCapture={capture} runDisabled={contextLost}/>
   );
 
   return (

@@ -287,5 +287,15 @@ test('the proton polarizer: pairs turn outward, at 1386 times the electron\u2019
   // Loading the proton file returns to the proton scenario.
   await tid(page, 'file-input').setInputFiles({ name: 'proton.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(saved)) });
   await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toHaveText('Proton polarizer');
+  // The lab runs the proton only in its stationary scenario: a moving proton is refused.
+  const moving = { ...saved, state: { ...saved.state, parameters: { ...saved.state.parameters, mode: 'moving' } } };
+  await tid(page, 'file-input').setInputFiles({ name: 'moving-proton.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(moving)) });
+  await expect(tid(page, 'notice')).toContainText('runs the proton only in its stationary scenario');
+  // A checkpoint brings its scenario back: an electron's checkpoint restored from Proton polarizer opens Stationary electron.
+  await scenario(page, 'stationary');
+  await tid(page, 'capture').click();
+  await scenario(page, 'proton');
+  await page.locator('.timeline-marker').first().click();
+  await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toHaveText('Stationary electron');
   expect(errors).toEqual([]);
 });
