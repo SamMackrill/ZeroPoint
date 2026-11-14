@@ -1,7 +1,8 @@
 // The double-slit experiment file (zeropoint-double-slit, version 1): the scenario, the slit geometry, the layers and the
 // tick. Parsing validates every field against the definition; the scenario, not the file, sets the wall and field speed.
+// The slit geometry is kept in every scenario, Open path included, because the lab carries it to the next scenario.
 import { SLIT_END_TICK, SLIT_MODEL, validateSlitParameters, type SlitParameters } from '../../double-slit/model';
-import { appliesTo, scenarioState } from '../../workbench/definition';
+import { scenarioState } from '../../workbench/definition';
 import { doubleSlitDefinition, type SlitView } from './definition';
 
 /** A saved double-slit experiment. */
@@ -23,7 +24,7 @@ export function parseSlitFile(text: string): Pick<SlitFile, 'scenario' | 'params
   if (!scenario) throw new Error(`Unknown scenario "${String(file.scenario)}".`);
   const start = scenarioState(doubleSlitDefinition, scenario.id), params = { ...start.params } as unknown as Record<string, unknown>;
   for (const spec of doubleSlitDefinition.params) {
-    if (spec.kind !== 'range' || !appliesTo(spec, scenario.id)) continue;
+    if (spec.kind !== 'range') continue;
     const value = (file.params as unknown as Record<string, unknown> | undefined)?.[spec.key];
     if (typeof value !== 'number' || !Number.isFinite(value) || value < spec.min || value > spec.max) throw new Error(`${spec.label} must be a number from ${spec.min} to ${spec.max}.`);
     params[spec.key] = value;

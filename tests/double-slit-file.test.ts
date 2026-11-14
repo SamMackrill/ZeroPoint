@@ -37,9 +37,12 @@ describe('double-slit files', () => {
     const file = slitFile('open', { ...DEFAULT_SLITS, wall: 'slits', fields: 'light' }, held.view, 0);
     expect(parseSlitFile(JSON.stringify(file)).params).toMatchObject({ wall: 'open', fields: 'fast' });
   });
-  it('keeps the default slits for a scenario without a wall, whatever the file holds', () => {
-    const file = { ...slitFile('open', DEFAULT_SLITS, held.view, 10), params: { slitOffset: 99 } };
-    expect(parseSlitFile(JSON.stringify(file)).params).toMatchObject({ slitOffset: 3, slitWidth: 1 });
+  it('keeps the slit geometry of an Open path file, which the lab carries to the next scenario', () => {
+    const geometry = { slitOffset: 5, slitWidth: 2 };
+    const file = slitFile('open', { ...DEFAULT_SLITS, ...geometry, wall: 'open' }, held.view, 10);
+    expect(parseSlitFile(JSON.stringify(file)).params).toEqual({ wall: 'open', fields: 'fast', ...geometry });
+    // Hidden or not, an out-of-range value is still rejected.
+    expect(() => parseSlitFile(JSON.stringify({ ...file, params: { ...file.params, slitOffset: 99 } }))).toThrow('Slit distance from path must be a number from 2 to 5.');
   });
   it('rejects other formats, unknown scenarios and out-of-range values', () => {
     const good = slitFile('slits', DEFAULT_SLITS, held.view, 0);
