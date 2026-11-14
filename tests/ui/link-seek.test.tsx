@@ -20,8 +20,9 @@ describe('useLinkSeek', () => {
     expect(holds.at(-1)).toBe(false); // the writer is free again
     expect(done).not.toHaveBeenCalled(); // but the seek is still pending
     view.rerender(<Lab pending={pending} state={{ parameters: { wavelength: 3 } }} seek={seek} done={done} onHold={h => holds.push(h)}/>);
-    expect(seek).toHaveBeenCalledWith(120);
-    expect(done).toHaveBeenCalled();
+    // The seek and the completion name the link they act for.
+    expect(seek).toHaveBeenCalledWith(120, pending);
+    expect(done).toHaveBeenCalledWith(pending);
   });
   it('forgets a link whose parameters never arrive after 30 s', () => {
     vi.useFakeTimers();
@@ -59,12 +60,24 @@ describe('usePendingLink', () => {
   });
   it('passes the seek on while its link is still pending, and not for the tick of another link', () => {
     const seekNow = vi.fn(), { result } = renderHook(() => usePendingLink(seekNow));
-    act(() => result.current.set({ params: {}, tick: 240 }));
-    act(() => result.current.seek(600));
-    expect(seekNow).not.toHaveBeenCalled();
-    act(() => result.current.seek(240));
+    const link = { params: {}, tick: 240 };
+    act(() => result.current.set(link));
+    act(() => result.current.seek(240, link));
     expect(seekNow).toHaveBeenCalledWith(240);
-    act(() => result.current.done());
+    act(() => result.current.done(link));
+    expect(result.current.link).toBeNull();
+  });
+  it.each([['the same tick', 600], ['a different tick', 900]])('ignores the replaced link’s seek and completion when a new link has %s', (_case, tick) => {
+    const seekNow = vi.fn(), { result } = renderHook(() => usePendingLink(seekNow));
+    const first = { params: { wavelength: 2 }, tick: 600 }, second = { params: { wavelength: 3 }, tick };
+    act(() => result.current.set(first));
+    act(() => result.current.set(second));
+    // The first link's effect runs late: neither its seek nor its completion may touch the second link.
+    act(() => { result.current.seek(600, first); result.current.done(first); });
+    expect(seekNow).not.toHaveBeenCalled();
+    expect(result.current.link).toBe(second);
+    act(() => { result.current.seek(tick, second); result.current.done(second); });
+    expect(seekNow).toHaveBeenCalledWith(tick);
     expect(result.current.link).toBeNull();
   });
 });

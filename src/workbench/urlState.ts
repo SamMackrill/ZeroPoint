@@ -175,34 +175,35 @@ export function sameValues(want: object, have: object): boolean {
  * and clear the pending link. Returns whether the URL writer should hold, so the link isn't overwritten meanwhile.
  * The hold lasts at most 3 s; a slow worker still gets its seek when its parameters arrive, for up to 30 s.
  */
-export function useLinkSeek(pending: PendingLink | null, done: () => void, state: { parameters: object } | null, seek: (tick: number) => void): boolean {
+export function useLinkSeek(pending: PendingLink | null, done: (link?: PendingLink) => void, state: { parameters: object } | null, seek: (tick: number, link?: PendingLink) => void): boolean {
   const [holding, setHolding] = useState(false);
   useEffect(() => {
     if (!pending || !state || !sameValues(pending.params, state.parameters)) return;
-    if (pending.tick) seek(pending.tick);
-    done();
+    // Both carry the link they act for, so a guard (usePendingLink) can ignore an effect from a link since replaced.
+    if (pending.tick) seek(pending.tick, pending);
+    done(pending);
   }, [pending, state, done, seek]);
   useEffect(() => {
     if (!pending) { setHolding(false); return; }
     // A runtime that normalizes a value it reports back would never match: release the URL writer after 3 s, and
     // forget the seek after 30 s so it can't fire much later on a coincidental match.
     setHolding(true);
-    const release = setTimeout(() => setHolding(false), 3000), expire = setTimeout(done, 30_000);
+    const release = setTimeout(() => setHolding(false), 3000), expire = setTimeout(() => done(pending), 30_000);
     return () => { clearTimeout(release); clearTimeout(expire); };
   }, [pending, done]);
   return !!pending && holding;
 }
 
 /**
- * A pending link that can be cancelled at once. `set` records the link in a ref as well as in state, and `seek` only
- * passes a tick on while that same link is still pending, so a seek queued by a render that saw an older link (say,
- * one the rail has just replaced with a fresh run) is dropped instead of moving the new run.
+ * A pending link that can be cancelled or replaced at once. `set` records the link in a ref as well as in state.
+ * `seek` and `done` act only for the link that is still pending, by identity, so an effect from a render that saw an
+ * older link (one the rail cancelled, or another link replaced) can neither move the new run nor clear the new link.
  */
 export function usePendingLink(seekNow: (tick: number) => void) {
   const [link, setState] = useState<PendingLink | null>(null), current = useRef<PendingLink | null>(null);
   const set = useCallback((next: PendingLink | null) => { current.current = next; setState(next); }, []);
-  const done = useCallback(() => set(null), [set]);
-  const seek = useCallback((tick: number) => { if (current.current && current.current.tick === tick) seekNow(tick); }, [seekNow]);
+  const done = useCallback((link?: PendingLink) => { if (!link || current.current === link) set(null); }, [set]);
+  const seek = useCallback((tick: number, link?: PendingLink) => { if (current.current && current.current === (link ?? current.current)) seekNow(tick); }, [seekNow]);
   return { link, set, done, seek };
 }
 
