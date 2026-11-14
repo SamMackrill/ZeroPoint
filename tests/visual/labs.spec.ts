@@ -53,14 +53,15 @@ test('light through the zero-point field', async ({ page }) => {
   await snapshot(page, 'light');
 });
 
-test('double slit scenarios', async ({ page }) => {
-  // Each scenario at the middle of its fourth central pair, with the field at its strongest.
-  for (const scenario of ['slits', 'open', 'light-speed']) {
+// Each double-slit scenario at the middle of its fourth central pair, with the field at its strongest. One test per
+// scenario, so three full-page captures never share one test's time limit.
+for (const scenario of ['slits', 'open', 'light-speed']) {
+  test(`double slit: ${scenario}`, async ({ page }) => {
     await page.goto(`/#/double-slit/${scenario}?t=105`);
     await expect(page.getByTestId('slit-tick')).toContainText('Tick 105');
     await snapshot(page, `double-slit-${scenario}`);
-  }
-});
+  });
+}
 
 test('electron scenarios', async ({ page }) => {
   await openLab(page, 'lab-electron');
