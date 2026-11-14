@@ -213,7 +213,27 @@ export const FIDELITY_SCREENS = [
   { name: 'casimir-attract', title: 'Extended Casimir · electron and proton, 120 steps', lab: 'lab-casimir', scenario: 'scenario-electron-proton', steps: 120 },
   { name: 'vdw-plates', title: 'Van der Waals · plates: which zeptons fit the gap', lab: 'lab-vdw', scenario: 'scenario-pressure' },
 ];
-const SETS = { fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
+/**
+ * The double-slit laboratory (`--set double-slit`): a new lab, so every screen but the rail has no "before". Each link
+ * opens a scenario at a tick chosen to show one step of Fleming's argument (book ch. 19, Fig. 19-3).
+ */
+const noSlitLab = 'the Double slit laboratory did not exist';
+export const DOUBLE_SLIT_SCREENS = [
+  { name: 'rail', title: 'The rail: Double slit moves from Planned to the experiments' },
+  { name: 'slits-short-of-wall', title: 'Two slits · tick 105, pair 4 at midlife: its field reaches B through both slits', hash: '#/double-slit/slits?t=105', beforeMissing: noSlitLab },
+  { name: 'slits-beyond-wall', title: 'Two slits · tick 285, pair 10 at midlife: induced beyond the wall, on the straight path', hash: '#/double-slit/slits?t=285', beforeMissing: noSlitLab },
+  { name: 'slits-absorbed', title: 'Two slits · tick 480: absorbed at B in the straight-line time', hash: '#/double-slit/slits?t=480', beforeMissing: noSlitLab },
+  { name: 'open-path', title: 'Open path · tick 105: nothing in the way, the reference time', hash: '#/double-slit/open?t=105', beforeMissing: noSlitLab },
+  { name: 'light-speed', title: 'Fields at light speed · tick 195: the field stops half a wavelength from the path', hash: '#/double-slit/light-speed?t=195', beforeMissing: noSlitLab },
+  { name: 'light-speed-halted', title: 'Fields at light speed · tick 300: halted at the wall, nothing arrives', hash: '#/double-slit/light-speed?t=300', beforeMissing: noSlitLab },
+  { name: 'wide-slits', title: 'Two slits · the slits moved in and widened (2 λ from the path, 2 λ wide)', hash: '#/double-slit/slits?slitOffset=2&slitWidth=2&t=195', beforeMissing: noSlitLab },
+  { name: 'plots', title: 'Dock › Plots: the field at B through the run, and along the wall now', hash: '#/double-slit/slits?t=195', beforeMissing: noSlitLab, prepare: liftDock, focus: '.dock-body' },
+  { name: 'reach', title: 'Dock › Reach: how far the field must spread', hash: '#/double-slit/slits?t=195', beforeMissing: noSlitLab, prepare: async page => { await page.getByTestId('dock-reach').filter({ visible: true }).click(); await liftDock(page); }, focus: '.dock-body' },
+  { name: 'figure', title: 'Split view: Fleming’s Fig. 19-3 beside the diagram', hash: '#/double-slit/slits?t=105&split=fig-19-3', beforeMissing: noSlitLab },
+  { name: 'about', title: 'Help › This scenario: what is drawn and what Fleming leaves open', hash: '#/double-slit/slits?t=105', beforeMissing: noSlitLab, prepare: openAbout() },
+  { name: 'phone', title: 'On a phone (390 px)', hash: '#/double-slit/slits?t=105', beforeMissing: noSlitLab, viewport: { width: 390, height: 844 }, fullPage: true },
+];
+const SETS = { 'double-slit': DOUBLE_SLIT_SCREENS, fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -291,7 +311,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (only && (!only.length || unknown.length)) throw new Error(`--only ${unknown.length ? `names screens not in the set: ${unknown.join(', ')}` : 'names no screen'}. The set's names: ${names.join(', ')}`);
   // --only recaptures a subset; the page still shows the whole set, from the images already in --out.
   const screens = set.filter(screen => !only || only.includes(screen.name));
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--only name,name] [--set fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--only name,name] [--set double-slit|fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.

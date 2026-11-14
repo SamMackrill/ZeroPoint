@@ -1,0 +1,215 @@
+/* The double-slit stage: a heading line, the diagram filling the viewport, a state line and a legend. */
+.slit-workbench-root .slit-stage {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 0;
+  overflow: auto;
+  background: var(--bg-2);
+}
+
+.slit-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  /* Room on the right for the split-view toggle. */
+  padding: 14px 56px 14px 21px;
+  color: var(--text-3);
+  font: var(--fs-micro) var(--mono);
+  letter-spacing: .5px;
+}
+
+.slit-heading b {
+  margin-left: 10px;
+  color: var(--text-2);
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.slit-heading a {
+  flex: none;
+  color: var(--text-2);
+  font: var(--fs-micro) 'DM Sans', sans-serif;
+  letter-spacing: 0;
+}
+
+.slit-diagram {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at center, var(--bg-3), var(--bg-1));
+}
+
+.slit-diagram > svg {
+  display: block;
+  width: 100%;
+  max-height: 100%;
+  fill: var(--text-2);
+}
+
+.slit-diagram text {
+  font: 17px 'DM Sans', sans-serif;
+}
+
+.slit-diagram .slit-svg-muted {
+  font-size: var(--fs-body);
+}
+
+.slit-diagram .slit-svg-muted:not([fill]) {
+  fill: var(--text-3);
+}
+
+.slit-state {
+  margin: 0;
+  padding: 6px 21px;
+  background: var(--bg-1);
+  color: var(--text-2);
+  font: var(--fs-ui) var(--mono);
+  text-align: center;
+}
+
+.slit-legend {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 21px;
+  border-top: 1px solid var(--line);
+  background: var(--bg-1);
+  color: var(--text-2);
+  font-size: var(--fs-micro);
+}
+
+.slit-legend > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.slit-legend small {
+  margin-left: auto;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+}
+
+.slit-legend i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.slit-positive {
+  background: var(--data-pos);
+}
+
+.slit-negative {
+  background: var(--data-neg);
+}
+
+.slit-turned {
+  background: var(--data-e);
+}
+
+.slit-mark {
+  background: var(--data-mark);
+}
+
+/* Dock: two plots side by side, and the reach comparison. */
+.slit-dock-plots {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  max-width: 1100px;
+}
+
+.slit-dock-plots h4,
+.slit-dock-text h4 {
+  margin: 0 0 4px;
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+}
+
+.slit-dock-text {
+  max-width: 640px;
+}
+
+.slit-plot-empty {
+  margin: 8px 0 0;
+  color: var(--text-3);
+  font-size: var(--fs-ui);
+}
+
+.slit-dock-text p {
+  margin: 10px 0 0;
+  color: var(--text-2);
+  font-size: var(--fs-ui);
+  line-height: 1.6;
+}
+
+.slit-dock-text .slit-note {
+  color: var(--text-3);
+  font-size: var(--fs-micro);
+}
+
+/* Source figures, on the white page they were printed on: one in the split pane, two in the About sheet. */
+.slit-figure {
+  margin: 0;
+  min-width: 0;
+}
+
+.slit-figure a {
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: white;
+  border-radius: 5px;
+}
+
+.slit-figure img {
+  max-width: 100%;
+  max-height: 52vh;
+  object-fit: contain;
+}
+
+.slit-figure figcaption {
+  margin-top: 12px;
+  font-size: var(--fs-ui);
+  line-height: 1.6;
+}
+
+.slit-figure strong {
+  display: block;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.slit-figure span {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-3);
+}
+
+.about-body .slit-source-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.about-body .slit-source-grid img {
+  max-height: 170px;
+}
+
+@media(max-width:850px) {
+  .slit-workbench-root .workbench-narrow-stage .workbench-viewport {
+    height: auto;
+  }
+
+  .slit-diagram {
+    min-height: 220px;
+  }
+}

@@ -14,9 +14,9 @@ The roadmap includes visualisations of:
 
 - **Casimir Effect** — an ideal plate pressure/energy reference is now available in the van der Waals experiment. The full 3D boundary model remains in the [Casimir experiment plan](docs/planned-experiments/casimir-effect.md).
 - **Lamb Shift** — energy-level comparisons showing the small shift associated with an atom’s interaction with its surrounding field, with any proposed zero-point-field explanation kept separate from the reference result.
-- **Double Slit Experiment** — adjustable slit geometry and wavelength, screen interference patterns, and comparisons between one-slit, two-slit and which-path cases.
+- **Double Slit Experiment** — Fleming's single-photon argument (book ch. 19, Fig. 19-3) is now a laboratory: see [the model notes](docs/double-slit-model.md). A screen pattern and one-slit and which-path cases are [not built](docs/planned-experiments/double-slit.md).
 
-Lamb shift and double slit remain planned. The implemented visualizations are not experimentally validated simulations.
+Lamb shift remains planned. The implemented visualizations are not experimentally validated simulations.
 
 ## Run locally
 

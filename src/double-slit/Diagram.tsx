@@ -189,5 +189,5 @@ export function WallPlot({ params, tick }: { params: SlitParameters; tick: numbe
   return <Plot label="The strength of the active pair's field along the wall at this instant, against distance from the straight path. The slit edges are marked."
     x={xs} series={[{ key: 'wall', label: '|E| on the wall', color: palette.dataE, values }]} xDomain={[-8, 8]} yScale="log" yDomain={[1e-4, 1]} yTicks={[1e-4, 1e-2, 1]} xTicks={[-8, 0, 8]} xUnit="λ"
     markers={openings(params).flatMap((o, i) => [{ x: o[0], label: `${i ? 'Right' : 'Left'} slit from ${o[0]} λ` }, { x: o[1], label: `${i ? 'Right' : 'Left'} slit to ${o[1]} λ` }])}
-    caption="Field strength along the wall, now · log scale · slit edges marked" height={110} empty="No field reaches the wall at this instant: no pair is turning." testId="slit-wall-plot"/>;
+    caption="Field strength along the wall, now · log scale · slit edges marked" height={110} empty="No field reaches the wall at this instant." testId="slit-wall-plot"/>;
 }

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import { ArrivalPlot, SlitDiagram, WallPlot, shownResponse, stateLine, type SlitLayers } from '../../src/double-slit/Diagram';
 import { DEFAULT_SLITS, PAIR_TICKS, PATH_LENGTH, SLIT_END_TICK, fieldAt, fieldOnWall, type SlitParameters } from '../../src/double-slit/model';
+import { formatNumber } from '../../src/ui/plot-scale';
 import { palette } from '../../src/ui/palette';
 
 const all: SlitLayers = { zeptons: true, fields: true, routes: true, reach: true, path: true };
@@ -96,6 +97,9 @@ describe('double-slit plots', () => {
   it('explain an empty wall plot when no pair is turning, and show the field when one is', () => {
     expect(plotted(<WallPlot params={slits} tick={0}/>)).toContain('No field reaches the wall at this instant');
     expect(plotted(<WallPlot params={slits} tick={PAIR_TICKS}/>)).toContain('No field reaches the wall at this instant');
+    // Held to light speed a pair is turning at tick 15, but its field stops half a wavelength from the path, short of the wall.
+    const heldAt15 = plotted(<WallPlot params={held} tick={15}/>);
+    expect(heldAt15).toContain('No field reaches the wall at this instant.'); expect(heldAt15).not.toContain('no pair is turning');
     expect(plotted(<WallPlot params={slits} tick={midlife(3)}/>)).not.toContain('No field reaches the wall');
     expect(plotted(<ArrivalPlot params={held} tick={0}/>)).toContain('No field reaches B at any time in this run.');
   });
@@ -104,5 +108,21 @@ describe('double-slit plots', () => {
     const tick = 3 * PAIR_TICKS + PAIR_TICKS / 4, atB = fieldAt(slits, tick, [0, PATH_LENGTH]), onWall = fieldOnWall(slits, tick, 3);
     expect(Math.abs(atB.electric)).toBeLessThan(atB.envelope);
     expect(Math.abs(onWall.electric)).toBeLessThan(onWall.envelope);
+  });
+  it('draw |E| itself: the keyboard readout at a sample shows |E|, not the envelope', () => {
+    /** Step a plot's crosshair to sample `index` from the keyboard and return its readout. */
+    const readAt = (node: ReactElement, index: number) => {
+      const view = render(node), area = view.container.querySelector('.plot-area')!;
+      fireEvent.keyDown(area, { key: 'Home' });
+      for (let i = 0; i < Math.floor(index / 10); i++) fireEvent.keyDown(area, { key: 'ArrowRight', shiftKey: true });
+      for (let i = 0; i < index % 10; i++) fireEvent.keyDown(area, { key: 'ArrowRight' });
+      const text = view.container.querySelector('.plot-readout')!.textContent ?? ''; view.unmount(); return text;
+    };
+    // Tick 97: pair 4 a quarter of the way through its life, so |E| and the envelope differ.
+    const tick = 3 * PAIR_TICKS + 7, atB = fieldAt(slits, tick, [0, PATH_LENGTH]), onWall = fieldOnWall(slits, tick, -8);
+    expect(formatNumber(Math.abs(atB.electric))).not.toBe(formatNumber(atB.envelope));
+    expect(readAt(<ArrivalPlot params={slits} tick={0}/>, tick)).toContain(formatNumber(Math.abs(atB.electric)));
+    expect(readAt(<WallPlot params={slits} tick={tick}/>, 0)).toContain(formatNumber(Math.abs(onWall.electric)));
+    expect(readAt(<WallPlot params={slits} tick={tick}/>, 0)).not.toContain(formatNumber(onWall.envelope));
   });
 });
