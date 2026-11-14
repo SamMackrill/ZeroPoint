@@ -21,7 +21,7 @@ import { lightDefinition } from './definition';
 import '../../light/light.css';
 import './light-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
-import { copyLinkAction, encodeUrl, routeFor, useLinkSeek, useUrlWriter, type PendingLink, type ScenarioRequest } from '../../workbench/urlState';
+import { copyLinkAction, encodeUrl, routeFor, useLinkSeek, usePendingLink, useUrlWriter, type ScenarioRequest } from '../../workbench/urlState';
 import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
 import { getSettings, useSettings } from '../../workbench/settings';
 import { SplitView } from '../../workbench/SplitView';
@@ -40,16 +40,19 @@ export interface LightWorkbenchProps {
   active: boolean;
   rail: ReactNode;
   header: Pick<HeaderProps, 'experiment'>;
-  /** A link's request (Light has one scenario, so only links send one). */
+  /** A request to start a scenario: from the rail or the palette, or from a link with its settings. */
   scenarioRequest?: ScenarioRequest | null;
+  onScenarioChange?(id: string): void;
 }
 
 /**
  * The light induction laboratory in the workbench (UI 08): the propagating wave and its pairs in the viewport, the
  * bounded 0–12 τ timeline with one tick per induction, the dock (travelled, time, energy; plots, ledger, events), and
- * the inspector (Setup, all ↻; View; Selection: the pair close-up). The worker protocol and renderer are unchanged.
+ * the inspector (Setup, all ↻; View; Selection: the pair close-up). The scenario is the run's ending: out of the window
+ * (Induction sequence) or absorbed at a wall (Absorption at a wall). It is read from the parameters, so a loaded file or a
+ * restored checkpoint brings its scenario with it.
  */
-export function LightWorkbench({ active, rail, header, scenarioRequest }: LightWorkbenchProps) {
+export function LightWorkbench({ active, rail, header, scenarioRequest, onScenarioChange }: LightWorkbenchProps) {
   const { state, latest, sink, send, error, restart } = useLight(active);
   const runtime = useMemo(() => lightRuntime({ send, latest, sink }), [send, latest, sink]);
   useEffect(() => () => runtime.dispose(), [runtime]);
@@ -97,12 +100,21 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   useSelectionKeys({ active, hasSelection: selected !== null, onClear: clearSelection, onFocus: focusSelection });
   const s = state ?? { model: LIGHT_MODEL, tick: 0, parameters: lightDefinition.defaultParams, running: false, speed: 1 };
   const p = s.parameters, d = lightReadout(s), inspected = pairAt(p, s.tick, selected ?? d.index);
-  // A link restarts the sequence with its parameters and view, then seeks to its tick once the worker has them.
-  const [link, setLink] = useState<PendingLink | null>(null), linkDone = useCallback(() => setLink(null), []);
+  const scenario = p.absorber ? 'absorption' : 'induction', current = lightDefinition.scenarios.find(x => x.id === scenario)!;
+  useEffect(() => { onScenarioChange?.(scenario); }, [scenario, onScenarioChange]);
+  // The pairs the run induces, and whether the photon is gone: absorbed at the wall, or out of the window.
+  const pairs = d.wall ? d.wall.pair + 1 : pairCount(p), gone = d.finished || d.absorbed;
+  // The rail restarts the sequence in the other scenario, keeping the wave. A link restarts it with its parameters and
+  // view, then seeks to its tick once the worker has them.
+  // The pending link lives in a ref too, so a rail choice cancels its seek at once (see usePendingLink).
+  const { link, set: setLink, done: linkDone, seek } = usePendingLink(useCallback((tick: number) => runtime.seek(tick), [runtime]));
   const applyLink = (request: ScenarioRequest) => {
-    const url = request.url, dropped = [...(request.dropped ?? [])];
+    const url = request.url, dropped = [...(request.dropped ?? [])], start = scenarioState(lightDefinition, request.id).params;
+    // Every rail choice restarts the run in its scenario. The worker's reply may lag, so this never compares with the
+    // state on screen, and it cancels a link's pending seek, which belongs to the run it replaces.
+    if (!url) { runtime.configure({ ...p, absorber: start.absorber }); setLink(null); setSelected(null); }
     if (url) {
-      const target = withPaths(scenarioState(lightDefinition, 'induction').params, url.params) as LightParameters;
+      const target = withPaths(start, url.params) as LightParameters;
       runtime.configure(target); setLink({ params: target, tick: url.tick });
       // A pinned pair is kept when it exists in the linked sequence.
       if (url.selection !== undefined && url.selection < pairCount(target)) setSelected(url.selection);
@@ -115,9 +127,10 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   };
   const applyRef = useRef(applyLink); applyRef.current = applyLink;
   useEffect(() => { if (scenarioRequest) applyRef.current(scenarioRequest); }, [scenarioRequest]);
-  const seek = useCallback((tick: number) => runtime.seek(tick), [runtime]);
   const linkHold = useLinkSeek(link, linkDone, state, seek);
-  const urlHash = encodeUrl(routeFor(lightDefinition, 'induction', p, view, { camera: camera === 'orbit' ? undefined : camera, split: split ? 'pair' : undefined, tick: s.tick || undefined, selection: selected ?? undefined }));
+  // Links to the first scenario keep their short form (#/light?…), as before the lab had a second.
+  const route = routeFor(lightDefinition, scenario, p, view, { camera: camera === 'orbit' ? undefined : camera, split: split ? 'pair' : undefined, tick: s.tick || undefined, selection: selected ?? undefined });
+  const urlHash = encodeUrl(scenario === 'induction' ? { ...route, scenario: undefined } : route);
   useUrlWriter(active, s.running || !state || linkHold, urlHash);
   const ready = !!state && !error;
   /** Restart the sequence with changed parameters (every light parameter is ↻). */
@@ -150,7 +163,8 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
   const spatialX = Array.from({ length: 161 }, (_, i) => p.offset - 6 + i * 12 / 160), historyX = Array.from({ length: 161 }, (_, i) => d.time * i / 160);
   const spatial = spatialX.map(x => waveAt(p, d.time, x).electric), history = historyX.map(t => waveAt(p, t, p.probe).electric);
   // B: the same model with B's parameters at A's tick (Light is analytic, so B needs no worker).
-  const pB = phone ? null : compare.b, dB = pB && lightReadout({ ...s, parameters: pB });
+  // B is compared within one scenario: a B pinned with or without the wall does not apply to the other (as in Electron).
+  const pB = phone || !compare.b || compare.b.absorber !== p.absorber ? null : compare.b, dB = pB && lightReadout({ ...s, parameters: pB });
   const spatialB = pB && dB ? spatialX.map(x => waveAt(pB, dB.time, x).electric) : undefined, historyB = pB ? historyX.map(t => waveAt(pB, t, pB.probe).electric) : undefined;
   /** The readout strip for one configuration. */
   const stripFor = (r: ReturnType<typeof lightReadout>, q: LightParameters) => [
@@ -161,9 +175,9 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
     { label: 'Excess energy', value: r.energy.toFixed(3), unit: 'eV' },
   ];
   const glyphReach = inspected.separation / inspected.peak * 46, pairX = 100 + inspected.axial * glyphReach, pairY = 66 - inspected.transverse * glyphReach;
-  const stateLine = d.finished ? 'SEQUENCE COMPLETE' : `Pair ${d.index + 1} / ${pairCount(p)} · ${d.pair.sense > 0 ? '↺ positive' : '↻ negative'} · E ${d.pair.polarity > 0 ? '+' : '−'}`;
+  const stateLine = d.absorbed ? 'ALL AT ONCE · FIELD AND PAIR' : d.finished ? 'SEQUENCE COMPLETE' : `Pair ${d.index + 1} / ${pairs} · ${d.pair.sense > 0 ? '↺ positive' : '↻ negative'} · E ${d.pair.polarity > 0 ? '+' : '−'}`;
 
-  const timeline = lightDefinition.timeline('induction', p);
+  const timeline = lightDefinition.timeline(scenario, p);
   const exportItems: ExportItem[] = [{ id: 'png', label: 'PNG image', onSelect: () => renderer.current?.exportPNG(), disabled: !!graphicsError }, { id: 'csv', label: 'CSV (full sequence)', onSelect: exportCSV }];
   // Every shortcut is an action (plan §11): the Help sheet lists them and one listener runs them.
   const actions: Action[] = [
@@ -173,14 +187,14 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
     ...fileShortcuts(save, fileInput, !ready),
     SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
     copyLinkAction(urlHash, setNotice),
-    ...layerActions(lightDefinition, 'induction', view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
-    ...parameterActions(lightDefinition, 'induction', () => setTab('setup')),
+    ...layerActions(lightDefinition, scenario, view, (k, v) => setView(old => withPaths(old, { [k]: v }))),
+    ...parameterActions(lightDefinition, scenario, () => setTab('setup')),
     ...exportActions(exportItems, !ready),
     ...helpActions(about.show),
   ];
   useActions(active && !about.open, actions);
 
-  const headerNode = <Header experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} onChip={() => about.show('scenario')} onHelp={() => about.show()}
+  const headerNode = <Header experiment={header.experiment} scenario={current.title} onChip={() => about.show('scenario')} onHelp={() => about.show()}
     actions={<FileActions inputRef={fileInput} disabled={!ready} onFile={load} onSave={save}
       exports={exportItems}/>}/>;
 
@@ -189,16 +203,16 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
       <div className="light-viewport" ref={setHost}/>
       {error && <div className="error-banner" role="alert">{error}<button onClick={() => { restart(); setSelected(null); setNotice('Light worker restarted with default parameters.'); }}>Restart light worker</button></div>}
       <div className="light-view-top">
-        <span><i className={`dot ${s.running ? '' : 'paused'}`}/>{d.finished ? 'PULSE EXITED' : s.running ? 'PROPAGATING' : 'PAUSED'}<b>{stateLine}</b></span>
+        <span><i className={`dot ${s.running ? '' : 'paused'}`}/>{d.absorbed ? 'ABSORBED AT THE WALL' : d.finished ? 'PULSE EXITED' : s.running ? 'PROPAGATING' : 'PAUSED'}<b>{stateLine}</b></span>
         <CameraPicker options={lightDefinition.cameras.map(c => ({ value: c.id, label: c.label }))} value={camera} onChange={v => setCamera(v as typeof camera)}/>
       </div>
-      <div className="light-view-legend"><span><i className="charge positive"/>+ Positron</span><span><i className="charge negative"/>− Electron</span><span className="light-e">— E</span><span className="light-b">— B</span><span className="light-probe">○ Probe</span></div>
+      <div className="light-view-legend"><span><i className="charge positive"/>+ Positron</span><span><i className="charge negative"/>− Electron</span><span className="light-e">— E</span><span className="light-b">— B</span><span className="light-probe">○ Probe</span>{d.wall && <span data-testid="light-wall-legend">▮ Wall · its stable electron</span>}</div>
       <div className="light-scale">1 L = 250 nm · 12 L window · drag to orbit</div>
       {graphicsError && <div className="graphics-error" role="alert"><h3>Light viewport needs attention</h3><p>{graphicsError}</p><button onClick={() => { setGraphicsError(''); setContextLost(false); setRevision(v => v + 1); }}>Recover light viewport</button></div>}
     </section>
   );
 
-  const events = Array.from({ length: pairCount(p) }, (_, i) => ({ index: i, tick: Math.max(0, pairStartTick(p, i)) }));
+  const events = Array.from({ length: pairs }, (_, i) => ({ index: i, tick: Math.max(0, pairStartTick(p, i)) }));
   const dockNode = (
     <Dock collapsed={dockCollapsed} onCollapsedChange={setDockCollapsed} tab={dockTab} onTab={setDockTab}
       readouts={withDeltas(stripFor(d, p), pB && dB ? stripFor(dB, pB) : null)}
@@ -207,9 +221,9 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
           <div><h4>Field along the path · current instant</h4><WavePlot x={spatialX} values={spatial} valuesB={spatialB} label="Spatial electric wave projection" unit="L" domain={[p.offset - 6, p.offset + 6]} marker={p.probe}/></div>
           <div><h4>Probe trace · x = {p.probe.toFixed(1)} L{pB && pB.probe !== p.probe && ` · B x = ${pB.probe.toFixed(1)} L`}</h4><WavePlot x={historyX} values={history} valuesB={historyB} label="Electric projection at the fixed probe over elapsed time" unit="τ" domain={[0, Math.max(d.time, 0.01)]}/></div>
         </div> },
-        ...(phone ? [] : [{ id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={lightDefinition} scenario="induction" a={p} b={pB}
+        ...(phone ? [] : [{ id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={lightDefinition} scenario={scenario} a={p} b={pB}
           onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}
-          onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Light files must be smaller than 100 KB.'); compare.pin(parseLightFile(await file.text()).state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> }]),
+          onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Light files must be smaller than 100 KB.'); const loaded = parseLightFile(await file.text()).state.parameters; if (loaded.absorber !== p.absorber) throw new Error('that file is from the other scenario'); compare.pin(loaded); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> }]),
         { id: 'ledger', label: 'Ledger', content: <div className="light-ledger">
           <Readouts items={[
             { label: 'Central pair · hf/2', value: d.pairEnergy.toFixed(4), unit: 'eV' },
@@ -223,11 +237,11 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
           <p className="light-small">Assigned energy bookkeeping. Field energy and angular momentum are not calculated from a force solver. The field strength follows the active pair’s rotating dipole moment; its fall-off with distance and the energy partition are prescribed illustrations of Fleming’s mechanism.</p>
         </div> },
         { id: 'events', label: 'Events', content: <ol className="light-event-list">
-          {events.map(e => <li key={e.index} className={e.index === d.index && !d.finished ? 'is-current' : ''}>
+          {events.map(e => <li key={e.index} className={e.index === d.index && !gone ? 'is-current' : ''}>
             <button type="button" data-testid={`event-pair-${e.index + 1}`} aria-label={`Inspect pair ${e.index + 1} at induction`} disabled={!ready} onClick={() => { setSelected(e.index); runtime.seek(e.tick); }}>
               <span>{pairAt(p, 0, e.index).sense > 0 ? '↺' : '↻'}</span><strong>Pair {e.index + 1}</strong><small>{(e.tick * LIGHT_DT).toFixed(2)} τ</small>
             </button>
-            {e.index === d.index && !d.finished && <p>{isHandoff(p, s.tick) ? `Pair ${d.index} has collapsed and its field with it; pair ${d.index + 1} is induced at its own fixed centre, with the opposite rotation sense and the field reversed.` : `Pair ${d.index + 1} rotates through 180° during ${(hopTicks(p) * LIGHT_DT).toFixed(2)} τ, opening to its wavelength λ/2 across the path at midlife. Step or scrub to inspect its separation and collapse.`}</p>}
+            {e.index === d.index && !gone && <p>{isHandoff(p, s.tick) ? `Pair ${d.index} has collapsed and its field with it; pair ${d.index + 1} is induced at its own fixed centre, with the opposite rotation sense and the field reversed.` : `Pair ${d.index + 1} rotates through 180° during ${(hopTicks(p) * LIGHT_DT).toFixed(2)} τ, opening to its wavelength λ/2 across the path at midlife. Step or scrub to inspect its separation and collapse.`}</p>}
           </li>)}
           {d.absorbed && <li><p>The last pair met the wall’s stable electron and the photon was absorbed all at once. The field is gone everywhere at the same tick, and its half of the energy went with the central pair’s.</p></li>}
           {d.finished && !d.wall && <li><p>The packet crossed the window boundary. Its budget is now recorded as departed energy; this is not an absorption event.</p></li>}
@@ -239,9 +253,9 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
     <svg className="light-pair-glyph" viewBox="0 0 200 135" role="img" aria-label="Selected pair in its rotation plane; fixed midpoint and opposite charge lobes"><circle cx="100" cy="66" r="46" fill="none" stroke={palette.line2} strokeDasharray="3 5"/><path d="M93 66H107M100 59V73" stroke={palette.dataShell3}/><line x1={pairX} y1={pairY} x2={200 - pairX} y2={132 - pairY} stroke={palette.text4}/>{inspected.active && <><circle cx={pairX} cy={pairY} r="10" fill={palette.danger}/><text x={pairX} y={pairY + 4} textAnchor="middle" fill={palette.bg2} fontSize="14">+</text><circle cx={200 - pairX} cy={132 - pairY} r="10" fill={palette.dataNeg}/><text x={200 - pairX} y={136 - pairY} textAnchor="middle" fill={palette.bg2} fontSize="14">−</text></>}<text x="100" y="130" textAnchor="middle" fill={palette.accent2} fontSize="9">Rotation plane · travel →, polarization ↑ · circle = λ/2</text></svg>
   );
   const aboutNode = (
-    <AboutSheet {...about} shortcuts={actions} pointer={ORBIT_GESTURES} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={lightDefinition.scenarios[0].title} sections={[
-      { id: 'scenario', content: <><p>Successive dipoles make half-turns over half-wavelength intervals. Each opens to its own wavelength, half the photon wavelength, and lies across the path at midlife. The field is produced by the active pair: it swells and collapses with that pair and reverses at every hand-off. Its fall-off with distance and the size of the surrounding response are visual conventions. Follow an energy wave through successive, locally rotating pairs.</p><p>{`Paused stepping is available. At 1×, one second of playback represents ${(TIME_SECONDS * 1e15).toFixed(3)} fs.`}</p><p>Changes start a new paused sequence.</p></> },
-      { id: 'sources', content: <div className="about-links"><a href="./docs/light-model.md" target="_blank" rel="noreferrer">Model equations & limitations ↗</a><a href="./docs/papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf#page=4" target="_blank" rel="noreferrer">Fleming’s paper · self-induction, p. 4 ↗</a></div> },
+    <AboutSheet {...about} shortcuts={actions} pointer={ORBIT_GESTURES} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={current.title} sections={[
+      { id: 'scenario', content: <>{scenario === 'absorption' && <><p>A wall stands at the end of the run, and the photon is absorbed there. Fleming holds that a photon is always absorbed all at once: the energy in its field is absorbed along with the energy of the central pair, although almost all of that field lies outside the light cone drawn at the wall. This is his argument that fields spread far faster than light.</p><p>The wall stands at the last hand-off inside the window, which is this model’s choice. A photon is absorbed when the positron of its last pair annihilates with a stable electron; that exchange, and the electron’s new state, are not modelled. The ring round the wall’s electron only marks that it has taken the photon’s energy.</p></>}<p>Successive dipoles make half-turns over half-wavelength intervals. Each opens to its own wavelength, half the photon wavelength, and lies across the path at midlife. The field is produced by the active pair: it swells and collapses with that pair and reverses at every hand-off. Its fall-off with distance and the size of the surrounding response are visual conventions. Follow an energy wave through successive, locally rotating pairs.</p><p>{`Paused stepping is available. At 1×, one second of playback represents ${(TIME_SECONDS * 1e15).toFixed(3)} fs.`}</p><p>Changes start a new paused sequence.</p></> },
+      { id: 'sources', content: <div className="about-links"><a href="./docs/light-model.md" target="_blank" rel="noreferrer">Model equations & limitations ↗</a><a href="./docs/papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf#page=1" target="_blank" rel="noreferrer">Fleming’s paper · absorption and the light cone, Fig. 1 ↗</a><a href="./docs/papers/Photons%20as%20Quantum%20Electron-Positron%20Composites.pdf#page=4" target="_blank" rel="noreferrer">Fleming’s paper · self-induction, p. 4 ↗</a></div> },
     ]}/>
   );
 
@@ -250,7 +264,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
       <div className="light-selection-head"><h3>Pair {inspected.index + 1}</h3><button type="button" className="inspector-link" onClick={() => setSelected(selected === null ? d.index : null)}>{selected === null ? 'Pin pair' : 'Follow active'}</button></div>
       {(!split || phone) && glyph}
       <dl className="light-readouts">
-        <div><dt>State</dt><dd>{inspected.active ? 'Induced' : s.tick < pairStartTick(p, inspected.index) ? 'Awaiting induction' : inspected.progress < 1 ? 'Window exited' : 'Collapsed / retired'}</dd></div>
+        <div><dt>State</dt><dd>{d.absorbed && inspected.index === d.wall?.pair ? 'Absorbed at the wall' : inspected.active ? 'Induced' : s.tick < pairStartTick(p, inspected.index) ? 'Awaiting induction' : inspected.progress < 1 ? 'Window exited' : 'Collapsed / retired'}</dd></div>
         <div><dt>Fixed centre</dt><dd data-testid="light-pair-centre">{inspected.centre.toFixed(3)} L</dd></div>
         <div><dt>Pair age / lifetime</dt><dd>{inspected.age.toFixed(3)} / {inspected.lifetime.toFixed(3)} τ</dd></div>
         <div><dt>Signed rotation</dt><dd data-testid="light-rotation">{(inspected.sense * inspected.progress * 180).toFixed(1)}° / {inspected.sense * 180}°</dd></div>
@@ -263,11 +277,11 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
 
   const inspectorNode = (
     <Inspector tab={tab} onTab={setTab} selection={selectionNode}
-      setup={<SetupPanel definition={lightDefinition} scenario="induction" params={p} onLive={() => undefined} onApply={configure}>
+      setup={<SetupPanel definition={lightDefinition} scenario={scenario} params={p} onLive={() => undefined} onApply={configure}>
         <p className="light-derived">f = {(1 / (p.wavelength * TIME_SECONDS) / 1e12).toFixed(1)} THz · λ = c / f · c = 299,792,458 m/s</p>
       </SetupPanel>}
       view={<>
-        <ViewPanel definition={lightDefinition} scenario="induction" view={view} onView={(k, v) => setView(old => withPaths(old, { [k]: v }))}/>
+        <ViewPanel definition={lightDefinition} scenario={scenario} view={view} onView={(k, v) => setView(old => withPaths(old, { [k]: v }))}/>
       </>}/>
   );
 
@@ -275,7 +289,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest }: LightW
     <TimelineBar runtime={runtime} timeline={timeline} speeds={SPEEDS}
       markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `tick ${c.tick}` }))}
       onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) { runtime.restore(c); setSelected(null); } }}
-      onMarkerPin={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) { compare.pin(c.parameters); setNotice('Pinned the checkpoint’s parameters as B.'); } }} onCapture={capture} runDisabled={contextLost}/>
+      onMarkerPin={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c && c.parameters.absorber !== p.absorber) setNotice('That checkpoint is from the other scenario; B is compared within one scenario.'); else if (c) { compare.pin(c.parameters); setNotice('Pinned the checkpoint’s parameters as B.'); } }} onCapture={capture} runDisabled={contextLost}/>
   );
 
   return (

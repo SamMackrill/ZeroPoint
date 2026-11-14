@@ -1,22 +1,34 @@
-import { DEFAULT_LIGHT, DEFAULT_LIGHT_VIEW, LIGHT_DT, LIGHT_END_TICK, pairStartTick, validateLightParameters, type LightParameters, type LightView } from '../../light/model';
+import { DEFAULT_LIGHT, DEFAULT_LIGHT_VIEW, LIGHT_DT, LIGHT_END_TICK, absorption, pairStartTick, runEndTick, validateLightParameters, type LightParameters, type LightView } from '../../light/model';
 import { SPEEDS } from '../../workbench/runtime';
 import type { ExperimentDefinition, TimelineEvent } from '../../workbench/definition';
 
 /** One length unit L is 250 nm, so wavelengths are shown in nm. */
 const NM_PER_L = 250;
 
-/** The ticks at which each later pair is induced (pair 1 is already there at tick 0), one hop apart, before the end. */
+/** The ticks at which each later pair is induced (pair 1 is already there at tick 0), one hop apart, before the run ends. */
 export function inductionEvents(params: LightParameters): TimelineEvent[] {
   const events: TimelineEvent[] = [];
-  for (let n = 2, tick = pairStartTick(params, 1); tick < LIGHT_END_TICK; n++, tick = pairStartTick(params, n - 1)) events.push({ tick, label: `Pair ${n} induced` });
+  for (let n = 2, tick = pairStartTick(params, 1); tick < runEndTick(params); n++, tick = pairStartTick(params, n - 1)) events.push({ tick, label: `Pair ${n} induced` });
   return events;
 }
 
-/** The light induction laboratory: a bounded 0–12 τ sequence in which every parameter restarts the sequence. */
+/** The timeline's events: every induction, then the absorption when a wall stands at the end of the run. */
+export function lightEvents(params: LightParameters): TimelineEvent[] {
+  const wall = absorption(params);
+  return [...inductionEvents(params), ...(wall ? [{ tick: wall.tick, label: 'Absorbed at the wall', id: 'absorb' }] : [])];
+}
+
+/**
+ * The light induction laboratory: a bounded 0–12 τ sequence in which every parameter restarts the sequence. The
+ * scenario sets whether the run ends at an absorbing wall or leaves the window.
+ */
 export const lightDefinition: ExperimentDefinition<LightParameters, LightView> = {
   id: 'light',
   title: 'Light through the ZPF',
-  scenarios: [{ id: 'induction', title: 'Induction sequence', description: 'A wave induces pair after pair as it travels' }],
+  scenarios: [
+    { id: 'induction', title: 'Induction sequence', description: 'A wave induces pair after pair as it travels', params: { absorber: false } },
+    { id: 'absorption', title: 'Absorption at a wall', description: 'The field’s energy goes with the last pair', params: { absorber: true } },
+  ],
   defaultParams: DEFAULT_LIGHT,
   defaultView: DEFAULT_LIGHT_VIEW,
   params: [
@@ -34,10 +46,11 @@ export const lightDefinition: ExperimentDefinition<LightParameters, LightView> =
     { key: 'fields', label: 'E / B of the active pair', group: 'Fields' },
     { key: 'envelope', label: 'Field reach', group: 'Fields', info: 'Swells and collapses with the active pair. Radius is a display choice.' },
     { key: 'centres', label: 'Fixed pair centres', group: 'Guides' },
+    { key: 'cone', label: 'Light cone at the wall', group: 'Guides', scenarios: ['absorption'], info: 'Fleming’s Fig. 1: the region from which field energy could reach the wall if fields spread only at the speed of light. Almost all of the field’s energy lies outside it.' },
   ],
   panes: [{ id: 'pair' }],
   cameras: [{ id: 'orbit', label: 'Orbit' }, { id: 'side', label: 'Side' }, { id: 'pair', label: 'Pair close-up' }],
   speeds: SPEEDS,
   validate: validateLightParameters,
-  timeline: (_scenario, params) => ({ kind: 'bounded', dt: LIGHT_DT, end: LIGHT_END_TICK, events: inductionEvents(params), next: 'event' }),
+  timeline: (_scenario, params) => ({ kind: 'bounded', dt: LIGHT_DT, end: LIGHT_END_TICK, events: lightEvents(params), next: 'event' }),
 };

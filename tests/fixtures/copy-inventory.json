@@ -489,11 +489,19 @@
   },
   {
     "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "A wall stands at the end of the run, and the photon is absorbed there. Fleming holds that a photon is always absorbed all at once: the energy in its field is absorbed along with the energy of the central pair, although almost all of that field lies outside the light cone drawn at the wall. This is his argument that fields spread far faster than light."
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
     "text": "Successive dipoles make half-turns over half-wavelength intervals. Each opens to its own wavelength, half the photon wavelength, and lies across the path at midlife. The field is produced by the active pair: it swells and collapses with that pair and reverses at every hand-off. Its fall-off with distance and the size of the surrounding response are visual conventions. Follow an energy wave through successive, locally rotating pairs."
   },
   {
     "file": "src/experiments/light/LightWorkbench.tsx",
     "text": "Paused stepping is available. At 1×, one second of playback represents $"
+  },
+  {
+    "file": "src/experiments/light/LightWorkbench.tsx",
+    "text": "Fleming’s paper · absorption and the light cone, Fig. 1 ↗"
   },
   {
     "file": "src/experiments/light/LightWorkbench.tsx",

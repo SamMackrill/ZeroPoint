@@ -20,11 +20,15 @@ describe('URL state', () => {
     expect(overrides).toEqual({ params: { axis: 'x', spin: -1 }, view: { 'spinDisplay.gain': 4, faraday: true, radius: true }, camera: 'shell', split: 'section', tick: 691 });
   });
 
-  it('gives a bare route for a scenario at its starting state, without a scenario for single-scenario labs', () => {
+  it('gives a bare route for a scenario at its starting state, naming the scenario when a lab has several', () => {
     const spin = scenarioState(electronDefinition, 'spin');
     expect(encodeUrl(routeFor(electronDefinition, 'spin', spin.params, spin.view))).toBe('#/electron/spin');
-    const light = scenarioState(lightDefinition, 'induction');
-    expect(encodeUrl(routeFor(lightDefinition, 'induction', withPaths(light.params, { wavelength: 2.5 }), light.view))).toBe('#/light?wavelength=2.5');
+    // Light gained a second scenario (absorption at a wall), so its route names the scenario. The Light workbench
+    // still writes its first scenario in the short form, and a link without a scenario opens the first one.
+    const light = scenarioState(lightDefinition, 'induction'), absorbing = scenarioState(lightDefinition, 'absorption');
+    expect(encodeUrl(routeFor(lightDefinition, 'induction', withPaths(light.params, { wavelength: 2.5 }), light.view))).toBe('#/light/induction?wavelength=2.5');
+    expect(encodeUrl(routeFor(lightDefinition, 'absorption', absorbing.params, absorbing.view))).toBe('#/light/absorption');
+    expect(resolveUrl(lightDefinition, decodeUrl('#/light?wavelength=2.5')!)).toMatchObject({ scenario: 'induction', dropped: [], overrides: { params: { wavelength: 2.5 } } });
   });
 
   it('drops unknown keys, values out of range or not offered, layers and cameras of other scenarios, and unknown scenarios', () => {
