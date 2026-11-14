@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { render } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
-import { SlitDiagram, shownResponse, stateLine, type SlitLayers } from '../../src/double-slit/Diagram';
-import { DEFAULT_SLITS, PAIR_TICKS, SLIT_END_TICK, type SlitParameters } from '../../src/double-slit/model';
+import { ArrivalPlot, SlitDiagram, WallPlot, shownResponse, stateLine, type SlitLayers } from '../../src/double-slit/Diagram';
+import { DEFAULT_SLITS, PAIR_TICKS, PATH_LENGTH, SLIT_END_TICK, fieldAt, fieldOnWall, type SlitParameters } from '../../src/double-slit/model';
 import { palette } from '../../src/ui/palette';
 
 const all: SlitLayers = { zeptons: true, fields: true, routes: true, reach: true, path: true };
@@ -86,5 +87,22 @@ describe('double-slit state line', () => {
     expect(stateLine(held, midlife(3))).toBe('Pair 4 of 8 · its field stops λ/2 from the path');
     expect(stateLine(held, 240)).toBe('Halted at the wall · no field reached a slit');
     expect(stateLine(slits, SLIT_END_TICK)).toBe('Absorbed at B at 8.00 τ, the straight-line time');
+  });
+});
+
+describe('double-slit plots', () => {
+  /** Render a plot and return its text: tick labels, caption and any empty-state message. */
+  const plotted = (node: ReactElement) => { const view = render(node); const text = view.container.textContent ?? ''; view.unmount(); return text; };
+  it('explain an empty wall plot when no pair is turning, and show the field when one is', () => {
+    expect(plotted(<WallPlot params={slits} tick={0}/>)).toContain('No field reaches the wall at this instant');
+    expect(plotted(<WallPlot params={slits} tick={PAIR_TICKS}/>)).toContain('No field reaches the wall at this instant');
+    expect(plotted(<WallPlot params={slits} tick={midlife(3)}/>)).not.toContain('No field reaches the wall');
+    expect(plotted(<ArrivalPlot params={held} tick={0}/>)).toContain('No field reaches B at any time in this run.');
+  });
+  it('plot the field the readouts report: |E|, which is below the envelope away from midlife', () => {
+    // A quarter of the way through pair 4's life the pair is turning, so |E| is a share of the envelope.
+    const tick = 3 * PAIR_TICKS + PAIR_TICKS / 4, atB = fieldAt(slits, tick, [0, PATH_LENGTH]), onWall = fieldOnWall(slits, tick, 3);
+    expect(Math.abs(atB.electric)).toBeLessThan(atB.envelope);
+    expect(Math.abs(onWall.electric)).toBeLessThan(onWall.envelope);
   });
 });

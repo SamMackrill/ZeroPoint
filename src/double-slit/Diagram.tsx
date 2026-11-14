@@ -174,7 +174,7 @@ export function SlitDiagram({ params, tick, layers }: { params: SlitParameters; 
 export function ArrivalPlot({ params, tick }: { params: SlitParameters; tick: number }) {
   const { times, values } = useMemo(() => {
     const ticks = Array.from({ length: SLIT_END_TICK + 1 }, (_, i) => i);
-    return { times: ticks.map(t => t * SLIT_DT), values: ticks.map(t => fieldAt(params, t, [0, PATH_LENGTH]).envelope) };
+    return { times: ticks.map(t => t * SLIT_DT), values: ticks.map(t => Math.abs(fieldAt(params, t, [0, PATH_LENGTH]).electric)) };
   }, [params]);
   if (!values.some(v => v > 0)) return <p className="slit-plot-empty" data-testid="slit-arrival-plot">No field reaches B at any time in this run.</p>;
   return <Plot label="The strength of the field at B over the run, taken from the active central pair, on a logarithmic scale. It pulses once with each pair, falling to zero at every hand-off, and grows as the photon approaches."
@@ -185,9 +185,9 @@ export function ArrivalPlot({ params, tick }: { params: SlitParameters; tick: nu
 /** The field along the wall at this instant, with the slit edges marked. */
 export function WallPlot({ params, tick }: { params: SlitParameters; tick: number }) {
   const xs = useMemo(() => Array.from({ length: 129 }, (_, i) => -8 + i / 8), []);
-  const values = xs.map(x => fieldOnWall(params, tick, x).envelope);
+  const values = xs.map(x => Math.abs(fieldOnWall(params, tick, x).electric));
   return <Plot label="The strength of the active pair's field along the wall at this instant, against distance from the straight path. The slit edges are marked."
     x={xs} series={[{ key: 'wall', label: '|E| on the wall', color: palette.dataE, values }]} xDomain={[-8, 8]} yScale="log" yDomain={[1e-4, 1]} yTicks={[1e-4, 1e-2, 1]} xTicks={[-8, 0, 8]} xUnit="λ"
     markers={openings(params).flatMap((o, i) => [{ x: o[0], label: `${i ? 'Right' : 'Left'} slit from ${o[0]} λ` }, { x: o[1], label: `${i ? 'Right' : 'Left'} slit to ${o[1]} λ` }])}
-    caption="Field strength along the wall, now · log scale · slit edges marked" height={110} testId="slit-wall-plot"/>;
+    caption="Field strength along the wall, now · log scale · slit edges marked" height={110} empty="No field reaches the wall at this instant: no pair is turning." testId="slit-wall-plot"/>;
 }

@@ -60,6 +60,10 @@
     "text": "Field strength along the wall, now · log scale · slit edges marked"
   },
   {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "No field reaches the wall at this instant: no pair is turning."
+  },
+  {
     "file": "src/electron/ChargeMotion.tsx",
     "text": "Opposite charges with opposite velocities give parallel conventional-current contributions"
   },
