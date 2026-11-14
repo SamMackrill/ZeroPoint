@@ -16,6 +16,54 @@
     "text": "Dynamic Zepton field with signed dipoles, interaction arrows and local pressure colour. Use Inspect newest Zepton for the accessible lifetime view."
   },
   {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "Halted at the wall · no field reached a slit"
+  },
+  {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "· its field reaches B through both slits"
+  },
+  {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "Nothing stands between source A and absorber B."
+  },
+  {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "wavelengths from the straight path, stands between source A and absorber B."
+  },
+  {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "The fields are held to light speed and reach half a wavelength from the path."
+  },
+  {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "The photon has halted at the wall and nothing arrives at B."
+  },
+  {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "No field reaches B at any time in this run."
+  },
+  {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "The strength of the field at B over the run, taken from the active central pair, on a logarithmic scale. It pulses once with each pair, falling to zero at every hand-off, and grows as the photon approaches."
+  },
+  {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "Field strength at B over the run · log scale"
+  },
+  {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "The strength of the active pair's field along the wall at this instant, against distance from the straight path. The slit edges are marked."
+  },
+  {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "Field strength along the wall, now · log scale · slit edges marked"
+  },
+  {
+    "file": "src/double-slit/Diagram.tsx",
+    "text": "No field reaches the wall at this instant: no pair is turning."
+  },
+  {
     "file": "src/electron/ChargeMotion.tsx",
     "text": "Opposite charges with opposite velocities give parallel conventional-current contributions"
   },
