@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { ELECTRON_SAMPLES, LATTICE_SAMPLES, SHELL_RADII, add, alignmentProgress, electronPresence, cross, dot, electronX, norm, probePosition, referenceFields, scale, spinAxis, unit, velocity } from './model';
+import { ELECTRON_SAMPLES, LATTICE_SAMPLES, SHELL_RADII, add, alignmentProgress, electronPresence, cross, dot, electronX, norm, probePosition, referenceFields, scale, spinAxis, unit, velocity, POLARIZERS } from './model';
+import type { Particle } from './model';
 import type { ElectronSnapshot, ElectronView, Vec } from './model';
 import { faradayLines } from './fieldLines';
 import { displayedDipole, localTurnArrow, sectionFrame, SHELL_COLOURS, shellBand, shellCentre } from './spinGeometry';
@@ -13,7 +14,7 @@ export class ElectronRenderer {
   private renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   private controls: OrbitControls;
   private positive: THREE.InstancedMesh; private negative: THREE.InstancedMesh;
-  private core = new THREE.Group(); private radius: THREE.Mesh; private selection: THREE.Mesh; private probe: THREE.Mesh;
+  private core = new THREE.Group(); private coreLabel!: { ctx: CanvasRenderingContext2D; texture: THREE.CanvasTexture; centre: THREE.MeshStandardMaterial; particle: Particle | null }; private radius: THREE.Mesh; private selection: THREE.Mesh; private probe: THREE.Mesh;
   private electric = new THREE.Group(); private magnetic = new THREE.Group(); private intrinsic = new THREE.Group();
   private eArrows: THREE.ArrowHelper[] = []; private bArrows: THREE.ArrowHelper[] = []; private sArrows: THREE.ArrowHelper[] = [];
   private rings = new THREE.Group(); private rotation: THREE.LineSegments; private path: THREE.Line;
@@ -37,9 +38,11 @@ export class ElectronRenderer {
     this.positive = new THREE.InstancedMesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataPosHi, emissive: scene.posGlowElectron, emissiveIntensity: .3 }), ELECTRON_SAMPLES);
     this.negative = new THREE.InstancedMesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataNeg, emissive: scene.negGlowElectron, emissiveIntensity: .3 }), ELECTRON_SAMPLES);
     for (const mesh of [this.positive, this.negative]) { mesh.count = 0; mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.frustumCulled = false; this.scene.add(mesh); }
-    const centre = new THREE.Mesh(new THREE.SphereGeometry(.22, 20, 16), new THREE.MeshStandardMaterial({ color: palette.dataBHi, emissive: scene.coreGlowElectron, emissiveIntensity: .8 }));
-    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 128; const ctx = canvas.getContext('2d')!; ctx.fillStyle = palette.dataBDeep; ctx.fillRect(26, 56, 76, 16);
-    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), depthTest: false })); label.scale.set(.35, .35, 1); label.renderOrder = 5;
+    const centreMaterial = new THREE.MeshStandardMaterial({ color: palette.dataBHi, emissive: scene.coreGlowElectron, emissiveIntensity: .8 });
+    const centre = new THREE.Mesh(new THREE.SphereGeometry(.22, 20, 16), centreMaterial);
+    const canvas = document.createElement('canvas'); canvas.width = canvas.height = 128; const ctx = canvas.getContext('2d')!, texture = new THREE.CanvasTexture(canvas);
+    this.coreLabel = { ctx, texture, centre: centreMaterial, particle: null }; this.drawCore('electron');
+    const label = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, depthTest: false })); label.scale.set(.35, .35, 1); label.renderOrder = 5;
     this.core.add(centre, label); this.scene.add(this.core);
     this.radius = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 2), new THREE.MeshBasicMaterial({ color: palette.dataB, wireframe: true, transparent: true, opacity: .18 })); this.scene.add(this.radius);
     this.selection = new THREE.Mesh(new THREE.SphereGeometry(.22, 12, 8), new THREE.MeshBasicMaterial({ color: palette.dataMark, wireframe: true, transparent: true, opacity: .65 })); this.selection.visible = false; this.scene.add(this.selection);
@@ -106,8 +109,20 @@ export class ElectronRenderer {
     this.positive.computeBoundingSphere(); this.negative.computeBoundingSphere(); // the cached bounds go stale as instances move
     const i = ray.intersectObjects([this.positive, this.negative])[0]?.instanceId; if (i !== undefined) this.pick(this.keys[i]);
   };
+  /** Mark the core with its charge: a minus for the electron, a plus for the proton, on a core of the charge's colour. */
+  private drawCore(particle: Particle) {
+    const { ctx, texture, centre } = this.coreLabel;
+    if (this.coreLabel.particle === particle) return;
+    this.coreLabel.particle = particle;
+    ctx.clearRect(0, 0, 128, 128);
+    ctx.fillStyle = particle === 'proton' ? palette.dataPosDeep : palette.dataBDeep; ctx.fillRect(26, 56, 76, 16);
+    if (particle === 'proton') ctx.fillRect(56, 26, 16, 76);
+    texture.needsUpdate = true;
+    centre.color.set(particle === 'proton' ? palette.dataPosHi : palette.dataBHi); centre.emissive.set(particle === 'proton' ? scene.posGlowElectron : scene.coreGlowElectron);
+  }
   update(s: ElectronSnapshot) {
     if (this.disposed) return;
+    this.drawCore(s.parameters.particle);
     const reframe = this.data && (this.data.parameters.mode !== s.parameters.mode || this.data.parameters.axis !== s.parameters.axis);
     this.needsRender = true; this.data = s; const x = electronX(s), p = s.parameters, beta = velocity(p), selected = this.selected === null ? null : shellCentre(this.selected, p.axis);
     const presence = electronPresence(s); this.core.visible = presence > 0; this.core.scale.setScalar(presence);
@@ -172,7 +187,8 @@ export class ElectronRenderer {
       for (const points of faradayLines(s, this.view.cutaway)) {
         for (let i = 1; i < points.length; i++) { data.setXYZ(n++, ...points[i - 1]); data.setXYZ(n++, ...points[i]); }
         if (points.length < 8) continue;
-        const i = Math.min(18, Math.floor(points.length / 2)), end = points[i], backward = unit(add(points[i + 1], scale(end, -1)));
+        // The barbs trail back from the head: P points inward round an electron (toward the start of the line) and outward round a proton.
+        const i = Math.min(18, Math.floor(points.length / 2)), end = points[i], backward = unit(add(points[POLARIZERS[p.particle].charge > 0 ? i - 1 : i + 1], scale(end, -1)));
         const side = unit(cross(backward, Math.abs(backward[2]) < .9 ? [0, 0, 1] : [0, 1, 0]));
         for (const sign of [-1, 1]) { data.setXYZ(n++, ...end); data.setXYZ(n++, ...add(add(end, scale(backward, .12)), scale(side, sign * .05))); }
       }
@@ -187,7 +203,8 @@ export class ElectronRenderer {
   private animate = () => { if (this.disposed) return; this.frame = requestAnimationFrame(this.animate); this.controls.update(); if (this.needsRender) { this.renderer.render(this.scene, this.camera); this.needsRender = false; } };
   exportPNG() {
     this.renderer.render(this.scene, this.camera); const source = this.renderer.domElement, canvas = document.createElement('canvas'); canvas.width = source.width; canvas.height = source.height + 60;
-    const c = canvas.getContext('2d')!; c.fillStyle = palette.bg1; c.fillRect(0, 0, canvas.width, canvas.height); c.drawImage(source, 0, 0); c.fillStyle = palette.text; c.font = '12px sans-serif'; c.fillText(`ZEROPOINT / Electron polarization · ${this.data?.parameters.mode} · tick ${this.data?.tick}`, 15, source.height + 24); c.fillText('Fixed zepton centres | R = half Compton wavelength | local turns illustrative; field arrows analytic reference', 15, source.height + 44);
+    const c = canvas.getContext('2d')!; c.fillStyle = palette.bg1; c.fillRect(0, 0, canvas.width, canvas.height); c.drawImage(source, 0, 0); c.fillStyle = palette.text; c.font = '12px sans-serif'; const particle = this.data?.parameters.particle ?? 'electron';
+    c.fillText(`ZEROPOINT / ${POLARIZERS[particle].label} polarization · ${this.data?.parameters.mode} · tick ${this.data?.tick}`, 15, source.height + 24); c.fillText(`Fixed zepton centres | R = ${POLARIZERS[particle].radiusName} | local turns illustrative; field arrows analytic reference`, 15, source.height + 44);
     canvas.toBlob(blob => { if (!blob) return; const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = 'zeropoint-electron.png'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); });
   }
   dispose() {

@@ -1,7 +1,7 @@
 import { Focus, Info, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { downloadFile } from '../../persistence/experiment';
-import { ALPHA, C, DEFAULT_ELECTRON_VIEW, ELECTRON_DT, ELECTRON_END, ELECTRON_FILE_VERSION, ELECTRON_MODEL, G_FACTOR, LATTICE_SAMPLES, RADIUS, SAMPLES_PER_SHELL, SHELL_RADII, TAU, alignmentProgress, dot, electronPresence, electronX, enclosedCharge, parseElectronFile, probePosition, referenceFields, shellAlignment, spinRateAtRadius, unit, velocity, type ElectronMode, type ElectronParameters, type ElectronState, type ElectronView } from '../../electron/model';
+import { ALPHA, C, DEFAULT_ELECTRON_VIEW, ELECTRON_DT, ELECTRON_END, ELECTRON_FILE_VERSION, ELECTRON_MODEL, G_FACTOR, LATTICE_SAMPLES, RADIUS, SAMPLES_PER_SHELL, SHELL_RADII, TAU, alignmentProgress, dot, electronPresence, electronX, enclosedCharge, parseElectronFile, probePosition, referenceFields, shellAlignment, spinRateAtRadius, unit, velocity, type ElectronMode, type ElectronParameters, type ElectronState, type ElectronView, POLARIZERS, polarizationRate, radiusOf, tauOf, type Particle } from '../../electron/model';
 import type { ElectronRenderer } from '../../electron/ElectronRenderer';
 import { ChargeMotion } from '../../electron/ChargeMotion';
 import { ElectronProperties } from '../../electron/ElectronProperties';
@@ -33,8 +33,12 @@ import { CompareTab, useCompare, withDeltas } from '../../workbench/compare';
 import { AboutSheet, helpActions, ORBIT_GESTURES, useAbout, type SavedView } from '../../workbench/AboutSheet';
 
 /** Scenario id ↔ worker mode for the three timed scenarios. */
-const MODE_OF: Record<string, ElectronMode> = { stationary: 'electric', spin: 'spin', moving: 'moving' };
+const MODE_OF: Record<string, ElectronMode> = { stationary: 'electric', spin: 'spin', moving: 'moving', proton: 'electric' };
 const SCENARIO_OF: Record<ElectronMode, string> = { electric: 'stationary', spin: 'spin', moving: 'moving' };
+/** The timed scenario for a set of parameters: the proton has its own, and the electron's follow the mode. */
+const scenarioOf = (p: ElectronParameters) => (p.particle === 'proton' ? 'proton' : SCENARIO_OF[p.mode]);
+/** The particle a timed scenario polarizes around. */
+const particleOf = (scenario: string): Particle => (scenario === 'proton' ? 'proton' : 'electron');
 /** The two static studies, from ElectronProperties. */
 const STUDY_OF: Record<string, 'flux' | 'radius' | 'mass'> = { 'charge-flux': 'flux', 'radius-limit': 'radius', 'mass-shell': 'mass' };
 /** What each timed scenario is about (About this scenario). */
@@ -43,6 +47,8 @@ const DESCRIPTION: Record<ElectronMode, string> = {
   spin: 'Following Fig. 2: neighboring zeptons turn locally, in one shared sense, as they polarize around the stationary electron. Compare the spherical field and equatorial section, then inspect how opposite charge motions contribute to current. Alternating whole bands is an optional extension.',
   moving: 'As the electron passes, nearby pairs turn locally. Reverse its velocity to reverse the motion-induced magnetic field.',
 };
+/** The proton scenario's account (Fleming, "Electron and proton radii", §1–4). */
+const PROTON_DESCRIPTION = 'The proton is a second bare polarizer. With its positive charge it polarizes proton-like pairs, positive charge and matter on one end, so every pair turns its positive end outward, where round an electron it turns inward. Its structure has the proton’s charge radius instead of half the Compton wavelength. Both turn at the speed of light at their own radius, so the proton turns about 1386 times as often each second: the ratio of the radii. Lengths here are in each particle’s own radius, so the two pictures are drawn alike.';
 /** Help › Saved views: states worth returning to, as links (plan §10). */
 const SAVED_VIEWS: readonly SavedView[] = [{
   title: 'The video’s shared rotation (4:44)',
@@ -74,7 +80,7 @@ export interface ElectronWorkbenchProps {
 export function ElectronWorkbench({ active, rail, header, scenarioRequest, onScenarioChange }: ElectronWorkbenchProps) {
   const { state, latest, sink, send, error, restart } = useElectron(active);
   const [scenario, setScenario] = useState('stationary');
-  const runtime = useMemo(() => electronRuntime({ send, latest, sink }, s => electronMilestones(SCENARIO_OF[s.parameters.mode]).map(e => e.tick)), [send, latest, sink]);
+  const runtime = useMemo(() => electronRuntime({ send, latest, sink }, s => electronMilestones(scenarioOf(s.parameters)).map(e => e.tick)), [send, latest, sink]);
   useEffect(() => () => runtime.dispose(), [runtime]);
   // Selection is always on (§09 cuts the "Zepton selector" opt-in: click selects everywhere).
   const [view, setView] = useState<ElectronView>(() => ({ ...DEFAULT_ELECTRON_VIEW, inspect: true, reducedMotion: getSettings().reducedMotion }));
@@ -139,7 +145,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     const dropped = [...(request.dropped ?? []), ...(url?.selection !== undefined && !selectable ? [`selection ${url.selection}`] : [])];
     const ignored = dropped.length ? `Ignored link settings that don’t apply: ${dropped.join(', ')}.` : '';
     if (!mode) { runtime.run(false); if (ignored) setNotice(ignored); return; }
-    const target = (url ? withPaths(scenarioState(electronDefinition, id).params, url.params) : { ...p, mode }) as ElectronParameters;
+    const target = (url ? withPaths(scenarioState(electronDefinition, id).params, url.params) : { ...p, mode, particle: particleOf(id) }) as ElectronParameters;
     runtime.configure(target); setSelected(null);
     setView(v => withPaths({ ...v, intrinsic: false, faraday: mode !== 'spin', radius: false, cutaway: false, shells: mode === 'spin' ? true : v.shells }, url?.view ?? {}));
     setCamera((url?.camera as Camera | undefined) ?? (mode === 'spin' ? 'shell' : 'orbit'));
@@ -165,14 +171,14 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   async function load(file: File) {
     try {
       if (file.size > 100000) throw new Error('File exceeds 100 KB.');
-      const saved = parseElectronFile(await file.text()); runtime.restore(saved.state); setView({ ...saved.view, inspect: true }); setScenario(SCENARIO_OF[saved.state.parameters.mode]); compare.clear(); // B is pinned within one scenario
+      const saved = parseElectronFile(await file.text()); runtime.restore(saved.state); setView({ ...saved.view, inspect: true }); setScenario(scenarioOf(saved.state.parameters)); compare.clear(); // B is pinned within one scenario
       setNotice(`Loaded electron tick ${saved.state.tick}. Playback is paused.${saved.migrated ? ' Updated an older experiment to the cubic medium and revised polarization sequence.' : ''}`);
     } catch (e) { setNotice(`Could not load: ${e instanceof Error ? e.message : String(e)}`); }
   }
   /** Export the electron reference-field timeline as CSV. */
   function csv() {
     const rows = ['tick,time_s,electron_x_R,beta,probe_valid,Ex_E0,Ey_E0,Ez_E0,Bmotion_x_B0,Bmotion_y_B0,Bmotion_z_B0,Bspin_x_B0,Bspin_y_B0,Bspin_z_B0'];
-    for (let tick = 0; tick <= ELECTRON_END; tick += 12) { const st = { ...s, tick }, f = referenceFields(st, probePosition(p)); rows.push([tick, tick * ELECTRON_DT * TAU, electronX(st), velocity(p), f.valid, ...(f.valid ? [...f.electric, ...f.motion, ...f.intrinsic] : Array(9).fill(''))].join(',')); }
+    for (let tick = 0; tick <= ELECTRON_END; tick += 12) { const st = { ...s, tick }, f = referenceFields(st, probePosition(p)); rows.push([tick, tick * ELECTRON_DT * tauOf(p.particle), electronX(st), velocity(p), f.valid, ...(f.valid ? [...f.electric, ...f.motion, ...f.intrinsic] : Array(9).fill(''))].join(',')); }
     downloadFile('zeropoint-electron-reference-sequence.csv', rows.join('\n'), 'text/csv'); setNotice('Exported the full analytic reference sequence, including future samples and the separate intrinsic-dipole reference.');
   }
   /** Select the displayed sample nearest to the configured probe. */
@@ -192,12 +198,14 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
     { label: 'Position', value: electronX(st).toFixed(3), unit: `R · ${velocity(st.parameters).toFixed(2)} c`, testId: 'electron-position' },
     { label: 'Time', value: time.toFixed(2), unit: 'τ' },
     { label: 'Enclosed Q', value: enclosedCharge(st, 2).toFixed(4), unit: 'e' },
-    { label: 'Spin', value: st.parameters.spin > 0 ? '+½' : '−½', unit: 'ℏ' },
+    st.parameters.particle === 'proton'
+      ? { label: 'Turns / s', value: polarizationRate('proton').toExponential(3), unit: `× ${(polarizationRate('proton') / polarizationRate('electron')).toFixed(0)} e⁻`, testId: 'electron-rate' }
+      : { label: 'Spin', value: st.parameters.spin > 0 ? '+½' : '−½', unit: 'ℏ' },
   ];
   const traceTimes = Array.from({ length: 161 }, (_, i) => time * i / 160);
   // Summed over all 2,197 lattice pairs, so only while its tab is showing.
   const shells = useMemo(() => dockTab === 'polarization' && !study ? shellAlignment(s).filter(shell => shell.pairs > 0) : [], [dockTab, study, s.tick, s.parameters]);
-  const stageNote = p.mode === 'electric' ? (s.tick === 0 ? 'Unpolarized ZPF · electron not yet introduced' : electronPresence(s) < 1 ? 'Introducing the negative electron' : '+ ends turn toward the electron, less with distance') : p.mode === 'spin' ? 'Local turns around a stationary core' : 'The electron moves; the medium responds';
+  const stageNote = p.particle === 'proton' ? (s.tick === 0 ? 'Unpolarized ZPF · proton not yet introduced' : electronPresence(s) < 1 ? 'Introducing the positive proton' : '+ ends turn away from the proton, less with distance') : p.mode === 'electric' ? (s.tick === 0 ? 'Unpolarized ZPF · electron not yet introduced' : electronPresence(s) < 1 ? 'Introducing the negative electron' : '+ ends turn toward the electron, less with distance') : p.mode === 'spin' ? 'Local turns around a stationary core' : 'The electron moves; the medium responds';
   const stageLabel = p.mode === 'electric' ? `Polarization ${(alignmentProgress(s) * 100).toFixed(0)}%` : p.mode === 'spin' ? '3D shells' : `${velocity(p).toFixed(2)} c along X`;
   const setSplit = useCallback((on: boolean) => setView(v => ({ ...v, spinDisplay: { ...v.spinDisplay, section: on } })), []);
   const scenarioTitle = electronDefinition.scenarios.find(x => x.id === scenario)?.title;
@@ -247,8 +255,8 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
       </div>
       <div className="electron-overlay-bottom">
         <p className="electron-hint">{p.mode === 'spin' ? 'Curled arrows turn at each pair · shaded plane links to 2D' : 'Faraday lines follow dipoles · field arrows are references'}</p>
-        <div className="light-view-legend"><span><i className="charge positive"/>+ Positron</span><span><i className="charge negative"/>− Electron</span><span className="light-e">— Polarization / E</span><span className="light-b">— B motion</span><span className="electron-spin-colour">— B spin</span></div>
-        <div className="light-scale">R = λC/2 ≈ 1.213 pm · radius guide, not a solid shell</div>
+        <div className="light-view-legend"><span><i className="charge positive"/>{p.particle === 'proton' ? '+ Proton-like end' : '+ Positron'}</span><span><i className="charge negative"/>{p.particle === 'proton' ? '− Antiproton-like end' : '− Electron'}</span><span className="light-e">— Polarization / E</span><span className="light-b">— B motion</span><span className="electron-spin-colour">— B spin</span></div>
+        <div className="light-scale">{p.particle === 'proton' ? 'R = proton charge radius ≈ 0.875 fm' : 'R = λC/2 ≈ 1.213 pm'} · radius guide, not a solid shell</div>
       </div>
       {graphicsError && <div className="graphics-error" role="alert"><h3>Electron viewport needs attention</h3><p>{graphicsError}</p><button onClick={() => { setGraphicsError(''); setContextLost(false); setRevision(v => v + 1); }}>Recover electron viewport</button></div>}
     </section>
@@ -301,12 +309,14 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
 
   const aboutNode = (
     <AboutSheet {...about} shortcuts={actions} pointer={study ? undefined : ORBIT_GESTURES} views={SAVED_VIEWS} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={scenarioTitle} sections={[
-      ...(MODE_OF[scenario] ? [{ id: 'scenario' as const, content: <><p>{DESCRIPTION[MODE_OF[scenario]]} {p.mode === 'electric' ? 'The electron appears during the first 0.35 τ; nearby pairs then align before distant ones. The 3 τ introduction is an illustrative transition, not a calculated propagation time. Probe numbers are final-field analytic references. Inside 1.6 R a pair turns all the way to the electron; beyond it the share falls so that the mean alignment thins with the square of distance and the same total crosses every sphere (Dock › Polarization). The 1.6 R scale magnifies a polarization far too slight to see.' : p.mode === 'spin' ? 'Each replacement pair starts partly aligned, turns toward the electron, and collapses. Both views show the same equatorial sites and generations. Outer pairs turn more slowly under the chosen display law; no centre orbits the electron.' : 'The path marks the prescribed electron trajectory. It is not a permanent magnetic wake; the reference field changes as the electron passes.'}</p><h3>Reading the scene</h3><p>Faraday lines trace the neighboring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative. Magnetic guides follow the motion-induced rotation direction.</p></> }] : []),
-      { id: 'units', content: <><h3>Source scale &amp; constants</h3><dl className="light-readouts"><div><dt>R = λC/2</dt><dd>{(RADIUS * 1e12).toFixed(6)} pm</dd></div><div><dt>c/(2πR)</dt><dd>{(C / (2 * Math.PI * RADIUS)).toExponential(3)} Hz</dd></div><div><dt>α</dt><dd>1 / {(1 / ALPHA).toFixed(6)}</dd></div><div><dt>μ along preferred axis</dt><dd>{(-p.spin * G_FACTOR / 2).toFixed(6)} μB</dd></div></dl><p className="light-small">Reference inputs, not fitted outputs. Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions.</p><a href="./docs/electron-source-notes.md" target="_blank" rel="noreferrer">Read extracted source details & model decisions ↗</a></> },
+      ...(MODE_OF[scenario] ? [{ id: 'scenario' as const, content: <><p>{scenario === 'proton' ? PROTON_DESCRIPTION : DESCRIPTION[MODE_OF[scenario]]} {scenario === 'proton' ? 'The proton appears during the first 0.35 τ, where τ = R/c is now the proton’s, 2.92 × 10⁻²⁴ s; the same partial-polarization rule applies, with every pair turned the other way. Why the two rates differ, which Fleming ties to matter and antimatter, is not modelled.' : p.mode === 'electric' ? 'The electron appears during the first 0.35 τ; nearby pairs then align before distant ones. The 3 τ introduction is an illustrative transition, not a calculated propagation time. Probe numbers are final-field analytic references. Inside 1.6 R a pair turns all the way to the electron; beyond it the share falls so that the mean alignment thins with the square of distance and the same total crosses every sphere (Dock › Polarization). The 1.6 R scale magnifies a polarization far too slight to see.' : p.mode === 'spin' ? 'Each replacement pair starts partly aligned, turns toward the electron, and collapses. Both views show the same equatorial sites and generations. Outer pairs turn more slowly under the chosen display law; no centre orbits the electron.' : 'The path marks the prescribed electron trajectory. It is not a permanent magnetic wake; the reference field changes as the electron passes.'}</p><h3>Reading the scene</h3><p>Faraday lines trace the neighboring dipoles’ mean alignment, with arrows toward positive ends. Line spacing is illustrative. Magnetic guides follow the motion-induced rotation direction.</p></> }] : []),
+      { id: 'units', content: <><h3>Source scale &amp; constants</h3><dl className="light-readouts">{p.particle === 'proton'
+        ? <><div><dt>R = proton charge radius</dt><dd>{(radiusOf('proton') * 1e15).toFixed(4)} fm</dd></div><div><dt>c/(2πR)</dt><dd data-testid="electron-proton-rate">{polarizationRate('proton').toExponential(3)} Hz</dd></div><div><dt>Rate against the electron’s</dt><dd>× {(polarizationRate('proton') / polarizationRate('electron')).toFixed(1)}</dd></div><div><dt>μ along the spin</dt><dd>{(p.spin * POLARIZERS.proton.g / 2).toFixed(4)} μ(proton, R)</dd></div></>
+        : <><div><dt>R = λC/2</dt><dd>{(RADIUS * 1e12).toFixed(6)} pm</dd></div><div><dt>c/(2πR)</dt><dd>{(C / (2 * Math.PI * RADIUS)).toExponential(3)} Hz</dd></div></>}<div><dt>α</dt><dd>1 / {(1 / ALPHA).toFixed(6)}</dd></div>{p.particle !== 'proton' && <div><dt>μ along preferred axis</dt><dd>{(-p.spin * G_FACTOR / 2).toFixed(6)} μB</dd></div>}</dl><p className="light-small">Reference inputs, not fitted outputs. Fleming interprets α as total polarization. This experiment does not derive α, quantized spin, magnetic moment or mass from dipole interactions.</p><a href="./docs/electron-source-notes.md" target="_blank" rel="noreferrer">Read extracted source details & model decisions ↗</a></> },
       { id: 'sources', content: <div className="electron-sources electron-about-sources">
           <article><strong>Polarization → electric field</strong><p>A bare negative polarizer aligns positive dipole ends inward. Fleming relates the surrounding polarization flux to unit charge.</p><a href="./docs/papers/Electron%20Properties%20Explained%20as%20Quantum%20Field%20Effects.pdf#page=2" target="_blank" rel="noreferrer">Electron properties · §2 ↗</a></article>
           <article><strong>Preferred local rotation → spin</strong><p>Neighboring partially aligned dipoles favor a common rotation sense. Their centres and the bare core need not move.</p><a href="./docs/papers/Electron%20Properties%20Explained%20as%20Quantum%20Field%20Effects.pdf#page=3" target="_blank" rel="noreferrer">Electron properties · §§3–6 ↗</a></article>
-          <article><strong>Polarization rate → radius</strong><p>R = λC/2 gives an effective rate c/(2πR) ≈ 3.933 × 10¹⁹ turns/s in Fleming’s radius argument.</p><a href="./docs/papers/Electron%20and%20proton%20radii%20are%20due%20to%20quantum%20polarization%20rate%20and%20the%20speed%20of%20light.pdf#page=3" target="_blank" rel="noreferrer">Radii paper · §4 ↗</a></article>
+          <article><strong>Polarization rate → radius</strong><p>R = λC/2 gives an effective rate c/(2πR) ≈ 3.933 × 10¹⁹ turns/s in Fleming’s radius argument; the proton’s charge radius gives 5.452 × 10²², about 1386 times as many.</p><a href="./docs/papers/Electron%20and%20proton%20radii%20are%20due%20to%20quantum%20polarization%20rate%20and%20the%20speed%20of%20light.pdf#page=3" target="_blank" rel="noreferrer">Radii paper · §4 ↗</a></article>
           <a className="light-small" href="./docs/Polarization-Notes.md" target="_blank" rel="noreferrer">Polarization notes ↗</a>
         </div> },
     ]}/>
@@ -354,7 +364,7 @@ export function ElectronWorkbench({ active, rail, header, scenarioRequest, onSce
   return (
     <div className={`electron-workbench-root ${p.mode === 'spin' ? 'electron-spin-view' : ''}`} style={{ display: active ? undefined : 'none' }}>
       <Shell active={active} id="electron" header={headerNode} rail={rail} viewport={<SplitView active={active && !study} primary={viewportNode} panes={panes} split={p.mode === 'spin' ? view.spinDisplay.section : motionSplit} onSplit={p.mode === 'spin' ? setSplit : setMotionSplit} pane={p.mode === 'spin' ? pane : 'motion'} onPane={id => setPane(id as 'section' | 'motion')}/>} timeline={timelineNode} dock={dockNode} inspector={inspectorNode}
-        status={<StatusBar running={s.running} telemetry={[ELECTRON_MODEL]} items={[...(pB ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), <span data-testid="electron-tick">Tick {s.tick} · {(time * TAU).toExponential(2)} s</span>, 'τ = R/c', 'Fixed zepton centres · local worker · source-linked model']}/>}/>
+        status={<StatusBar running={s.running} telemetry={[ELECTRON_MODEL]} items={[...(pB ? [<span className="status-badge" aria-label="Comparison B active">B</span>] : []), <span data-testid="electron-tick">Tick {s.tick} · {(time * tauOf(p.particle)).toExponential(2)} s</span>, 'τ = R/c', 'Fixed zepton centres · local worker · source-linked model']}/>}/>
       {notice && <div className="toast" role="status" data-testid="notice"><Info size={15}/><span>{notice}</span><button aria-label="Dismiss notification" onClick={() => setNotice('')}><X size={14}/></button></div>}
       {aboutNode}
     </div>

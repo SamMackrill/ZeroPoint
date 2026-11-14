@@ -53,6 +53,13 @@ describe('experiment definitions', () => {
     expect(lightDefinition.layers.filter(l => appliesTo(l, 'induction')).map(l => l.key)).not.toContain('cone');
     expect(lightDefinition.layers.filter(l => appliesTo(l, 'absorption')).map(l => l.key)).toContain('cone');
   });
+  it('gives the Electron lab a proton scenario: the stationary sequence round a positive polarizer', () => {
+    expect(scenarioState(electronDefinition, 'proton').params).toMatchObject({ mode: 'electric', particle: 'proton' });
+    for (const id of ['stationary', 'spin', 'moving']) expect(scenarioState(electronDefinition, id).params.particle).toBe('electron');
+    expect(electronDefinition.timeline('proton', electronDefinition.defaultParams)).toMatchObject({ kind: 'bounded', next: 'event' });
+    expect(electronDefinition.timeline('proton', electronDefinition.defaultParams).events.map(e => e.label)).toEqual(['Proton introduced', 'Polarization established']);
+    expect(electronDefinition.layers.filter(l => appliesTo(l, 'proton')).map(l => l.key)).toContain('radius');
+  });
   it('converts Light wavelengths between L and nm', () => {
     const wavelength = lightDefinition.params.find(p => p.key === 'wavelength');
     expect(wavelength?.kind === 'range' && wavelength.display?.toDisplay(2)).toBe(500);

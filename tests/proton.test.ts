@@ -4,6 +4,7 @@ import {
   norm, parseElectronFile, polarizationRate, radiusOf, referenceFields, sampleCentre, scale, shellAlignment, tauOf, unit, validateElectronParameters,
   type ElectronMode, type ElectronState, type Particle,
 } from '../src/electron/model';
+import { faradayLines } from '../src/electron/fieldLines';
 
 /** A state for a particle in a mode at a tick (the polarization is established by tick 360). */
 const state = (particle: Particle, mode: ElectronMode = 'electric', tick = 360): ElectronState => ({ model: ELECTRON_MODEL, tick, parameters: { ...DEFAULT_ELECTRON, mode, particle } });
@@ -69,4 +70,14 @@ describe('the proton as a second polarizer', () => {
     expect(v4).toMatchObject({ migrated: true, state: { model: ELECTRON_MODEL, tick: 120, parameters: { particle: 'electron' } } });
     expect(() => parseElectronFile(JSON.stringify({ ...proton, state: { ...state('proton'), parameters: older } }))).toThrow('The particle must be an electron or a proton.');
   });
+  it('traces Faraday lines outward from the proton, as from the electron', () => {
+    for (const particle of ['electron', 'proton'] as const) {
+      const lines = faradayLines(state(particle), false);
+      expect(lines.length).toBe(40);
+      const long = lines.filter(line => line.length > 20);
+      expect(long.length).toBeGreaterThan(30);
+      for (const line of long) expect(norm(line.at(-1)!)).toBeGreaterThan(norm(line[0]) + 1);
+    }
+  });
 });
+

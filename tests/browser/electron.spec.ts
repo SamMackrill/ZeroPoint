@@ -260,3 +260,32 @@ test('Stationary and Moving offer the selected pair’s charge motion as a pane,
   await page.getByTestId('split-toggle').filter({ visible: true }).click();
   await expect(page.getByText('Select a zepton (click the field) to see its charge motion.')).toBeVisible();
 });
+
+test('the proton polarizer: pairs turn outward, at 1386 times the electron\u2019s rate, and the rail returns to the electron', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await openElectron(page);
+  await scenario(page, 'proton');
+  await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toHaveText('Proton polarizer');
+  const top = page.locator('.electron-stage .light-view-top, .electron-stage').first();
+  await expect(top).toContainText('proton not yet introduced');
+  await tid(page, 'event-aligned').click();
+  await expect(page.getByTestId('electron-tick')).toContainText('Tick 360');
+  await expect(top).toContainText('+ ends turn away from the proton');
+  await expect(page.getByTestId('electron-rate')).toHaveText('5.452e+22');
+  await expect(page.locator('.dock-strip').filter({ visible: true }).first()).toContainText('1.0000');
+  await expect(page.locator('.dock-strip').filter({ visible: true }).first()).not.toContainText('-1.0000');
+  await expect(page.locator('.light-scale').filter({ visible: true })).toContainText('proton charge radius');
+  // The file keeps the particle.
+  const saving = page.waitForEvent('download'); await tid(page, 'file-save').click();
+  const saved = JSON.parse(await readFile((await (await saving).path())!, 'utf8'));
+  expect(saved).toMatchObject({ version: 5, state: { parameters: { particle: 'proton', mode: 'electric' } } });
+  // Back to the electron: the pairs point inward again.
+  await scenario(page, 'stationary');
+  await tid(page, 'event-aligned').click();
+  await expect(top).toContainText('+ ends turn toward the electron');
+  await expect(page.locator('.dock-strip').filter({ visible: true }).first()).toContainText('-1.0000');
+  // Loading the proton file returns to the proton scenario.
+  await tid(page, 'file-input').setInputFiles({ name: 'proton.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(saved)) });
+  await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toHaveText('Proton polarizer');
+  expect(errors).toEqual([]);
+});
