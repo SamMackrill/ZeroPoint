@@ -2,8 +2,8 @@ import { DEFAULT_ELECTRON, DEFAULT_ELECTRON_VIEW, ELECTRON_DT, ELECTRON_END, val
 import { SPEEDS } from '../../workbench/runtime';
 import type { ExperimentDefinition, TimelineEvent } from '../../workbench/definition';
 
-/** The three time-based scenarios, which share the electron's physics parameters. */
-const LIVE = ['stationary', 'spin', 'moving'] as const;
+/** The time-based scenarios, which share the particle's physics parameters. */
+const LIVE = ['stationary', 'spin', 'moving', 'proton'] as const;
 
 /**
  * Milestones per scenario, at the ticks the current replay buttons seek to: the electron appears over its first
@@ -11,21 +11,23 @@ const LIVE = ['stationary', 'spin', 'moving'] as const;
  */
 export function electronMilestones(scenario: string): TimelineEvent[] {
   if (scenario === 'stationary') return [{ tick: Math.round(0.35 / ELECTRON_DT), label: 'Electron introduced', id: 'introduced' }, { tick: 360, label: 'Polarization established', id: 'aligned' }];
+  if (scenario === 'proton') return [{ tick: Math.round(0.35 / ELECTRON_DT), label: 'Proton introduced', id: 'introduced' }, { tick: 360, label: 'Polarization established', id: 'aligned' }];
   if (scenario === 'moving') return [{ tick: 2880, label: 'Path centre', id: 'path-centre' }];
   return [];
 }
 
 /**
- * The electron laboratory: three bounded 0–48 τ scenarios (physics parameters restart, shell display is live) and two
- * static studies from ElectronProperties.
+ * The electron laboratory: four bounded 0–48 τ scenarios (physics parameters restart, shell display is live), the last
+ * of them the proton as a second polarizer, and three static studies from ElectronProperties.
  */
 export const electronDefinition: ExperimentDefinition<ElectronParameters, ElectronView> = {
   id: 'electron',
   title: 'Electron in the ZPF',
   scenarios: [
-    { id: 'stationary', title: 'Stationary electron', description: 'Nearby pairs align first as the electric pattern resolves', params: { mode: 'electric' } },
-    { id: 'spin', title: 'Spin in the field', description: 'Neighbouring zeptons turn locally around a stationary core', params: { mode: 'spin' }, view: { faraday: false } },
-    { id: 'moving', title: 'Moving electron', description: 'Pairs turn locally as the electron passes', params: { mode: 'moving' } },
+    { id: 'stationary', title: 'Stationary electron', description: 'Nearby pairs align first as the electric pattern resolves', params: { mode: 'electric', particle: 'electron' } },
+    { id: 'spin', title: 'Spin in the field', description: 'Neighbouring zeptons turn locally around a stationary core', params: { mode: 'spin', particle: 'electron' }, view: { faraday: false } },
+    { id: 'moving', title: 'Moving electron', description: 'Pairs turn locally as the electron passes', params: { mode: 'moving', particle: 'electron' } },
+    { id: 'proton', title: 'Proton polarizer', description: 'Pairs point the other way, 1386× the turn rate', params: { mode: 'electric', particle: 'proton' } },
     { id: 'charge-flux', title: 'Charge & flux', description: 'A Gauss sphere of variable radius', static: true },
     { id: 'radius-limit', title: 'Radius limit', description: 'Effective speed against radius', static: true },
     { id: 'mass-shell', title: 'Mass & excluded energy', description: 'A shell that shuts out a band of fluctuations', static: true },
@@ -33,9 +35,9 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
   defaultParams: DEFAULT_ELECTRON,
   defaultView: DEFAULT_ELECTRON_VIEW,
   params: [
-    { kind: 'range', key: 'beta', label: 'Velocity', group: 'Electron', apply: 'restart', min: -0.2, max: 0.2, step: 0.01, unit: 'c', scenarios: ['moving'] },
-    { kind: 'choice', key: 'spin', label: 'Spin projection', group: 'Electron', apply: 'restart', scenarios: LIVE, options: [{ value: 1, label: '+½', title: 'spin up' }, { value: -1, label: '−½', title: 'spin down' }] },
-    { kind: 'choice', key: 'axis', label: 'Preferred axis', group: 'Electron', apply: 'restart', scenarios: LIVE, options: [{ value: 'x', label: 'X' }, { value: 'y', label: 'Y' }, { value: 'z', label: 'Z' }] },
+    { kind: 'range', key: 'beta', label: 'Velocity', group: 'Particle', apply: 'restart', min: -0.2, max: 0.2, step: 0.01, unit: 'c', scenarios: ['moving'] },
+    { kind: 'choice', key: 'spin', label: 'Spin projection', group: 'Particle', apply: 'restart', scenarios: LIVE, options: [{ value: 1, label: '+½', title: 'spin up' }, { value: -1, label: '−½', title: 'spin down' }] },
+    { kind: 'choice', key: 'axis', label: 'Preferred axis', group: 'Particle', apply: 'restart', scenarios: LIVE, options: [{ value: 'x', label: 'X' }, { value: 'y', label: 'Y' }, { value: 'z', label: 'Z' }] },
     { kind: 'range', key: 'probeX', label: 'Probe X', group: 'Probe', apply: 'restart', min: -5, max: 5, step: 0.1, unit: 'R', scenarios: LIVE },
     { kind: 'range', key: 'probeY', label: 'Probe Y', group: 'Probe', apply: 'restart', min: -4, max: 4, step: 0.1, unit: 'R', scenarios: LIVE },
     { kind: 'range', key: 'probeZ', label: 'Probe Z', group: 'Probe', apply: 'restart', min: -3, max: 3, step: 0.1, unit: 'R', scenarios: LIVE },
@@ -53,7 +55,7 @@ export const electronDefinition: ExperimentDefinition<ElectronParameters, Electr
     { key: 'magnetic', label: 'Motion B', group: 'Fields', scenarios: LIVE, info: 'Guides follow the motion-induced rotation direction. The motion field vanishes at zero velocity.' },
     { key: 'intrinsic', label: 'Intrinsic spin B', group: 'Fields', scenarios: LIVE },
     { key: 'rotation', label: 'Local rotation sense', group: 'Guides', scenarios: LIVE },
-    { key: 'radius', label: 'Half-Compton radius', group: 'Guides', scenarios: LIVE },
+    { key: 'radius', label: 'Particle radius', group: 'Guides', scenarios: LIVE, info: 'R: half the Compton wavelength for the electron, the charge radius for the proton. Both structures are drawn at their own R, where their turn reaches the speed of light.' },
     { key: 'cutaway', label: 'Central slab cutaway', group: 'Clipping', scenarios: LIVE },
   ],
   panes: [{ id: 'section', scenarios: ['spin'] }, { id: 'motion', scenarios: LIVE }],
