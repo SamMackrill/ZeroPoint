@@ -341,6 +341,10 @@
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "The proton is a second bare polarizer. With its positive charge it polarizes proton-like pairs, positive charge and matter on one end, so every pair turns its positive end outward, where round an electron it turns inward. Its structure has the proton’s charge radius instead of half the Compton wavelength. Both turn at the speed of light at their own radius, so the proton turns about 1386 times as often each second: the ratio of the radii. Lengths here are in each particle’s own radius, so the two pictures are drawn alike."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Shared local preference selected, following the video’s coordination explanation at 4:44."
   },
   {
@@ -354,6 +358,10 @@
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",
     "text": "Exported the full analytic reference sequence, including future samples and the separate intrinsic-dipole reference."
+  },
+  {
+    "file": "src/experiments/electron/ElectronWorkbench.tsx",
+    "text": "+ ends turn away from the proton, less with distance"
   },
   {
     "file": "src/experiments/electron/ElectronWorkbench.tsx",

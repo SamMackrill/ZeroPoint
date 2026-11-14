@@ -1,4 +1,4 @@
-import { CORE_MASK, GRID_SIDE, GRID_SPACING, GRID_HALF, LATTICE_SAMPLES, alignmentProgress, add, dipoleAt, electronX, meanAlignment, norm, scale, unit } from './model';
+import { CORE_MASK, GRID_SIDE, GRID_SPACING, GRID_HALF, LATTICE_SAMPLES, POLARIZERS, alignmentProgress, add, dipoleAt, electronX, meanAlignment, norm, scale, unit } from './model';
 import type { ElectronState, Vec } from './model';
 
 /**
@@ -28,9 +28,12 @@ export function samplePolarization(grid: Vec[], point: Vec): Vec {
   return result;
 }
 
-/** Trace outward against P with midpoint integration; arrowheads later point inward along P. */
-export function tracePolarization(grid: Vec[], seed: Vec, core: Vec, steps = 160): Vec[] {
-  const points: Vec[] = [seed], h = .055;
+/**
+ * Trace outward from the core with midpoint integration. `sense` is the step along P that leads outward: −1 round an
+ * electron, whose P points inward, and +1 round a proton, whose P points outward. Arrowheads are later drawn along P.
+ */
+export function tracePolarization(grid: Vec[], seed: Vec, core: Vec, steps = 160, sense: 1 | -1 = -1): Vec[] {
+  const points: Vec[] = [seed], h = .055 * -sense;
   for (let i = 0; i < steps; i++) {
     const p = points[points.length - 1], v = unit(samplePolarization(grid, p));
     if (!norm(v)) break;
@@ -55,5 +58,5 @@ export function faradayLines(state: ElectronState, cutaway: boolean): Vec[][] {
     const z = 1 - 2 * (i + .5) / count, r = Math.sqrt(1 - z * z), a = i * 2.399963229728653;
     return [r * Math.cos(a), r * Math.sin(a), z];
   });
-  return directions.map(n => tracePolarization(grid, add(core, scale(n, .38)), core));
+  return directions.map(n => tracePolarization(grid, add(core, scale(n, .38)), core, 160, POLARIZERS[state.parameters.particle].charge));
 }

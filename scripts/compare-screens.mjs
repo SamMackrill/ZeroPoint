@@ -249,7 +249,22 @@ export const ABSORPTION_SCREENS = [
   { name: 'about', title: 'Help \u203a This scenario: the absorption and what is not modelled', hash: '#/light/absorption?t=1380', beforeMissing: noAbsorption, prepare: openAbout() },
   { name: 'induction-end', title: 'Induction sequence · tick 1440: unchanged, the pulse leaves the window', hash: '#/light?t=1440' },
 ];
-const SETS = { absorption: ABSORPTION_SCREENS, 'double-slit': DOUBLE_SLIT_SCREENS, fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
+/**
+ * The proton as a second polarizer (`--set proton`): a new Electron scenario, so "before" has none. After Fleming's
+ * "Electron and proton radii are due to quantum polarization rate and the speed of light" (§1–4).
+ */
+const noProton = 'the Electron lab had no proton scenario';
+export const PROTON_SCREENS = [
+  { name: 'rail', title: 'The rail: Electron gains a Proton polarizer scenario; the Setup group reads Particle', lab: 'lab-electron' },
+  { name: 'proton-established', title: 'Proton polarizer · tick 720, front: pairs turn their positive ends outward; Faraday lines run outward', hash: '#/electron/proton?t=720&cam=front', beforeMissing: noProton },
+  { name: 'electron-established', title: 'Stationary electron · tick 720, front, for comparison: positive ends inward', hash: '#/electron/stationary?t=720&cam=front' },
+  { name: 'proton-introduced', title: 'Proton polarizer · tick 60: the proton appears, its core marked +', hash: '#/electron/proton?t=60&cam=front', beforeMissing: noProton },
+  { name: 'proton-orbit', title: 'Proton polarizer · tick 720, orbit', hash: '#/electron/proton?t=720', beforeMissing: noProton },
+  { name: 'proton-polarization', title: 'Dock › Polarization round the proton: the same mean and total alignment, along its own field', hash: '#/electron/proton?t=1500', beforeMissing: noProton, prepare: async page => { await page.getByTestId('dock-polarization').filter({ visible: true }).click(); await liftDock(page); }, focus: '.dock-body' },
+  { name: 'proton-units', title: 'Help › Units: the proton’s radius, turn rate (× 1386) and moment', hash: '#/electron/proton?t=720', beforeMissing: noProton, prepare: openAbout(['about-units']) },
+  { name: 'proton-about', title: 'Help › This scenario', hash: '#/electron/proton?t=720', beforeMissing: noProton, prepare: openAbout() },
+];
+const SETS = { proton: PROTON_SCREENS, absorption: ABSORPTION_SCREENS, 'double-slit': DOUBLE_SLIT_SCREENS, fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -327,7 +342,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (only && (!only.length || unknown.length)) throw new Error(`--only ${unknown.length ? `names screens not in the set: ${unknown.join(', ')}` : 'names no screen'}. The set's names: ${names.join(', ')}`);
   // --only recaptures a subset; the page still shows the whole set, from the images already in --out.
   const screens = set.filter(screen => !only || only.includes(screen.name));
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--only name,name] [--set absorption|double-slit|fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--only name,name] [--set proton|absorption|double-slit|fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.
