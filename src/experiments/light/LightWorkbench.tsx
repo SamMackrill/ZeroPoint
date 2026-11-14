@@ -109,7 +109,9 @@ export function LightWorkbench({ active, rail, header, scenarioRequest, onScenar
   const [link, setLink] = useState<PendingLink | null>(null), linkDone = useCallback(() => setLink(null), []);
   const applyLink = (request: ScenarioRequest) => {
     const url = request.url, dropped = [...(request.dropped ?? [])], start = scenarioState(lightDefinition, request.id).params;
-    if (!url && start.absorber !== p.absorber) { runtime.configure({ ...p, absorber: start.absorber }); setSelected(null); compare.clear(); }
+    // Every rail choice restarts the run in its scenario. The worker's reply may lag, so this never compares with the
+    // state on screen, and it cancels a link's pending seek, which belongs to the run it replaces.
+    if (!url) { runtime.configure({ ...p, absorber: start.absorber }); setLink(null); setSelected(null); }
     if (url) {
       const target = withPaths(start, url.params) as LightParameters;
       runtime.configure(target); setLink({ params: target, tick: url.tick });
@@ -161,7 +163,8 @@ export function LightWorkbench({ active, rail, header, scenarioRequest, onScenar
   const spatialX = Array.from({ length: 161 }, (_, i) => p.offset - 6 + i * 12 / 160), historyX = Array.from({ length: 161 }, (_, i) => d.time * i / 160);
   const spatial = spatialX.map(x => waveAt(p, d.time, x).electric), history = historyX.map(t => waveAt(p, t, p.probe).electric);
   // B: the same model with B's parameters at A's tick (Light is analytic, so B needs no worker).
-  const pB = phone ? null : compare.b, dB = pB && lightReadout({ ...s, parameters: pB });
+  // B is compared within one scenario: a B pinned with or without the wall does not apply to the other (as in Electron).
+  const pB = phone || !compare.b || compare.b.absorber !== p.absorber ? null : compare.b, dB = pB && lightReadout({ ...s, parameters: pB });
   const spatialB = pB && dB ? spatialX.map(x => waveAt(pB, dB.time, x).electric) : undefined, historyB = pB ? historyX.map(t => waveAt(pB, t, pB.probe).electric) : undefined;
   /** The readout strip for one configuration. */
   const stripFor = (r: ReturnType<typeof lightReadout>, q: LightParameters) => [
@@ -220,7 +223,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest, onScenar
         </div> },
         ...(phone ? [] : [{ id: 'compare', label: 'Compare', badge: pB ? 'B' : undefined, content: <CompareTab definition={lightDefinition} scenario={scenario} a={p} b={pB}
           onPin={() => compare.pin(p)} onCopyToA={() => { if (pB) configure({ ...pB }); }} onClear={compare.clear}
-          onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Light files must be smaller than 100 KB.'); compare.pin(parseLightFile(await file.text()).state.parameters); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> }]),
+          onLoadB={async file => { try { if (file.size > 100_000) throw new Error('Light files must be smaller than 100 KB.'); const loaded = parseLightFile(await file.text()).state.parameters; if (loaded.absorber !== p.absorber) throw new Error('that file is from the other scenario'); compare.pin(loaded); setNotice(`Loaded ${file.name} as B.`); } catch (error) { setNotice(`Could not load as B: ${error instanceof Error ? error.message : String(error)}`); } }}/> }]),
         { id: 'ledger', label: 'Ledger', content: <div className="light-ledger">
           <Readouts items={[
             { label: 'Central pair · hf/2', value: d.pairEnergy.toFixed(4), unit: 'eV' },
@@ -286,7 +289,7 @@ export function LightWorkbench({ active, rail, header, scenarioRequest, onScenar
     <TimelineBar runtime={runtime} timeline={timeline} speeds={SPEEDS}
       markers={checkpoints.map((c, i) => ({ id: `${i}-${c.tick}`, tick: c.tick, label: `tick ${c.tick}` }))}
       onMarker={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) { runtime.restore(c); setSelected(null); } }}
-      onMarkerPin={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c) { compare.pin(c.parameters); setNotice('Pinned the checkpoint’s parameters as B.'); } }} onCapture={capture} runDisabled={contextLost}/>
+      onMarkerPin={m => { const c = checkpoints.find((x, i) => `${i}-${x.tick}` === m.id); if (c && c.parameters.absorber !== p.absorber) setNotice('That checkpoint is from the other scenario; B is compared within one scenario.'); else if (c) { compare.pin(c.parameters); setNotice('Pinned the checkpoint’s parameters as B.'); } }} onCapture={capture} runDisabled={contextLost}/>
   );
 
   return (

@@ -154,5 +154,17 @@ test('the absorption scenario ends the run at a wall, all at once, and the rail 
   await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/light?wavelength=1.7');
   await tid(page, 'scenario-absorption').click();
   await expect(page.getByTestId('light-wall-legend')).toBeVisible();
+  // Two rail choices in quick succession: the last one wins, whatever the worker has replied so far.
+  await tid(page, 'scenario-induction').click(); await tid(page, 'scenario-absorption').click(); await tid(page, 'scenario-induction').click();
+  await expect(page.locator('.workbench-breadcrumb [aria-current=page]').filter({ visible: true })).toHaveText('Induction sequence');
+  await page.waitForTimeout(300); await expect(page.getByTestId('light-wall-legend')).toHaveCount(0);
+  // B is compared within one scenario: a B pinned without the wall does not carry over to the absorption scenario.
+  const root = page.locator('.light-workbench-root');
+  await root.getByTestId('dock-compare').click(); await root.getByTestId('compare-pin').click();
+  await expect(root.getByTestId('dock-compare')).toContainText('B');
+  await tid(page, 'scenario-absorption').click();
+  await expect(page.getByTestId('light-wall-legend')).toBeVisible();
+  await expect(root.getByTestId('compare-pin')).toBeVisible();
+  await expect(root.locator('.workbench-status')).not.toContainText('B');
   expect(errors).toEqual([]);
 });
