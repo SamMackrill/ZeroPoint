@@ -81,6 +81,12 @@ test('electron scenarios', async ({ page }) => {
   }
 });
 
+test('electron lab: the proton polarizer', async ({ page }) => {
+  await page.goto('/#/electron/proton');
+  await expect(page.getByTestId('electron-tick')).toContainText('Tick 0');
+  await snapshot(page, 'electron-proton');
+});
+
 test('extended Casimir pairings', async ({ page }) => {
   await openLab(page, 'lab-casimir');
   await expect(page.getByTestId('casimir-time')).toHaveText('0.00 τ');

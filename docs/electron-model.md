@@ -10,7 +10,9 @@
 
 ## The proton as a second polarizer (model 5)
 
-Model 5 (14 November 2026) adds a `particle` parameter, `electron` or `proton`, after Fleming's *Electron and proton radii are due to quantum polarization rate and the speed of light*. Older files hold an electron and open as model 5 with `particle: electron`. The lab's scenarios set the particle; the model alone changes nothing that is drawn for an electron.
+Model 5 (14 November 2026) adds a `particle` parameter, `electron` or `proton`, after Fleming's *Electron and proton radii are due to quantum polarization rate and the speed of light*. Older files hold an electron and open as model 5 with `particle: electron`. The scenarios set the particle: **Proton polarizer** runs the stationary sequence round a proton, and the other scenarios use the electron. Loading a file opens the scenario its particle and mode belong to.
+
+In the Proton polarizer scenario the core carries a plus on a positive-coloured sphere, pair ends are labelled proton-like and antiproton-like, Faraday lines are traced outward along the polarization with arrowheads pointing outward, and the readout strip shows the enclosed charge (+1) and the turn rate (5.452 × 10²² a second, × 1386 the electron's). Units › Source scale gives the proton's R, rate and moment, and the status bar converts τ with the proton's radius. The Setup group is now headed **Particle**, and the radius guide **Particle radius**.
 
 - **Both are bare point-like polarizers** surrounded by the polarized field (§1), so the proton uses the same partial-polarization rule, turn share and lifetimes as the electron.
 - **The pairs point the other way.** "A proton with positive charge and matter, preferentially polarizes proton-like quantum fluctuations", dipoles with "positive charge and matter on one end and negative charge and antimatter on the other end" (§3). With a positive charge at the centre the field points outward, and each pair's positive end turns outward, where round an electron it turns inward. The reference field, enclosed charge (+1), moving-charge field and shell alignment all change sign with the charge.
