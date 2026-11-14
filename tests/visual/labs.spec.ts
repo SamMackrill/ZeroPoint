@@ -51,6 +51,9 @@ test('light through the zero-point field', async ({ page }) => {
   await openLab(page, 'lab-light');
   await expect(tid(page, 'transport-run')).toBeEnabled();
   await snapshot(page, 'light');
+});
+
+test('light: absorbed at the wall', async ({ page }) => {
   // The absorption scenario after the photon has been absorbed: the status, legend and ledger strip change.
   await page.goto('/#/light/absorption?t=1440');
   await expect(page.getByTestId('light-tick')).toContainText('Tick 1440');
