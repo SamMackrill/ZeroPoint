@@ -72,6 +72,13 @@ function Status({ runtime, scenario }: { runtime: Clock; scenario: string }) {
   return <StatusBar running={running} telemetry={[SLIT_MODEL]} items={[scenario, <span data-testid="slit-tick">Tick {tick} · Δt = τ/60</span>]}/>;
 }
 
+/** What the Reach tab says about the scenario's outcome: on time through the slits, the reference time, or never. */
+export function reachExplanation(params: SlitParameters): string {
+  if (params.wall === 'open') return 'With nothing in the way the arrival time is the distance over the speed of light. This is the time the wall and slits leave unchanged.';
+  if (params.fields === 'light') return 'Held to light speed, the field spreads only half a wavelength from the path before its pair is extinguished. The nearest slit edge is farther than that, so no field passes the wall, no pair is induced beyond it, and the photon never arrives.';
+  return 'The photon arrives in the straight-line time although the only way past the wall is through the slits, off the straight path. A central pair lasts for half a wavelength of travel, so a field moving at c would spread half a wavelength before it was extinguished.';
+}
+
 /** The dock: the photon's readouts, the field plots, and the reach comparison that is Fleming's argument. */
 function LiveDock({ runtime, params, collapsed, onCollapsedChange, tab, onTab }: { runtime: Clock; params: SlitParameters; collapsed: boolean; onCollapsedChange(collapsed: boolean): void; tab: string; onTab(tab: string): void }) {
   const tick = useTick(runtime), r = slitReadout(params, tick), walled = params.wall === 'slits';
@@ -94,7 +101,7 @@ function LiveDock({ runtime, params, collapsed, onCollapsedChange, tab, onTab }:
   return <Dock collapsed={collapsed} onCollapsedChange={onCollapsedChange} tab={tab} onTab={onTab} readouts={readouts} tabs={[
     { id: 'plots', label: 'Plots', content: <div className="slit-dock-plots"><div><h4>Field at B</h4><ArrivalPlot params={params} tick={tick}/></div>{walled && <div><h4>Field along the wall</h4><WallPlot params={params} tick={tick}/></div>}</div> },
     { id: 'reach', label: 'Reach', content: <div className="slit-dock-text"><h4>How far the field must spread</h4><Readouts items={reach}/>
-      <p>{walled ? 'The photon arrives in the straight-line time although the only way past the wall is through the slits, off the straight path. A central pair lasts for half a wavelength of travel, so a field moving at c would spread half a wavelength before it was extinguished.' : 'With nothing in the way the arrival time is the distance over the speed of light. This is the time the wall and slits leave unchanged.'}</p>
+      <p data-testid="slit-reach-text">{reachExplanation(params)}</p>
       <p className="slit-note">Fleming gives no figure for the speed of fields beyond “much faster than the speed of light”; the last row is only what reaching the slit edge within one pair’s life requires.</p></div> },
   ]}/>;
 }
@@ -147,14 +154,16 @@ export function DoubleSlitWorkbench({ active, rail, header, scenarioRequest, onS
     if (url) {
       const from = scenarioState(doubleSlitDefinition, id);
       setParams(withPaths(from.params, url.params)); setView(withPaths(from.view, url.view));
-      if (url.split) setSplit(url.split !== 'off');
+      setSplit(!!url.split && url.split !== 'off');
       if (Number.isInteger(url.tick)) runtime.seek(Math.min(SLIT_END_TICK, Math.max(0, url.tick!)));
     }
     if (dropped?.length) setNotice(`Ignored link settings that don’t apply: ${dropped.join(', ')}.`);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- a request is applied once, when it arrives
   }, [scenarioRequest]);
   // The address bar follows this lab while it is paused (plan §11).
-  const urlHash = encodeUrl(routeFor(doubleSlitDefinition, scenario, params, view, { split: split ? 'fig-19-3' : undefined, tick: paused.tick || undefined }));
+  /** The link to this state at a tick. */
+  const linkAt = (tick: number) => encodeUrl(routeFor(doubleSlitDefinition, scenario, params, view, { split: split ? 'fig-19-3' : undefined, tick: tick || undefined }));
+  const urlHash = linkAt(paused.tick);
   useUrlWriter(active, paused.running, urlHash);
 
   /** Save the scenario, slits, layers and tick. */
@@ -177,7 +186,8 @@ export function DoubleSlitWorkbench({ active, rail, header, scenarioRequest, onS
     { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') }, SPLIT_SHORTCUT,
     ...fileShortcuts(save, fileInput),
     ...PANEL_SHORTCUTS,
-    copyLinkAction(urlHash, setNotice),
+    // While it runs, the tick shown is newer than the paused tick in the address bar; copy the one shown.
+    { ...copyLinkAction(urlHash, setNotice), run: () => copyLinkAction(linkAt(runtime.status().tick), setNotice).run() },
     ...layerActions(doubleSlitDefinition, scenario, view, onView),
     ...parameterActions(doubleSlitDefinition, scenario, () => setTab('setup')),
     ...exportActions(exportItems, false),

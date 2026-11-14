@@ -293,7 +293,11 @@
   },
   {
     "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
-    "text": "Speed to reach a slit in one pair’s life"
+    "text": "With nothing in the way the arrival time is the distance over the speed of light. This is the time the wall and slits leave unchanged."
+  },
+  {
+    "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
+    "text": "Held to light speed, the field spreads only half a wavelength from the path before its pair is extinguished. The nearest slit edge is farther than that, so no field passes the wall, no pair is induced beyond it, and the photon never arrives."
   },
   {
     "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
@@ -301,7 +305,7 @@
   },
   {
     "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",
-    "text": "With nothing in the way the arrival time is the distance over the speed of light. This is the time the wall and slits leave unchanged."
+    "text": "Speed to reach a slit in one pair’s life"
   },
   {
     "file": "src/experiments/double-slit/DoubleSlitWorkbench.tsx",

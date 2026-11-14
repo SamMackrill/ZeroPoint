@@ -50,6 +50,8 @@ test('the photon reaches B in the straight-line time through two slits, and neve
   await scenario(page, 'light-speed');
   await expect(tick).toContainText('Tick 0');
   await expect(tid(page, 'slit-arrival')).toHaveText('Never');
+  // The Reach tab says the photon never arrives, as the readout does.
+  await expect(page.getByTestId('slit-reach-text')).toContainText('the photon never arrives');
   await expect(page.getByRole('slider', { name: 'Slit distance from path' })).toHaveAttribute('aria-valuenow', '4');
   await expect(page.getByTestId('slit-reach')).toBeVisible();
   await tid(page, 'transport-next').click();
@@ -69,6 +71,11 @@ test('playback runs to the end, pauses on navigation, and the timeline scrubs', 
   await openExperiment(page);
   const tick = page.getByTestId('slit-tick');
   await tid(page, 'transport-run').click();
+  // Copy link while running takes the tick shown, not the last paused one (0, which a link leaves out).
+  const shown = async () => Number(/Tick (\d+)/.exec(await tick.innerText())![1]);
+  await expect.poll(shown).toBeGreaterThan(30);
+  await page.keyboard.press('Control+Shift+c');
+  expect(Number(/[?&]t=(\d+)/.exec(await page.evaluate(() => location.hash))?.[1] ?? 0)).toBeGreaterThan(30);
   await expect(tick).not.toContainText('Tick 0 ');
   await tid(page, 'lab-medium').click();
   await tid(page, 'lab-double-slit').click();
@@ -102,6 +109,11 @@ test('layers, the source figure, links, files and CSV', async ({ page }) => {
   await expect(figure).toHaveAttribute('src', /figure-19-3\.jpeg$/);
   await expect.poll(() => figure.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
   await page.keyboard.press('Backslash'); await expect(figure).toHaveCount(0);
+  // A link copied with the split view closed closes it.
+  await page.keyboard.press('Backslash'); await expect(figure).toHaveCount(1);
+  await page.evaluate(() => { location.hash = '#/double-slit/light-speed?slitWidth=2&t=100&L=-reach,-zeptons'; });
+  await expect(figure).toHaveCount(0);
+  await expect(tick).toContainText('Tick 100');
   // Save, change scenario, and load the file back.
   const saving = page.waitForEvent('download'); await tid(page, 'file-save').click(); const file = await (await saving).path();
   expect(JSON.parse(await readFile(file!, 'utf8'))).toMatchObject({ format: 'zeropoint-double-slit', model: 'double-slit/1', scenario: 'light-speed', tick: 100, params: { slitWidth: 2, fields: 'light' }, view: { reach: false } });
