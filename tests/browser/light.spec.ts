@@ -79,7 +79,7 @@ test('light configuration, layers, mobile layout and exports work together', asy
   const before = await page.getByTestId('light-tick').innerText(); await page.waitForTimeout(200); await expect(page.getByTestId('light-tick')).toHaveText(before);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await tid(page, 'export-menu').click(); const csv = page.waitForEvent('download'); await tid(page, 'export-csv').click(); expect((await csv).suggestedFilename()).toContain('illustrative-sequence.csv');
-  const doc = await page.request.get('/docs/light-model.md'); expect(doc.ok()).toBe(true); expect(await doc.text()).toContain('light-induction/2');
+  const doc = await page.request.get('/docs/light-model.md'); expect(doc.ok()).toBe(true); expect(await doc.text()).toContain('light-induction/3');
   await page.screenshot({ path: 'test-results/light-mobile.png', fullPage: true });
 });
 
@@ -102,4 +102,27 @@ test('light pauses when hidden and recovers graphics without losing its timeline
   await tid(page, 'timeline').fill('780');
   await expect(page.getByTestId('light-tick')).toContainText('Tick 780');
   await page.screenshot({ path: 'test-results/light-desktop.png', fullPage: true });
+});
+
+test('a file with the absorbing wall shows its absorbed energy in the ledger and events', async ({ page }) => {
+  await openLight(page);
+  const parameters = { wavelength: 2, polarization: 0, phase: 0, direction: 1, offset: 0, probe: 0, absorber: true };
+  const view = { background: true, pairs: true, response: true, fields: true, envelope: true, centres: true, reducedMotion: false };
+  await tid(page, 'file-input').setInputFiles({ name: 'wall.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ format: 'zeropoint-light', version: 1, state: { model: 'light-induction/3', tick: 1440, parameters }, view })) });
+  await expect(tid(page, 'notice')).toContainText('Loaded tick 1440');
+  // The whole budget is absorbed at the wall, so the residual is zero rather than minus the budget.
+  await tid(page, 'dock-ledger').click();
+  await expect(page.getByTestId('light-absorbed')).toContainText('2.4797');
+  await expect(page.getByTestId('light-energy-residual')).toHaveText('0.0e+0 eV');
+  await tid(page, 'dock-events').click();
+  await expect(page.locator('.light-event-list')).toContainText('absorbed all at once');
+  await tid(page, 'export-menu').click(); const csv = page.waitForEvent('download'); await tid(page, 'export-csv').click();
+  const rows = (await (await import('node:fs/promises')).readFile((await (await csv).path())!, 'utf8')).trim().split('\n');
+  expect(rows[0].split(',').at(-1)).toBe('absorbed_energy_eV');
+  // 775 nm pairs do not divide the window: the wall takes the photon at tick 1302, after 10.85 L, and Travelled stops there.
+  await tid(page, 'file-input').setInputFiles({ name: 'wall-775.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ format: 'zeropoint-light', version: 1, state: { model: 'light-induction/3', tick: 1440, parameters: { ...parameters, wavelength: 3.1 } }, view })) });
+  await expect(tid(page, 'notice')).toContainText('Loaded tick 1440');
+  await expect(page.locator('.dock-strip').filter({ visible: true }).first()).toContainText('10.850');
+  await expect(page.locator('.dock-strip').filter({ visible: true }).first()).toContainText('2713 nm');
+  expect(Number(rows.at(-1)!.split(',').at(-1))).toBeCloseTo(2.4797, 4);
 });

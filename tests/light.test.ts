@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_LIGHT, DEFAULT_LIGHT_VIEW, ENERGY_EV, LIGHT_DT, LIGHT_END_TICK, LIGHT_MODEL, LightSimulation, TIME_SECONDS, fieldAt, hopTicks, lightReadout, pairAt, pairWavelength, parseLightFile, polarizationAxis, sourceX, validateLightParameters, validateLightState, waveAt } from '../src/light/model';
+import { DEFAULT_LIGHT, DEFAULT_LIGHT_VIEW, ENERGY_EV, LIGHT_DT, LIGHT_END_TICK, LIGHT_MODEL, LightSimulation, TIME_SECONDS, absorption, fieldAt, hopTicks, lightReadout, pairAt, pairWavelength, parseLightFile, runEndTick, polarizationAxis, sourceX, validateLightParameters, validateLightState, waveAt } from '../src/light/model';
 
 describe('illustrative light induction model', () => {
   it('uses half-wavelength events, alternating half-turns and symmetric lobes about fixed centres', () => {
@@ -124,11 +124,18 @@ describe('illustrative light induction model', () => {
     expect(waveAt(p, 1, -5.5).envelope).toBe(0);
     expect(waveAt(p, 12, 6).electric).toBe(0); expect(waveAt(p, .5, 6.5).envelope).toBe(0);
   });
-  it('opens model 1 files, which hold the same state, and marks them as upgraded', () => {
+  it('opens model 1 and 2 files, which hold the same state without an absorber, and marks them as upgraded', () => {
     const m = new LightSimulation(); m.configure({ ...DEFAULT_LIGHT, wavelength: 3, phase: 45 }); m.step(200);
     const current = parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: DEFAULT_LIGHT_VIEW }));
-    const old = parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: { ...m.snapshot(), model: 'light-induction/1' }, view: DEFAULT_LIGHT_VIEW }));
-    expect(current.migrated).toBe(false); expect(old.migrated).toBe(true); expect(old.state).toEqual(current.state); expect(old.state.model).toBe(LIGHT_MODEL);
+    for (const model of ['light-induction/1', 'light-induction/2']) {
+      const { absorber: _none, ...parameters } = m.snapshot().parameters;
+      const old = parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: { ...m.snapshot(), model, parameters }, view: DEFAULT_LIGHT_VIEW }));
+      expect(old.migrated).toBe(true); expect(old.state).toEqual(current.state); expect(old.state.model).toBe(LIGHT_MODEL); expect(old.state.parameters.absorber).toBe(false);
+    }
+    expect(current.migrated).toBe(false);
+    // A current file must say whether there is a wall.
+    const { absorber: _missing, ...incomplete } = m.snapshot().parameters;
+    expect(() => parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: { ...m.snapshot(), parameters: incomplete }, view: DEFAULT_LIGHT_VIEW }))).toThrow('The absorber must be on or off.');
     expect(() => parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: { ...m.snapshot(), model: 'light-induction/0' }, view: DEFAULT_LIGHT_VIEW }))).toThrow();
   });
   it('has no physical dependence on render layers or playback state', () => {
@@ -137,5 +144,67 @@ describe('illustrative light induction model', () => {
     expect(saved.state).toEqual(before); expect(saved.state.model).toBe(LIGHT_MODEL);
     model.configure({ ...DEFAULT_LIGHT, wavelength: 4 }); expect(model.state.tick).toBe(0);
     expect(lightReadout(model.state).energy).toBeCloseTo(lightReadout(before).energy / 2);
+  });
+});
+
+// Fleming: a photon "is always absorbed all at once" (book ch. 19), and "the field energy gets absorbed along with the
+// energy of the central quantum particle pair dipole" (Photons §6).
+describe('absorption at a wall', () => {
+  const wall = { ...DEFAULT_LIGHT, absorber: true };
+  const at = (parameters: typeof wall, tick: number) => lightReadout({ model: LIGHT_MODEL, tick, parameters });
+  it('has no wall, and so no absorption, unless asked for', () => {
+    expect(absorption(DEFAULT_LIGHT)).toBeNull();
+    expect(runEndTick(DEFAULT_LIGHT)).toBe(LIGHT_END_TICK);
+    expect(at(DEFAULT_LIGHT, LIGHT_END_TICK)).toMatchObject({ absorbed: false, wall: null, absorbedEnergy: 0 });
+  });
+  it('stands the wall where the last whole pair in the window ends its half wavelength', () => {
+    expect(absorption(wall)).toEqual({ tick: 1440, pair: 11, x: 6 });
+    expect(absorption({ ...wall, direction: -1 })).toEqual({ tick: 1440, pair: 11, x: -6 });
+    // 1.7 L pairs do not divide the window: 14 complete, and the wall stands a little short of the edge.
+    const odd = { ...wall, wavelength: 1.7 }, end = absorption(odd)!;
+    expect(end.pair).toBe(13); expect(end.tick).toBe(14 * hopTicks(odd)); expect(end.x).toBeCloseTo(-6 + 14 * 0.85, 12);
+    expect(end.tick).toBeLessThan(LIGHT_END_TICK);
+    // The pair start angle moves every hand-off, and the wall with them.
+    const turned = { ...wall, phase: 90 }, shifted = absorption(turned)!;
+    expect(shifted).toEqual({ tick: 1380, pair: 11, x: 5.5 });
+    expect(pairAt(turned, shifted.tick - 1, shifted.pair).active).toBe(true);
+  });
+  it('absorbs the whole budget at one tick, the field with the central pair', () => {
+    for (const p of [wall, { ...wall, wavelength: 1.7 }, { ...wall, wavelength: 3.3, phase: 45, direction: -1 as const }]) {
+      const end = absorption(p)!, before = at(p, end.tick - 1), after = at(p, end.tick);
+      expect(before).toMatchObject({ absorbed: false, absorbedEnergy: 0 });
+      expect(before.pairEnergy).toBe(before.energy / 2); expect(before.fieldEnergy).toBe(before.energy / 2);
+      expect(after).toMatchObject({ absorbed: true, pairEnergy: 0, fieldEnergy: 0, departedEnergy: 0 });
+      expect(after.absorbedEnergy).toBe(after.energy);
+      expect(after.x).toBeCloseTo(end.x, 12);
+      // Nothing leaves by the window when the wall has taken it, and the budget balances at every tick.
+      for (let tick = 0; tick <= LIGHT_END_TICK; tick += 7) { const d = at(p, tick); expect(d.pairEnergy + d.fieldEnergy + d.absorbedEnergy + d.departedEnergy).toBeCloseTo(d.energy, 12); }
+      expect(at(p, LIGHT_END_TICK)).toMatchObject({ absorbed: true, departedEnergy: 0 });
+      expect(at(p, LIGHT_END_TICK).x).toBeCloseTo(end.x, 12);
+    }
+  });
+  it('leaves no field anywhere and no pair once the photon is absorbed', () => {
+    const p = { ...wall, wavelength: 1.7 }, end = absorption(p)!, last = pairAt(p, end.tick - hopTicks(p) / 2, end.pair);
+    expect(last.active).toBe(true);
+    expect(fieldAt(p, (end.tick - hopTicks(p) / 2) * LIGHT_DT, [last.centre, 1, 0]).envelope).toBeGreaterThan(0);
+    for (const tick of [end.tick, end.tick + 1, LIGHT_END_TICK - 1]) {
+      expect(pairAt(p, tick, end.pair).active).toBe(false);
+      expect(pairAt(p, tick, end.pair + 1).active).toBe(false);
+      for (const x of [last.centre, 0, -5, end.x]) expect(fieldAt(p, tick * LIGHT_DT, [x, 0.5, 0]).envelope).toBe(0);
+      expect(at(p, tick).index).toBe(end.pair);
+    }
+  });
+  it('steps Next from the last induction to the absorption, then to the end of the timeline', () => {
+    const p = { ...wall, wavelength: 1.7 }, end = absorption(p)!, m = new LightSimulation();
+    m.configure(p); m.seek(end.tick - hopTicks(p) + 3);
+    m.next(); expect(m.state.tick).toBe(end.tick);
+    m.next(); expect(m.state.tick).toBe(LIGHT_END_TICK);
+    m.next(); expect(m.state.tick).toBe(LIGHT_END_TICK);
+  });
+  it('keeps the wall in saved files and rejects a missing or malformed setting', () => {
+    const m = new LightSimulation(); m.configure(wall); m.step(300);
+    const saved = parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: DEFAULT_LIGHT_VIEW }));
+    expect(saved.migrated).toBe(false); expect(saved.state.parameters.absorber).toBe(true);
+    expect(() => validateLightParameters({ ...wall, absorber: 'yes' })).toThrow('The absorber must be on or off.');
   });
 });
