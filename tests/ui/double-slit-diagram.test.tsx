@@ -96,6 +96,9 @@ describe('double-slit plots', () => {
   it('explain an empty wall plot when no pair is turning, and show the field when one is', () => {
     expect(plotted(<WallPlot params={slits} tick={0}/>)).toContain('No field reaches the wall at this instant');
     expect(plotted(<WallPlot params={slits} tick={PAIR_TICKS}/>)).toContain('No field reaches the wall at this instant');
+    // Held to light speed a pair is turning at tick 15, but its field stops half a wavelength from the path, short of the wall.
+    const heldAt15 = plotted(<WallPlot params={held} tick={15}/>);
+    expect(heldAt15).toContain('No field reaches the wall at this instant.'); expect(heldAt15).not.toContain('no pair is turning');
     expect(plotted(<WallPlot params={slits} tick={midlife(3)}/>)).not.toContain('No field reaches the wall');
     expect(plotted(<ArrivalPlot params={held} tick={0}/>)).toContain('No field reaches B at any time in this run.');
   });

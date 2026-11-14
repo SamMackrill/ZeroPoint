@@ -57,7 +57,7 @@
   },
   {
     "file": "src/double-slit/Diagram.tsx",
-    "text": "No field reaches the wall at this instant: no pair is turning."
+    "text": "No field reaches the wall at this instant."
   },
   {
     "file": "src/electron/ChargeMotion.tsx",
