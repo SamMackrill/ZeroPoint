@@ -244,8 +244,8 @@ export class LightRenderer {
       e.visible = b.visible = !!pair;
       if (!pair) continue;
       const fade = seriesFade(pair.behind);
-      // The live pair is drawn by the Induced pair layer; earlier ones lie across the path as at midlife.
-      if (pair.behind > 0 || d.finished || d.absorbed) this.put(count++, pair.centre, 0, 0, [0, pair.polarity * axis[1], pair.polarity * axis[2]], peak, .9, .12 + .3 * fade);
+      // The live pair is drawn by the Induced pair layer when it is on; earlier ones lie across the path as at midlife.
+      if (pair.behind > 0 || d.finished || d.absorbed || !this.options.pairs) this.put(count++, pair.centre, 0, 0, [0, pair.polarity * axis[1], pair.polarity * axis[2]], peak, .9, .12 + .3 * fade);
       e.position.set(pair.centre, row * axis[1], row * axis[2]); e.setDirection(up.clone().multiplyScalar(pair.polarity));
       e.setColor(faded.set(palette.bg1).lerp(accent, fade));
       b.position.set(pair.centre, -row * axis[1], -row * axis[2]); b.setDirection(magnetic.clone().multiplyScalar(pair.polarity * p.direction));
