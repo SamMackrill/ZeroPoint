@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { fieldAt, lightReadout, pairAt, pairCount, waveAt } from './model';
+import { fieldAt, lightReadout, pairAt, pairCount, pairWavelength, polarizationAxis, seriesAt, seriesPairs, waveAt } from './model';
 import { lifecycleEnvelope } from '../model/pairMotion';
 import type { LightSnapshot, LightView } from './model';
 import { palette, scene } from '../ui/palette';
@@ -11,6 +11,10 @@ const SAMPLES = 241, BACKGROUND = 540;
 const CONE_LENGTH = 3;
 /** The central pair's lobes are drawn larger than the background samples so the photon's own pair stands out. */
 const CENTRAL_SCALE = 1.9;
+/** Most pairs a run can have (at the shortest wavelength, with a start angle), for the series drawn behind the photon. */
+const SERIES = 32;
+/** How strongly a pair of the series is drawn `behind` pairs after it was active: fading with age is a display choice. */
+const seriesFade = (behind: number) => Math.max(.3, 1 - behind * .1);
 export class LightRenderer {
   readonly renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
   private scene = new THREE.Scene();
@@ -24,6 +28,11 @@ export class LightRenderer {
   private response = new THREE.Group();
   private arrows: THREE.ArrowHelper[] = [];
   private envelope: THREE.Mesh;
+  /** Fleming's Fig. 5-1 behind the photon: the traced E field, and each pair's E arrow (above) and B arrow (below). */
+  private series = new THREE.Group();
+  private trace: THREE.Line;
+  private seriesE: THREE.ArrowHelper[] = [];
+  private seriesB: THREE.ArrowHelper[] = [];
   private link: THREE.Line;
   private probe: THREE.Mesh;
   private selection: THREE.Mesh;
@@ -54,8 +63,8 @@ export class LightRenderer {
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true; this.controls.minDistance = 1.3; this.controls.maxDistance = 30;
     const sphere = new THREE.SphereGeometry(.062, 10, 8);
-    this.positive = new THREE.InstancedMesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataPosHi, emissive: scene.posGlowLight, emissiveIntensity: .25 }), BACKGROUND + 24);
-    this.negative = new THREE.InstancedMesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataNegHi, emissive: scene.negGlowLight, emissiveIntensity: .25 }), BACKGROUND + 24);
+    this.positive = new THREE.InstancedMesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataPosHi, emissive: scene.posGlowLight, emissiveIntensity: .25 }), BACKGROUND + 1 + SERIES);
+    this.negative = new THREE.InstancedMesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataNegHi, emissive: scene.negGlowLight, emissiveIntensity: .25 }), BACKGROUND + 1 + SERIES);
     this.centres = new THREE.InstancedMesh(new THREE.TorusGeometry(.09, .012, 5, 16), new THREE.MeshBasicMaterial({ color: palette.text2, transparent: true, opacity: .6 }), 24);
     for (const mesh of [this.positive, this.negative, this.centres]) { mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage); mesh.frustumCulled = false; mesh.count = 0; this.scene.add(mesh); }
     const makeLine = (color: string) => {
@@ -69,6 +78,15 @@ export class LightRenderer {
       this.arrows.push(arrow); this.response.add(arrow);
     }
     this.scene.add(this.response);
+    const traced = new THREE.BufferGeometry();
+    traced.setAttribute('position', new THREE.BufferAttribute(new Float32Array(SAMPLES * 3), 3).setUsage(THREE.DynamicDrawUsage));
+    traced.setAttribute('color', new THREE.BufferAttribute(new Float32Array(SAMPLES * 3), 3).setUsage(THREE.DynamicDrawUsage));
+    this.trace = new THREE.Line(traced, new THREE.LineBasicMaterial({ vertexColors: true })); this.trace.frustumCulled = false;
+    for (let i = 0; i < SERIES; i++) {
+      this.seriesE.push(new THREE.ArrowHelper(new THREE.Vector3(0, 1, 0), new THREE.Vector3(), .4, palette.accent, .1, .06));
+      this.seriesB.push(new THREE.ArrowHelper(new THREE.Vector3(0, 0, 1), new THREE.Vector3(), .3, palette.dataCore, .1, .06));
+    }
+    this.series.add(this.trace, ...this.seriesE, ...this.seriesB); this.scene.add(this.series);
     this.envelope = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 16), new THREE.MeshBasicMaterial({ color: palette.accent, transparent: true, opacity: .065, depthWrite: false, wireframe: true }));
     this.probe = new THREE.Mesh(new THREE.TorusGeometry(.9, .009, 4, 48), new THREE.MeshBasicMaterial({ color: palette.dataShell1, transparent: true, opacity: .65 }));
     this.probe.rotation.y = Math.PI / 2;
@@ -136,20 +154,24 @@ export class LightRenderer {
     let count = 0;
     // Fixed, reproducible spatial sample of the surrounding medium. Each background pair has its own seeded
     // orientation and lifetime and makes a half-turn per generation, as in the medium laboratory. Near the central
-    // pair it is biased toward that pair's orientation and turns with it (book Fig. 5-2); the bias is magnified.
-    const lead = d.pair.direction;
+    // pair it leans with the field, along the polarization axis (book p. 45: the surrounding pairs are "only slightly
+    // biased in the direction consistent with the photon's central pair", and rotate "parallel to the axis of
+    // polarization"); the lean is magnified. It follows the field's sign, which passes smoothly through zero at each
+    // hand-off and reverses, so the medium sways one way and then the other. The central pair's full orientation would
+    // not do: each pair is born along the path, so it restarts at every hand-off.
+    const axis = polarizationAxis(p);
     for (let i = 0; i < BACKGROUND; i++) {
       const x = p.offset + (i % 30) * .4 - 5.8, y = (Math.floor(i / 30) % 6) * .55 - 1.375, z = Math.floor(i / 180) * .75 - .75;
       if (this.cameraMode === 'pair' && Math.hypot(x - selected.centre, y, z) > .8) continue;
-      const response = this.options.response && !gone ? fieldAt(p, d.time, [x, y, z]).envelope : 0;
+      const field = this.options.response && !gone ? fieldAt(p, d.time, [x, y, z]) : null, response = field?.envelope ?? 0;
       if (!this.options.background && response < .04) continue;
       const life = 1.1 + (i % 7) * .23, cycles = d.time / life + (i * .61803398875) % 1, generation = Math.floor(cycles), u = cycles - generation;
       const k = i * 7 + generation * 13 + 1, cz = 1 - 2 * ((k * .7548776662466927) % 1), ca = k * 2.399963229728653, cr = Math.sqrt(1 - cz * cz);
       const a = [cr * Math.cos(ca), cr * Math.sin(ca), cz], n = [Math.cos(k * 1.7), Math.sin(k * 1.7) * Math.cos(k * .9), Math.sin(k * 1.7) * Math.sin(k * .9)];
       // b is perpendicular to a; the pair turns from a to −a through b.
       const dot = a[0] * n[0] + a[1] * n[1] + a[2] * n[2], b = n.map((v, j) => v - dot * a[j]), bl = Math.hypot(b[0], b[1], b[2]) || 1;
-      const bias = Math.min(.9, response * 1.8), turn = Math.PI * u;
-      const direction = a.map((v, j) => (1 - bias) * (v * Math.cos(turn) + b[j] / bl * Math.sin(turn)) + bias * lead[j]);
+      const lean = Math.max(-.9, Math.min(.9, (field?.electric ?? 0) * 1.8)), turn = Math.PI * u;
+      const direction = a.map((v, j) => (1 - Math.abs(lean)) * (v * Math.cos(turn) + b[j] / bl * Math.sin(turn)) + lean * axis[j]);
       const norm = Math.hypot(direction[0], direction[1], direction[2]) || 1; direction.forEach((v, j) => { direction[j] = v / norm; });
       this.put(count++, x, y, z, direction, (.13 + response * .12) * lifecycleEnvelope(u, 1), .43 + response * .32, .16 + response * .8);
     }
@@ -162,6 +184,8 @@ export class LightRenderer {
       ends.needsUpdate = true;
     }
     this.link.visible = this.options.pairs && !gone;
+    this.series.visible = this.options.series;
+    if (this.options.series) count = this.drawSeries(state, count, axis);
     this.positive.count = this.negative.count = count;
     for (const mesh of [this.positive, this.negative]) { mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; }
     this.centres.count = d.wall ? d.wall.pair + 1 : pairCount(p); this.centres.visible = this.options.centres;
@@ -202,6 +226,41 @@ export class LightRenderer {
       arrow.setDirection(new THREE.Vector3(0, sign * (i % 2 ? -Math.sin(pol) : Math.cos(pol)), sign * (i % 2 ? Math.cos(pol) : Math.sin(pol))));
       arrow.setLength(Math.max(.01, Math.abs(value)), .08, .04);
     }
+  }
+  /**
+   * Fleming's Fig. 5-1 behind the photon: each pair it has passed through, drawn across the path at midlife with its +
+   * and − lobes, its E arrow in a row above and its B arrow in a row below, and the E field each produced traced along
+   * the path. The pairs and arrows of earlier pairs fade. Returns the next free lobe instance.
+   */
+  private drawSeries(state: LightSnapshot, count: number, axis: [number, number, number]) {
+    const p = state.parameters, d = lightReadout(state), peak = pairWavelength(p);
+    // The arrow rows sit clear of the lobes and of the traced field, which swings to ±1 L.
+    const row = Math.max(1, peak / 2) + .35;
+    const up = new THREE.Vector3(0, axis[1], axis[2]), magnetic = new THREE.Vector3(0, -axis[2], axis[1]);
+    const faded = new THREE.Color(), accent = new THREE.Color(palette.accent), core = new THREE.Color(palette.dataCore);
+    const pairs = seriesPairs(p, state.tick);
+    for (let i = 0; i < SERIES; i++) {
+      const pair = pairs[i], e = this.seriesE[i], b = this.seriesB[i];
+      e.visible = b.visible = !!pair;
+      if (!pair) continue;
+      const fade = seriesFade(pair.behind);
+      // The live pair is drawn by the Induced pair layer when it is on; earlier ones lie across the path as at midlife.
+      if (pair.behind > 0 || d.finished || d.absorbed || !this.options.pairs) this.put(count++, pair.centre, 0, 0, [0, pair.polarity * axis[1], pair.polarity * axis[2]], peak, .9, .12 + .3 * fade);
+      e.position.set(pair.centre, row * axis[1], row * axis[2]); e.setDirection(up.clone().multiplyScalar(pair.polarity));
+      e.setColor(faded.set(palette.bg1).lerp(accent, fade));
+      b.position.set(pair.centre, -row * axis[1], -row * axis[2]); b.setDirection(magnetic.clone().multiplyScalar(pair.polarity * p.direction));
+      b.setColor(faded.set(palette.bg1).lerp(core, fade));
+    }
+    const at = this.trace.geometry.attributes.position, colour = this.trace.geometry.attributes.color;
+    for (let i = 0; i < SAMPLES; i++) {
+      const x = p.offset - 6 + i * 12 / (SAMPLES - 1), s = seriesAt(p, d.time, x), value = s?.electric ?? 0;
+      // Ahead of the front there is no record: the vertex sits on the path in the background colour.
+      at.setXYZ(i, x, value * axis[1], value * axis[2]);
+      faded.set(palette.bg1); if (s) faded.lerp(accent, .55 * seriesFade(d.index - s.index));
+      colour.setXYZ(i, faded.r, faded.g, faded.b);
+    }
+    at.needsUpdate = colour.needsUpdate = true;
+    return count;
   }
   private animate = () => { if (this.disposed) return; this.frame = requestAnimationFrame(this.animate); this.controls.update(); this.renderer.render(this.scene, this.camera); };
   exportPNG() {

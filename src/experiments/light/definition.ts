@@ -44,6 +44,7 @@ export const lightDefinition: ExperimentDefinition<LightParameters, LightView> =
     { key: 'pairs', label: 'Induced pair', group: 'Medium' },
     { key: 'response', label: 'Dipole response', group: 'Medium' },
     { key: 'fields', label: 'E / B of the active pair', group: 'Fields' },
+    { key: 'series', label: 'Photon’s series (Fig. 5-1)', group: 'Fields', info: 'Fleming’s Fig. 5-1: the pairs the photon has passed through and the alternating E (up and down) and B (in and out) each produced, laid along the path. Together they make the photon’s wave. A record, not a field present now: each pair’s field collapsed at its hand-off. The fading with age is a display choice.' },
     { key: 'envelope', label: 'Field reach', group: 'Fields', info: 'Swells and collapses with the active pair. Radius is a display choice.' },
     { key: 'centres', label: 'Fixed pair centres', group: 'Guides' },
     { key: 'cone', label: 'Light cone at the wall', group: 'Guides', scenarios: ['absorption'], info: 'Fleming’s Fig. 1: the region from which field energy could reach the wall if fields spread only at the speed of light. Almost all of the field’s energy lies outside it.' },
