@@ -2,18 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_LIGHT, DEFAULT_LIGHT_VIEW, ENERGY_EV, LIGHT_DT, LIGHT_END_TICK, LIGHT_MODEL, LightSimulation, TIME_SECONDS, absorption, fieldAt, hopTicks, lightReadout, pairAt, pairWavelength, parseLightFile, runEndTick, polarizationAxis, seriesAt, seriesPairs, sourceX, validateLightParameters, validateLightState, waveAt } from '../src/light/model';
 
 describe('illustrative light induction model', () => {
-  it('uses half-wavelength events, alternating half-turns and symmetric lobes about a centre that travels with the energy', () => {
+  it('uses half-wavelength events, alternating half-turns and symmetric lobes about fixed centres', () => {
     for (const direction of [1, -1] as const) for (const wavelength of [1, 1.7, 2, 4]) {
       const p = { ...DEFAULT_LIGHT, wavelength, direction }, interval = hopTicks(p);
       expect(interval * LIGHT_DT).toBeCloseTo(wavelength / 2, 12);
       for (let index = 0; index < 3; index++) {
         const start = pairAt(p, index * interval, index), middle = pairAt(p, (index + .5) * interval, index), end = pairAt(p, (index + 1) * interval, index);
-        // Born where the pair before annihilated, at the midpoint at midlife, and gone half a wavelength on (Photons Fig. 2).
-        expect(start.centre).toBe(start.start); expect(middle.centre).toBeCloseTo(middle.midpoint, 12); expect(end.centre).toBe(end.end);
-        expect(end.end - start.start).toBeCloseTo(direction * wavelength / 2, 12);
-        if (index > 0) expect(start.start).toBeCloseTo(pairAt(p, index * interval, index - 1).end, 12);
-        // While it is active the pair is the energy front.
-        expect(lightReadout({ model: LIGHT_MODEL, tick: Math.round((index + .3) * interval), parameters: p }).x).toBeCloseTo(pairAt(p, Math.round((index + .3) * interval), index).centre, 12);
+        expect(middle.centre).toBe(start.centre); expect(end.centre).toBe(start.centre);
         expect(Math.abs(end.angle - start.angle)).toBeCloseTo(Math.PI);
         expect(Math.sign(end.angle - start.angle)).toBe((index % 2 ? -1 : 1) * direction);
         const left = middle.direction.map((v, j) => (j ? 0 : middle.centre) - v * middle.separation / 2);
@@ -53,7 +48,7 @@ describe('illustrative light induction model', () => {
           expect(Math.sign(field.electric) * polarity).toBeGreaterThanOrEqual(0);
         }
         expect(waveAt(p, index * interval * LIGHT_DT, pairAt(p, index * interval, index).centre).electric).toBeCloseTo(0, 12);
-        expect(waveAt(p, (index + .5) * interval * LIGHT_DT, pairAt(p, 0, index).midpoint).electric).toBeCloseTo(polarity, 12);
+        expect(waveAt(p, (index + .5) * interval * LIGHT_DT, pairAt(p, 0, index).centre).electric).toBeCloseTo(polarity, 12);
       }
     }
   });
@@ -129,7 +124,7 @@ describe('illustrative light induction model', () => {
     expect(waveAt(p, 1, -5.5).envelope).toBe(0);
     expect(waveAt(p, 12, 6).electric).toBe(0); expect(waveAt(p, .5, 6.5).envelope).toBe(0);
   });
-  it('opens model 1, 2 and 3 files, which hold the same state, and marks them as upgraded', () => {
+  it('opens model 1 and 2 files, which hold the same state without an absorber, and marks them as upgraded', () => {
     const m = new LightSimulation(); m.configure({ ...DEFAULT_LIGHT, wavelength: 3, phase: 45 }); m.step(200);
     const current = parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: DEFAULT_LIGHT_VIEW }));
     for (const model of ['light-induction/1', 'light-induction/2']) {
@@ -138,12 +133,6 @@ describe('illustrative light induction model', () => {
       expect(old.migrated).toBe(true); expect(old.state).toEqual(current.state); expect(old.state.model).toBe(LIGHT_MODEL); expect(old.state.parameters.absorber).toBe(false);
     }
     expect(current.migrated).toBe(false);
-    // Model 3 files had the absorber; they open as the current model with their wall setting kept.
-    for (const absorber of [true, false]) {
-      m.configure({ ...DEFAULT_LIGHT, absorber }); m.step(300);
-      const three = parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: { ...m.snapshot(), model: 'light-induction/3' }, view: DEFAULT_LIGHT_VIEW }));
-      expect(three.migrated).toBe(true); expect(three.state).toEqual(m.snapshot());
-    }
     // A current file must say whether there is a wall.
     const { absorber: _missing, ...incomplete } = m.snapshot().parameters;
     expect(() => parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: { ...m.snapshot(), parameters: incomplete }, view: DEFAULT_LIGHT_VIEW }))).toThrow('The absorber must be on or off.');
@@ -225,7 +214,7 @@ describe('absorption at a wall', () => {
       expect(pairs.length).toBeGreaterThan(5);
       for (const pair of pairs) {
         // At each pair's centre the record is that pair's peak field, with its polarity.
-        const s = seriesAt(p, time, pair.midpoint)!;
+        const s = seriesAt(p, time, pair.centre)!;
         expect(s.index).toBe(pair.index); expect(s.electric).toBeCloseTo(pair.polarity, 9);
         expect(pair.polarity).toBe(pairAt(p, tick, pair.index).polarity);
       }
@@ -235,7 +224,7 @@ describe('absorption at a wall', () => {
       for (const pair of pairs) expect(pair.behind).toBe(active - pair.index);
       expect(pairs.at(-1)!.index).toBe(pairAt(p, tick, active).progress >= .5 ? active : active - 1);
       // Zero at a hand-off between two pairs, and nothing recorded ahead of the front or before the source.
-      const handoff = (pairs[0].midpoint + pairs[1].midpoint) / 2;
+      const handoff = (pairs[0].centre + pairs[1].centre) / 2;
       expect(seriesAt(p, time, handoff)!.electric).toBeCloseTo(0, 9);
       expect(seriesAt(p, time, front + direction * .05)).toBeNull();
       expect(seriesAt(p, time, sourceX(p) - direction * .05)).toBeNull();
@@ -247,11 +236,10 @@ describe('absorption at a wall', () => {
     expect(seriesAt(p, time, end.x - .3)).not.toBeNull();
     expect(seriesAt(p, time, end.x + .05)).toBeNull();
   });
-  it('opens files saved before the series layer with the series hidden, its default', () => {
+  it('opens files saved before the series layer with the series shown', () => {
     const { series: _none, ...older } = DEFAULT_LIGHT_VIEW, m = new LightSimulation();
     const saved = parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: { ...older, fields: false } }));
-    expect(DEFAULT_LIGHT_VIEW.series).toBe(false);
-    expect(saved.view).toEqual({ ...DEFAULT_LIGHT_VIEW, fields: false });
+    expect(saved.view).toEqual({ ...DEFAULT_LIGHT_VIEW, fields: false, series: true });
     expect(() => parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: { ...DEFAULT_LIGHT_VIEW, series: 1 } }))).toThrow('Invalid series layer setting.');
   });
   it('keeps the wall in saved files and rejects a missing or malformed setting', () => {

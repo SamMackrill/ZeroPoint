@@ -32,9 +32,8 @@ describe('light pair start angle', () => {
         expect(start.separation).toBe(0); expect(end.separation).toBe(0); expect(middle.separation).toBeCloseTo(p.wavelength / 2, 12);
         polarizationAxis(p).forEach((v, j) => expect(middle.direction[j]).toBeCloseTo(middle.polarity * v, 12));
         expect(middle.polarity).toBe(-pairAt(p, 0, index - 1).polarity);
-        // Each pair travels with the energy: born where the one before annihilated, across the path at the middle of
-        // its stretch at midlife, which is where the energy front then is.
-        expect(start.centre).toBeCloseTo(pairAt(p, born, index - 1).end, 12); expect(middle.centre).toBeCloseTo(middle.midpoint, 12);
+        expect(middle.centre).toBe(start.centre);
+        // Each fixed centre is the middle of the stretch the energy covers during that pair's life.
         expect(lightReadout({ model: LIGHT_MODEL, tick: born + duration / 2, parameters: p }).x).toBeCloseTo(middle.centre, 12);
       }
     }

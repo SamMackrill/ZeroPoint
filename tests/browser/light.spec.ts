@@ -18,12 +18,10 @@ test('light handoffs, fixed-centre inspection, replay, files and switching prese
   await page.getByRole('tab', { name: 'Selection', exact: true }).filter({ visible: true }).click();
   await page.getByRole('button', { name: 'Pin pair', exact: true }).click();
   await page.getByRole('radio', { name: 'Pair close-up', exact: true }).click(); await expect(page.getByRole('radio', { name: 'Pair close-up', exact: true })).toHaveAttribute('aria-checked', 'true');
-  const span = await page.getByTestId('light-pair-span').innerText(), centre = await page.getByTestId('light-pair-centre').innerText();
+  const centre = await page.getByTestId('light-pair-centre').innerText();
   await tid(page, 'transport-step').click();
+  await expect(page.getByTestId('light-pair-centre')).toHaveText(centre);
   await expect(page.getByTestId('light-rotation')).toHaveText('-1.5° / -180°');
-  // The same pair, a step further along its stretch: it travels with the energy.
-  await expect(page.getByTestId('light-pair-span')).toHaveText(span);
-  expect(Number.parseFloat(await page.getByTestId('light-pair-centre').innerText()) - Number.parseFloat(centre)).toBeCloseTo(1 / 120, 3);
   await page.keyboard.press('f'); await expect(page.getByRole('radio', { name: 'Pair close-up', exact: true })).toHaveAttribute('aria-checked', 'true');
   // The split pane shows the glyph enlarged, which then leaves the Selection tab.
   const root = page.locator('.light-workbench-root');
@@ -77,12 +75,11 @@ test('light configuration, layers, mobile layout and exports work together', asy
   await tid(page, 'transport-next').click();
   await expect(page.getByTestId('light-tick')).toContainText('Tick 240');
   await page.getByRole('button', { name: 'Open inspector' }).click(); await page.getByRole('tab', { name: 'Selection', exact: true }).click();
-  // At this hand-off the pinned pair stands at its birth point; travelling −X, it will annihilate 2 L further on.
-  await expect(page.getByTestId('light-pair-centre')).toHaveText('4.000 L'); await expect(page.getByTestId('light-pair-span')).toHaveText('4.000 / 2.000 L'); await page.getByRole('button', { name: 'Close inspector' }).click();
+  await expect(page.getByTestId('light-pair-centre')).toHaveText('3.000 L'); await page.getByRole('button', { name: 'Close inspector' }).click();
   const before = await page.getByTestId('light-tick').innerText(); await page.waitForTimeout(200); await expect(page.getByTestId('light-tick')).toHaveText(before);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await tid(page, 'export-menu').click(); const csv = page.waitForEvent('download'); await tid(page, 'export-csv').click(); expect((await csv).suggestedFilename()).toContain('illustrative-sequence.csv');
-  const doc = await page.request.get('/docs/light-model.md'); expect(doc.ok()).toBe(true); expect(await doc.text()).toContain('light-induction/4');
+  const doc = await page.request.get('/docs/light-model.md'); expect(doc.ok()).toBe(true); expect(await doc.text()).toContain('light-induction/3');
   await page.screenshot({ path: 'test-results/light-mobile.png', fullPage: true });
 });
 
