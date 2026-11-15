@@ -163,6 +163,8 @@ function NarrowShell({ header, rail, viewport, timeline, dock, inspector, status
   const [drawer, setDrawer] = useState<'rail' | 'inspector' | null>(null);
   // `l` and Palette › Parameters choose an inspector tab; on a narrow layout the drawer has to open for it to show.
   useCommand('inspector.show', active && !!inspector, () => setDrawer('inspector'));
+  // A lab that stops being the active one stays mounted; close its drawer so its modal cannot cover the lab now shown.
+  useEffect(() => { if (!active) setDrawer(null); }, [active]);
   const openChange = (which: 'rail' | 'inspector') => (open: boolean) => setDrawer(open ? which : null);
   const openLibrary = useCallback(() => setDrawer('rail'), []);
   return (

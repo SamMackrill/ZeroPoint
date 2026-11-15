@@ -28,6 +28,12 @@ test('on a tablet, L and Palette › Parameters open the closed inspector drawer
   await page.keyboard.press('Enter');
   await expect(drawer).toBeVisible();
   await expect(drawer.locator('[data-testid="param-frequency"] input')).toBeFocused();
+  // Following a link to another lab closes this lab's drawer, so its modal cannot cover the lab now shown.
+  await page.evaluate(() => { location.hash = '#/light'; });
+  await expect(page.getByTestId('light-tick').filter({ visible: true })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await tid(page, 'transport-next').filter({ visible: true }).click();
+  await expect(page.getByTestId('light-tick').filter({ visible: true })).not.toContainText('Tick 0');
 });
 
 test('phones are a basic viewer: no split view, Compare or palette, and the inspector is a bottom sheet', async ({ page }) => {
