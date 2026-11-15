@@ -1,6 +1,6 @@
 import { lifecycleEnvelope } from '../model/pairMotion';
 
-export const LIGHT_MODEL = 'light-induction/3';
+export const LIGHT_MODEL = 'light-induction/4';
 export const LIGHT_DT = 1 / 120;
 export const LIGHT_LENGTH = 12;
 export const LIGHT_END_TICK = 1440;
@@ -15,7 +15,7 @@ export interface LightParameters {
 export const DEFAULT_LIGHT: LightParameters = { wavelength: 2, polarization: 0, phase: 0, direction: 1, offset: 0, probe: 0, absorber: false };
 export interface LightState { model: typeof LIGHT_MODEL; tick: number; parameters: LightParameters }
 export interface LightView { background: boolean; pairs: boolean; response: boolean; fields: boolean; series: boolean; envelope: boolean; centres: boolean; cone: boolean; reducedMotion: boolean }
-export const DEFAULT_LIGHT_VIEW: LightView = { background: true, pairs: true, response: true, fields: true, series: true, envelope: true, centres: true, cone: true, reducedMotion: false };
+export const DEFAULT_LIGHT_VIEW: LightView = { background: true, pairs: true, response: true, fields: true, series: false, envelope: true, centres: true, cone: true, reducedMotion: false };
 export interface LightSnapshot extends LightState { running: boolean; speed: number }
 export type LightCommand = { type: 'run'; value: boolean } | { type: 'step' | 'next' | 'reset' | 'ack' } | { type: 'speed'; value: number } | { type: 'configure'; parameters: LightParameters } | { type: 'seek'; tick: number } | { type: 'restore'; state: LightState };
 export type LightReply = { type: 'state'; state: LightSnapshot } | { type: 'error'; message: string };
@@ -45,10 +45,11 @@ export function parseLightFile(text: string): { state: LightState; view: LightVi
   if (text.length > 100_000) throw new Error('Light files must be smaller than 100 KB.');
   const f = JSON.parse(text);
   if (f?.format !== 'zeropoint-light' || f.version !== 1) throw new Error('Choose a ZeroPoint light experiment file.');
-  // Model 1 stored the same tick and parameters, and model 2 changed only the pair geometry and the field drawn from
-  // it. Neither had an absorber, so their runs open as model 3 with none.
-  const migrated = f.state?.model === 'light-induction/1' || f.state?.model === 'light-induction/2';
-  const state = validateLightState(migrated ? { ...f.state, model: LIGHT_MODEL, parameters: { ...f.state.parameters, absorber: false } } : f.state), view = { ...DEFAULT_LIGHT_VIEW };
+  // Every model stored the same tick and parameters. Model 2 changed the pair geometry and the field drawn from it,
+  // model 3 added the absorber (models 1 and 2 open with none), and model 4 made each pair travel with the energy.
+  const older = /^light-induction\/([123])$/.exec(f.state?.model ?? ''), migrated = !!older;
+  const parameters = older && older[1] !== '3' ? { ...f.state.parameters, absorber: false } : f.state?.parameters;
+  const state = validateLightState(migrated ? { ...f.state, model: LIGHT_MODEL, parameters } : f.state), view = { ...DEFAULT_LIGHT_VIEW };
   for (const key of Object.keys(view) as (keyof LightView)[]) {
     // The light cone came with the absorbing wall, and the photon's series later; a file saved before either keeps the default.
     if ((key === 'cone' || key === 'series') && f.view?.[key] === undefined) continue;
@@ -99,6 +100,16 @@ export const pairWavelength = (p: LightParameters) => p.wavelength / 2;
 /**
  * The induced pair for hand-off `index` at the requested tick.
  *
+ * Each pair travels with the photon's energy. It is born where the previous pair annihilated, its centre moves forward
+ * at c through its half wavelength while it turns, and it annihilates where the next pair is born: Fleming's *Photons*
+ * Fig. 2 draws a pair appearing on the photon's line, its two charges looping apart and rejoining, and §2 that "The
+ * dipole wavelength is equal to the distance traveled by a photon during a half-wavelength"; the book has the pairs
+ * "rotating forward", their charges tracing "a helical path every half wavelength" in circular polarization (ch. 5).
+ * So the charges trace a loop from one hand-off point to the next, and the active pair's centre is the energy front.
+ * `centre` is where the pair is at this tick (its birth point before it is born, its end point after it has gone);
+ * `start`, `midpoint` and `end` are where it is born, lies across the path at midlife, and annihilates. Models 1 to 3
+ * held each pair at its midpoint for its whole life, so it collapsed there and the next appeared half a wavelength on.
+ *
  * Fleming's figures (book Figs 4-9 and 5-1; Photons Fig. 3) draw each pair across the path with one field polarity,
  * alternating pair by pair. So each pair is born along the path, turns 180° in the plane of travel and polarization,
  * and is transverse at midlife, when it is widest (its wavelength, λ/2). `polarity` alternates; the rotation `sense`
@@ -113,17 +124,19 @@ export function pairAt(p: LightParameters, tick: number, index: number) {
   const turn = Math.PI * progress, e = polarizationAxis(p);
   const axial = p.direction * Math.cos(turn), transverse = polarity * Math.sin(turn);
   const peak = pairWavelength(p), separation = peak * lifecycleEnvelope(progress, 1);
-  // The middle of the stretch of path the energy covers during this pair's life.
-  const centre = sourceX(p) + p.direction * (index + .5 - elapsed / duration) * p.wavelength / 2;
+  // The stretch of path the energy covers during this pair's life, which the pair travels along.
+  const at = (share: number) => sourceX(p) + p.direction * (index + share - elapsed / duration) * p.wavelength / 2;
+  const start = at(0), midpoint = at(.5), end = at(1), centre = at(progress);
   const direction: [number, number, number] = [axial, transverse * e[1], transverse * e[2]];
-  return { index, centre, progress, polarity, sense, turn, angle: sense * turn, axial, transverse, direction, separation, peak, age: progress * duration * LIGHT_DT, lifetime: duration * LIGHT_DT, active: tick >= born && tick < born + duration && tick < runEndTick(p) };
+  return { index, centre, start, midpoint, end, progress, polarity, sense, turn, angle: sense * turn, axial, transverse, direction, separation, peak, age: progress * duration * LIGHT_DT, lifetime: duration * LIGHT_DT, active: tick >= born && tick < born + duration && tick < runEndTick(p) };
 }
 /** The pair that is active at a continuous time (in τ), with its progress through its life. */
 function activePair(p: LightParameters, time: number) {
   const life = p.wavelength / 2, { elapsed, flips } = runStart(p), shift = elapsed / hopTicks(p);
   const index = Math.min(pairCount(p) - 1, Math.floor(time / life + shift + 1e-9));
   const progress = Math.max(0, Math.min(1, time / life + shift - index)), polarity = (index + flips) % 2 === 0 ? 1 : -1;
-  return { index, progress, polarity, centre: sourceX(p) + p.direction * (index + .5 - shift) * life };
+  // The active pair travels with the energy: its centre is the front, `time` from the source.
+  return { index, progress, polarity, centre: sourceX(p) + p.direction * (index + progress - shift) * life };
 }
 /**
  * The field at a point, taken from the active pair's rotating dipole moment (not an electromagnetic field solver).
@@ -131,7 +144,8 @@ function activePair(p: LightParameters, time: number) {
  * The pair produces the field: its strength is the transverse part of the pair's moment (orientation × separation),
  * so it swells and collapses with the pair, is zero at each hand-off and reverses for the next pair (book ch. 5:
  * the field "reverses electric and magnetic polarity"; ch. 19: the fields "are also extinguished each half
- * wavelength along with the central zepton"). It falls with the inverse square of distance from that pair (ch. 19),
+ * wavelength along with the central zepton"). It is centred on the pair, which travels with the energy, so it moves
+ * along the path with the photon. It falls with the inverse square of distance from that pair (ch. 19),
  * softened inside a quarter-wavelength, and is taken as established at once everywhere in the window, because
  * Fleming's fields spread far faster than light. `envelope` is the unsigned strength of the response. Once the photon
  * is absorbed there is no field anywhere: the fields do not exist "after the photon is absorbed" (ch. 19).
@@ -150,7 +164,7 @@ export const waveAt = (p: LightParameters, time: number, x: number) => fieldAt(p
  * The photon's series as Fleming draws it in book Fig. 5-1: "A series of alternately rotating virtual electron-positron
  * pairs produces an alternating E field (up and down) and an alternating B field (in and out) identical to that of a
  * photon." For each point of the path the energy front has passed, the field the active pair had at its own centre when
- * the front was there: positive or negative with that pair's polarity, strongest at its centre, zero at each hand-off.
+ * the front was there: positive or negative with that pair's polarity, strongest at its midpoint, zero at each hand-off.
  * Laid along the path it alternates every half wavelength, which is the photon's wave. It is a record of what each pair
  * produced, not a field present now: each pair's field collapsed at its hand-off (book ch. 19). Null ahead of the front,
  * before the source, and beyond where the photon left the scene; `index` is the pair that produced it.
@@ -162,14 +176,15 @@ export function seriesAt(p: LightParameters, time: number, x: number): { electri
   return { electric: pair.polarity * Math.sin(Math.PI * pair.progress) ** 2, index: pair.index };
 }
 /**
- * The pairs of the series the front has passed the centre of, for drawing Fig. 5-1: each with its centre, its polarity
- * (the sign of its E field), and `behind`, how many pairs ago it was active (0 for the active pair).
+ * The pairs of the series the front has passed the midpoint of, for drawing Fig. 5-1: each with its midpoint (where it
+ * lay across the path), its polarity (the sign of its E field), and `behind`, how many pairs ago it was active (0 for
+ * the active pair).
  */
 export function seriesPairs(p: LightParameters, tick: number) {
   const time = tick * LIGHT_DT, reached = Math.min(time, runEndTick(p) * LIGHT_DT, LIGHT_LENGTH), active = pairIndexAt(p, tick), pairs = [];
   for (let index = 0; index <= active; index++) {
-    const { centre, polarity } = pairAt(p, tick, index), distance = p.direction * (centre - sourceX(p));
-    if (distance >= 0 && distance <= reached) pairs.push({ index, centre, polarity, behind: active - index });
+    const { midpoint, polarity } = pairAt(p, tick, index), distance = p.direction * (midpoint - sourceX(p));
+    if (distance >= 0 && distance <= reached) pairs.push({ index, midpoint, polarity, behind: active - index });
   }
   return pairs;
 }

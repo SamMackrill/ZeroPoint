@@ -189,11 +189,12 @@ export class LightRenderer {
     this.positive.count = this.negative.count = count;
     for (const mesh of [this.positive, this.negative]) { mesh.instanceMatrix.needsUpdate = true; if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true; }
     this.centres.count = d.wall ? d.wall.pair + 1 : pairCount(p); this.centres.visible = this.options.centres;
-    for (let i = 0; i < this.centres.count; i++) { this.dummy.position.set(pairAt(p, state.tick, i).centre, 0, 0); this.dummy.scale.setScalar(1); this.dummy.updateMatrix(); this.centres.setMatrixAt(i, this.dummy.matrix); }
+    // Hand-off points: where each pair is born, which is where the one before it annihilated.
+    for (let i = 0; i < this.centres.count; i++) { this.dummy.position.set(pairAt(p, state.tick, i).start, 0, 0); this.dummy.scale.setScalar(1); this.dummy.updateMatrix(); this.centres.setMatrixAt(i, this.dummy.matrix); }
     this.centres.instanceMatrix.needsUpdate = true;
     this.base.position.x = p.offset;
-    // The response swells and collapses about the active pair's fixed centre; it does not glide with the energy front.
-    // At a hand-off the pair and its field are gone, so nothing is drawn.
+    // The reach travels with the active pair, swelling and collapsing with it. At a hand-off the pair and its field
+    // are gone, so nothing is drawn.
     const open = lifecycleEnvelope(d.pair.progress, 1);
     this.envelope.visible = this.options.envelope && !gone && this.cameraMode !== 'pair' && open > 0;
     this.envelope.position.set(d.pair.centre, 0, 0); this.envelope.scale.setScalar(Math.max(1e-6, p.wavelength / 2 * open));
@@ -245,10 +246,10 @@ export class LightRenderer {
       if (!pair) continue;
       const fade = seriesFade(pair.behind);
       // The live pair is drawn by the Induced pair layer; earlier ones lie across the path as at midlife.
-      if (pair.behind > 0 || d.finished || d.absorbed) this.put(count++, pair.centre, 0, 0, [0, pair.polarity * axis[1], pair.polarity * axis[2]], peak, .9, .12 + .3 * fade);
-      e.position.set(pair.centre, row * axis[1], row * axis[2]); e.setDirection(up.clone().multiplyScalar(pair.polarity));
+      if (pair.behind > 0 || d.finished || d.absorbed) this.put(count++, pair.midpoint, 0, 0, [0, pair.polarity * axis[1], pair.polarity * axis[2]], peak, .9, .12 + .3 * fade);
+      e.position.set(pair.midpoint, row * axis[1], row * axis[2]); e.setDirection(up.clone().multiplyScalar(pair.polarity));
       e.setColor(faded.set(palette.bg1).lerp(accent, fade));
-      b.position.set(pair.centre, -row * axis[1], -row * axis[2]); b.setDirection(magnetic.clone().multiplyScalar(pair.polarity * p.direction));
+      b.position.set(pair.midpoint, -row * axis[1], -row * axis[2]); b.setDirection(magnetic.clone().multiplyScalar(pair.polarity * p.direction));
       b.setColor(faded.set(palette.bg1).lerp(core, fade));
     }
     const at = this.trace.geometry.attributes.position, colour = this.trace.geometry.attributes.color;

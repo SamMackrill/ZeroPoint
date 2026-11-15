@@ -265,20 +265,24 @@ export const PROTON_SCREENS = [
   { name: 'proton-about', title: 'Help › This scenario', hash: '#/electron/proton?t=720', beforeMissing: noProton, prepare: openAbout() },
 ];
 /**
- * The photon's wave in the Light lab (`--set light-wave`): the series of pairs behind the photon, as in Fleming's
- * Fig. 5-1, and the surrounding pairs leaning with the field. Three side views across one hand-off show the continuity.
+ * The photon's wave in the Light lab (`--set light-wave`): each pair travels with the energy (Fleming's Photons
+ * Fig. 2), born where the one before annihilated; the surrounding pairs lean with the field; and an optional layer lays
+ * the series along the path (Fig. 5-1). Three side views across one hand-off show the continuity.
  */
 const openView = async page => { await page.getByRole('tab', { name: 'View', exact: true }).filter({ visible: true }).click(); };
+// "Before" has no series layer, so it is captured as it stands.
+const showSeries = async page => { await openView(page); const toggle = page.getByTestId('layer-series').filter({ visible: true }); if (await toggle.count()) await toggle.click(); };
 export const LIGHT_WAVE_SCREENS = [
-  { name: 'orbit-midlife', title: 'Light · tick 660, orbit: pair 6 at midlife, with the five before it behind the photon', hash: '#/light?t=660' },
-  { name: 'side-before-handoff', title: 'Light · tick 690, side: pair 6 three-quarters through its life', hash: '#/light?t=690&cam=side' },
-  { name: 'side-handoff', title: 'Light · tick 720, side: the hand-off from pair 6 to pair 7, when the field is zero', hash: '#/light?t=720&cam=side' },
-  { name: 'side-after-handoff', title: 'Light · tick 750, side: pair 7 a quarter through its life, its field reversed', hash: '#/light?t=750&cam=side' },
-  { name: 'end', title: 'Light · tick 1440, side: the whole series once the photon has left the window', hash: '#/light?t=1440&cam=side' },
-  { name: 'short-wavelength', title: 'Light · 300 nm, tick 900, orbit: more, smaller pairs per window', hash: '#/light?wavelength=1.2&t=900' },
-  { name: 'absorbed', title: 'Absorption · tick 1440: the series up to the wall after the photon is absorbed', hash: '#/light/absorption?t=1440' },
-  { name: 'layers', title: 'Inspector › View: the new Photon’s series (Fig. 5-1) layer under Fields', hash: '#/light?t=660', prepare: openView, focus: '.wb-inspector' },
-  { name: 'about', title: 'Help › This scenario: the series and the swaying medium', hash: '#/light?t=660', prepare: openAbout() },
+  { name: 'orbit-midlife', title: 'Light · tick 660, orbit: pair 6 at midlife, travelling with the energy front', hash: '#/light?t=660' },
+  { name: 'side-before-handoff', title: 'Light · tick 690, side: pair 6 three-quarters through its stretch, closing as it nears the hand-off point', hash: '#/light?t=690&cam=side' },
+  { name: 'side-handoff', title: 'Light · tick 720, side: the hand-off. Pair 6 annihilates and pair 7 is born on the same spot', hash: '#/light?t=720&cam=side' },
+  { name: 'side-after-handoff', title: 'Light · tick 750, side: pair 7 a quarter through its stretch, its field reversed', hash: '#/light?t=750&cam=side' },
+  { name: 'closeup', title: 'Light · tick 690, pair close-up: the camera follows the travelling pair', hash: '#/light?t=690&cam=pair' },
+  { name: 'selection', title: 'Inspector › Selection: centre now, and where the pair is born and annihilates', hash: '#/light?t=690', prepare: async page => { await page.getByRole('tab', { name: 'Selection', exact: true }).filter({ visible: true }).click(); }, focus: '.wb-inspector' },
+  { name: 'series-on', title: 'Light · tick 900, side, with View › Photon’s series (Fig. 5-1) turned on: the pairs and alternating fields left behind', hash: '#/light?t=900&cam=side', prepare: showSeries },
+  { name: 'absorbed', title: 'Absorption · tick 1440: the last pair has reached the wall', hash: '#/light/absorption?t=1440' },
+  { name: 'layers', title: 'Inspector › View: Photon’s series (off by default) and Hand-off points (was Fixed pair centres)', hash: '#/light?t=660', prepare: openView, focus: '.wb-inspector' },
+  { name: 'about', title: 'Help › This scenario: pairs that travel, the swaying medium and the series', hash: '#/light?t=660', prepare: openAbout() },
 ];
 const SETS = { 'light-wave': LIGHT_WAVE_SCREENS, proton: PROTON_SCREENS, absorption: ABSORPTION_SCREENS, 'double-slit': DOUBLE_SLIT_SCREENS, fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 

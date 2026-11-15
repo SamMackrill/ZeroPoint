@@ -493,7 +493,7 @@
   },
   {
     "file": "src/experiments/light/LightWorkbench.tsx",
-    "text": "is induced at its own fixed centre, with the opposite rotation sense and the field reversed."
+    "text": "is induced on the same spot, with the opposite rotation sense and the field reversed."
   },
   {
     "file": "src/experiments/light/LightWorkbench.tsx",
@@ -513,7 +513,7 @@
   },
   {
     "file": "src/experiments/light/LightWorkbench.tsx",
-    "text": "Fixed centres · prescribed c · field from the active pair"
+    "text": "Pairs travel at c · field from the active pair"
   },
   {
     "file": "src/experiments/medium/DipoleCloseUp.tsx",
