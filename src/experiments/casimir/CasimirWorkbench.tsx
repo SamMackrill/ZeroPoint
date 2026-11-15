@@ -14,7 +14,7 @@ import { CASIMIR_SPEEDS, casimirModel, type CasimirConfig } from '../../workbenc
 import { MainThreadRuntime } from '../../workbench/main-thread-runtime';
 import { dockStartsCollapsed, Shell, usePhone } from '../../workbench/Shell';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
-import { APPLY_SHORTCUT, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
+import { APPLY_SHORTCUT, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action, layersAction } from '../../workbench/actions';
 import { casimirDefinition, type CasimirParams } from './definition';
 import '../../casimir/casimir.css';
 import './casimir-workbench.css';
@@ -156,7 +156,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   // Every shortcut is an action (plan §11): the Help sheet lists them and one listener runs them.
   const actions: Action[] = [
     ...transportActions(runtime, casimirDefinition.timeline(scenario, params), CASIMIR_SPEEDS),
-    { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
+    layersAction(() => setTab('view')),
     SELECTION_SHORTCUTS.clear, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
     ...fileShortcuts(save, fileInput, false), ...exportActions(exportItems, false),
     copyLinkAction(urlHash, setNotice),

@@ -16,7 +16,7 @@ import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workb
 import { mediumRuntime, SPEEDS } from '../../workbench/runtime';
 import { dockStartsCollapsed, Shell, usePhone } from '../../workbench/Shell';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
-import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
+import { APPLY_SHORTCUT, cameraActions, layerActions, PANEL_SHORTCUTS, parameterActions, SELECTION_SHORTCUTS, SPLIT_SHORTCUT, useActions, type Action, layersAction } from '../../workbench/actions';
 import { mediumDefinition, type MediumParams } from './definition';
 import './medium-workbench.css';
 import { useSelectionKeys } from '../../workbench/selection';
@@ -282,7 +282,7 @@ export function MediumWorkbench({ active, rail, header, scenarioRequest, onPrese
     ...transportActions(runtime, timeline, SPEEDS, { onCapture: () => save('checkpoint'), runDisabled: contextLost, disabled: !ready || busy }),
     ...cameraActions([{ id: 'perspective', label: 'Perspective' }, { id: 'top', label: 'Top' }, { id: 'front', label: 'Front' }], id => setCamera(id as typeof camera)),
     { id: 'view.representation', label: 'Dipoles or points', group: 'View', keys: ['r'], run: () => setOption('representation', view.representation === 'dipoles' ? 'points' : 'dipoles') },
-    { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') },
+    layersAction(() => setTab('view')),
     ...fileShortcuts(() => save('file'), fileInput, !ready || busy),
     SELECTION_SHORTCUTS.clear, SELECTION_SHORTCUTS.focus, APPLY_SHORTCUT, SPLIT_SHORTCUT, ...PANEL_SHORTCUTS,
     copyLinkAction(urlHash, setNotice),

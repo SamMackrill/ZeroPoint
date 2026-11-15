@@ -11,7 +11,7 @@ import { Inspector, SetupPanel, ViewPanel, type InspectorTab } from '../../workb
 import { dockStartsCollapsed, Shell } from '../../workbench/Shell';
 import { SplitView } from '../../workbench/SplitView';
 import { TimelineBar, transportActions } from '../../workbench/TimelineBar';
-import { layerActions, PANEL_SHORTCUTS, parameterActions, SPLIT_SHORTCUT, useActions, type Action } from '../../workbench/actions';
+import { layerActions, PANEL_SHORTCUTS, parameterActions, SPLIT_SHORTCUT, useActions, type Action, layersAction } from '../../workbench/actions';
 import { scenarioState, withPaths } from '../../workbench/definition';
 import { boundedClockModel, type BoundedClock } from '../../workbench/main-thread-models';
 import { MainThreadRuntime } from '../../workbench/main-thread-runtime';
@@ -183,7 +183,7 @@ export function DoubleSlitWorkbench({ active, rail, header, scenarioRequest, onS
   const onView = (key: string, value: unknown) => setView(old => withPaths(old, { [key]: value }));
   const actions: Action[] = [
     ...transportActions(runtime, timeline, SPEEDS),
-    { id: 'view.layers', label: 'Open View › Layers', group: 'View', keys: ['l'], run: () => setTab('view') }, SPLIT_SHORTCUT,
+    layersAction(() => setTab('view')), SPLIT_SHORTCUT,
     ...fileShortcuts(save, fileInput),
     ...PANEL_SHORTCUTS,
     // While it runs, the tick shown is newer than the paused tick in the address bar; copy the one shown.
