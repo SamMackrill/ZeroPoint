@@ -14,8 +14,8 @@ export interface LightParameters {
 }
 export const DEFAULT_LIGHT: LightParameters = { wavelength: 2, polarization: 0, phase: 0, direction: 1, offset: 0, probe: 0, absorber: false };
 export interface LightState { model: typeof LIGHT_MODEL; tick: number; parameters: LightParameters }
-export interface LightView { background: boolean; pairs: boolean; response: boolean; fields: boolean; envelope: boolean; centres: boolean; cone: boolean; reducedMotion: boolean }
-export const DEFAULT_LIGHT_VIEW: LightView = { background: true, pairs: true, response: true, fields: true, envelope: true, centres: true, cone: true, reducedMotion: false };
+export interface LightView { background: boolean; pairs: boolean; response: boolean; fields: boolean; series: boolean; envelope: boolean; centres: boolean; cone: boolean; reducedMotion: boolean }
+export const DEFAULT_LIGHT_VIEW: LightView = { background: true, pairs: true, response: true, fields: true, series: true, envelope: true, centres: true, cone: true, reducedMotion: false };
 export interface LightSnapshot extends LightState { running: boolean; speed: number }
 export type LightCommand = { type: 'run'; value: boolean } | { type: 'step' | 'next' | 'reset' | 'ack' } | { type: 'speed'; value: number } | { type: 'configure'; parameters: LightParameters } | { type: 'seek'; tick: number } | { type: 'restore'; state: LightState };
 export type LightReply = { type: 'state'; state: LightSnapshot } | { type: 'error'; message: string };
@@ -50,8 +50,8 @@ export function parseLightFile(text: string): { state: LightState; view: LightVi
   const migrated = f.state?.model === 'light-induction/1' || f.state?.model === 'light-induction/2';
   const state = validateLightState(migrated ? { ...f.state, model: LIGHT_MODEL, parameters: { ...f.state.parameters, absorber: false } } : f.state), view = { ...DEFAULT_LIGHT_VIEW };
   for (const key of Object.keys(view) as (keyof LightView)[]) {
-    // The light cone came with the absorbing wall; a file saved before it keeps the default.
-    if (key === 'cone' && f.view?.cone === undefined) continue;
+    // The light cone came with the absorbing wall, and the photon's series later; a file saved before either keeps the default.
+    if ((key === 'cone' || key === 'series') && f.view?.[key] === undefined) continue;
     if (typeof f.view?.[key] !== 'boolean') throw new Error(`Invalid ${key} layer setting.`);
     view[key] = f.view[key];
   }
@@ -146,6 +146,33 @@ export function fieldAt(p: LightParameters, time: number, point: readonly [numbe
 }
 /** The field on the travel axis at position `x`: see `fieldAt`. */
 export const waveAt = (p: LightParameters, time: number, x: number) => fieldAt(p, time, [x, 0, 0]);
+/**
+ * The photon's series as Fleming draws it in book Fig. 5-1: "A series of alternately rotating virtual electron-positron
+ * pairs produces an alternating E field (up and down) and an alternating B field (in and out) identical to that of a
+ * photon." For each point of the path the energy front has passed, the field the active pair had at its own centre when
+ * the front was there: positive or negative with that pair's polarity, strongest at its centre, zero at each hand-off.
+ * Laid along the path it alternates every half wavelength, which is the photon's wave. It is a record of what each pair
+ * produced, not a field present now: each pair's field collapsed at its hand-off (book ch. 19). Null ahead of the front,
+ * before the source, and beyond where the photon left the scene; `index` is the pair that produced it.
+ */
+export function seriesAt(p: LightParameters, time: number, x: number): { electric: number; index: number } | null {
+  const distance = p.direction * (x - sourceX(p)), reached = Math.min(time, runEndTick(p) * LIGHT_DT, LIGHT_LENGTH);
+  if (distance < 0 || distance > reached) return null;
+  const pair = activePair(p, distance);
+  return { electric: pair.polarity * Math.sin(Math.PI * pair.progress) ** 2, index: pair.index };
+}
+/**
+ * The pairs of the series the front has passed the centre of, for drawing Fig. 5-1: each with its centre, its polarity
+ * (the sign of its E field), and `behind`, how many pairs ago it was active (0 for the active pair).
+ */
+export function seriesPairs(p: LightParameters, tick: number) {
+  const time = tick * LIGHT_DT, reached = Math.min(time, runEndTick(p) * LIGHT_DT, LIGHT_LENGTH), active = pairIndexAt(p, tick), pairs = [];
+  for (let index = 0; index <= active; index++) {
+    const { centre, polarity } = pairAt(p, tick, index), distance = p.direction * (centre - sourceX(p));
+    if (distance >= 0 && distance <= reached) pairs.push({ index, centre, polarity, behind: active - index });
+  }
+  return pairs;
+}
 /**
  * Summarize the current light timeline, position, and energy allocation.
  *

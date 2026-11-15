@@ -264,7 +264,23 @@ export const PROTON_SCREENS = [
   { name: 'proton-units', title: 'Help › Units: the proton’s radius, turn rate (× 1386) and moment', hash: '#/electron/proton?t=720', beforeMissing: noProton, prepare: openAbout(['about-units']) },
   { name: 'proton-about', title: 'Help › This scenario', hash: '#/electron/proton?t=720', beforeMissing: noProton, prepare: openAbout() },
 ];
-const SETS = { proton: PROTON_SCREENS, absorption: ABSORPTION_SCREENS, 'double-slit': DOUBLE_SLIT_SCREENS, fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
+/**
+ * The photon's wave in the Light lab (`--set light-wave`): the series of pairs behind the photon, as in Fleming's
+ * Fig. 5-1, and the surrounding pairs leaning with the field. Three side views across one hand-off show the continuity.
+ */
+const openView = async page => { await page.getByRole('tab', { name: 'View', exact: true }).filter({ visible: true }).click(); };
+export const LIGHT_WAVE_SCREENS = [
+  { name: 'orbit-midlife', title: 'Light · tick 660, orbit: pair 6 at midlife, with the five before it behind the photon', hash: '#/light?t=660' },
+  { name: 'side-before-handoff', title: 'Light · tick 690, side: pair 6 three-quarters through its life', hash: '#/light?t=690&cam=side' },
+  { name: 'side-handoff', title: 'Light · tick 720, side: the hand-off from pair 6 to pair 7, when the field is zero', hash: '#/light?t=720&cam=side' },
+  { name: 'side-after-handoff', title: 'Light · tick 750, side: pair 7 a quarter through its life, its field reversed', hash: '#/light?t=750&cam=side' },
+  { name: 'end', title: 'Light · tick 1440, side: the whole series once the photon has left the window', hash: '#/light?t=1440&cam=side' },
+  { name: 'short-wavelength', title: 'Light · 300 nm, tick 900, orbit: more, smaller pairs per window', hash: '#/light?wavelength=1.2&t=900' },
+  { name: 'absorbed', title: 'Absorption · tick 1440: the series up to the wall after the photon is absorbed', hash: '#/light/absorption?t=1440' },
+  { name: 'layers', title: 'Inspector › View: the new Photon’s series (Fig. 5-1) layer under Fields', hash: '#/light?t=660', prepare: openView, focus: '.wb-inspector' },
+  { name: 'about', title: 'Help › This scenario: the series and the swaying medium', hash: '#/light?t=660', prepare: openAbout() },
+];
+const SETS = { 'light-wave': LIGHT_WAVE_SCREENS, proton: PROTON_SCREENS, absorption: ABSORPTION_SCREENS, 'double-slit': DOUBLE_SLIT_SCREENS, fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };
@@ -342,7 +358,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   if (only && (!only.length || unknown.length)) throw new Error(`--only ${unknown.length ? `names screens not in the set: ${unknown.join(', ')}` : 'names no screen'}. The set's names: ${names.join(', ')}`);
   // --only recaptures a subset; the page still shows the whole set, from the images already in --out.
   const screens = set.filter(screen => !only || only.includes(screen.name));
-  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--only name,name] [--set proton|absorption|double-slit|fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
+  if (!before || !out) throw new Error('Usage: compare-screens.mjs --before <worktree> --out <dir> [--only name,name] [--set light-wave|proton|absorption|double-slit|fidelity|screens|plots|split|about|info|settings|shortcuts|palette|links|views|compare|compare-medium|responsive|camera|electron-motion|telemetry|picker] [--title T] [--description D]');
   const target = resolve(root, out), port = 5700 + Math.floor(Math.random() * 200);
   mkdirSync(target, { recursive: true });
   // Each resource starts inside the cleanup scope of the ones before it, so any failed start still stops them.

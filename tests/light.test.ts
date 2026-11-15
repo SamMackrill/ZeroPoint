@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_LIGHT, DEFAULT_LIGHT_VIEW, ENERGY_EV, LIGHT_DT, LIGHT_END_TICK, LIGHT_MODEL, LightSimulation, TIME_SECONDS, absorption, fieldAt, hopTicks, lightReadout, pairAt, pairWavelength, parseLightFile, runEndTick, polarizationAxis, sourceX, validateLightParameters, validateLightState, waveAt } from '../src/light/model';
+import { DEFAULT_LIGHT, DEFAULT_LIGHT_VIEW, ENERGY_EV, LIGHT_DT, LIGHT_END_TICK, LIGHT_MODEL, LightSimulation, TIME_SECONDS, absorption, fieldAt, hopTicks, lightReadout, pairAt, pairWavelength, parseLightFile, runEndTick, polarizationAxis, seriesAt, seriesPairs, sourceX, validateLightParameters, validateLightState, waveAt } from '../src/light/model';
 
 describe('illustrative light induction model', () => {
   it('uses half-wavelength events, alternating half-turns and symmetric lobes about fixed centres', () => {
@@ -206,6 +206,41 @@ describe('absorption at a wall', () => {
     const saved = parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: { ...older, pairs: false } }));
     expect(saved.view).toEqual({ ...DEFAULT_LIGHT_VIEW, pairs: false, cone: true });
     expect(() => parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: { ...DEFAULT_LIGHT_VIEW, cone: 'yes' } }))).toThrow('Invalid cone layer setting.');
+  });
+  it('traces the series behind the front: alternating every half wavelength, one sign per pair, nothing ahead', () => {
+    for (const direction of [1, -1] as const) for (const phase of [0, 90, 270]) {
+      const p = { ...DEFAULT_LIGHT, direction, phase }, tick = 900, time = tick * LIGHT_DT, front = sourceX(p) + direction * time;
+      const pairs = seriesPairs(p, tick);
+      expect(pairs.length).toBeGreaterThan(5);
+      for (const pair of pairs) {
+        // At each pair's centre the record is that pair's peak field, with its polarity.
+        const s = seriesAt(p, time, pair.centre)!;
+        expect(s.index).toBe(pair.index); expect(s.electric).toBeCloseTo(pair.polarity, 9);
+        expect(pair.polarity).toBe(pairAt(p, tick, pair.index).polarity);
+      }
+      for (let i = 1; i < pairs.length; i++) expect(pairs[i].polarity).toBe(-pairs[i - 1].polarity);
+      // The active pair joins the series once the front has passed its centre.
+      const active = lightReadout({ model: LIGHT_MODEL, tick, parameters: p }).index;
+      for (const pair of pairs) expect(pair.behind).toBe(active - pair.index);
+      expect(pairs.at(-1)!.index).toBe(pairAt(p, tick, active).progress >= .5 ? active : active - 1);
+      // Zero at a hand-off between two pairs, and nothing recorded ahead of the front or before the source.
+      const handoff = (pairs[0].centre + pairs[1].centre) / 2;
+      expect(seriesAt(p, time, handoff)!.electric).toBeCloseTo(0, 9);
+      expect(seriesAt(p, time, front + direction * .05)).toBeNull();
+      expect(seriesAt(p, time, sourceX(p) - direction * .05)).toBeNull();
+    }
+  });
+  it('keeps the series once the photon has been absorbed, up to the wall', () => {
+    const p = { ...wall }, end = absorption(p)!, time = LIGHT_END_TICK * LIGHT_DT;
+    expect(seriesPairs(p, LIGHT_END_TICK).at(-1)!.index).toBe(end.pair);
+    expect(seriesAt(p, time, end.x - .3)).not.toBeNull();
+    expect(seriesAt(p, time, end.x + .05)).toBeNull();
+  });
+  it('opens files saved before the series layer with the series shown', () => {
+    const { series: _none, ...older } = DEFAULT_LIGHT_VIEW, m = new LightSimulation();
+    const saved = parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: { ...older, fields: false } }));
+    expect(saved.view).toEqual({ ...DEFAULT_LIGHT_VIEW, fields: false, series: true });
+    expect(() => parseLightFile(JSON.stringify({ format: 'zeropoint-light', version: 1, state: m.snapshot(), view: { ...DEFAULT_LIGHT_VIEW, series: 1 } }))).toThrow('Invalid series layer setting.');
   });
   it('keeps the wall in saved files and rejects a missing or malformed setting', () => {
     const m = new LightSimulation(); m.configure(wall); m.step(300);
