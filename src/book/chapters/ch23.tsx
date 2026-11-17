@@ -1,5 +1,5 @@
 // Chapter 23: Gravity, Energy, and Light (PDF pp. 176–184). Figures 23-1 and 23-2.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Arrow, Body, Choice, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, fmt, pathThrough, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
@@ -88,14 +88,21 @@ const MAGNIFY = 0.6 / 45.7;
 function ClocksAndRedshift() {
   const [km, setKm] = useState(20200);
   const play = usePlayback();
-  const gain = clockGain(km * 1000), shift = (GM_EARTH / (C * C)) * (1 / R_EARTH - 1 / (R_EARTH + km * 1000));
-  const H = 340, cx = 200, cy = 350, R = 120, alt = 24 + (Math.log10(km) / Math.log10(40000)) * 150, y = cy - R - alt, hand = (rate: number) => play.t * 120 * rate;
+  const gain = clockGain(km * 1000);
+  // Each hand's angle accumulates at its current rate, so a change of height changes the rate from then on and never
+  // moves a hand by itself. Restart (or a step back) sets both to twelve.
+  const hands = useRef({ t: 0, ground: 0, upper: 0 });
+  if (play.t < hands.current.t) hands.current = { t: 0, ground: 0, upper: 0 };
+  const step = Math.max(0, Math.min(0.05, play.t - hands.current.t));
+  hands.current = { t: play.t, ground: hands.current.ground + 120 * step, upper: hands.current.upper + 120 * (1 + gain * MAGNIFY) * step };
+  const shift = (GM_EARTH / (C * C)) * (1 / R_EARTH - 1 / (R_EARTH + km * 1000));
+  const H = 340, cx = 200, cy = 350, R = 120, alt = 24 + (Math.log10(km) / Math.log10(40000)) * 150, y = cy - R - alt
   const clock = (yy: number, a: number, label: string) => <g><circle cx={cx} cy={yy} r={20} className="bk-body bk-body-plain"/><line x1={cx} y1={yy} x2={cx + 15 * Math.sin((a * Math.PI) / 180)} y2={yy - 15 * Math.cos((a * Math.PI) / 180)} className="bk-s-mark" strokeWidth="2.5" strokeLinecap="round"/><T x={cx + 30} y={yy + 5} anchor="start" size="sm">{label}</T></g>;
   return <Diagram stage={
     <Stage w={W} h={H} label={`A clock on the Earth's surface and one ${km.toLocaleString('en-GB')} kilometres above it. The higher clock gains ${fmt(gain, 3)} microseconds a day, and light climbing to it is redshifted by ${fmt(shift, 3)}.`}>
       <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-matter"/><T x={cx} y={cy - R + 30} tone="text" size="sm">Earth</T>
       {[0, 1, 2, 3].map(i => <circle key={i} cx={cx} cy={cy} r={R + 30 + i * 44} className="bk-s-b" fill="none" strokeDasharray="2 6" opacity={0.7 - i * 0.16}/>)}
-      {clock(cy - R - 8, hand(1), 'on the ground')}{clock(y, hand(1 + gain * MAGNIFY), `at ${km.toLocaleString('en-GB')} km`)}
+      {clock(cy - R - 8, hands.current.ground, 'on the ground')}{clock(y, hands.current.upper, `at ${km.toLocaleString('en-GB')} km`)}
       <T x={470} y={90} anchor="start" size="sm" tone="b">dotted rings: the torque of the</T><T x={470} y={108} anchor="start" size="sm" tone="b">vacuum, greater nearer the Earth</T>
       <T x={470} y={150} anchor="start" size="sm">the difference in the clocks’ rates</T><T x={470} y={168} anchor="start" size="sm">is magnified about a billion times</T>
     </Stage>}>
