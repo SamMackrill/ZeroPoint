@@ -10,6 +10,11 @@ export const CHAPTERS: ChapterMeta[] = [
   { n: 0, title: 'Introduction: The Genesis of a Physics Heretic', pages: [7, 10], figures: [], blurb: 'How Fleming came to the zero-point field, and what he asks of a theory.', load: () => import('./chapters/ch00') },
   { n: 1, title: 'The Philosophy of Science', pages: [11, 17], figures: [], blurb: 'The tests a physical theory must pass: a mechanical cause for every force.', load: () => import('./chapters/ch01') },
   { n: 2, title: 'The Zero-Point', pages: [18, 26], figures: [], blurb: 'Planck, Nernst and Heisenberg: the vacuum is full of energy, with a limit on each fluctuation.', load: () => import('./chapters/ch02') },
+  { n: 3, title: 'The Casimir Effect, The Model Force', pages: [27, 32], figures: figs(3, 4), blurb: 'Vacuum fluctuations as dipoles that push on matter; the plates as the model for every force.', load: () => import('./chapters/ch03') },
+  { n: 4, title: 'What is a Virtual Photon?', pages: [33, 42], figures: figs(4, 9), blurb: 'Why a fluctuation cannot be a photon pair, and must be a rotating electron-positron pair.', load: () => import('./chapters/ch04') },
+  { n: 5, title: 'The Zero-Point Photon', pages: [43, 47], figures: figs(5, 2), blurb: 'A photon as a series of alternately rotating pairs, with the field around it turning too.', load: () => import('./chapters/ch05') },
+  { n: 6, title: 'Zeptons and Faraday Field Lines', pages: [48, 61], figures: figs(6, 18), blurb: 'Zeptons polarize round a charge and become Faraday’s lines; attraction, repulsion and magnetism follow.', load: () => import('./chapters/ch06') },
+  { n: 7, title: 'Maxwell’s Equations', pages: [62, 69], figures: figs(7, 5), blurb: 'Maxwell’s molecular vortices, and the Lorentz force from rotating zepton dipoles.', load: () => import('./chapters/ch07') },
 ];
 
 /** The chapter with a number, if the book has one. */
