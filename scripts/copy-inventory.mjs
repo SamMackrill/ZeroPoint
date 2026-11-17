@@ -1,6 +1,8 @@
 // Extract every prose string (8+ words) from the UI source into tests/fixtures/copy-inventory.json.
 // The UI redesign promises to move scientific caveats and explanations verbatim into an About layer rather than
 // delete them (docs/ui-redesign-plan.html §10); tests/copy-inventory.test.ts checks every entry still exists in src/.
+// The book companion (src/book) is left out: it is a set of reading pages whose wording will be revised against the
+// book, not laboratory copy carried over from the old layouts.
 // Usage: node scripts/copy-inventory.mjs [--write]. Without --write it lists entries missing from the fixture.
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -10,10 +12,14 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const INVENTORY = join(root, 'tests', 'fixtures', 'copy-inventory.json');
 const MIN_WORDS = 8;
 
+/** Source directories outside the inventory: the book companion's prose is its own content, not laboratory copy to preserve. */
+const EXCLUDED = new Set([join(root, 'src', 'book')]);
+
 /** List TSX sources under a directory, recursively and in stable order. */
 export function sources(dir = join(root, 'src')) {
   return readdirSync(dir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name)).flatMap(entry => {
     const path = join(dir, entry.name);
+    if (EXCLUDED.has(path)) return [];
     return entry.isDirectory() ? sources(path) : entry.name.endsWith('.tsx') ? [path] : [];
   });
 }
