@@ -84,7 +84,7 @@ describe('book companion: index', () => {
     const pages = (term: string) => INDEX.find(e => e.term === term)?.pages;
     expect(pages('Debye, Peter')).toEqual([27, 28]); // Figure 3-1 and its discussion
     expect(pages('Triacontahedron')).toEqual([126, 127, 194, 195]);
-    expect(pages('Michelson-Morley experiment')).toEqual([21, 153, 154, 155, 156, 158, 159, 160, 161]); // chapter 2's history, then chapter 21
+    expect(pages('Michelson-Morley experiment')).toEqual([21, 153, 154, 155, 156, 157, 158, 159, 160, 161]); // chapter 2's history, then chapter 21; p. 157 splits it across a line
     expect(pages('Riess, Adam')).toBeUndefined(); // named only in note 67
   });
 
@@ -92,6 +92,15 @@ describe('book companion: index', () => {
     expect(pageRuns([48, 49, 50, 53, 55, 56])).toEqual([[48, 50], [53, 53], [55, 56]]);
     expect(chaptersOf([27, 28, 126, 195])).toEqual([3, 16, 25]);
     expect(letterOf('Æther')).toBe('A');
+  });
+
+  it('choosing a letter clears the search, even the letter already in the address', () => {
+    const { container } = render(<IndexPage letter="m"/>);
+    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'casimir' } });
+    expect(container.querySelector('#index-M')).toBeNull();
+    fireEvent.click(screen.getByRole('link', { name: 'M' }));
+    expect((screen.getByRole('searchbox') as HTMLInputElement).value).toBe('');
+    expect(container.querySelector('#index-M')).not.toBeNull();
   });
 
   it('routes to the index and to a letter', () => {

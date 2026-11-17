@@ -90,7 +90,8 @@ ENTRIES = [(h, p, True) for h, p in PEOPLE] + [(h, p, False) for h, p in IDEAS]
 
 
 def page_texts(doc):
-    """Each page's body and caption text from p. 7 on, without the endnotes, de-hyphenated and on one line."""
+    """Each page's body and caption text from p. 7 on, without the endnotes: two readings of it, one with words split
+    at a line end rejoined and one with their hyphen kept."""
     texts = {}
     for index in range(FIRST_PAGE - 1, doc.page_count):
         kept, notes = [], False
@@ -104,8 +105,11 @@ def page_texts(doc):
                 if notes: break
                 kept.append(text)
             if notes: break
-        joined = re.sub(r'(\w)-\n(\w)', r'\1\2', '\n'.join(kept))
-        texts[index + 1] = re.sub(r'\s+', ' ', joined)
+        # A word split at a line end may be one word hyphenated (zep-tons) or a compound (zero-point). Keep both
+        # readings, so a pattern matches whichever the split was.
+        text = '\n'.join(kept)
+        rejoined, compound = re.sub(r'(\w)-\n(\w)', r'\1\2', text), re.sub(r'(\w)-\n(\w)', r'\1-\2', text)
+        texts[index + 1] = re.sub(r'\s+', ' ', rejoined) + ' \n ' + re.sub(r'\s+', ' ', compound)
     return texts
 
 
