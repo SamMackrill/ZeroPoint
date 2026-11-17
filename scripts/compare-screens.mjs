@@ -280,7 +280,19 @@ export const LIGHT_WAVE_SCREENS = [
   { name: 'layers', title: 'Inspector › View: the new Photon’s series (Fig. 5-1) layer under Fields', hash: '#/light?t=660', prepare: openView, focus: '.wb-inspector' },
   { name: 'about', title: 'Help › This scenario: the series and the swaying medium', hash: '#/light?t=660', prepare: openAbout() },
 ];
-const SETS = { 'light-wave': LIGHT_WAVE_SCREENS, proton: PROTON_SCREENS, absorption: ABSORPTION_SCREENS, 'double-slit': DOUBLE_SLIT_SCREENS, fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
+/**
+ * The link to the book companion (`--set book-link`): the header at four widths, where the label gives way to the icon
+ * as the repository link's does, and the end of About › Sources, where every lab now points to the companion.
+ */
+export const BOOK_LINK_SCREENS = [
+  { name: 'header-desktop', title: 'Header · 1440 px: “Read the book” beside the repository link', hash: '#/electron/spin', scale: 2, focus: '.workbench-header' },
+  { name: 'header-laptop', title: 'Header · 1366 px', hash: '#/electron/spin', viewport: { width: 1366, height: 860 }, scale: 2, focus: '.workbench-header' },
+  { name: 'header-tablet', title: 'Header · 1024 px', hash: '#/electron/spin', viewport: { width: 1024, height: 768 }, scale: 2, focus: '.workbench-header' },
+  { name: 'header-phone', title: 'Header · 390 px: icons only', hash: '#/electron/spin', viewport: { width: 390, height: 844 }, scale: 3, focus: '.workbench-header' },
+  { name: 'casimir-sources', title: 'Extended Casimir · Help › Sources ends with the book companion', lab: 'lab-casimir', prepare: openAbout(['about-sources']) },
+  { name: 'light-sources', title: 'Light · Help › Sources ends with the book companion', lab: 'lab-light', prepare: openAbout(['about-sources']) },
+];
+const SETS = { 'book-link': BOOK_LINK_SCREENS, 'light-wave': LIGHT_WAVE_SCREENS, proton: PROTON_SCREENS, absorption: ABSORPTION_SCREENS, 'double-slit': DOUBLE_SLIT_SCREENS, fidelity: FIDELITY_SCREENS, picker: PICKER_SCREENS, telemetry: TELEMETRY_SCREENS, 'electron-motion': ELECTRON_MOTION_SCREENS, camera: CAMERA_SCREENS, screens: SCREENS, plots: PLOT_SCREENS, split: SPLIT_SCREENS, about: ABOUT_SCREENS, info: INFO_SCREENS, settings: SETTINGS_SCREENS, shortcuts: SHORTCUT_SCREENS, palette: PALETTE_SCREENS, links: LINK_SCREENS, views: VIEW_SCREENS, compare: COMPARE_SCREENS, 'compare-medium': MEDIUM_COMPARE_SCREENS, responsive: RESPONSIVE_SCREENS };
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2), option = name => { const i = args.indexOf(name); return i === -1 ? undefined : args[i + 1]; };

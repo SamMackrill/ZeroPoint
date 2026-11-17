@@ -8,6 +8,10 @@
     "text": "Unshifted reference levels beside the small Lamb shift."
   },
   {
+    "file": "src/app/BookLink.tsx",
+    "text": "Read the book: an interactive diagram for every figure"
+  },
+  {
     "file": "src/casimir/Scene.tsx",
     "text": "Dynamic Zepton field with signed dipoles, interaction arrows and local pressure colour. Use Inspect newest Zepton for the accessible lifetime view."
   },
@@ -678,6 +682,14 @@
   {
     "file": "src/workbench/AboutSheet.tsx",
     "text": "Shortcuts are ignored while typing in a field or while a dialog is open."
+  },
+  {
+    "file": "src/workbench/AboutSheet.tsx",
+    "text": ": an interactive diagram for every figure of"
+  },
+  {
+    "file": "src/workbench/AboutSheet.tsx",
+    "text": ", each linked to the laboratory scenarios that take it further."
   },
   {
     "file": "src/workbench/Chrome.tsx",

@@ -4,6 +4,7 @@ import { ArrowDownToLine, ArrowUpFromLine, Atom, ChevronDown, ChevronRight, Circ
 import { useContext, type ReactNode, type Ref, type RefObject } from 'react';
 import { keyLabel, press, type Action } from './actions';
 import { BrandMark } from '../app/BrandMark';
+import { BookLink } from '../app/BookLink';
 import { RepositoryLink } from '../app/RepositoryLink';
 import { updateSettings, useSettings } from './settings';
 import { useFps, webglInfo } from './telemetry';
@@ -45,7 +46,7 @@ export function Header({ experiment, scenario, modified, actions, onHelp, onChip
       <button type="button" className="workbench-search" data-testid="header-search" aria-label="Search commands and settings" aria-keyshortcuts="Control+K Meta+K" onClick={() => press('Mod+k')}>
         <Search size={14} aria-hidden="true"/><span>Search or jump to…</span><span className="workbench-search-keys" aria-hidden="true">{keyLabel('Mod+k').map(part => <kbd key={part}>{part}</kbd>)}</span>
       </button>
-      <div className="workbench-actions">{actions}<RepositoryLink/><SettingsMenu/>{onHelp && <button type="button" className="workbench-icon-button" aria-label="Help" title="Help: About and shortcuts (?)" onClick={onHelp}><CircleHelp size={16} aria-hidden="true"/></button>}</div>
+      <div className="workbench-actions">{actions}<BookLink/><RepositoryLink/><SettingsMenu/>{onHelp && <button type="button" className="workbench-icon-button" aria-label="Help" title="Help: About and shortcuts (?)" onClick={onHelp}><CircleHelp size={16} aria-hidden="true"/></button>}</div>
     </header>
   );
 }
