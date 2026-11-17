@@ -88,7 +88,7 @@ export function BookApp() {
         {route.page === 'chapter' ? <ChapterPage key={route.n} n={route.n} item={route.item}/>
           : route.page === 'guide' ? <GuidePage/>
           : route.page === 'future' ? <FuturePage id={route.id}/>
-          : route.page === 'references' ? <ReferencesPage chapter={route.chapter}/>
+          : route.page === 'references' ? <ReferencesPage key={route.chapter ?? 'all'} chapter={route.chapter}/>
           : <ContentsPage/>}
       </main>
     </div>

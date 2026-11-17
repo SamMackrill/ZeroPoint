@@ -37,6 +37,9 @@ describe('book companion: references', () => {
     expect(NOTES[29].text).toBe('P. Debye, “Die van der Waalsschen Kohäsionskräfte” Physikalische Zeitschrift, Vol. 21, pages 178-187, 1920.');
     expect(citedPages(NOTES[29])).toEqual([27]);
     expect(notesFor(3).map(n => n.n)).toEqual([26, 27, 28, 29, 30, 31]);
+    // Superscripts after a digit are exponents (10¹⁴ on p. 18, 10⁹⁵ on p. 148), not callouts of notes 14 and 95.
+    expect(citedPages(NOTES[13])).toEqual([19]);
+    expect(citedPages(NOTES[94])).toEqual([144]);
     expect(NOTES[132].text).toMatch(/^H\.B\.G\. Casimir, Some remarks on the history of the so called Casimir effect/);
   });
 

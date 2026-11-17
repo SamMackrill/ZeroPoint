@@ -86,6 +86,8 @@ def main():
             for i, s in enumerate(spans):
                 if inside(s['size'], SUPER) and re.fullmatch(r'\d{1,3}(\s*,\s*\d{1,3})*', s['text'].strip()):
                     before = joined(spans[:i])
+                    # A superscript straight after a digit is an exponent (10 to the 14th), not a note callout.
+                    if re.search(r'\d$', before): continue
                     for n in map(int, re.findall(r'\d+', s['text'])):
                         cites.setdefault(n, []).append({'page': page, 'before': clean(before)[-120:]})
     if len(notes) != 133:
