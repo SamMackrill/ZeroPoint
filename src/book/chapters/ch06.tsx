@@ -133,7 +133,8 @@ function FieldDirection() {
   const since = useRef(-10);
   // After a swap the zeptons turn round over a moment, the field going through zero as they do.
   // With the negative charge on the left the positive ends point left (180°); swapped, they point right (0°).
-  const progress = ease((play.t - since.current) / 0.8), angle = swapped ? 180 - 180 * progress : 180 * progress;
+  // Stopped (or with reduced motion) the clock does not advance, so the zeptons are shown already turned.
+  const progress = play.playing ? ease((play.t - since.current) / 0.8) : 1, angle = swapped ? 180 - 180 * progress : 180 * progress;
   const y = 110, xs = Array.from({ length: 6 }, (_, i) => 190 + i * 68), pointing = Math.cos((angle * Math.PI) / 180);
   return <Diagram stage={
     <Stage w={W} h={250} label={`A negative charge on the ${swapped ? 'right' : 'left'} and a positive charge on the ${swapped ? 'left' : 'right'}, with six zeptons between. The positive end of each zepton faces the negative charge, and the electric field E points the same way, to the ${swapped ? 'right' : 'left'}.`}>
@@ -288,6 +289,8 @@ function CurrentAndSpin() {
   const [on, setOn] = useState(true);
   const play = usePlayback();
   const state = useRef({ t: 0, current: 0, angle: 0, flow: 0 });
+  // Restart (or a step back) starts the current again from zero.
+  if (play.t < state.current.t) state.current = { t: 0, current: 0, angle: 0, flow: 0 };
   // The current and the spin of the field rise quickly when driven and, with the drive cut, die away together.
   const dt = Math.max(0, Math.min(0.1, play.t - state.current.t)), target = on ? drive : 0, rate = on ? 4 : 0.45;
   state.current.t = play.t;

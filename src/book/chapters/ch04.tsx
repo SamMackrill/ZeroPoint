@@ -115,9 +115,9 @@ function PhotonProposal({ proposal }: { proposal: Proposal }) {
   const sides: (1 | -1)[] = pair ? [1, -1] : [1];
   // Where a photon is on its trip. Only the eighth-wavelength pair has no way back: it goes out and is left there.
   const stuck = proposal === 'eighth', out = stuck ? Math.min(1, u * 1.7) : u < 0.5 ? u * 2 : 2 - u * 2, back = !stuck && u >= 0.5, stranded = stuck && u > 0.6;
-  // The tally: each wavelength covered adds h. The eighth-wavelength pair covers half of what it needs and stops; the
-  // single photon is counted, as in the text, for its one half wavelength.
-  const covered = stuck ? (total / 2) * out : proposal === 'single' ? total * Math.min(1, u * 2) : total * u;
+  // The tally: each wavelength covered adds h. The eighth-wavelength pair has the right energy-time, h/2, reached as its
+  // photons go out (and they never come back); the single photon is counted, as in the text, for its one half wavelength.
+  const covered = stuck ? total * out : proposal === 'single' ? total * Math.min(1, u * 2) : total * u;
   const ticks: [number, string][] = pair ? (proposal === 'full' ? [[-1, 'λ'], [-0.5, '½λ'], [0, '0'], [0.5, '½λ'], [1, 'λ']] : [[-1, spec.tick], [0, '0'], [1, spec.tick]]) : [[0, '0'], [1, spec.tick]];
   const bar = (amount: number) => (Math.min(4, amount) / 4) * 600;
   return <Diagram stage={
@@ -200,7 +200,8 @@ export const pairField = (turned: number) => Math.sin((clamp(turned, 0, 180) * M
 function RotatingPair() {
   const [sense, setSense] = useState<'cw' | 'ccw'>('cw');
   const play = usePlayback({ speed: 0.25 });
-  const turned = (play.t % 1) * 180, cw = sense === 'cw';
+  // A paused clock sought to the end of the turn shows 180°, not the start of the next turn.
+  const phase = play.t > 0 && !play.playing && play.t % 1 === 0 ? 1 : play.t % 1, turned = phase * 180, cw = sense === 'cw';
   // The pair starts along the path and turns half a turn; clockwise carries its positive end over the top.
   const angle = cw ? 180 - turned : 180 + turned, field = pairField(turned), up = cw ? 1 : -1;
   const cx = 210, cy = 165, px = 420, pw = 250, py = 165;
@@ -235,7 +236,7 @@ function PairEnergy() {
     <Stage h={230} label={`A photon of wavelength ${nm} nanometres and a pair of wavelength ${pairWavelength} nanometres. Both carry ${fmt(photon, 3)} electron volts.`}>
       <Line d={pathThrough(Array.from({ length: 121 }, (_, i) => [x0 + (i / 120) * nm * scale, y - 30 * Math.sin((i / 120) * 2 * Math.PI)] as const))} tone="e" w={2.2}/>
       <Arrow x1={x0} y1={y + 52} x2={x0 + nm * scale} y2={y + 52} both tone="e" w={1.4} head={6}/><T x={x0 + (nm * scale) / 2} y={y + 72} tone="e" size="sm">photon wavelength λ_ph = {nm} nm</T>
-      <Zepton x={x0 + (nm * scale) / 4} y={y - 0} angle={90} len={56} signs/>
+      <Zepton x={x0 + (nm * scale) / 4} y={y} angle={0} len={(nm * scale) / 2} signs/>
       <Arrow x1={x0} y1={y + 96} x2={x0 + (nm * scale) / 2} y2={y + 96} both tone="mark" w={1.4} head={6}/><T x={x0 + (nm * scale) / 4} y={y + 116} tone="mark" size="sm" anchor={nm < 420 ? 'start' : 'middle'}>pair wavelength λ_z = {pairWavelength} nm</T>
     </Stage>}>
     <Slider label="Photon wavelength" value={nm} min={250} max={1200} step={10} onChange={setNm} unit="nm"/>

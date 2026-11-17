@@ -43,6 +43,8 @@ function MolecularVortices() {
   const [zeptons, setZeptons] = useState(false);
   const play = usePlayback();
   const state = useRef({ t: 0, rate: ROWS.map(() => 0), angle: ROWS.map(() => 0), flow: 0 });
+  // Restart (or a step back) starts every row from rest again.
+  if (play.t < state.current.t) state.current = { t: 0, rate: ROWS.map(() => 0), angle: ROWS.map(() => 0), flow: 0 };
   // Each row takes its rotation from the row nearer the current, so the motion spreads outward a row at a time.
   const dt = Math.max(0, Math.min(0.1, play.t - state.current.t));
   state.current.t = play.t;
@@ -101,7 +103,7 @@ function ElectricDeflection() {
   const [offset, setOffset] = useState(60);
   const play = usePlayback({ speed: 0.3 });
   const H = 400, body: [number, number] = [320, 190], q = sign === 'pos' ? 1 : -1;
-  const path = useMemo(() => deflectionPath([body[0] + offset, H - 20], [0, -1.4], body, q * 5200), [offset, q]);
+  const path = useMemo(() => deflectionPath([body[0] + offset, H - 20], [0, -1.4], body, q * 40), [offset, q]);
   const sources = useMemo<Source[]>(() => [{ x: body[0], y: body[1], q: 1.5 }], []);
   const index = Math.min(path.length - 1, Math.floor((play.t % 1.15) * path.length)), [px, py] = path[index], near = Math.hypot(px - body[0], py - body[1]) < 130;
   const [ex, ey] = path[path.length - 1], drift = ex - (body[0] + offset);
