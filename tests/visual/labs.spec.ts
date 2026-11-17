@@ -20,15 +20,17 @@ async function snapshot(page: Page, name: string) {
   if (!existsSync(baseline)) {
     mkdirSync(BASELINES, { recursive: true });
     // Record only a settled page, as toHaveScreenshot compares one: a single early shot caught the double-slit plots
-    // mid-draw and a scenario mid-switch. Take shots until two in a row match (or ten tries), then keep the last.
+    // mid-draw and a scenario mid-switch. Take shots until two in a row match, then keep the last; give up after ten.
     const options = { fullPage: true, animations: 'disabled', caret: 'hide', style: readFileSync(STYLE, 'utf8') } as const;
-    let previous = await page.screenshot(options);
-    for (let i = 0; i < 10; i++) {
+    let previous = await page.screenshot(options), settled = false;
+    for (let i = 0; i < 10 && !settled; i++) {
       await page.waitForTimeout(250);
       const next = await page.screenshot(options);
-      if (next.equals(previous)) break;
+      settled = next.equals(previous);
       previous = next;
     }
+    // A page that never settles must not become a baseline: fail, and record nothing.
+    expect(settled, `${name} did not settle in ten captures; no baseline recorded`).toBe(true);
     writeFileSync(baseline, previous);
     test.info().annotations.push({ type: 'baseline recorded', description: name });
     return;
