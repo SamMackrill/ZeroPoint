@@ -112,9 +112,13 @@ export type FieldFn = (x: number, y: number) => [number, number];
 export function traceField(field: FieldFn, x: number, y: number, dir: 1 | -1, box: { w: number; h: number }, step = 4, max = 900): { points: [number, number][]; closed: boolean } {
   const points: [number, number][] = [[x, y]], sx = x, sy = y;
   for (let i = 0; i < max; i++) {
+    // Midpoint (second-order) step: a first-order step gains step² on the squared radius of a circular line each time,
+    // so a line round a wire would spiral outward instead of closing.
     const [fx, fy] = field(x, y), m = Math.hypot(fx, fy);
     if (m === 0) break;
-    x += (dir * fx * step) / m; y += (dir * fy * step) / m;
+    const [gx, gy] = field(x + (dir * fx * step) / (2 * m), y + (dir * fy * step) / (2 * m)), n = Math.hypot(gx, gy);
+    if (n === 0) break;
+    x += (dir * gx * step) / n; y += (dir * gy * step) / n;
     points.push([x, y]);
     if (x < 0 || y < 0 || x > box.w || y > box.h) break;
     if (i > 8 && Math.hypot(x - sx, y - sy) < step * 1.2) return { points, closed: true };

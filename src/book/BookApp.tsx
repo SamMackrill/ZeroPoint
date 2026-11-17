@@ -34,6 +34,17 @@ function useRoute() {
   return route;
 }
 
+/** The companion's own pages, the book and the laboratory: in the header on wide screens, in the drawer on narrow ones. */
+function PageLinks({ page, className, onNavigate }: { page: BookRoute['page']; className: string; onNavigate?(): void }) {
+  return <nav className={className} aria-label="Companion">
+    <a href="#/" aria-current={page === 'contents' ? 'page' : undefined} onClick={onNavigate}>Contents</a>
+    <a href="#/guide" aria-current={page === 'guide' ? 'page' : undefined} onClick={onNavigate}>How to read</a>
+    <a href="#/future" aria-current={page === 'future' ? 'page' : undefined} onClick={onNavigate}>Future simulations</a>
+    <a href={BOOK_PDF} target="_blank" rel="noreferrer">The book (PDF)</a>
+    <a className="bk-top-lab" href={LAB_APP}>Laboratory</a>
+  </nav>;
+}
+
 /** The book's contents as navigation: every chapter, with its figure count. */
 function ChapterNav({ current, onNavigate }: { current?: number; onNavigate?(): void }) {
   return <nav className="bk-nav" aria-label="Chapters">
@@ -63,17 +74,11 @@ export function BookApp() {
   return <div className="bk-shell">
     <header className="bk-top">
       <a className="bk-brand" href="#/"><span className="bk-brand-book">The Zero-Point Universe</span><span className="bk-brand-sub">interactive companion</span></a>
-      <nav className="bk-top-links" aria-label="Companion">
-        <a href="#/" aria-current={route.page === 'contents' ? 'page' : undefined}>Contents</a>
-        <a href="#/guide" aria-current={route.page === 'guide' ? 'page' : undefined}>How to read</a>
-        <a href="#/future" aria-current={route.page === 'future' ? 'page' : undefined}>Future simulations</a>
-        <a href={BOOK_PDF} target="_blank" rel="noreferrer">The book (PDF)</a>
-        <a className="bk-top-lab" href={LAB_APP}>Laboratory</a>
-      </nav>
-      <button type="button" className="bk-menu-button" aria-expanded={menu} aria-controls="bk-side" onClick={() => setMenu(m => !m)}>Chapters</button>
+      <PageLinks page={route.page} className="bk-top-links"/>
+      <button type="button" className="bk-menu-button" aria-expanded={menu} aria-controls="bk-side" onClick={() => setMenu(m => !m)}>Menu</button>
     </header>
     <div className="bk-layout">
-      <aside id="bk-side" className={`bk-side${menu ? ' bk-side-open' : ''}`}><ChapterNav current={chapter} onNavigate={() => setMenu(false)}/></aside>
+      <aside id="bk-side" className={`bk-side${menu ? ' bk-side-open' : ''}`}><PageLinks page={route.page} className="bk-side-links" onNavigate={() => setMenu(false)}/><ChapterNav current={chapter} onNavigate={() => setMenu(false)}/></aside>
       <main className="bk-main" id="bk-main">
         {route.page === 'chapter' ? <ChapterPage key={route.n} n={route.n} item={route.item}/>
           : route.page === 'guide' ? <GuidePage/>

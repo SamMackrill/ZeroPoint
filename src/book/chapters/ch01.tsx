@@ -35,11 +35,11 @@ function Pushed() {
   if (s.x === 190 || s.x === 530) s.v = 0;
   const H = 280, y = 130;
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A body with the vacuum pressing on it from both sides: ${fmt(left, 3)} from the left and ${fmt(right, 3)} from the right. ${Math.abs(net) < 0.0005 ? 'The pressures balance and it stays where it is.' : `It is pushed to the ${net > 0 ? 'right' : 'left'}.`}`}>
+    <Stage w={W} h={H} label={`A body with the vacuum pressing on it from both sides: ${fmt(left, 3)} from the left and ${fmt(right, 3)} from the right. ${Math.abs(net) < 0.0005 ? 'The pressures balance, so the body no longer accelerates.' : `It is pushed to the ${net > 0 ? 'right' : 'left'}.`}`}>
       <BlockArrow x1={s.x - 46 - 150 * left} y1={y} x2={s.x - 46} y2={y} thick={46}/>
       <BlockArrow x1={s.x + 46 + 150 * right} y1={y} x2={s.x + 46} y2={y} thick={46}/>
       <Body x={s.x} y={y} r={40} tone="plain"/>
-      <T x={W / 2} y={H - 30} size="sm">{Math.abs(net) < 0.0005 ? 'equal pressures: no motion, however large they are' : 'it looks like attraction toward the side with less pressure; it is a push from the side with more'}</T>
+      <T x={W / 2} y={H - 30} size="sm">{Math.abs(net) < 0.0005 ? 'equal pressures: no push either way, however large they are' : 'it looks like attraction toward the side with less pressure; it is a push from the side with more'}</T>
     </Stage>}>
     <Slider label="Pressure from the left" value={left} min={0.8} max={1.2} step={0.005} onChange={setLeft}/>
     <Slider label="Pressure from the right" value={right} min={0.8} max={1.2} step={0.005} onChange={setRight}/>
@@ -70,7 +70,7 @@ const chapter: ChapterContent = {
         <p><Q>And even at a state of rest everything is being pushed. The concept of an attractive force is an illusion. Zero-point vacuum fluctuations do not come with hooks. They cannot pull on a body. If two bodies move toward each other due to a force it is because the pressure pushing them together is greater than the pressure pushing them apart</Q> (<Pg n={16}/>).</p>
         <p>The principle is Dolbear’s, quoted just before it: <Q>every body moves because it is pushed</Q>.</p>
       </>,
-      tryThis: ['Make the two pressures equal: the body does not move, at any size of pressure.', 'Lower one side a little: the body moves toward that side, as if attracted by it.', 'Every attraction in the book is drawn this way; Figure 6-12 is the clearest.'],
+      tryThis: ['Make the two pressures equal: the body is pushed neither way, at any size of pressure. At rest it stays at rest; moving, it keeps its speed.', 'Lower one side a little: the body moves toward that side, as if attracted by it.', 'Every attraction in the book is drawn this way; Figure 6-12 is the clearest.'],
       notes: <p>The size of the pressures and how fast the body responds are illustrative.</p>,
       labs: [{ lab: 'casimir', scenario: 'electron-proton', why: 'An attraction produced by lower pressure between two charges than outside them.' }],
     },

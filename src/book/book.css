@@ -145,6 +145,11 @@ input {
   border-right: 1px solid var(--line);
 }
 
+/* The companion's pages appear in the drawer only on narrow screens, where the header hides them. */
+.bk-side-links {
+  display: none;
+}
+
 .bk-nav ol {
   padding: 0;
   list-style: none;
@@ -1062,6 +1067,25 @@ input {
 
   .bk-top-links {
     display: none;
+  }
+
+  .bk-side-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 0 0 14px;
+    padding: 0 0 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .bk-side-links a {
+    color: var(--text-2);
+    font-size: var(--fs-ui);
+    text-decoration: none;
+  }
+
+  .bk-side-links a[aria-current=page] {
+    color: var(--accent);
   }
 
   .bk-menu-button {

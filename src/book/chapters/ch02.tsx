@@ -21,10 +21,12 @@ export const OCEANS = [
 function DropInTheOcean() {
   const [i, setI] = useState(0);
   const step = OCEANS[i], H = 300, x0 = 60, w = 600, x = (e: number) => x0 + (e / 96) * w;
+  // The visible universe is 10^95.7: five times 10^95, as the text puts it. One description serves every place.
+  const power = Math.floor(step.exp), times = Math.round(10 ** (step.exp - power)), ratio = `${times > 1 ? `${times} × ` : ''}10${superscript(power)}`;
   return <Diagram stage={
-    <Stage w={W} h={H} label={`One millilitre of water against ${step.name}: one part in ten to the power ${Math.round(step.exp)}. The energy of the vacuum, as a mass, is about ten to the power 95 times the density of water.`}>
+    <Stage w={W} h={H} label={`One millilitre of water against ${step.name}: one part in ${times > 1 ? `${times} times ` : ''}ten to the power ${power}. The energy of the vacuum, as a mass, is about ten to the power 95 times the density of water.`}>
       <T x={W / 2} y={44} tone="text" size="lg">a drop in {step.name}</T>
-      <T x={W / 2} y={74}>1 part in 10{superscript(Math.floor(step.exp))}{i === OCEANS.length - 1 ? ' × 5' : ''}</T>
+      <T x={W / 2} y={74}>1 part in {ratio}</T>
       <line x1={x0} y1={150} x2={x0 + w} y2={150} className="bk-s-faint" strokeWidth="12" strokeLinecap="round"/>
       <line x1={x0} y1={150} x2={x(step.exp)} y2={150} className="bk-s-accent" strokeWidth="12" strokeLinecap="round"/>
       {OCEANS.map((o, k) => <g key={o.name}><line x1={x(o.exp)} y1={134} x2={x(o.exp)} y2={166} className={k === i ? 'bk-s-mark' : 'bk-s-muted'} strokeWidth={k === i ? 3 : 1.5}/><T x={x(o.exp)} y={k % 2 ? 198 : 184} size="sm" tone={k === i ? 'mark' : 'muted'}>10{superscript(Math.floor(o.exp))}</T></g>)}
@@ -32,7 +34,7 @@ function DropInTheOcean() {
       <T x={W / 2} y={250} size="sm">a logarithmic scale: each step along it is a factor of ten</T>
     </Stage>}>
     <Slider label="Size of the ocean" value={i} min={0} max={OCEANS.length - 1} step={1} onChange={setI} show={() => step.name}/>
-    <Readout label="Drop against ocean" value={`1 : 10${superscript(Math.floor(step.exp))}`}/>
+    <Readout label="Drop against ocean" value={`1 : ${ratio}`}/>
     <Remark tone={i === OCEANS.length - 1 ? 'good' : undefined}>{i === OCEANS.length - 1 ? 'There we go: water against the vacuum is five drops in an ocean the size of the visible universe.' : 'Still not anywhere close.'}</Remark>
   </Diagram>;
 }
@@ -91,7 +93,7 @@ function CutoffDensity() {
       <line x1={x(exp)} y1={52} x2={x(exp)} y2={88} className="bk-s-mark" strokeWidth="3"/>
       <rect x={x0} y={150} width={w} height={22} rx={3} className="bk-fill-soft"/><rect x={x0} y={150} width={w * bar} height={22} rx={3} className="bk-f-accent"/>
       <T x={x0} y={140} anchor="start" size="sm">energy density of the vacuum (logarithmic)</T>
-      <T x={x0 + w} y={196} anchor="end" size="sm" tone="accent">10{superscript(Math.round(Math.log10(density)))} GeV/cm³</T>
+      <T x={x0 + w} y={196} anchor="end" size="sm" tone="accent">{fmt(density)} GeV/cm³</T>
       <T x={W / 2} y={250} size="sm">each tenfold shorter cut-off multiplies the energy by ten thousand</T>
     </Stage>}>
     <Slider label="Cut-off wavelength" value={exp} min={Math.log10(PLANCK_LENGTH)} max={-6} step={0.1} onChange={setExp} show={() => (Math.abs(cutoff - PLANCK_LENGTH) < 1e-37 ? 'the Planck length' : `${fmt(cutoff, 2)} m`)}/>
