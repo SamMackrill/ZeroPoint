@@ -34,7 +34,15 @@ test('Light compares A with a pinned B: zero Δ when identical, a diff, dashed s
 test('Electron compares spin projections with B dashed in the probe history, and a scenario change clears B', async ({ page }) => {
   await page.goto('/#/electron/spin'); await expect(page.getByTestId('electron-tick')).toBeVisible();
   const root = page.locator('.electron-workbench-root');
-  await root.getByTestId('dock-compare').click(); await root.getByTestId('compare-pin').click();
+  // Opening from a link starts the scenario, which clears B; on a slow runner that can land after the first pin. Pin
+  // once the lab is ready, and again if B does not survive a moment.
+  await expect(tid(page, 'transport-run')).toBeEnabled();
+  await root.getByTestId('dock-compare').click();
+  await expect(async () => {
+    if (await root.getByTestId('compare-pin').isVisible()) await root.getByTestId('compare-pin').click();
+    await page.waitForTimeout(300);
+    await expect(root.getByTestId('dock-compare')).toContainText('B', { timeout: 500 });
+  }).toPass();
   await page.getByRole('tab', { name: 'Setup', exact: true }).filter({ visible: true }).click();
   await page.getByRole('radio', { name: 'spin down' }).filter({ visible: true }).click(); await tid(page, 'params-apply').click();
   await tid(page, 'transport-next').click();

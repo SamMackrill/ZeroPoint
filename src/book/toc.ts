@@ -15,6 +15,14 @@ export const CHAPTERS: ChapterMeta[] = [
   { n: 5, title: 'The Zero-Point Photon', pages: [43, 47], figures: figs(5, 2), blurb: 'A photon as a series of alternately rotating pairs, with the field around it turning too.', load: () => import('./chapters/ch05') },
   { n: 6, title: 'Zeptons and Faraday Field Lines', pages: [48, 61], figures: figs(6, 18), blurb: 'Zeptons polarize round a charge and become Faraday’s lines; attraction, repulsion and magnetism follow.', load: () => import('./chapters/ch06') },
   { n: 7, title: 'Maxwell’s Equations', pages: [62, 69], figures: figs(7, 5), blurb: 'Maxwell’s molecular vortices, and the Lorentz force from rotating zepton dipoles.', load: () => import('./chapters/ch07') },
+  { n: 8, title: 'The Mattermagnetic Field', pages: [70, 80], figures: figs(8, 6), blurb: 'Descartes’s vortices, the spinning top, and a magnetic-like field of moving matter.', load: () => import('./chapters/ch08') },
+  { n: 9, title: 'Tops, Flywheels, and Gyroscopes', pages: [81, 85], figures: figs(9, 2), blurb: 'Induction between spinning masses: the Morgan and Wallace experiments.', load: () => import('./chapters/ch09') },
+  { n: 10, title: 'Inertia', pages: [86, 90], figures: figs(10, 3), blurb: 'Inertia as the zero-point field’s resistance to a change in the rotation matter induces.', load: () => import('./chapters/ch10') },
+  { n: 11, title: 'The Matter Dipole', pages: [91, 97], figures: figs(11, 6), blurb: 'Zeptons polarize by matter and antimatter as well as by charge.', load: () => import('./chapters/ch11') },
+  { n: 12, title: 'Astronomical Motion', pages: [98, 109], figures: figs(12, 8), blurb: 'Orbits, precession and galaxy rotation with the mattermagnetic field added.', load: () => import('./chapters/ch12') },
+  { n: 13, title: 'Solar and Planetary Dynamos', pages: [110, 112], figures: figs(13, 1), blurb: 'How a rotating body with layered matter could drive its magnetic field.', load: () => import('./chapters/ch13') },
+  { n: 14, title: 'The Matter Force', pages: [113, 116], figures: [], blurb: 'The repulsive force between bodies of matter, written like Coulomb’s law.', load: () => import('./chapters/ch14') },
+  { n: 15, title: 'The Electro-Matter Force', pages: [117, 121], figures: [], blurb: 'Electric and matter forces unified in one set of equations.', load: () => import('./chapters/ch15') },
 ];
 
 /** The chapter with a number, if the book has one. */

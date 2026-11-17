@@ -1,6 +1,8 @@
 // Behaviour of individual companion diagrams that a reader relies on, beyond the book's numbers.
 import { describe, expect, it } from 'vitest';
 import { deflectionPath } from '../src/book/chapters/ch07';
+import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
+import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
   it('Figure 7-3: at every slider setting the moving charge passes the fixed one, away if positive, toward if negative', () => {
@@ -14,5 +16,21 @@ describe('book companion: diagrams', () => {
       // Near enough at the default and closer starts for the pressure between them to be drawn.
       if (offset <= 100) expect(Math.min(...deflectionPath([body[0] + offset, 380], [0, -1.4], body, 40).map(([x, y]) => Math.hypot(x - body[0], y - body[1])))).toBeLessThan(130);
     }
+  });
+
+  it('Figure 12-5: successive perihelia are one turn plus the chosen advance apart', () => {
+    for (const advance of [0, 0.06, 0.15]) {
+      // Search the second orbit for its perihelion (the smallest radius) and measure how far past one turn it falls.
+      let best = 0, least = Infinity;
+      for (let i = 0; i <= 20000; i++) { const th = Math.PI + (i / 20000) * 2 * Math.PI * 1.2, r = precessingRadius(th, 120, 0.55, advance); if (r < least) { least = r; best = th; } }
+      expect((best / (2 * Math.PI) - 1) * 360, `advance ${advance}`).toBeCloseTo(advance * 360, 0);
+    }
+  });
+
+  it('Figure 10-2: however much momentum, the velocity reads below c', () => {
+    expect(speedOfLight(bodyVelocity(1, 2))).toBe('0.45 c');
+    expect(speedOfLight(bodyVelocity(20, 1))).toBe('0.9988 c');
+    expect(speedOfLight(bodyVelocity(500, 1))).toMatch(/^0\.99999\d* c$/);
+    expect(speedOfLight(bodyVelocity(1e6, 1))).toBe('within a billionth of c');
   });
 });
