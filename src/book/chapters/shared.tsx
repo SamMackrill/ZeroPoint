@@ -2,7 +2,7 @@
 // rotation that moving bodies leave in the zeptons beside them (chapters 6, 10, 11 and 12).
 import { useMemo, useState } from 'react';
 import { BOOK_PDF } from '../labs';
-import { Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, PlayBar, Readout, Remark, Spin, Stage, T, Toggle, Zepton, usePlayback, type Source, type Tone } from '../kit';
+import { Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, PlayBar, Readout, Remark, Spin, Stage, Still, T, Toggle, Zepton, usePlayback, type Source, type Tone } from '../kit';
 
 /** A direction along an axis: +x, −x and so on. */
 export type Axis = '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
@@ -127,7 +127,7 @@ export function SpinRow({ kind, current, angle, flow, t, field }: { kind: 'elect
         {field && moving && i % 2 === 1 && <><InOut x={x} y={top - 62 - 34} out={current > 0} r={7}/><InOut x={x} y={bottom + 62 + 34} out={current < 0} r={7}/></>}
       </g>;
     })}
-    {moving && <Arrow x1={W / 2 - Math.sign(current) * 40} y1={top - 14} x2={W / 2 + Math.sign(current) * 40} y2={top - 14} tone="motion" w={2}/>}
+    {moving && <Still><Arrow x1={W / 2 - Math.sign(current) * 40} y1={top - 14} x2={W / 2 + Math.sign(current) * 40} y2={top - 14} tone="motion" w={2}/></Still>}
   </g>;
 }
 

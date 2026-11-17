@@ -58,7 +58,7 @@ function Refraction() {
       <Line d={`M${start[0]} ${start[1]} L${bx} ${by} L${bx + outDir[0] * down} ${by + outDir[1] * down}`} tone="e" w={2}/>
       {marks(up, 44, inDir, start, p).map(([x, y], i) => <circle key={`a${i}`} cx={x} cy={y} r={5} className="bk-f-mark"/>)}
       {marks(down, 44 * speed, outDir, [bx, by], p).map(([x, y], i) => <circle key={`b${i}`} cx={x} cy={y} r={5} className="bk-f-mark"/>)}
-      {n > 1.01 && <Spin x={bx} y={by} r={26} ccw={false} from={90 + incidence} sweep={Math.max(8, (incidence - inside) * 2.2)} tone="text" w={2.4}/>}
+      {n > 1.01 && <Spin x={bx} y={by} r={26} ccw={false} from={90 + incidence} sweep={Math.max(8, (incidence - inside) * 2.2)} tone="text" w={2.4} steady/>}
       <T x={60} y={by - 12} anchor="start" size="sm">vacuum: c₀</T><T x={60} y={by + 24} anchor="start" size="sm">{named ? named.name : 'medium'}: {fmt(speed, 3)} c₀</T>
       <T x={bx + 60} y={H - 34} anchor="start" size="sm" tone="mark">● one wavelength apart</T>
     </Stage>}>

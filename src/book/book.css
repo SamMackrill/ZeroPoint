@@ -1040,6 +1040,21 @@ input {
   padding-top: 4px;
 }
 
+/* Annotations a running animation makes redundant (rotation arrows) fade while it plays. */
+.bk-still {
+  transition: opacity 350ms ease;
+}
+
+.bk-still.is-running {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bk-still {
+    transition: none;
+  }
+}
+
 /* Appendices: references by chapter */
 .bk-visually-hidden {
   position: absolute;

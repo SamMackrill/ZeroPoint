@@ -109,7 +109,7 @@ function TwoSlits() {
       </>}
       <circle cx={cx} cy={yA} r={8} className="bk-f-text"/><T x={cx - 20} y={yA + 5} tone="text" size="lg" anchor="end">A</T>
       <circle cx={cx} cy={yB} r={8} className={done && !stopped ? 'bk-f-accent' : 'bk-f-text'}/><T x={cx - 20} y={yB + 5} tone="text" size="lg" anchor="end">B</T>
-      <Spin x={90} y={H - 60} r={13} ccw sweep={250}/><T x={90} y={H - 26} size="sm">plane of zepton rotation</T>
+      <Spin x={90} y={H - 60} r={13} ccw sweep={250} steady/><T x={90} y={H - 26} size="sm">plane of zepton rotation</T>
       {stopped && k >= last - 1 && <T x={cx + 20} y={wallY + 24} anchor="start" tone="danger" size="sm">no field reaches a slit: no next pair</T>}
       {done && !stopped && <T x={cx + 20} y={yB + 5} anchor="start" tone="accent" size="sm">absorbed at B, all at once</T>}
     </Stage>}>

@@ -1,6 +1,7 @@
 // The companion's drawing vocabulary: one way to draw a zepton, a charge, a field arrow and a rotation, so that every
 // figure reads the same. Colours come from classes in book.css (tokens), never from literals here.
-import type { ReactNode, SVGProps } from 'react';
+import { useContext, type ReactNode, type SVGProps } from 'react';
+import { FigureRunning } from './clock';
 import { polar, rad } from './geom';
 
 /** A colour role. `pos`/`neg` are electric charge, `matter`/`anti` matter charge, `e`/`b` the fields, `force` a push. */
@@ -50,15 +51,18 @@ export function Vector({ x, y, angle, len, centred, ...rest }: { x: number; y: n
 
 /**
  * A curved arrow showing a sense of rotation about (x, y). `ccw` turns counter-clockwise as the reader sees it. The arc
- * starts at `from` degrees and sweeps `sweep` degrees.
+ * starts at `from` degrees and sweeps `sweep` degrees. While its figure's animation runs the arrow fades out, as the
+ * motion shows the rotation itself. `steady` keeps an arrow that is the only picture of its rotation (a field, an
+ * eddy, a body drawn still), or a key or a measure rather than a rotation.
  */
-export function Spin({ x, y, r, ccw = true, tone = 'motion', from = 40, sweep = 270, w = 1.8, opacity }: { x: number; y: number; r: number; ccw?: boolean; tone?: Tone; from?: number; sweep?: number; w?: number; opacity?: number }) {
+export function Spin({ x, y, r, ccw = true, tone = 'motion', from = 40, sweep = 270, w = 1.8, opacity, steady = false }: { x: number; y: number; r: number; ccw?: boolean; tone?: Tone; from?: number; sweep?: number; w?: number; opacity?: number; steady?: boolean }) {
+  const quiet = useContext(FigureRunning) && !steady;
   const s = ccw ? 1 : -1, end = from + s * sweep;
   const [x1, y1] = polar(x, y, r, from), [x2, y2] = polar(x, y, r, end);
   // The tangent at the end of the arc gives the head's direction.
   const tx = -s * Math.sin(rad(end)), ty = -s * Math.cos(rad(end)), h = Math.max(5, Math.min(9, r * 0.7));
   const bx = x2 - tx * h, by = y2 - ty * h;
-  return <g className={`bk-s-${tone} bk-f-${tone}`} opacity={opacity}>
+  return <g className={`bk-s-${tone} bk-f-${tone} bk-still${quiet ? ' is-running' : ''}`} opacity={opacity}>
     <path d={`M${x1} ${y1} A${r} ${r} 0 ${sweep > 180 ? 1 : 0} ${ccw ? 0 : 1} ${x2} ${y2}`} fill="none" strokeWidth={w} strokeLinecap="round"/>
     <polygon points={`${x2 + tx * 2},${y2 + ty * 2} ${bx - ty * h * 0.55},${by + tx * h * 0.55} ${bx + ty * h * 0.55},${by - tx * h * 0.55}`} stroke="none"/>
   </g>;
@@ -151,4 +155,14 @@ export function SpinLoop({ x, y, angle, r = 9, turn, tone = 'b', opacity }: { x:
     <ellipse cx={x} cy={y} rx={r * 0.32} ry={r} transform={`rotate(${-angle} ${x} ${y})`} fill="none" strokeWidth="1.2"/>
     <circle cx={dx} cy={dy} r={1.8 + 1.1 * depth} stroke="none"/>
   </g>;
+}
+
+/**
+ * Annotations that a running animation makes redundant: an arrow marking the direction of a motion the reader can watch,
+ * or the ω beside a rotation arrow. They fade out while the figure plays and back in when it pauses or stops; static
+ * figures always show them. (Spin arrows fade by themselves.)
+ */
+export function Still({ children }: { children: ReactNode }) {
+  const running = useContext(FigureRunning);
+  return <g className={`bk-still${running ? ' is-running' : ''}`}>{children}</g>;
 }

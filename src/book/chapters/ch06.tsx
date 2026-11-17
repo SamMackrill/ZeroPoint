@@ -1,6 +1,6 @@
 // Chapter 6: Zeptons and Faraday Field Lines (PDF pp. 48–61). Figures 6-1 to 6-18.
 import { useMemo, useRef, useState, type ComponentType } from 'react';
-import { Action, Arrow, BlockArrow, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fmt, lerpAngle, pathThrough, polar, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
+import { Action, Arrow, BlockArrow, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fmt, lerpAngle, pathThrough, polar, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
 import { Pg, Q } from '../prose';
 import type { BookItem, ChapterContent } from '../types';
 import { TwoSources } from './shared';
@@ -272,7 +272,7 @@ function MovingCharge() {
       {[160, 360, 560].map(px => <circle key={px} cx={px} cy={y} r={15} className="bk-s-faint" fill="none" strokeDasharray="2 3"/>)}
       <Line d={`M${above.x} ${above.y} L${ex} ${y} L${below.x} ${below.y}`} tone="faint" dash="2 4"/>
       <Zepton x={above.x} y={above.y} angle={up} len={50} signs/><Zepton x={below.x} y={below.y} angle={down} len={50} signs/>
-      {moving !== 0 && <><Spin x={above.x} y={above.y} r={36} ccw={moving > 0} from={moving > 0 ? 20 : 160} sweep={140}/><Spin x={below.x} y={below.y} r={36} ccw={moving < 0} from={moving > 0 ? -20 : 200} sweep={140}/><Arrow x1={ex + moving * 22} y1={y} x2={ex + moving * 58} y2={y} tone="motion" w={2.4}/></>}
+      {moving !== 0 && <><Spin x={above.x} y={above.y} r={36} ccw={moving > 0} from={moving > 0 ? 20 : 160} sweep={140}/><Spin x={below.x} y={below.y} r={36} ccw={moving < 0} from={moving > 0 ? -20 : 200} sweep={140}/><Still><Arrow x1={ex + moving * 22} y1={y} x2={ex + moving * 58} y2={y} tone="motion" w={2.4}/></Still></>}
       <Drag x={ex} y={y} onMove={nx => { if (!play.playing) setX(nx); }} bounds={{ x0: 80, y0: y, x1: 640, y1: y }} label="Free electron"><Charge x={ex} y={y} sign={-1} r={15}/></Drag>
     </Stage>}>
     <Slider label="Position of the electron" value={Math.round(ex)} min={80} max={640} step={2} onChange={v => { if (!play.playing) setX(v); }} show={v => (v < 300 ? 'left' : v > 420 ? 'right' : 'between the zeptons')}/>
@@ -310,7 +310,7 @@ function CurrentAndSpin() {
           {Math.abs(current) > 0.05 && i % 2 === 0 && <><Spin x={x} y={top - 62} r={26} ccw={current > 0} sweep={70 + 150 * Math.abs(current)} opacity={0.8}/><Spin x={x} y={bottom + 62} r={26} ccw={current < 0} sweep={70 + 150 * Math.abs(current)} opacity={0.8}/></>}
         </g>;
       })}
-      {Math.abs(current) > 0.05 && <Arrow x1={W / 2 - Math.sign(current) * 40} y1={top - 14} x2={W / 2 + Math.sign(current) * 40} y2={top - 14} tone="motion" w={2}/>}
+      {Math.abs(current) > 0.05 && <Still><Arrow x1={W / 2 - Math.sign(current) * 40} y1={top - 14} x2={W / 2 + Math.sign(current) * 40} y2={top - 14} tone="motion" w={2}/></Still>}
     </Stage>}>
     <Slider label="Electron flow when driven" value={drive} min={-1} max={1} step={0.05} onChange={setDrive} show={v => (v === 0 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'right' : 'left'}`)}/>
     <Toggle label="Drive the current" checked={on} onChange={setOn}/>
