@@ -32,6 +32,8 @@ function MorganFlywheels() {
   const [running, setRunning] = useState(true);
   const play = usePlayback();
   const state = useRef({ t: 0, driven: 0, passive: 0, a1: 0, a2: 0 });
+  // Restart (or a step back) begins again from the starting state.
+  if (play.t < state.current.t) state.current = { t: 0, driven: 0, passive: 0, a1: 0, a2: 0 };
   const dt = Math.max(0, Math.min(0.05, play.t - state.current.t)), target = running ? speed : 0, before = state.current.driven;
   state.current.t = play.t;
   // The motor brings the first flywheel up to speed over a moment; the brake stops it almost at once.
@@ -66,6 +68,8 @@ function WallaceGyros() {
   const [tumble, setTumble] = useState(0.6);
   const play = usePlayback();
   const state = useRef({ t: 0, a1: 0, a2: 0, tilt: 0, passive: 0 });
+  // Restart (or a step back) begins again from the starting state.
+  if (play.t < state.current.t) state.current = { t: 0, a1: 0, a2: 0, tilt: 0, passive: 0 };
   const dt = Math.max(0, Math.min(0.05, play.t - state.current.t));
   state.current.t = play.t;
   // The induced rotation is drawn as following both the spin and the turning-over of the first gyroscope's plane.
@@ -102,6 +106,8 @@ function LaithwaiteFlywheel() {
   const [mode, setMode] = useState<Mode>('spinning');
   const play = usePlayback();
   const state = useRef({ t: 0, lift: -18, turn: 0, spin: 0, mode: 'spinning' as Mode });
+  // Restart (or a step back) begins again from the starting state.
+  if (play.t < state.current.t) state.current = { t: 0, lift: -18, turn: 0, spin: 0, mode: 'spinning' as Mode };
   const dt = Math.max(0, Math.min(0.05, play.t - state.current.t));
   state.current.t = play.t;
   if (state.current.mode !== mode) { state.current.mode = mode; if (mode === 'still' || mode === 'locked') state.current.lift = -18; }

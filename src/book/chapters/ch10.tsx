@@ -13,6 +13,8 @@ function CurrentInertia() {
   const [resistance, setResistance] = useState(0.5);
   const play = usePlayback();
   const state = useRef({ t: 0, current: 0, angle: 0, flow: 0 });
+  // Restart (or a step back) begins again from the starting state.
+  if (play.t < state.current.t) state.current = { t: 0, current: 0, angle: 0, flow: 0 };
   const dt = Math.max(0, Math.min(0.1, play.t - state.current.t));
   state.current.t = play.t;
   // The electromotive force drives the current against the resistance; with neither, the current stays as it is.
@@ -40,6 +42,8 @@ function MatterInertia() {
   const [matter, setMatter] = useState(2);
   const play = usePlayback();
   const state = useRef({ t: 0, p: 0, push: 0, until: 0, angle: 0, flow: 0 });
+  // Restart (or a step back) begins again from the starting state.
+  if (play.t < state.current.t) state.current = { t: 0, p: 0, push: 0, until: 0, angle: 0, flow: 0 };
   const dt = Math.max(0, Math.min(0.1, play.t - state.current.t)), s = state.current;
   s.t = play.t;
   if (play.t < s.until) s.p = clamp(s.p + s.push * dt * 1.6, -9, 9); else s.push = 0;

@@ -138,6 +138,8 @@ function PrecessingOrbit() {
   const [e, setE] = useState(0.55);
   const play = usePlayback();
   const state = useRef({ t: 0, theta: 0 });
+  // Restart (or a step back) begins again from the starting state.
+  if (play.t < state.current.t) state.current = { t: 0, theta: 0 };
   const dt = Math.max(0, Math.min(0.05, play.t - state.current.t)), H = 400, cx = 330, cy = 215, a = 120;
   state.current.t = play.t;
   // Equal areas in equal times: the planet moves fastest at perihelion.

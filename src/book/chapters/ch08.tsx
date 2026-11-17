@@ -76,6 +76,8 @@ function PrecessingTop() {
   const [field, setField] = useState(false);
   const play = usePlayback();
   const state = useRef({ t: 0, angle: 20, spun: 0 });
+  // Restart (or a step back) begins again from the starting state.
+  if (play.t < state.current.t) state.current = { t: 0, angle: 20, spun: 0 };
   const dt = Math.max(0, Math.min(0.05, play.t - state.current.t)), sense = clockwise ? -1 : 1;
   state.current.t = play.t;
   state.current.angle += sense * precessionRate(spin) * 34 * dt;
