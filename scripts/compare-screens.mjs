@@ -288,7 +288,7 @@ export const BOOK_LINK_SCREENS = [
   { name: 'header-desktop', title: 'Header · 1440 px: “Read the book” beside the repository link', hash: '#/electron/spin', scale: 2, focus: '.workbench-header' },
   { name: 'header-laptop', title: 'Header · 1366 px', hash: '#/electron/spin', viewport: { width: 1366, height: 860 }, scale: 2, focus: '.workbench-header' },
   { name: 'header-tablet', title: 'Header · 1024 px', hash: '#/electron/spin', viewport: { width: 1024, height: 768 }, scale: 2, focus: '.workbench-header' },
-  { name: 'header-phone', title: 'Header · 390 px: icons only', hash: '#/electron/spin', viewport: { width: 390, height: 844 }, scale: 3, focus: '.workbench-header' },
+  { name: 'header-phone', title: 'Header · 390 px: unchanged, so the scenario name keeps its room (the companion is in Help › Sources)', hash: '#/electron/spin', viewport: { width: 390, height: 844 }, scale: 3, focus: '.workbench-header' },
   { name: 'casimir-sources', title: 'Extended Casimir · Help › Sources ends with the book companion', lab: 'lab-casimir', prepare: openAbout(['about-sources']) },
   { name: 'light-sources', title: 'Light · Help › Sources ends with the book companion', lab: 'lab-light', prepare: openAbout(['about-sources']) },
 ];
