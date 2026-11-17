@@ -1,6 +1,6 @@
 // Chapter 7: Maxwell's Equations (PDF pp. 62–69). Figures 7-1 to 7-5.
 import { useMemo, useRef, useState } from 'react';
-import { Action, Arrow, BlockArrow, Charge, Choice, Diagram, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
+import { Action, Arrow, BlockArrow, Charge, Choice, Diagram, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { HandRule } from './shared';
@@ -148,7 +148,7 @@ function MagneticDeflection() {
       <rect x={30} y={20} width={W - 60} height={top - 20} rx={8} className="bk-fill-panel"/>
       {Array.from({ length: 4 }, (_, r) => Array.from({ length: 8 }, (_, c) => {
         const x = 80 + c * 80, y = 56 + r * 66;
-        return <g key={`${r}-${c}`} opacity={0.3 + 0.25 * strength}><Zepton x={x} y={y} angle={(clockwise ? -1 : 1) * play.t * 260 * strength + (r * 8 + c) * 47} len={26} oval={false} signs={false}/>{(r + c) % 3 === 0 && <Still><Spin x={x} y={y} r={20} ccw={!clockwise} sweep={200} opacity={0.7}/></Still>}</g>;
+        return <g key={`${r}-${c}`} opacity={0.3 + 0.25 * strength}><Zepton x={x} y={y} angle={(clockwise ? -1 : 1) * play.t * 260 * strength + (r * 8 + c) * 47} len={26} oval={false} signs={false}/>{(r + c) % 3 === 0 && <Spin x={x} y={y} r={20} ccw={!clockwise} sweep={200} opacity={0.7}/>}</g>;
       }))}
       <T x={W - 44} y={44} anchor="end" size="sm" tone="b">B {clockwise ? 'into the page' : 'out of the page'}</T><InOut x={W - 56 - (clockwise ? 104 : 116)} y={40} out={!clockwise} r={7}/>
       <Line d={pathThrough(path)} tone="motion" w={1.6} dash="5 4"/>

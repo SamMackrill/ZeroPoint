@@ -1,6 +1,6 @@
 // Chapter 19: The Speed of the Zero-Point Universe (PDF pp. 142–150). Figures 19-1 to 19-4.
 import { useMemo, useRef, useState } from 'react';
-import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Vector, Zepton, clamp, fmt, lerpAngle, polar, rng, usePlayback } from '../kit';
+import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, lerpAngle, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -109,7 +109,7 @@ function TwoSlits() {
       </>}
       <circle cx={cx} cy={yA} r={8} className="bk-f-text"/><T x={cx - 20} y={yA + 5} tone="text" size="lg" anchor="end">A</T>
       <circle cx={cx} cy={yB} r={8} className={done && !stopped ? 'bk-f-accent' : 'bk-f-text'}/><T x={cx - 20} y={yB + 5} tone="text" size="lg" anchor="end">B</T>
-      <Spin x={90} y={H - 60} r={13} ccw sweep={250}/><T x={90} y={H - 26} size="sm">plane of zepton rotation</T>
+      <Spin x={90} y={H - 60} r={13} ccw sweep={250} steady/><T x={90} y={H - 26} size="sm">plane of zepton rotation</T>
       {stopped && k >= last - 1 && <T x={cx + 20} y={wallY + 24} anchor="start" tone="danger" size="sm">no field reaches a slit: no next pair</T>}
       {done && !stopped && <T x={cx + 20} y={yB + 5} anchor="start" tone="accent" size="sm">absorbed at B, all at once</T>}
     </Stage>}>
@@ -136,7 +136,7 @@ function HalfTurn() {
   return <Diagram stage={
     <Stage w={W} h={H} label={`A zepton of relative frequency ${fmt(nu, 2)} turning through 180 degrees. Over its life it spans a distance equal to its wavelength, which is the speed of light divided by its frequency. Passing on a field needs only ${fmt(needed, 2)} degrees of that turn, so the field moves at ${fmt(fieldSpeed(needed), 2)} times the speed of light.`}>
       <Zepton x={cx} y={cy} angle={180 - 180 * u} len={d} open={Math.max(0.12, Math.sin(Math.PI * u))} polarity="matter" signs emphasis="key"/>
-      <Still><Spin x={cx} y={cy - 12} r={d * 0.3 + 26} ccw={false} from={160} sweep={140}/></Still>
+      <Spin x={cx} y={cy - 12} r={d * 0.3 + 26} ccw={false} from={160} sweep={140}/>
       <Arrow x1={cx - d / 2} y1={cy + 96} x2={cx + d / 2} y2={cy + 96} both tone="mark" w={1.6} head={7}/>
       <T x={cx} y={cy + 122} tone="mark" size="lg">d = λ = c/ν</T>
       <T x={cx} y={34} size="sm">turned {Math.round(u * 180)}° of 180°</T>

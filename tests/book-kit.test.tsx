@@ -4,7 +4,7 @@
 import { render, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BookApp } from '../src/book/BookApp';
-import { FigureRunning, RunningReport, Still, traceField, usePlayback, wireField } from '../src/book/kit';
+import { FigureRunning, RunningReport, Spin, Still, traceField, usePlayback, wireField } from '../src/book/kit';
 
 describe('book companion: kit', () => {
   it('traces the circular field line round a single wire back to its start', () => {
@@ -32,6 +32,11 @@ describe('book companion: rotation arrows step aside while a figure plays', () =
     expect(container.querySelector('.bk-still')!.classList.contains('is-running')).toBe(false);
     rerender(<svg><FigureRunning.Provider value={true}><Still><circle/></Still></FigureRunning.Provider></svg>);
     expect(container.querySelector('.bk-still')!.classList.contains('is-running')).toBe(true);
+  });
+
+  it('fades every rotation arrow while the figure runs, except a steady one (a key or a measure)', () => {
+    const { container } = render(<svg><FigureRunning.Provider value={true}><Spin x={0} y={0} r={10}/><Spin x={0} y={0} r={10} steady/></FigureRunning.Provider></svg>);
+    expect([...container.querySelectorAll('.bk-still')].map(g => g.classList.contains('is-running'))).toEqual([true, false]);
   });
 
   it('has each clock report to its card whether it is playing, and stop reporting when it goes', () => {

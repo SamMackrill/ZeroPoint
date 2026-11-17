@@ -41,7 +41,7 @@ export function GuidePage() {
     <div className="bk-card bk-card-legend"><Legend/></div>
     <section className="bk-prose">
       <p>A <strong>zepton</strong> is Fleming’s name (chapter 6) for a virtual particle pair of the zero-point field. He draws one as an oval with a positive and a negative end, and so do these pages. Colours keep one meaning throughout: warm for positive, cool for negative, green for the electric field, violet for the magnetic field, and gold and pink for matter and antimatter from chapter 11 onward.</p>
-      <p>The diagrams are schematic. Sizes, counts, speeds and the strength of an effect are chosen to be seen, unless a readout gives a number, in which case the number comes from the equation named beside it. Animations pause when they leave the screen, and start paused if your system asks for reduced motion. Curved arrows that mark the sense of a rotation fade while the rotation itself is playing, and come back when you pause.</p>
+      <p>The diagrams are schematic. Sizes, counts, speeds and the strength of an effect are chosen to be seen, unless a readout gives a number, in which case the number comes from the equation named beside it. Animations pause when they leave the screen, and start paused if your system asks for reduced motion. Arrows that mark a rotation or a motion fade while the animation is showing it, and come back when you pause.</p>
       <h2>Sources</h2>
       <p>The authority throughout is the book. Fleming’s papers give more depth on particular points and are cited where a diagram draws on them:</p>
       <ul>{(Object.keys(PAPERS) as PaperId[]).map(id => <li key={id}><a href={paperHref(id)} target="_blank" rel="noreferrer"><cite>{PAPERS[id].title}</cite></a></li>)}</ul>

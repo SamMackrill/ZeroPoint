@@ -32,7 +32,7 @@ function CounterField({ x, y, inner, rings, sense, count = 9 }: { x: number; y: 
   if (Math.abs(sense) < 0.05) return null;
   return <g>{Array.from({ length: rings }, (_, k) => Array.from({ length: count + k * 2 }, (_, i) => {
     const [px, py] = polar(x, y, inner + k * 36, (i / (count + k * 2)) * 360 + k * 17);
-    return <Spin key={`${k}-${i}`} x={px} y={py} r={10} ccw={sense < 0} sweep={90 + 160 * Math.min(1, Math.abs(sense))} w={1.4} opacity={0.9 / (1 + k * 0.9)}/>;
+    return <Spin key={`${k}-${i}`} x={px} y={py} r={10} ccw={sense < 0} sweep={90 + 160 * Math.min(1, Math.abs(sense))} w={1.4} opacity={0.9 / (1 + k * 0.9)} steady/>;
   }))}</g>;
 }
 
@@ -49,7 +49,7 @@ function OrbitInField() {
     <Stage w={W} h={H} label={Math.abs(omega) < 0.05 ? 'A small body orbiting a larger one that is not rotating: no mattermagnetic force.' : `A small body orbiting ${orbit === 'ccw' ? 'counter-clockwise' : 'clockwise'} round a larger body rotating ${omega > 0 ? 'counter-clockwise' : 'clockwise'}. The mattermagnetic field points ${omega > 0 ? 'into' : 'out of'} the page and the force on the small body is ${inward > 0 ? 'toward' : 'away from'} the larger one.`}>
       <circle cx={cx} cy={cy} r={R} className="bk-s-faint" fill="none" strokeDasharray="3 6"/>
       <CounterField x={cx} y={cy} inner={78} rings={3} sense={omega}/>
-      <Body x={cx} y={cy} r={52} tone="plain"/>{Math.abs(omega) > 0.05 && <Spin x={cx} y={cy} r={24} ccw={omega > 0} sweep={270} tone="text" w={3}/>}<T x={cx + 34} y={cy - 26} tone="text" italic>ω</T>
+      <Body x={cx} y={cy} r={52} tone="plain"/>{Math.abs(omega) > 0.05 && <Spin x={cx} y={cy} r={24} ccw={omega > 0} sweep={270} tone="text" w={3} steady/>}<T x={cx + 34} y={cy - 26} tone="text" italic>ω</T>
       <Arrow x1={px} y1={py} x2={vx} y2={vy} tone="motion" w={2.4}/><T x={vx + 12} y={vy + 4} tone="motion" italic>υ</T>
       {Math.abs(omega) > 0.05 && <><BlockArrow x1={px} y1={py} x2={fx} y2={fy} thick={10}/><T x={fx + (fx < px ? -18 : 18)} y={fy + 18} tone="text" italic>F m</T></>}
       <Body x={px} y={py} r={15} tone="plain"/>
@@ -74,7 +74,7 @@ function PlanetSpinField() {
       <CounterField x={cx} y={cy} inner={104} rings={2} sense={omega} count={10}/>
       <Body x={cx} y={cy} r={72} tone="plain"/>
       <line x1={polar(cx, cy, 66, turned)[0]} y1={polar(cx, cy, 66, turned)[1]} x2={polar(cx, cy, 66, turned + 180)[0]} y2={polar(cx, cy, 66, turned + 180)[1]} className="bk-s-muted" strokeDasharray="4 6"/>
-      {Math.abs(omega) > 0.05 && <Still><Spin x={cx} y={cy} r={28} ccw={omega > 0} sweep={270} tone="text" w={3}/></Still>}<T x={cx + 40} y={cy - 30} tone="text" italic>ω</T>
+      {Math.abs(omega) > 0.05 && <Spin x={cx} y={cy} r={28} ccw={omega > 0} sweep={270} tone="text" w={3}/>}<T x={cx + 40} y={cy - 30} tone="text" italic>ω</T>
       {Math.abs(omega) > 0.05 && <><InOut x={590} y={90} out={omega < 0} r={12}/><T x={612} y={96} anchor="start" tone="b" size="lg">B m</T></>}
     </Stage>}>
     <Slider label="Rotation of the body, ω" value={omega} min={-1} max={1} step={0.05} onChange={setOmega} show={v => (Math.abs(v) < 0.05 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'counter-clockwise' : 'clockwise'}`)}/>
@@ -109,8 +109,8 @@ function SynchronousRotation() {
     <Stage w={W} h={H} label={`A planet moving up the page in its orbit, with the Sun to the left. Its orbital motion makes a field out of the page on the Sun's side and into the page on the far side. ${sun ? 'The Sun’s own rotational field, into the page, is stronger on the near side, so the planet’s rotation slows.' : 'Without the Sun’s field the two sides are equal and the rotation does not change.'}`}>
       <Arrow x1={110} y1={cy} x2={50} y2={cy} tone="muted" w={1.6}/><T x={120} y={cy - 12} anchor="start" size="sm">to the Sun</T>
       {grid.map(dy => <g key={dy}>
-        <Spin x={cx - 128} y={cy + dy} r={13} ccw sweep={220} w={1.6}/>
-        <Spin x={cx + 128} y={cy + dy} r={13} ccw={false} sweep={220} w={1.6}/>
+        <Spin x={cx - 128} y={cy + dy} r={13} ccw sweep={220} w={1.6} steady/>
+        <Spin x={cx + 128} y={cy + dy} r={13} ccw={false} sweep={220} w={1.6} steady/>
         {sun && <><InOut x={cx - 176} y={cy + dy} out={false} r={5 + 9 * inner} tone="b" opacity={0.9}/><InOut x={cx + 176} y={cy + dy} out={false} r={5 + 9 * outer} tone="b" opacity={0.9}/></>}
       </g>)}
       <T x={cx - 128} y={cy - 104} size="sm" tone="motion">orbital field: out of the page</T><T x={cx + 128} y={cy - 104} size="sm" tone="motion">orbital field: into the page</T>
@@ -203,7 +203,7 @@ function LorentzOnOrbit() {
     <Stage w={W} h={H} label={`A planet on an elliptical orbit round a rotating sun. The mattermagnetic force on it is at right angles to its velocity and ${Math.round(off)} degrees away from the direction of the sun. ${k > 0 ? 'With this force added the ellipse precesses.' : 'With no such force the ellipse is closed.'}`}>
       <Line d={pathThrough(orbit.map(screen))} tone="muted" w={1.4}/>
       {k > 0 && orbit.slice(0, perOrbit).filter((_, n) => n % Math.round(perOrbit / 10) === 0).map((q, n) => { const [x, y] = screen(q), m = Math.hypot(q.fx, q.fy) || 1, len = 14 + 26 * Math.min(1, m / (k * 9)); return <Arrow key={n} x1={x} y1={y} x2={x + (q.fy / m) * len} y2={y + (q.fx / m) * len} tone="text" w={1.6} head={7}/>; })}
-      <Body x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={15} tone="matter"/><Spin x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={25} ccw sweep={230} tone="text"/>
+      <Body x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={15} tone="matter"/><Spin x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={25} ccw sweep={230} tone="text" steady/>
       <Arrow x1={px} y1={py} x2={px + p.vy * 26} y2={py + p.vx * 26} tone="motion" w={2.2}/>
       {k > 0 && <BlockArrow x1={px} y1={py} x2={px + (p.fy / (Math.hypot(p.fx, p.fy) || 1)) * 44} y2={py + (p.fx / (Math.hypot(p.fx, p.fy) || 1)) * 44} thick={8}/>}
       <Line d={`M${px} ${py} L${screen({ x: 0, y: 0 })[0]} ${screen({ x: 0, y: 0 })[1]}`} tone="faint" dash="3 4"/>
@@ -266,9 +266,9 @@ function ParallelStars() {
     <Stage w={W} h={H} label={`Two stars moving ${same ? 'in the same direction' : 'in opposite directions'} side by side. Their mattermagnetic fields ${same ? 'oppose each other in the space between, and the stars are drawn together' : 'add in the space between, and the stars are pushed apart'}.`}>
       <Body x={x} y={y1} r={22} tone="plain"/><Body x={x2} y={y2} r={22} tone="plain"/>
       {speed > 0.05 && <>
-        <Arrow x1={x - 28} y1={y1} x2={x - 28 - 70 * speed} y2={y1} tone="motion" w={2.6}/><T x={x - 110 - 70 * (speed - 1)} y={y1 - 10} tone="motion" italic>υ</T>
-        <Arrow x1={x2 + (same ? -28 : 28)} y1={y2} x2={x2 + (same ? -28 - 70 * speed : 28 + 70 * speed)} y2={y2} tone="motion" w={2.6}/>
-        <Spin x={mid + 40} y={cy - 22} r={15} ccw sweep={230} w={1.8}/><Spin x={mid + 40} y={cy + 22} r={15} ccw={!same} sweep={230} w={1.8}/>
+        <Still><Arrow x1={x - 28} y1={y1} x2={x - 28 - 70 * speed} y2={y1} tone="motion" w={2.6}/><T x={x - 110 - 70 * (speed - 1)} y={y1 - 10} tone="motion" italic>υ</T></Still>
+        <Still><Arrow x1={x2 + (same ? -28 : 28)} y1={y2} x2={x2 + (same ? -28 - 70 * speed : 28 + 70 * speed)} y2={y2} tone="motion" w={2.6}/></Still>
+        <Spin x={mid + 40} y={cy - 22} r={15} ccw sweep={230} w={1.8} steady/><Spin x={mid + 40} y={cy + 22} r={15} ccw={!same} sweep={230} w={1.8} steady/>
         <BlockArrow x1={mid - 30} y1={y1 + 14} x2={mid - 30} y2={y1 + 14 + (same ? 1 : -1) * 34 * Math.min(1.4, speed * speed)} thick={9}/><BlockArrow x1={mid - 30} y1={y2 - 14} x2={mid - 30} y2={y2 - 14 - (same ? 1 : -1) * 34 * Math.min(1.4, speed * speed)} thick={9}/>
         <T x={mid - 54} y={cy + 5} tone="text" italic>F</T>
       </>}

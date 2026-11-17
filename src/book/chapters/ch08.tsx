@@ -1,6 +1,6 @@
 // Chapter 8: The Mattermagnetic Field (PDF pp. 70–80). Figures 8-1 to 8-6.
 import { useRef, useState } from 'react';
-import { Action, Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
+import { Action, Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { HandRule } from './shared';
@@ -87,11 +87,11 @@ function PrecessingTop() {
   return <Diagram stage={
     <Stage w={W} h={H} label={`A top seen from above, spinning ${clockwise ? 'clockwise' : 'counter-clockwise'}. It precesses round the point where its tip meets the surface, also ${clockwise ? 'clockwise' : 'counter-clockwise'}.`}>
       <circle cx={cx} cy={cy} r={R * 0.7} className="bk-s-muted" fill="none" strokeDasharray="7 7"/>
-      <Still><Spin x={cx} y={cy} r={R * 0.7 + 22} ccw={!clockwise} from={a + sense * 20} sweep={50} tone="muted"/></Still>
+      <Spin x={cx} y={cy} r={R * 0.7 + 22} ccw={!clockwise} from={a + sense * 20} sweep={50} tone="muted"/>
       <path d={`M${cx} ${cy} L${p1x} ${p1y} L${p2x} ${p2y} Z`} className="bk-body bk-body-plain"/>
       <circle cx={hx} cy={hy} r={20} className="bk-body bk-body-plain"/>
       <line x1={hx} y1={hy} x2={polar(hx, hy, 16, state.current.spun)[0]} y2={polar(hx, hy, 16, state.current.spun)[1]} className="bk-s-motion" strokeWidth="2.5"/>
-      <Still><Spin x={hx} y={hy} r={27} ccw={!clockwise} sweep={240}/></Still>
+      <Spin x={hx} y={hy} r={27} ccw={!clockwise} sweep={240}/>
       <circle cx={mx} cy={my} r={6} className="bk-f-mark"/>
       <circle cx={cx} cy={cy} r={4} className="bk-f-text"/><T x={cx - 10} y={cy + 22} anchor="end" size="sm">tip</T>
       {field && <>

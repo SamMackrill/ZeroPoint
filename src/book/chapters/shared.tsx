@@ -123,11 +123,11 @@ export function SpinRow({ kind, current, angle, flow, t, field }: { kind: 'elect
       return <g key={i}>
         <Zepton x={x} y={top - 62} angle={-90 + angle} len={38} signs={false} opacity={seen} polarity={polarity}/>
         <Zepton x={x} y={bottom + 62} angle={90 - angle} len={38} signs={false} opacity={seen} polarity={polarity}/>
-        {moving && i % 2 === 0 && <><Still><Spin x={x} y={top - 62} r={26} ccw={current > 0} sweep={70 + 150 * Math.min(1, Math.abs(current))} opacity={0.8}/></Still><Still><Spin x={x} y={bottom + 62} r={26} ccw={current < 0} sweep={70 + 150 * Math.min(1, Math.abs(current))} opacity={0.8}/></Still></>}
+        {moving && i % 2 === 0 && <><Spin x={x} y={top - 62} r={26} ccw={current > 0} sweep={70 + 150 * Math.min(1, Math.abs(current))} opacity={0.8}/><Spin x={x} y={bottom + 62} r={26} ccw={current < 0} sweep={70 + 150 * Math.min(1, Math.abs(current))} opacity={0.8}/></>}
         {field && moving && i % 2 === 1 && <><InOut x={x} y={top - 62 - 34} out={current > 0} r={7}/><InOut x={x} y={bottom + 62 + 34} out={current < 0} r={7}/></>}
       </g>;
     })}
-    {moving && <Arrow x1={W / 2 - Math.sign(current) * 40} y1={top - 14} x2={W / 2 + Math.sign(current) * 40} y2={top - 14} tone="motion" w={2}/>}
+    {moving && <Still><Arrow x1={W / 2 - Math.sign(current) * 40} y1={top - 14} x2={W / 2 + Math.sign(current) * 40} y2={top - 14} tone="motion" w={2}/></Still>}
   </g>;
 }
 

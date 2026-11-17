@@ -1,6 +1,6 @@
 // Chapter 20: The Origin of the Speed of Light (PDF pp. 151–152). No figures: two explorers.
 import { useMemo, useState } from 'react';
-import { Arrow, Diagram, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Zepton, clamp, deg, fmt, rad, rng, usePlayback } from '../kit';
+import { Arrow, Diagram, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Zepton, clamp, deg, fmt, rad, rng, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -22,7 +22,7 @@ function Torque() {
         <Zepton x={x} y={y} angle={(i % 2 ? -1 : 1) * (angle - z.lag) * (z.r > 100 ? 0.45 : 0.75)} len={24} oval={false} signs={false} opacity={0.5 + 0.4 * clamp(torque / 2.4)}/>
       </g>; })}
       <Zepton x={cx} y={cy} angle={angle} len={62} emphasis="key" signs/>
-      <Still><Spin x={cx} y={cy} r={46} ccw sweep={60 + 220 * rate}/></Still>
+      <Spin x={cx} y={cy} r={46} ccw sweep={60 + 220 * rate}/>
       <rect x={560} y={70} width={30} height={220} className="bk-fill-soft"/><rect x={560} y={290 - 220 * rate} width={30} height={220 * rate} className="bk-f-accent"/>
       <T x={575} y={312} size="sm" tone="accent">speed of light</T><T x={604} y={290 - 220 * rate + 5} anchor="start" tone="accent">{fmt(rate, 3)} c₀</T>
       {torque < 0.3 && <T x={cx} y={30} tone="danger" size="sm">with almost no field to resist it, a zepton would rotate almost without limit</T>}
@@ -58,7 +58,7 @@ function Refraction() {
       <Line d={`M${start[0]} ${start[1]} L${bx} ${by} L${bx + outDir[0] * down} ${by + outDir[1] * down}`} tone="e" w={2}/>
       {marks(up, 44, inDir, start, p).map(([x, y], i) => <circle key={`a${i}`} cx={x} cy={y} r={5} className="bk-f-mark"/>)}
       {marks(down, 44 * speed, outDir, [bx, by], p).map(([x, y], i) => <circle key={`b${i}`} cx={x} cy={y} r={5} className="bk-f-mark"/>)}
-      {n > 1.01 && <Spin x={bx} y={by} r={26} ccw={false} from={90 + incidence} sweep={Math.max(8, (incidence - inside) * 2.2)} tone="text" w={2.4}/>}
+      {n > 1.01 && <Spin x={bx} y={by} r={26} ccw={false} from={90 + incidence} sweep={Math.max(8, (incidence - inside) * 2.2)} tone="text" w={2.4} steady/>}
       <T x={60} y={by - 12} anchor="start" size="sm">vacuum: c₀</T><T x={60} y={by + 24} anchor="start" size="sm">{named ? named.name : 'medium'}: {fmt(speed, 3)} c₀</T>
       <T x={bx + 60} y={H - 34} anchor="start" size="sm" tone="mark">● one wavelength apart</T>
     </Stage>}>
