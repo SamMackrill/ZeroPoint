@@ -23,6 +23,18 @@ export const CHAPTERS: ChapterMeta[] = [
   { n: 13, title: 'Solar and Planetary Dynamos', pages: [110, 112], figures: figs(13, 1), blurb: 'How a rotating body with layered matter could drive its magnetic field.', load: () => import('./chapters/ch13') },
   { n: 14, title: 'The Matter Force', pages: [113, 116], figures: [], blurb: 'The repulsive force between bodies of matter, written like Coulomb’s law.', load: () => import('./chapters/ch14') },
   { n: 15, title: 'The Electro-Matter Force', pages: [117, 121], figures: [], blurb: 'Electric and matter forces unified in one set of equations.', load: () => import('./chapters/ch15') },
+  { n: 16, title: 'Mass', pages: [122, 128], figures: figs(16, 2), blurb: 'Mass as the zero-point energy a particle’s shell shuts out.', load: () => import('./chapters/ch16') },
+  { n: 17, title: 'Gravity', pages: [129, 136], figures: figs(17, 5), blurb: 'Push gravity revisited: a van der Waals shadow between bodies of matter.', load: () => import('./chapters/ch17') },
+  { n: 18, title: 'The Distance Limitation of Gravity', pages: [137, 141], figures: figs(18, 2), blurb: 'Why the path of gravity narrows, and gravity fades at great distance.', load: () => import('./chapters/ch18') },
+  { n: 19, title: 'The Speed of the Zero-Point Universe', pages: [142, 150], figures: figs(19, 4), blurb: 'Fields that spread far faster than light; a single photon and two slits.', load: () => import('./chapters/ch19') },
+  { n: 20, title: 'The Origin of the Speed of Light', pages: [151, 152], figures: [], blurb: 'The speed of light as a property of the zepton medium.', load: () => import('./chapters/ch20') },
+  { n: 21, title: 'Æther and Michelson-Morley', pages: [153, 161], figures: figs(21, 1), blurb: 'What the interferometer did and did not test.', load: () => import('./chapters/ch21') },
+  { n: 22, title: 'Relativity is Not Special', pages: [162, 175], figures: figs(22, 3), blurb: 'Light measured from moving frames in a zero-point rest frame; the Sagnac effect.', load: () => import('./chapters/ch22') },
+  { n: 23, title: 'Gravity, Energy, and Light', pages: [176, 184], figures: figs(23, 2), blurb: 'The Shapiro delay and the bending of starlight as changes in the medium.', load: () => import('./chapters/ch23') },
+  { n: 24, title: 'Standard Tests of Gravitational Theory', pages: [185, 191], figures: [], blurb: 'The classical tests set against the zero-point account.', load: () => import('./chapters/ch24') },
+  { n: 25, title: 'The Strong Nuclear Force', pages: [192, 200], figures: figs(25, 2), blurb: 'The strong force as a van der Waals shadow between particles at contact distance.', load: () => import('./chapters/ch25') },
+  { n: 26, title: 'The Weak Interaction', pages: [201, 206], figures: figs(26, 1), blurb: 'Decay as an interaction with the zero-point field.', load: () => import('./chapters/ch26') },
+  { n: 27, title: 'Conclusion', pages: [207, 209], figures: [], blurb: 'The zero-point universe in summary.', load: () => import('./chapters/ch27') },
 ];
 
 /** The chapter with a number, if the book has one. */

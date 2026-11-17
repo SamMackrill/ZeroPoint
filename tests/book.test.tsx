@@ -30,8 +30,9 @@ beforeAll(async () => {
 });
 
 describe('book companion: structure', () => {
-  it('lists the chapters in order', () => {
-    expect(CHAPTERS.map(c => c.n)).toEqual(Array.from({ length: CHAPTERS.length }, (_, i) => i));
+  it('lists the chapters in order, with the book’s 86 figures', () => {
+    expect(CHAPTERS.map(c => c.n)).toEqual(Array.from({ length: 28 }, (_, i) => i));
+    expect(ALL_FIGURES).toHaveLength(86);
     for (let i = 1; i < CHAPTERS.length; i++) expect(CHAPTERS[i].pages[0]).toBeGreaterThan(CHAPTERS[i - 1].pages[1]);
   });
 
@@ -90,7 +91,7 @@ describe('book companion: links into the laboratories', () => {
       for (const link of content.labs ?? []) links.push([`chapter ${content.n}`, link]);
       for (const item of content.items) for (const link of item.labs ?? []) links.push([item.id, link]);
     }
-    expect(links.length).toBeGreaterThan(0);
+    expect(links.length).toBeGreaterThan(40);
     for (const [where, link] of links) {
       const definition = EXPERIMENTS.find(d => d.id === link.lab)!;
       const resolved = resolveUrl(definition, decodeUrl(labHash(link))!);
@@ -104,9 +105,7 @@ describe('book companion: pages', () => {
   /** Every in-page route a rendered page links to. */
   const routes = (container: HTMLElement) => [...container.querySelectorAll('a[href^="#/"]')].map(a => a.getAttribute('href')!);
   const valid = (hash: string) => {
-    const route = parseRoute(hash), later = /^#\/ch\/(\d+)/.exec(hash);
-    // A chapter after the last one listed arrives in a later layer of the stack; its links are checked then.
-    if (later && Number(later[1]) > CHAPTERS.at(-1)!.n && Number(later[1]) <= 27) return true;
+    const route = parseRoute(hash);
     if (route.page === 'chapter') return !route.item || loaded.get(route.n)!.items.some(i => i.id === route.item);
     if (route.page === 'future') return !route.id || FUTURE.some(f => f.id === route.id);
     return route.page !== 'contents' || hash === '#/';
@@ -127,7 +126,7 @@ describe('book companion: pages', () => {
       for (const hash of routes(container)) seen.add(hash);
       unmount();
     }
-    expect(seen.size).toBeGreaterThan(10);
+    expect(seen.size).toBeGreaterThan(100);
     expect([...seen].filter(h => !valid(h))).toEqual([]);
   });
 });
