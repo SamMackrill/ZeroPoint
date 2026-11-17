@@ -278,7 +278,7 @@ function ParallelStars() {
     <Slider label="Their speed, υ" value={speed} min={0} max={1.5} step={0.05} onChange={setSpeed} show={v => `${fmt(v, 2)} ×`}/>
     <PlayBar play={play} label="the stars"/>
     <Readout label="Force between them" value={speed < 0.05 ? 'none from motion' : `${fmt(Math.abs(force), 2)} × , ${same ? 'together' : 'apart'}`} tone="force"/>
-    <Readout label="Distance between them" value={`${Math.round(s.gap)} units`}/>
+    <Readout label="Separation across their paths" value={`${Math.round(s.gap)} units`}/>
     <Remark>{same ? 'Like parallel conductors with currents in the same direction, the stars are attracted. This is what Fleming says forms the spiral arms.' : 'By the same analogy with conductors, opposite motion repels.'}</Remark>
   </Diagram>;
 }

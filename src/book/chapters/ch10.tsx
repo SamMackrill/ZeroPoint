@@ -37,6 +37,14 @@ function CurrentInertia() {
 /** The velocity of a body with matter charge m and momentum p, as a fraction of the speed the zeptons allow. */
 export const bodyVelocity = (p: number, m: number) => { const u = p / m; return u / Math.sqrt(1 + u * u); };
 
+/** A speed as a fraction of c, with enough digits to show that it stays below c however close it comes. */
+export function speedOfLight(v: number) {
+  const u = Math.abs(v);
+  if (u < 0.99) return `${fmt(u, 2)} c`;
+  const gap = 1 - u;
+  return gap < 1e-9 ? 'within a billionth of c' : `${u.toFixed(Math.ceil(-Math.log10(gap)) + 1)} c`;
+}
+
 /** Figure 10-2: matter in motion sets zeptons rotating in proportion to its momentum, and their rotation keeps it moving. */
 function MatterInertia() {
   const [matter, setMatter] = useState(2);
@@ -60,9 +68,9 @@ function MatterInertia() {
     <Action onClick={() => push(-1)}>Push back for a moment</Action>
     <Slider label="Matter charge of the body, m" value={matter} min={1} max={5} step={0.5} onChange={setMatter} unit="units"/>
     <PlayBar play={play} label="the moving matter"/>
-    <Readout label="Velocity, υ" value={`${fmt(Math.abs(v), 2)} c`}/>
-    <Readout label="Momentum, mυ" value={fmt(Math.abs(s.p), 2)} tone="force"/>
-    <Readout label="Rotation of the zeptons" value={`${fmt(Math.abs(s.p), 2)} (follows mυ)`} tone="b"/>
+    <Readout label="Velocity, υ" value={speedOfLight(v)}/>
+    <Readout label="Momentum, p" value={fmt(Math.abs(s.p), 2)} tone="force"/>
+    <Readout label="Rotation of the zeptons" value={`${fmt(Math.abs(s.p), 2)} (follows p)`} tone="b"/>
     <Remark>{s.push === 0 ? (Math.abs(s.p) < 0.05 ? 'At rest it stays at rest. Push it.' : 'No push, and it keeps moving: the rotating zeptons induce the matter to move, as the matter induced them to rotate.') : 'The resistance you are pushing against is the zeptons being made to change their rotation.'}</Remark>
   </Diagram>;
 }
@@ -129,7 +137,7 @@ const chapter: ChapterContent = {
         <Eq n="10-1"><V>B</V><sub>m</sub> = <Frac top={<>μ<sub>0m</sub><V>m</V></>} bottom="4π"/> <Frac top={<><V>υ</V> × r̂</>} bottom={<><V>r</V>²</>}/></Eq>
       </>,
       tryThis: ['Push forward once and let go. The body keeps its velocity, and the zeptons keep turning: neither stops the other.', 'Push back the same amount: it comes to rest.', 'Raise the matter charge and push again: the same push gives the same momentum and the same rotation, but less velocity.', 'Keep pushing forward. The momentum and the rotation go on rising while the velocity closes on c and never reaches it.'],
-      notes: <p>The symbols ⊙ and ⊗ mark the mattermagnetic field as Figure 11-4 states it: out of the page above matter moving to the right, into it below. How the velocity approaches the limit as momentum rises is a display choice (the usual relativistic form); Fleming says only that the zeptons cannot rotate faster.</p>,
+      notes: <p>The symbols ⊙ and ⊗ mark the mattermagnetic field as Figure 11-4 states it: out of the page above matter moving to the right, into it below. How the velocity approaches the limit as momentum rises is a display choice (the usual relativistic form); Fleming says only that the zeptons cannot rotate faster. So the momentum shown is p = mυ/√(1 − υ²/c²), which is Fleming’s mυ at low speeds and goes on rising as υ approaches c.</p>,
     },
     {
       kind: 'figure', id: '10-3', page: 88, title: 'Why a body at rest stays at rest',

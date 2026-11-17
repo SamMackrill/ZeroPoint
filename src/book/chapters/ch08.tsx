@@ -156,16 +156,17 @@ function MovingSourceField() {
   const [p, setP] = useState({ x: 480, y: 130 });
   const H = 380, sx = 280, sy = 300, dx = p.x - sx, dy = p.y - sy, r = Math.hypot(dx, dy), alpha = deg(Math.acos(clamp(-dy / (r || 1), -1, 1)));
   // At the source itself the inverse square has no value, and a body at rest makes no field: both read as none.
-  const strength = r < 1 || speed === 0 ? 0 : speed * movingField(r, alpha, 150), right = dx > 0, name = matter ? 'B_m' : 'B';
+  const strength = r < 1 || speed === 0 ? 0 : speed * movingField(r, alpha, 150), none = strength < 1e-6, right = dx > 0, name = matter ? 'B_m' : 'B';
   const arc = pathThrough(Array.from({ length: 20 }, (_, i) => polar(sx, sy, 56, 90 - (Math.sign(dx) || 1) * (alpha * i) / 19)));
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A ${matter ? 'body of matter' : 'positive charge'} moving up the page. At the point marked, ${Math.round(r)} units away at ${Math.round(alpha)} degrees from the motion, the ${matter ? 'mattermagnetic' : 'magnetic'} field points ${right ? 'into' : 'out of'} the page with relative strength ${fmt(strength, 2)}.`}>
+    <Stage w={W} h={H} label={`A ${matter ? 'body of matter' : 'positive charge'} moving up the page. At the point marked, ${Math.round(r)} units away at ${Math.round(alpha)} degrees from the motion, ${none ? `there is no ${matter ? 'mattermagnetic' : 'magnetic'} field` : `the ${matter ? 'mattermagnetic' : 'magnetic'} field points ${right ? 'into' : 'out of'} the page with relative strength ${fmt(strength, 2)}`}.`}>
       <Arrow x1={sx} y1={sy} x2={sx} y2={sy - 60 - 110 * speed} tone="motion" w={3}/><T x={sx - 14} y={sy - 90} anchor="end" tone="motion" size="lg">v</T>
       <Arrow x1={sx} y1={sy} x2={p.x} y2={p.y} tone="mark" w={2.2}/><T x={(sx + p.x) / 2 + 12} y={(sy + p.y) / 2 + 16} tone="mark" anchor="start" size="lg">r</T>
       <Line d={arc} tone="accent" w={1.6}/><T x={polar(sx, sy, 74, 90 - (Math.sign(dx) || 1) * alpha / 2)[0]} y={polar(sx, sy, 74, 90 - (Math.sign(dx) || 1) * alpha / 2)[1]} tone="accent">α</T>
       {matter ? <Body x={sx} y={sy} r={18}/> : <Charge x={sx} y={sy} sign={1} r={18}/>}
       <Drag x={p.x} y={p.y} onMove={(x, y) => setP({ x, y })} bounds={{ x0: 40, y0: 30, x1: W - 40, y1: H - 30 }} label="Point where the field is measured">
-        <InOut x={p.x} y={p.y} out={!right} r={6 + 16 * clamp(strength / 2)} tone="b"/>
+        {/* No field, no direction: an empty ring marks the point instead of ⊙ or ⊗. */}
+        {none ? <circle cx={p.x} cy={p.y} r={7} className="bk-s-muted" fill="none" strokeWidth="1.5"/> : <InOut x={p.x} y={p.y} out={!right} r={6 + 16 * clamp(strength / 2)} tone="b"/>}
       </Drag>
       <T x={p.x + 30} y={p.y - 18} anchor="start" tone="b" size="lg">{name}</T>
       <T x={30} y={H - 14} anchor="start" size="sm">⊗ into the page on the right of the motion · ⊙ out of it on the left</T>
@@ -174,7 +175,7 @@ function MovingSourceField() {
     <Slider label="Velocity" value={speed} min={0} max={1.5} step={0.05} onChange={setSpeed} show={v => `${fmt(v, 2)} ×`}/>
     <Readout label="Distance r" value={`${Math.round(r)} units`}/>
     <Readout label="Angle α" value={`${Math.round(alpha)}°`}/>
-    <Readout label={`${name}, relative`} value={`${fmt(strength, 2)} ${speed === 0 || alpha < 1 ? '' : right ? 'into the page' : 'out of the page'}`} tone="b"/>
+    <Readout label={`${name}, relative`} value={none ? 'none' : `${fmt(strength, 2)} ${right ? 'into the page' : 'out of the page'}`} tone="b"/>
     <Remark>{matter ? 'With matter in place of charge the numerator is mυ: the momentum of the body.' : 'Drag the point. The field is strongest beside the charge, falls with the square of the distance, and is zero straight ahead.'}</Remark>
   </Diagram>;
 }
@@ -211,7 +212,10 @@ const chapter: ChapterContent = {
         <p>His account comes at the end of the chapter. A clockwise top produces a mattermagnetic field <Q>directed downward along its axis of rotation</Q>. Gravity gives the off-balance top a velocity toward Earth, and <Q>This produces a Lorentz Force, F<sub>m</sub> = m (υ x B<sub>m</sub>). Since the force is a result of a cross product, the movement of the top is perpendicular to the motion due to the gravitational acceleration</Q> (<Pg n={80}/>).</p>
       </>,
       tryThis: ['Reverse the spin: the precession reverses with it.', 'Spin it faster. It precesses more slowly, as Equation 8-5 requires for the same torque and a larger L.', 'Turn on the mattermagnetic account to see the three things Fleming’s force is built from, and that the force lies along the circle.'],
-      notes: <p>Fleming gives the force as <V>m</V>(<V>υ</V> × <V>B</V><sub>m</sub>) and says it is at 90 degrees to gravity’s acceleration; he does not work through its sign. The force arrow is drawn the way the top is seen to precess. The top is not shown slowing down and falling.</p>,
+      notes: <>
+        <p>Fleming gives the force as <V>m</V>(<V>υ</V> × <V>B</V><sub>m</sub>) and says it is at 90 degrees to gravity’s acceleration; he does not work through its sign. Taken literally with the field and velocity as he describes them (the field down the axis, toward the tip, for a clockwise top, and the velocity downward), the cross product points the other way round the circle from the precession he describes, for either sense of spin. The force arrow is drawn the way he says the top precesses, and the sign is left as he leaves it.</p>
+        <p>The top is not shown slowing down and falling.</p>
+      </>,
     },
     {
       kind: 'figure', id: '8-4', page: 74, title: 'The right hand rule again: torque and angular momentum',
