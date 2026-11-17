@@ -13,6 +13,14 @@ Open it at `/book/` on the dev server (`npm run dev`) or the preview, or at `boo
 
 Routes are hashes, as in the laboratory: `#/` contents, `#/guide` how to read the diagrams, `#/ch/6` a chapter, `#/ch/6/6-10` a chapter scrolled to an item, `#/future` and `#/future/<id>`.
 
+## Appendices
+
+The book has no reference list and no index of its own. Its references are endnotes, printed at the end of each chapter and numbered 1 to 133 through the book. The companion adds two appendices.
+
+- **References by chapter** (`#/references`, and `#/references/N` for chapter N): all 133 notes as printed, grouped by chapter. Each note lists the pages whose text cites it. DOIs open at doi.org and arXiv paths at their abstracts. Each chapter page also ends with its own notes, folded away until opened.
+
+  The notes come from the PDF. `scripts/book-references.py` (needs PyMuPDF) separates them from the body text by font size: 15 pt body, 11.3 pt notes, 8.7 pt superscript citations. It writes `src/book/appendix/references.json`. The wording is Fleming's, slips included.
+
 ## Conventions
 
 The diagrams follow the yardstick of the [fidelity review](fleming-fidelity-report.html): Fleming's own text and figures, not consensus physics.

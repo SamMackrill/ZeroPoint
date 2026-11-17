@@ -1040,6 +1040,155 @@ input {
   padding-top: 4px;
 }
 
+/* Appendices: references by chapter */
+.bk-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.bk-appendix-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin-top: 24px;
+}
+
+.bk-search {
+  display: flex;
+  flex: 1 1 320px;
+  align-items: center;
+  gap: 10px;
+  max-width: 520px;
+}
+
+.bk-search span {
+  font-family: var(--mono);
+  font-size: var(--fs-ui);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+.bk-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 12px;
+  color: var(--text);
+  background: var(--bg-1);
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+}
+
+.bk-appendix-count,
+.bk-appendix-empty {
+  font-size: var(--fs-body);
+  color: var(--text-3);
+}
+
+.bk-appendix-section {
+  margin-top: 32px;
+  scroll-margin-top: 72px;
+}
+
+.bk-appendix-section h2 {
+  font-size: 21px;
+  letter-spacing: -0.2px;
+}
+
+.bk-appendix-section h2 a {
+  color: var(--text);
+  text-decoration: none;
+}
+
+.bk-appendix-section h2 a:hover {
+  color: var(--accent);
+}
+
+.bk-appendix-label {
+  margin-right: 6px;
+  font-family: var(--mono);
+  font-size: var(--fs-ui);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
+.bk-ref-list {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bk-ref-list > li {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 72px;
+}
+
+.bk-ref-n {
+  font-family: var(--mono);
+  font-size: var(--fs-body);
+  color: var(--accent);
+  text-align: right;
+}
+
+.bk-ref-text {
+  max-width: 78ch;
+  color: var(--text-2);
+  overflow-wrap: anywhere;
+}
+
+.bk-ref-cited {
+  margin-top: 4px;
+  font-size: var(--fs-body);
+  color: var(--text-3);
+}
+
+.bk-chapter-notes {
+  margin-top: 36px;
+}
+
+.bk-chapter-notes summary {
+  cursor: pointer;
+}
+
+.bk-chapter-notes summary .bk-section {
+  display: inline;
+}
+
+.bk-chapter-notes-count {
+  margin-left: 8px;
+  font-family: var(--mono);
+  font-size: var(--fs-ui);
+  color: var(--text-3);
+}
+
+.bk-chapter-notes-all {
+  margin-top: 10px;
+  font-size: var(--fs-body);
+}
+
+/* Between the drawer and a wide screen the header keeps its links on one row: the subtitle goes, the links close up. */
+@media (max-width: 1240px) {
+  .bk-brand-sub {
+    display: none;
+  }
+
+  .bk-top-links {
+    flex-wrap: nowrap;
+    gap: 4px 14px;
+    white-space: nowrap;
+  }
+}
+
 /* Narrow screens: the chapter list becomes a drawer, and cards stack. */
 @media (max-width: 1000px) {
   .bk-layout {
