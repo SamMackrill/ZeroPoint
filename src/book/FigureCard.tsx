@@ -1,7 +1,7 @@
 // One item of a chapter page: the figure's number and caption, the interactive diagram, what the text says, what to
 // try, what is a display choice, Fleming's own figure for comparison, and links into the laboratories.
-import { useEffect, useRef, useState } from 'react';
-import { FigureVisible } from './kit/clock';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { FigureRunning, FigureVisible, RunningReport } from './kit/clock';
 import { BOOK_PDF } from './labs';
 import { LabLinks, Pg } from './prose';
 import type { BookItem } from './types';
@@ -26,9 +26,20 @@ function useOnScreen<T extends Element>() {
   return [ref, visible] as const;
 }
 
+/** Whether any clock in a figure is playing, as its clocks report it (see RunningReport). */
+function useRunning() {
+  const clocks = useRef(new Set<object>()), [running, setRunning] = useState(false);
+  const report = useCallback((key: object, on: boolean) => {
+    if (on) clocks.current.add(key); else clocks.current.delete(key);
+    setRunning(clocks.current.size > 0);
+  }, []);
+  return [running, report] as const;
+}
+
 /** Render one figure or explorer of a chapter. */
 export function FigureCard({ item, chapter }: { item: BookItem; chapter: number }) {
   const [ref, visible] = useOnScreen<HTMLElement>();
+  const [running, report] = useRunning();
   const figure = item.kind === 'figure', { Diagram } = item;
   const name = figure ? `Figure ${item.id}` : 'Explorer';
   return <article ref={ref} id={itemAnchor(item.id)} className={`bk-card bk-card-${item.kind}`} aria-labelledby={`${itemAnchor(item.id)}-title`} data-testid={`item-${item.id}`}>
@@ -37,7 +48,7 @@ export function FigureCard({ item, chapter }: { item: BookItem; chapter: number 
       <h3 id={`${itemAnchor(item.id)}-title`}>{item.title}</h3>
       {item.caption && <blockquote className="bk-caption"><span className="bk-caption-label">Fleming’s caption</span>{item.caption}</blockquote>}
     </header>
-    <FigureVisible.Provider value={visible}><Diagram/></FigureVisible.Provider>
+    <FigureVisible.Provider value={visible}><RunningReport.Provider value={report}><FigureRunning.Provider value={running}><Diagram/></FigureRunning.Provider></RunningReport.Provider></FigureVisible.Provider>
     <div className="bk-card-body">
       <div className="bk-card-text">
         <section><h4>In the text</h4><div className="bk-prose">{item.text}</div></section>

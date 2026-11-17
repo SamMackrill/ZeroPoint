@@ -1,6 +1,6 @@
 // Chapter 22: Relativity is Not Special (PDF pp. 162–175). Figures 22-1 to 22-3.
 import { useRef, useState } from 'react';
-import { Arrow, Diagram, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, fmt, pathThrough, polar, usePlayback } from '../kit';
+import { Arrow, Diagram, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, fmt, pathThrough, polar, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -78,7 +78,7 @@ function Sagnac() {
   return <Diagram stage={
     <Stage w={W} h={H} label={`A sphere rotating with a rim speed of ${fmt(v, 2)} of the speed of light, and an emitter on its surface that sends one photon each way round. The photon sent against the rotation is detected after ${fmt(times.against, 3)} of the time light takes to go round, and the other after ${fmt(times.with, 3)}.`}>
       <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-plain"/>
-      {v > 0.01 && <Spin x={cx} y={cy} r={22} ccw sweep={250} tone="text" w={2.4}/>}<T x={cx + 30} y={cy - 18} tone="text" italic>ω</T>
+      <Still>{v > 0.01 && <Spin x={cx} y={cy} r={22} ccw sweep={250} tone="text" w={2.4}/>}<T x={cx + 30} y={cy - 18} tone="text" italic>ω</T></Still>
       <Line d={arc(pWith, R + 34)} tone="text" w={2}/><Line d={arc(pAgainst, R + 18)} tone="muted" w={2}/>
       <circle cx={at(pWith, R + 34)[0]} cy={at(pWith, R + 34)[1]} r={6} className="bk-f-text"/>
       <circle cx={at(pAgainst, R + 18)[0]} cy={at(pAgainst, R + 18)[1]} r={6} className="bk-f-mark"/>

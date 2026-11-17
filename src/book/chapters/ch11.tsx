@@ -1,6 +1,6 @@
 // Chapter 11: The Matter Dipole (PDF pp. 91–97). Figures 11-1 to 11-6.
 import { useMemo, useState } from 'react';
-import { Action, Arrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, bearing, polar, turn, usePlayback, type Source } from '../kit';
+import { Action, Arrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, bearing, polar, turn, usePlayback, type Source } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 import { TwoSources } from './shared';
@@ -55,7 +55,7 @@ function ZeptonPair({ rotating }: { rotating: boolean }) {
         {lobe(-46, true, eUp, eUp ? -1 : 1)}{lobe(-46, false, !eUp, eUp ? 1 : -1)}
         {lobe(46, true, pUp, pUp ? 1 : -1)}{lobe(46, false, !pUp, pUp ? -1 : 1)}
       </g>
-      {rotating && <Spin x={cx} y={cy} r={150} ccw sweep={300} tone="muted"/>}
+      {rotating && <Still><Spin x={cx} y={cy} r={150} ccw sweep={300} tone="muted"/></Still>}
       {!rotating && <><T x={cx - 46} y={H - 26} size="sm">electron-like</T><T x={cx + 46} y={H - 26} size="sm">proton-like</T></>}
       <T x={600} y={84} size="sm">net dipole</T><T x={560} y={110} tone="matter">matter</T>
       {matter !== 0 ? <Arrow x1={560} y1={cy + matter * 22} x2={560} y2={cy - matter * 22} tone="matter" w={4} head={13}/> : <T x={560} y={cy + 5} tone="muted">none</T>}
@@ -86,7 +86,7 @@ function MovingBody() {
       <Line d={`M${above.x} ${above.y} L${bx} ${y} L${below.x} ${below.y}`} tone="faint" dash="2 4"/>
       <Zepton x={above.x} y={above.y} angle={up} len={52} polarity="matter" signs/><Zepton x={below.x} y={below.y} angle={down} len={52} polarity="matter" signs/>
       {moving !== 0 && <>
-        <Spin x={above.x} y={above.y} r={38} ccw={moving > 0} from={moving > 0 ? 20 : 160} sweep={140}/><Spin x={below.x} y={below.y} r={38} ccw={moving < 0} from={moving > 0 ? -20 : 200} sweep={140}/>
+        <Still><Spin x={above.x} y={above.y} r={38} ccw={moving > 0} from={moving > 0 ? 20 : 160} sweep={140}/><Spin x={below.x} y={below.y} r={38} ccw={moving < 0} from={moving > 0 ? -20 : 200} sweep={140}/></Still>
         <InOut x={above.x + 78} y={above.y} out={moving > 0} r={10}/><InOut x={below.x + 78} y={below.y} out={moving < 0} r={10}/>
         <T x={above.x + 96} y={above.y + 5} anchor="start" tone="b">B_m {moving > 0 ? 'out of the page' : 'into the page'}</T><T x={below.x + 96} y={below.y + 5} anchor="start" tone="b">B_m {moving < 0 ? 'out of the page' : 'into the page'}</T>
         <Arrow x1={bx + moving * 26} y1={y} x2={bx + moving * 62} y2={y} tone="motion" w={2.4}/>
@@ -111,7 +111,7 @@ function RotatingBody() {
       <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-matter"/>
       {[0, 90].map(a => <line key={a} x1={polar(cx, cy, R - 6, turned + a)[0]} y1={polar(cx, cy, R - 6, turned + a)[1]} x2={polar(cx, cy, R - 6, turned + a + 180)[0]} y2={polar(cx, cy, R - 6, turned + a + 180)[1]} className="bk-s-muted" strokeWidth="1.5" strokeDasharray="4 6"/>)}
       <T x={cx} y={cy + 7} tone="text" size="lg">M</T>
-      {Math.abs(rate) > 0.05 && <Spin x={cx} y={cy} r={34} ccw={rate > 0} sweep={280} tone="text" w={3}/>}
+      {Math.abs(rate) > 0.05 && <Still><Spin x={cx} y={cy} r={34} ccw={rate > 0} sweep={280} tone="text" w={3}/></Still>}
       {Array.from({ length: n }, (_, i) => {
         const a = (i / n) * 360, [x, y] = polar(cx, cy, R + 46, a);
         // A zepton beside a moving surface turns like one gear against another: the opposite way to the body.

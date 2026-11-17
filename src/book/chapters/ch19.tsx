@@ -1,6 +1,6 @@
 // Chapter 19: The Speed of the Zero-Point Universe (PDF pp. 142–150). Figures 19-1 to 19-4.
 import { useMemo, useRef, useState } from 'react';
-import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, lerpAngle, polar, rng, usePlayback } from '../kit';
+import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Vector, Zepton, clamp, fmt, lerpAngle, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -136,7 +136,7 @@ function HalfTurn() {
   return <Diagram stage={
     <Stage w={W} h={H} label={`A zepton of relative frequency ${fmt(nu, 2)} turning through 180 degrees. Over its life it spans a distance equal to its wavelength, which is the speed of light divided by its frequency. Passing on a field needs only ${fmt(needed, 2)} degrees of that turn, so the field moves at ${fmt(fieldSpeed(needed), 2)} times the speed of light.`}>
       <Zepton x={cx} y={cy} angle={180 - 180 * u} len={d} open={Math.max(0.12, Math.sin(Math.PI * u))} polarity="matter" signs emphasis="key"/>
-      <Spin x={cx} y={cy - 12} r={d * 0.3 + 26} ccw={false} from={160} sweep={140}/>
+      <Still><Spin x={cx} y={cy - 12} r={d * 0.3 + 26} ccw={false} from={160} sweep={140}/></Still>
       <Arrow x1={cx - d / 2} y1={cy + 96} x2={cx + d / 2} y2={cy + 96} both tone="mark" w={1.6} head={7}/>
       <T x={cx} y={cy + 122} tone="mark" size="lg">d = λ = c/ν</T>
       <T x={cx} y={34} size="sm">turned {Math.round(u * 180)}° of 180°</T>

@@ -1,6 +1,6 @@
 // Chapter 4: What is a Virtual Photon? (PDF pp. 33–42). Figures 4-1 to 4-9.
 import { useMemo, useState } from 'react';
-import { Arrow, Charge, Choice, Diagram, Drag, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, bearing, clamp, fmt, lerpAngle, pathThrough, polar, rng, usePlayback } from '../kit';
+import { Arrow, Charge, Choice, Diagram, Drag, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Vector, Zepton, bearing, clamp, fmt, lerpAngle, pathThrough, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -183,7 +183,7 @@ function PairInPhoton() {
       </>}
       {turning && <>
         <Zepton x={cx} y={y} angle={phase === 1 ? -180 * k : phase === 0 ? 0 : -180} len={76} open={phase === 1 ? Math.max(0.25, Math.sin(Math.PI * k)) : 0.25} oval={false} signs opacity={phase === 1 ? 1 : 0.35}/>
-        {phase === 1 && <Spin x={cx} y={y} r={48} ccw={false} from={150} sweep={120}/>}
+        {phase === 1 && <Still><Spin x={cx} y={y} r={48} ccw={false} from={150} sweep={120}/></Still>}
       </>}
       <T x={cx} y={228} size="sm">{turning ? 'Read as one pair turning half a turn: its electron moves forward, its positron back.' : 'The loop is the pair; the wavy line is the photon either side of it.'}</T>
     </Stage>}>
@@ -208,7 +208,7 @@ function RotatingPair() {
   const trace = pathThrough(Array.from({ length: 61 }, (_, i) => [px + (pw * i) / 60, py - up * 70 * pairField(i * 3)] as const));
   return <Diagram stage={
     <Stage h={330} label={`A virtual electron-positron pair rotating ${cw ? 'clockwise' : 'counter-clockwise'}. Its electric field points ${up > 0 ? 'up' : 'down'} the page, toward its positive end, and its magnetic field points ${cw ? 'into' : 'out of'} the page.`}>
-      <Spin x={cx} y={cy} r={62} ccw={!cw} from={cw ? 150 : 210} sweep={100}/>
+      <Still><Spin x={cx} y={cy} r={62} ccw={!cw} from={cw ? 150 : 210} sweep={100}/></Still>
       <Zepton x={cx} y={cy} angle={angle} len={84} oval={false} signs/>
       <Vector x={cx + 100} y={cy} angle={90 * up} len={12 + 78 * field} centred tone="e" w={3}/><T x={cx + 124} y={cy + 5} tone="e" size="lg" anchor="start">E</T>
       <InOut x={cx - 104} y={cy} out={!cw} r={7 + 9 * field} opacity={0.3 + 0.7 * field}/><T x={cx - 104} y={cy + 40} tone="b" size="lg">B</T>

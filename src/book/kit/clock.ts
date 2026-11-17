@@ -5,6 +5,12 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 /** Whether the surrounding figure is on screen. FigureCard provides it; a diagram outside one is always visible. */
 export const FigureVisible = createContext(true);
 
+/** Whether the surrounding figure's animation is playing. FigureCard provides it; outside a card nothing is playing. */
+export const FigureRunning = createContext(false);
+
+/** How a clock tells its card whether it is playing: by a key of its own, so a figure with two clocks runs if either does. */
+export const RunningReport = createContext<((key: object, running: boolean) => void) | null>(null);
+
 /** Whether the reader has asked their system for less motion. */
 export function prefersReducedMotion() {
   return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -46,6 +52,12 @@ export function usePlayback({ speed = 1, end, autoplay = true }: { speed?: numbe
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [playing, visible, end]);
+  // Tell the card whether this clock is playing, so annotations that the motion makes redundant can step aside.
+  const report = useContext(RunningReport), key = useRef({});
+  useEffect(() => {
+    report?.(key.current, playing);
+    return () => report?.(key.current, false);
+  }, [report, playing]);
   const seek = useCallback((next: number) => { time.current = next; setT(next); }, []);
   const toggle = useCallback(() => setPlaying(p => {
     // Play at the end of a bounded sequence starts it again.

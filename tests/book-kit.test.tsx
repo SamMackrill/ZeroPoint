@@ -4,7 +4,7 @@
 import { render, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BookApp } from '../src/book/BookApp';
-import { traceField, wireField } from '../src/book/kit';
+import { FigureRunning, RunningReport, Still, traceField, usePlayback, wireField } from '../src/book/kit';
 
 describe('book companion: kit', () => {
   it('traces the circular field line round a single wire back to its start', () => {
@@ -23,5 +23,24 @@ describe('book companion: shell', () => {
       const hrefs = within(nav as HTMLElement).getAllByRole('link').map(a => a.getAttribute('href'));
       expect(hrefs).toEqual(expect.arrayContaining(['#/', '#/guide', '#/future']));
     }
+  });
+});
+
+describe('book companion: rotation arrows step aside while a figure plays', () => {
+  it('shows a Still annotation when the figure is still, and fades it while it runs', async () => {
+    const { container, rerender } = render(<svg><FigureRunning.Provider value={false}><Still><circle/></Still></FigureRunning.Provider></svg>);
+    expect(container.querySelector('.bk-still')!.classList.contains('is-running')).toBe(false);
+    rerender(<svg><FigureRunning.Provider value={true}><Still><circle/></Still></FigureRunning.Provider></svg>);
+    expect(container.querySelector('.bk-still')!.classList.contains('is-running')).toBe(true);
+  });
+
+  it('has each clock report to its card whether it is playing, and stop reporting when it goes', () => {
+    const calls: boolean[] = [];
+    /** A diagram with one clock, which starts playing. */
+    function Clock() { usePlayback(); return null; }
+    const { unmount } = render(<RunningReport.Provider value={(_key, on) => calls.push(on)}><Clock/></RunningReport.Provider>);
+    expect(calls.at(-1)).toBe(true);
+    unmount();
+    expect(calls.at(-1)).toBe(false);
   });
 });

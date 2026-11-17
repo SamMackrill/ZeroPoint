@@ -1,6 +1,6 @@
 // Chapter 20: The Origin of the Speed of Light (PDF pp. 151–152). No figures: two explorers.
 import { useMemo, useState } from 'react';
-import { Arrow, Diagram, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Zepton, clamp, deg, fmt, rad, rng, usePlayback } from '../kit';
+import { Arrow, Diagram, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Zepton, clamp, deg, fmt, rad, rng, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -22,7 +22,7 @@ function Torque() {
         <Zepton x={x} y={y} angle={(i % 2 ? -1 : 1) * (angle - z.lag) * (z.r > 100 ? 0.45 : 0.75)} len={24} oval={false} signs={false} opacity={0.5 + 0.4 * clamp(torque / 2.4)}/>
       </g>; })}
       <Zepton x={cx} y={cy} angle={angle} len={62} emphasis="key" signs/>
-      <Spin x={cx} y={cy} r={46} ccw sweep={60 + 220 * rate}/>
+      <Still><Spin x={cx} y={cy} r={46} ccw sweep={60 + 220 * rate}/></Still>
       <rect x={560} y={70} width={30} height={220} className="bk-fill-soft"/><rect x={560} y={290 - 220 * rate} width={30} height={220 * rate} className="bk-f-accent"/>
       <T x={575} y={312} size="sm" tone="accent">speed of light</T><T x={604} y={290 - 220 * rate + 5} anchor="start" tone="accent">{fmt(rate, 3)} c₀</T>
       {torque < 0.3 && <T x={cx} y={30} tone="danger" size="sm">with almost no field to resist it, a zepton would rotate almost without limit</T>}

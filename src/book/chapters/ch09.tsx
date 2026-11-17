@@ -1,6 +1,6 @@
 // Chapter 9: Tops, Flywheels, and Gyroscopes (PDF pp. 81–85). Figures 9-1 and 9-2.
 import { useRef, useState } from 'react';
-import { Action, Arrow, BlockArrow, Choice, Diagram, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, polar, rad, usePlayback } from '../kit';
+import { Action, Arrow, BlockArrow, Choice, Diagram, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, clamp, polar, rad, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -47,8 +47,8 @@ function MorganFlywheels() {
     <Stage w={W} h={H} label={`Two flywheels facing each other across a small air gap, shown face on. The driven flywheel is ${way(driven)}; the passive one is ${way(passive)}.`}>
       <Wheel x={230} y={y} r={92} angle={a1} label="driven flywheel (motor)" tone="matter"/>
       <Wheel x={490} y={y} r={110} angle={a2} label="passive flywheel (free to turn)"/>
-      {Math.abs(driven) > 0.03 && <Spin x={230} y={y} r={106} ccw={driven > 0} sweep={60 + 160 * Math.abs(driven)}/>}
-      {Math.abs(passive) > 0.03 && <Spin x={490} y={y} r={124} ccw={passive > 0} sweep={60 + 160 * Math.min(1, Math.abs(passive))}/>}
+      {Math.abs(driven) > 0.03 && <Still><Spin x={230} y={y} r={106} ccw={driven > 0} sweep={60 + 160 * Math.abs(driven)}/></Still>}
+      {Math.abs(passive) > 0.03 && <Still><Spin x={490} y={y} r={124} ccw={passive > 0} sweep={60 + 160 * Math.min(1, Math.abs(passive))}/></Still>}
       {[-60, -20, 20, 60].map((dy, i) => <Zepton key={dy} x={354} y={y + dy} angle={a1 * 0.7 * (i % 2 ? -1 : 1) + i * 40} len={18} oval={false} signs={false} polarity="matter" opacity={0.35 + 0.6 * Math.min(1, Math.abs(driven) + Math.abs(passive))}/>)}
       <T x={354} y={y - 96} size="sm">air gap only</T>
       <T x={W / 2} y={H - 12} size="sm">The two discs face each other on one axis; they are drawn side by side so both rotations can be seen.</T>
@@ -87,8 +87,8 @@ function WallaceGyros() {
     <Stage w={W} h={H} label={`Two gyroscopes some distance apart. The first is spun by a motor while its plane is turned over; the second, passive, is induced to rotate the opposite way at ${Math.round(Math.abs(passive) * 100)} per cent of the display's full speed.`}>
       {gyro(190, a1, Math.max(0.08, squash), 'driven gyroscope: spun, and its plane turned over')}
       {gyro(530, a2, 0.75, 'passive gyroscope')}
-      <Spin x={190} y={y - 96} r={16} ccw sweep={200} tone="muted"/>
-      {Math.abs(passive) > 0.03 && <Spin x={530} y={y} r={98} ccw={passive > 0} sweep={50 + 200 * Math.min(1, Math.abs(passive))}/>}
+      <Still><Spin x={190} y={y - 96} r={16} ccw sweep={200} tone="muted"/></Still>
+      {Math.abs(passive) > 0.03 && <Still><Spin x={530} y={y} r={98} ccw={passive > 0} sweep={50 + 200 * Math.min(1, Math.abs(passive))}/></Still>}
       <Arrow x1={290} y1={y} x2={430} y2={y} tone="faint" w={1.4} dash="4 4"/><T x={360} y={y - 12} size="sm">some distance apart</T>
     </Stage>}>
     <Slider label="Spin of the driven gyroscope" value={spin} min={0} max={1} step={0.05} onChange={setSpin} show={v => `${Math.round(v * 100)} %`}/>

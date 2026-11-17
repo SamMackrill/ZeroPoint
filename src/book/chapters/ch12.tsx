@@ -1,6 +1,6 @@
 // Chapter 12: Astronomical Motion (PDF pp. 98–109). Figures 12-1 to 12-8.
 import { useMemo, useRef, useState } from 'react';
-import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
+import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -74,7 +74,7 @@ function PlanetSpinField() {
       <CounterField x={cx} y={cy} inner={104} rings={2} sense={omega} count={10}/>
       <Body x={cx} y={cy} r={72} tone="plain"/>
       <line x1={polar(cx, cy, 66, turned)[0]} y1={polar(cx, cy, 66, turned)[1]} x2={polar(cx, cy, 66, turned + 180)[0]} y2={polar(cx, cy, 66, turned + 180)[1]} className="bk-s-muted" strokeDasharray="4 6"/>
-      {Math.abs(omega) > 0.05 && <Spin x={cx} y={cy} r={28} ccw={omega > 0} sweep={270} tone="text" w={3}/>}<T x={cx + 40} y={cy - 30} tone="text" italic>ω</T>
+      {Math.abs(omega) > 0.05 && <Still><Spin x={cx} y={cy} r={28} ccw={omega > 0} sweep={270} tone="text" w={3}/></Still>}<T x={cx + 40} y={cy - 30} tone="text" italic>ω</T>
       {Math.abs(omega) > 0.05 && <><InOut x={590} y={90} out={omega < 0} r={12}/><T x={612} y={96} anchor="start" tone="b" size="lg">B m</T></>}
     </Stage>}>
     <Slider label="Rotation of the body, ω" value={omega} min={-1} max={1} step={0.05} onChange={setOmega} show={v => (Math.abs(v) < 0.05 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'counter-clockwise' : 'clockwise'}`)}/>
@@ -118,7 +118,7 @@ function SynchronousRotation() {
       <Arrow x1={cx} y1={cy - R - 8} x2={cx} y2={cy - R - 70} tone="motion" w={3}/><T x={cx + 14} y={cy - R - 44} tone="motion" italic>υ</T>
       <Body x={cx} y={cy} r={R} tone="plain"/>
       <line x1={polar(cx, cy, R - 6, s.angle)[0]} y1={polar(cx, cy, R - 6, s.angle)[1]} x2={polar(cx, cy, R - 6, s.angle + 180)[0]} y2={polar(cx, cy, R - 6, s.angle + 180)[1]} className="bk-s-muted" strokeWidth="2" strokeDasharray="5 6"/>
-      <Spin x={cx} y={cy} r={22} ccw sweep={60 + 210 * s.spin} tone="text" w={3}/><T x={cx + 34} y={cy - 22} tone="text" italic>ω</T>
+      <Still><Spin x={cx} y={cy} r={22} ccw sweep={60 + 210 * s.spin} tone="text" w={3}/><T x={cx + 34} y={cy - 22} tone="text" italic>ω</T></Still>
     </Stage>}>
     <Toggle label="Include the Sun’s rotational field" checked={sun} onChange={setSun}/>
     <PlayBar play={play} label="the passage of time"/>
@@ -233,7 +233,7 @@ function GalaxyDisc() {
       <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-plain" opacity={0.5 + 0.2 * m}/>
       {Array.from({ length: 26 }, (_, i) => { const [x, y] = polar(cx, cy, R * (0.15 + 0.82 * ((i * 0.618) % 1)), turned + i * 137.5); return <circle key={i} cx={x} cy={y} r={2.2} className="bk-f-mark"/>; })}
       <Arrow x1={cx} y1={cy} x2={cx - R} y2={cy} tone="text" w={2.4}/><T x={cx - R / 2} y={cy - 10} tone="text" italic>r</T>
-      <Spin x={cx} y={cy + 4} r={20} ccw sweep={250} tone="text" w={2.4}/><T x={cx + 34} y={cy + 30} tone="text" italic>ω</T><T x={cx} y={cy - R + 26} tone="text" italic>m</T>
+      <Still><Spin x={cx} y={cy + 4} r={20} ccw sweep={250} tone="text" w={2.4}/><T x={cx + 34} y={cy + 30} tone="text" italic>ω</T></Still><T x={cx} y={cy - R + 26} tone="text" italic>m</T>
       <rect x={520} y={60} width={46} height={250} className="bk-fill-soft"/>
       <rect x={520} y={310 - clamp(L / 4.5) * 250} width={46} height={clamp(L / 4.5) * 250} className="bk-f-b"/>
       <T x={543} y={332} size="sm" tone="b">B_m ∝ L</T><T x={600} y={310 - clamp(L / 4.5) * 250 + 5} anchor="start" tone="b">{fmt(L / 0.5, 3)} ×</T>

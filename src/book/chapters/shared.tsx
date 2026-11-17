@@ -2,7 +2,7 @@
 // rotation that moving bodies leave in the zeptons beside them (chapters 6, 10, 11 and 12).
 import { useMemo, useState } from 'react';
 import { BOOK_PDF } from '../labs';
-import { Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, PlayBar, Readout, Remark, Spin, Stage, T, Toggle, Zepton, usePlayback, type Source, type Tone } from '../kit';
+import { Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, PlayBar, Readout, Remark, Spin, Stage, Still, T, Toggle, Zepton, usePlayback, type Source, type Tone } from '../kit';
 
 /** A direction along an axis: +x, −x and so on. */
 export type Axis = '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
@@ -123,7 +123,7 @@ export function SpinRow({ kind, current, angle, flow, t, field }: { kind: 'elect
       return <g key={i}>
         <Zepton x={x} y={top - 62} angle={-90 + angle} len={38} signs={false} opacity={seen} polarity={polarity}/>
         <Zepton x={x} y={bottom + 62} angle={90 - angle} len={38} signs={false} opacity={seen} polarity={polarity}/>
-        {moving && i % 2 === 0 && <><Spin x={x} y={top - 62} r={26} ccw={current > 0} sweep={70 + 150 * Math.min(1, Math.abs(current))} opacity={0.8}/><Spin x={x} y={bottom + 62} r={26} ccw={current < 0} sweep={70 + 150 * Math.min(1, Math.abs(current))} opacity={0.8}/></>}
+        {moving && i % 2 === 0 && <><Spin x={x} y={top - 62} r={26} ccw={current > 0} sweep={70 + 150 * Math.min(1, Math.abs(current))} opacity={0.8}/><Still><Spin x={x} y={bottom + 62} r={26} ccw={current < 0} sweep={70 + 150 * Math.min(1, Math.abs(current))} opacity={0.8}/></Still></>}
         {field && moving && i % 2 === 1 && <><InOut x={x} y={top - 62 - 34} out={current > 0} r={7}/><InOut x={x} y={bottom + 62 + 34} out={current < 0} r={7}/></>}
       </g>;
     })}

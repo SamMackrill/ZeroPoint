@@ -1,6 +1,6 @@
 // Chapter 5: The Zero-Point Photon (PDF pp. 43–47). Figures 5-1 and 5-2.
 import { useMemo, useState } from 'react';
-import { Action, Arrow, Charge, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, fmt, pathThrough, rad, rng, usePlayback } from '../kit';
+import { Action, Arrow, Charge, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Vector, Zepton, fmt, pathThrough, rad, rng, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -34,7 +34,7 @@ function PairSeries() {
           </g>}
           {live && <>
             <Zepton x={x} y={y} angle={angle} len={spacing * 0.86} open={Math.max(0.18, strength)} emphasis="key" signs={spacing > 60}/>
-            <Spin x={x} y={y} r={spacing * 0.5} ccw={!pair.clockwise} from={pair.clockwise ? 150 : 210} sweep={90}/>
+            <Still><Spin x={x} y={y} r={spacing * 0.5} ccw={!pair.clockwise} from={pair.clockwise ? 150 : 210} sweep={90}/></Still>
             <Vector x={x} y={62} angle={90 * pair.up} len={6 + amp * field} centred tone="e" w={3}/>
             <InOut x={x} y={238} out={!pair.clockwise} r={5 + 8 * field} opacity={0.35 + 0.65 * field}/>
           </>}

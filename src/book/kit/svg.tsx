@@ -1,6 +1,7 @@
 // The companion's drawing vocabulary: one way to draw a zepton, a charge, a field arrow and a rotation, so that every
 // figure reads the same. Colours come from classes in book.css (tokens), never from literals here.
-import type { ReactNode, SVGProps } from 'react';
+import { useContext, type ReactNode, type SVGProps } from 'react';
+import { FigureRunning } from './clock';
 import { polar, rad } from './geom';
 
 /** A colour role. `pos`/`neg` are electric charge, `matter`/`anti` matter charge, `e`/`b` the fields, `force` a push. */
@@ -151,4 +152,13 @@ export function SpinLoop({ x, y, angle, r = 9, turn, tone = 'b', opacity }: { x:
     <ellipse cx={x} cy={y} rx={r * 0.32} ry={r} transform={`rotate(${-angle} ${x} ${y})`} fill="none" strokeWidth="1.2"/>
     <circle cx={dx} cy={dy} r={1.8 + 1.1 * depth} stroke="none"/>
   </g>;
+}
+
+/**
+ * Annotations that a running animation makes redundant, such as an arrow showing the sense of a rotation the reader can
+ * watch. They fade out while the figure plays and back in when it pauses or stops; static figures always show them.
+ */
+export function Still({ children }: { children: ReactNode }) {
+  const running = useContext(FigureRunning);
+  return <g className={`bk-still${running ? ' is-running' : ''}`}>{children}</g>;
 }

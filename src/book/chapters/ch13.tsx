@@ -1,6 +1,6 @@
 // Chapter 13: Solar and Planetary Dynamos (PDF pp. 110–112). Figure 13-1.
 import { useState } from 'react';
-import { Arrow, Diagram, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, fmt, polar, usePlayback } from '../kit';
+import { Arrow, Diagram, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, fmt, polar, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -23,7 +23,7 @@ function DynamoEddies() {
       <circle cx={cx} cy={cy} r={shell} className="bk-s-text" fill="none" strokeWidth="2"/>
       {[0, 60, 120].map(a => <line key={a} x1={polar(cx, cy, R - 4, turned + a)[0]} y1={polar(cx, cy, R - 4, turned + a)[1]} x2={polar(cx, cy, R - 4, turned + a + 180)[0]} y2={polar(cx, cy, R - 4, turned + a + 180)[1]} className="bk-s-faint" strokeDasharray="3 8"/>)}
       {turning && <>
-        <Spin x={cx} y={cy} r={30} ccw={rate > 0} sweep={270} tone="text" w={3}/>
+        <Still><Spin x={cx} y={cy} r={30} ccw={rate > 0} sweep={270} tone="text" w={3}/></Still>
         <Arrow x1={cx + R + 26} y1={cy + 40 * Math.sign(rate)} x2={cx + R + 26} y2={cy - 40 * Math.sign(rate)} tone="text" w={3}/><Arrow x1={cx - R - 26} y1={cy - 40 * Math.sign(rate)} x2={cx - R - 26} y2={cy + 40 * Math.sign(rate)} tone="text" w={3}/>
         {Array.from({ length: n }, (_, i) => {
           const a = (i / n) * 360 + 12, [ix, iy] = polar(cx, cy, shell - 19, a), [ox, oy] = polar(cx, cy, shell + 19, a);
