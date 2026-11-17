@@ -307,7 +307,7 @@ function CurrentAndSpin() {
         return <g key={i}>
           <Zepton x={x} y={top - 62} angle={-90 + angle} len={38} signs={false} opacity={seen}/>
           <Zepton x={x} y={bottom + 62} angle={90 - angle} len={38} signs={false} opacity={seen}/>
-          {Math.abs(current) > 0.05 && i % 2 === 0 && <><Spin x={x} y={top - 62} r={26} ccw={current > 0} sweep={70 + 150 * Math.abs(current)} opacity={0.8}/><Still><Spin x={x} y={bottom + 62} r={26} ccw={current < 0} sweep={70 + 150 * Math.abs(current)} opacity={0.8}/></Still></>}
+          {Math.abs(current) > 0.05 && i % 2 === 0 && <><Still><Spin x={x} y={top - 62} r={26} ccw={current > 0} sweep={70 + 150 * Math.abs(current)} opacity={0.8}/></Still><Still><Spin x={x} y={bottom + 62} r={26} ccw={current < 0} sweep={70 + 150 * Math.abs(current)} opacity={0.8}/></Still></>}
         </g>;
       })}
       {Math.abs(current) > 0.05 && <Arrow x1={W / 2 - Math.sign(current) * 40} y1={top - 14} x2={W / 2 + Math.sign(current) * 40} y2={top - 14} tone="motion" w={2}/>}

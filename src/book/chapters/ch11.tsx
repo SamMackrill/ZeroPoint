@@ -115,7 +115,7 @@ function RotatingBody() {
       {Array.from({ length: n }, (_, i) => {
         const a = (i / n) * 360, [x, y] = polar(cx, cy, R + 46, a);
         // A zepton beside a moving surface turns like one gear against another: the opposite way to the body.
-        return <g key={i}><Zepton x={x} y={y} angle={a + 180 - turned * 2.2} len={34} polarity="matter" signs={false}/>{Math.abs(rate) > 0.05 && i % 3 === 0 && <Spin x={x} y={y} r={24} ccw={rate < 0} sweep={220} opacity={0.85}/>}</g>;
+        return <g key={i}><Zepton x={x} y={y} angle={a + 180 - turned * 2.2} len={34} polarity="matter" signs={false}/>{Math.abs(rate) > 0.05 && i % 3 === 0 && <Still><Spin x={x} y={y} r={24} ccw={rate < 0} sweep={220} opacity={0.85}/></Still>}</g>;
       })}
       <T x={560} y={150} size="sm">body: {Math.abs(rate) < 0.05 ? 'at rest' : rate > 0 ? 'counter-clockwise' : 'clockwise'}</T>
       <T x={560} y={174} size="sm" tone="motion">zeptons: {Math.abs(rate) < 0.05 ? 'at rest' : rate > 0 ? 'clockwise' : 'counter-clockwise'}</T>
