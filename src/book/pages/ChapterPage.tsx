@@ -2,6 +2,7 @@
 // prints them, with the laboratories and the proposed simulations that belong to it.
 import { Fragment, useEffect, useState } from 'react';
 import { FigureCard, itemAnchor } from '../FigureCard';
+import { NoteList, notesFor } from '../appendix/notes';
 import { FUTURE } from '../future';
 import { BOOK_PDF } from '../labs';
 import { LabLinks, Pg } from '../prose';
@@ -18,6 +19,17 @@ function useChapter(n: number) {
     return () => { live = false; };
   }, [n]);
   return content;
+}
+
+/** Fleming's notes to this chapter, as the book prints them at its end; folded away until opened. */
+function ChapterNotes({ n }: { n: number }) {
+  const notes = notesFor(n);
+  if (!notes.length) return null;
+  return <details className="bk-chapter-notes">
+    <summary><span className="bk-section">Fleming’s notes to this chapter</span> <span className="bk-chapter-notes-count">{notes.length === 1 ? `note ${notes[0].n}` : `notes ${notes[0].n}–${notes.at(-1)!.n}`}</span></summary>
+    <NoteList notes={notes}/>
+    <p className="bk-chapter-notes-all"><a href={`#/references/${n}`}>All the book’s references, by chapter</a></p>
+  </details>;
 }
 
 /** Links to the chapters before and after. */
@@ -60,6 +72,7 @@ export function ChapterPage({ n, item }: { n: number; item?: string }) {
         return <Fragment key={it.id}>{heading && <h2 className="bk-section">{heading}</h2>}<FigureCard item={it} chapter={n}/></Fragment>;
       })}
       {content.labs && <section className="bk-chapter-labs"><LabLinks links={content.labs} heading="Laboratories for this chapter"/></section>}
+      <ChapterNotes n={n}/>
       {proposals.length > 0 && <section className="bk-chapter-future">
         <h2 className="bk-section">Simulations this chapter could have</h2>
         <ul>{proposals.map(p => <li key={p.id}><a href={`#/future/${p.id}`}>{p.title}</a><span>{p.idea}</span></li>)}</ul>

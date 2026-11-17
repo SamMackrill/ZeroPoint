@@ -21,6 +21,13 @@ export function ContentsPage() {
         </a>
         {c.figures.length > 0 && <p className="bk-toc-figs" aria-label={`Figures of ${chapterLabel(c.n)}`}>{c.figures.map(id => <a key={id} href={`#/ch/${c.n}/${id}`}>{id}</a>)}</p>}
       </li>)}
+      <li>
+        <a className="bk-toc-row" href="#/references">
+          <span className="bk-toc-n">App.</span>
+          <span className="bk-toc-main"><strong>References by chapter</strong><span>Fleming’s 133 notes, gathered from the ends of the chapters, each with the pages that cite it.</span></span>
+          <span className="bk-toc-meta">appendix</span>
+        </a>
+      </li>
     </ol>
     <p className="bk-footnote">Ray Fleming died in 2024. These pages follow his text and figures as closely as they can; they are a study aid, not a statement of established physics, and where a diagram has to choose something he does not give, it says so.</p>
   </div>;
