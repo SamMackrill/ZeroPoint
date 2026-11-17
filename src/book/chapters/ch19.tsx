@@ -97,7 +97,7 @@ function TwoSlits() {
   const y = yA - (k + 0.5) * (lambda / 2), clockwise = k % 2 === 0, angle = clockwise ? 90 - 180 * u : 90 + 180 * u, strength = Math.sin(Math.PI * u);
   const through = wall && fast && y > wallY, direct = Math.hypot(yA - yB), detour = 2 * Math.hypot(slit, (yA - yB) / 2);
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A single photon travelling from A to B${wall ? ' with a wall and two slits in the way' : ' with nothing in the way'}. ${stopped ? 'With fields held to the speed of light they reach only half a wavelength from the path, never reach the slits, and nothing arrives at B.' : 'Its fields spread much faster than light, pass the slits, and the photon arrives in the time a straight path at the speed of light takes.'}`}>
+    <Stage w={W} h={H} label={`A single photon travelling from A to B${wall ? ' with a wall and two slits in the way' : ' with nothing in the way'}. ${fast ? 'Its fields spread much faster than light' : 'Its fields are held to the speed of light and reach only half a wavelength from the path'}. ${stopped ? 'They never reach the slits, and nothing arrives at B.' : wall ? 'They pass the slits, and the photon arrives in the time a straight line takes.' : 'With nothing in the way, the photon travels straight to B.'}`}>
       {wall && <>{[[40, cx - slit - half], [cx - slit + half, cx + slit - half], [cx + slit + half, W - 40]].map(([x1, x2]) => <line key={x1} x1={x1} y1={wallY} x2={x2} y2={wallY} className="bk-s-text" strokeWidth="4"/>)}</>}
       <line x1={cx} y1={yA} x2={cx} y2={yB} className="bk-s-faint" strokeDasharray="2 5"/>
       {!fast && <rect x={cx - lambda / 2} y={yB} width={lambda} height={yA - yB} className="bk-f-danger" opacity={0.12}/>}
@@ -148,7 +148,7 @@ function HalfTurn() {
     <Slider label="Frequency of the zepton, ν" value={nu} min={0.7} max={2.4} step={0.1} onChange={setNu} show={v => `${fmt(v, 2)} ×`}/>
     <Slider label="Share of a half-turn a field needs" value={exp} min={-20} max={0} step={0.5} onChange={setExp} show={() => (exp === 0 ? 'all 180°' : `180° / ${fmt(10 ** -exp, 2)}`)}/>
     <PlayBar play={play} label="the zepton"/>
-    <Readout label="Span of the zepton, d" value={`${fmt(1 / nu, 3)} × (c/ν)`} tone="force"/>
+    <Readout label="Span of the zepton, d = c/ν" value={`${fmt(1 / nu, 3)} × its span at 1 ×`} tone="force"/>
     <Readout label="Speed of what needs a full half-turn" value="c"/>
     <Readout label="Speed of the field" value={`${fmt(fieldSpeed(needed), 2)} c`} tone="e"/>
     <Remark>{exp === 0 ? 'Matter and photons need the whole half-turn, and are held to the speed of light.' : 'If the polarization needs only a small fraction of the turn, it is passed on that many times faster. The real figure has not been determined.'}</Remark>

@@ -77,8 +77,12 @@ function LightBending() {
   </Diagram>;
 }
 
-/** How much faster a clock at altitude runs than one on the ground, in microseconds a day (the first-order form of Equation 23-4). */
+/** How much faster a clock at altitude runs than one on the ground, in microseconds a day: Equation 23-4 without its square
+ * root, which Fleming says may be left off. */
 export const clockGain = (altitude: number) => ((GM_EARTH / (C * C)) * (1 / R_EARTH - 1 / (R_EARTH + altitude))) * 86400 * 1e6;
+
+/** How much the drawing magnifies the clocks' difference in rate: 45.7 µs a day (5.3 × 10⁻¹⁰) is drawn as 60 per cent. */
+const MAGNIFY = 0.6 / 45.7;
 
 /** Explorer: a clock higher above the Earth runs faster, and light climbing away is redshifted (Equations 23-4 and 23-5). */
 function ClocksAndRedshift() {
@@ -91,9 +95,9 @@ function ClocksAndRedshift() {
     <Stage w={W} h={H} label={`A clock on the Earth's surface and one ${km.toLocaleString('en-GB')} kilometres above it. The higher clock gains ${fmt(gain, 3)} microseconds a day, and light climbing to it is redshifted by ${fmt(shift, 3)}.`}>
       <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-matter"/><T x={cx} y={cy - R + 30} tone="text" size="sm">Earth</T>
       {[0, 1, 2, 3].map(i => <circle key={i} cx={cx} cy={cy} r={R + 30 + i * 44} className="bk-s-b" fill="none" strokeDasharray="2 6" opacity={0.7 - i * 0.16}/>)}
-      {clock(cy - R - 8, hand(1), 'on the ground')}{clock(y, hand(1.6), `at ${km.toLocaleString('en-GB')} km`)}
+      {clock(cy - R - 8, hand(1), 'on the ground')}{clock(y, hand(1 + gain * MAGNIFY), `at ${km.toLocaleString('en-GB')} km`)}
       <T x={470} y={90} anchor="start" size="sm" tone="b">dotted rings: the torque of the</T><T x={470} y={108} anchor="start" size="sm" tone="b">vacuum, greater nearer the Earth</T>
-      <T x={470} y={150} anchor="start" size="sm">the difference in the clocks’ rates</T><T x={470} y={168} anchor="start" size="sm">is greatly magnified in the drawing</T>
+      <T x={470} y={150} anchor="start" size="sm">the difference in the clocks’ rates</T><T x={470} y={168} anchor="start" size="sm">is magnified about a billion times</T>
     </Stage>}>
     <Slider label="Height of the upper clock" value={km} min={100} max={40000} step={100} onChange={setKm} show={v => `${v.toLocaleString('en-GB')} km`}/>
     <PlayBar play={play} label="the clocks"/>
@@ -120,7 +124,10 @@ const chapter: ChapterContent = {
         <p>The redshift of light leaving a star has the same size (Equation 23-5): Δλ/λ = <V>GM</V>/(<V>c</V>²<V>r</V>). <Q>Photons accelerate as they leave a gravitational field in the radial direction, and as they speed up their wavelengths become longer</Q> (<Pg n={179}/>).</p>
       </>,
       tryThis: ['Set the height to 20,200 km, where the GPS satellites are: the upper clock gains about 46 microseconds a day.', 'Bring the clock down: the gain shrinks toward zero at the surface.', 'Compare the redshift readout: it is the same fraction, seen in the light instead of the clock.'],
-      notes: <p>The readouts are the first-order form of Equation 23-4 for the Earth, the difference between the surface and the height chosen. The correction for the satellite’s motion, which Fleming assigns to the Sagnac effect of chapter 22, is not included.</p>,
+      notes: <>
+        <p>The readouts are Equation 23-4 with its square root left off, as Fleming says it may be, for the Earth: the difference between the surface and the height chosen. That gives about 45.7 µs a day at the height of the GPS satellites, the figure usually quoted. Taken with the square root as printed, the equation gives half that, about 22.9 µs; the standard form has 2<V>GM</V> under the root. The book does not remark on the difference.</p>
+        <p>The correction for the satellite’s motion, which Fleming assigns to the Sagnac effect of chapter 22, is not included. The drawing magnifies the difference in rate about a billion times, in proportion to the gain, so a lower clock visibly gains less.</p>
+      </>,
     },
     {
       kind: 'figure', id: '23-1', page: 180, section: 'Shapiro Delay', title: 'A signal that comes back late',

@@ -47,13 +47,14 @@ export const skyFraction = (R: number, d: number) => (1 - Math.sqrt(Math.max(0, 
 function Shadow() {
   const [d, setD] = useState(6);
   const [size, setSize] = useState(1);
-  const H = 320, y = 150, x1 = 110, r1 = 44, x2 = x1 + 60 + d * 62, r2 = 30 * size, share = skyFraction(size, d), half = deg(Math.asin(clamp(size / d)));
+  const H = 320, y = 150, x1 = 110, r1 = 44, x2 = 325 + ((d - 2.5) / 7.5) * 300, r2 = 30 * size, share = skyFraction(size, d), half = deg(Math.asin(clamp(size / d)));
   const px = 420, pw = 260, py = 230, ph = 70, curve = pathThrough(Array.from({ length: 50 }, (_, i) => { const dd = 2.5 + (i / 49) * 7.5; return [px + ((dd - 2.5) / 7.5) * pw, py + ph - (skyFraction(size, dd) / skyFraction(size, 2.5)) * ph] as const; }));
   return <Diagram stage={
     <Stage w={W} h={H} label={`Star 2, ${fmt(d, 2)} of its radii away from Star 1, covers ${fmt(share * 100, 2)} per cent of Star 1's sky. The lines from its edges to the centre of Star 1 mark the shadow on Star 1's surface.`}>
       <Line d={`M${x2} ${y - r2} L${x1} ${y} L${x2} ${y + r2}`} tone="mark" w={1.4}/>
       <Body x={x1} y={y} r={r1} tone="plain" label="Star 1"/>
-      {x2 < W + r2 && <Body x={Math.min(x2, W - 34)} y={y} r={r2} tone="plain" label="Star 2"/>}
+      {/* The distance range maps onto the stage, with room for the largest Star 2; the drawing is not to scale. */}
+      <Body x={x2} y={y} r={r2} tone="plain" label="Star 2"/>
       <circle cx={x1 + r1} cy={y} r={Math.max(2.5, r1 * Math.sin((half * Math.PI) / 180))} className="bk-f-mark" opacity={0.9}/>
       <Arrow x1={x1 + r1 + 46} y1={y - 64} x2={x1 + r1 + 6} y2={y - 8} tone="muted" w={1.2} head={7}/><T x={x1 + r1 + 50} y={y - 70} anchor="start" size="sm">the “shadow” on the star’s surface</T>
       <line x1={px} y1={py + ph} x2={px + pw} y2={py + ph} className="bk-s-muted"/><Line d={curve} tone="mark" w={2}/>

@@ -21,7 +21,7 @@ export const PARTICLES: Record<'proton' | 'electron', { name: string; unit: stri
   proton: { name: 'Proton', unit: 'fm', energy: 938.272046, diameter: 1.755, shells: [{ label: 'Fleming’s shell', d: [1.586, 1.924] }], range: [1.2, 2.8], pair: 0.330 },
   electron: {
     name: 'Electron', unit: 'pm', energy: 0.510998928, diameter: 2.4263102389, range: [1.7, 3.8], pair: 0.6066,
-    shells: [{ label: 'Fleming’s printed shell', d: [2.123, 2.472] }, { label: 'Mean at the Compton wavelength', d: [2.2469, 2.6057] }, { label: 'Pair-wavelength thickness', d: [2.880, 3.487] }],
+    shells: [{ label: 'Fleming’s printed shell', d: [2.123, 2.472] }, { label: 'Mean at the Compton wavelength', d: [2.2469, 2.6057] }, { label: 'Diameters a pair wavelength apart', d: [2.880, 3.487] }],
   },
 };
 export type Particle = keyof typeof PARTICLES;
@@ -74,6 +74,7 @@ function ParticleShell() {
     <Slider label="Inner diameter, dᵢ" value={inner} min={spec.range[0]} max={spec.range[1]} step={0.001} onChange={v => set(v, outer)} show={v => `${fmt(v, 4)} ${spec.unit}`}/>
     <Slider label="Outer diameter, dₒ" value={outer} min={spec.range[0]} max={spec.range[1] + 1} step={0.001} onChange={v => set(inner, v)} show={v => `${fmt(v, 4)} ${spec.unit}`}/>
     {spec.shells.map(shell => <Action key={shell.label} onClick={() => setD(v => ({ ...v, [particle]: shell.d }))}>{shell.label}</Action>)}
+    <PlayBar play={play} label="the fluctuations"/>
     <Readout label="Excluded vacuum energy density" value={`${fmt(excluded, 4)} ${unit}`}/>
     <Readout label="Mass-energy density (mean diameter)" value={`${fmt(needed, 4)} ${unit}`}/>
     <Readout label="Energy excluded" value={`${fmt(energy, 4)} MeV`} tone={Math.abs(ratio - 1) < 0.02 ? 'good' : undefined}/>
@@ -166,10 +167,10 @@ const chapter: ChapterContent = {
         'With Fleming’s shell for the proton, read the energy excluded: it is the proton’s 938 MeV.',
         'Widen the shell or move it. The excluded energy changes steeply, by the fourth power of the diameter, and no other shell of that mean diameter gives the right mass.',
         'Push the outer diameter as far as it goes with dᵢ at 1.755 fm: this is his first approximation, a little more than the proton’s mass-energy density.',
-        'Switch to the electron and press “Mean at the Compton wavelength”: the same construction gives 0.511 MeV. Then try “Fleming’s printed shell” (see the note below) and “Pair-wavelength thickness”, his second solution, which also gives 0.511 MeV.',
+        'Switch to the electron and press “Mean at the Compton wavelength”: the same construction gives 0.511 MeV. Then try “Fleming’s printed shell” (see the note below) and “Diameters a pair wavelength apart”, his second solution, which also gives 0.511 MeV.',
       ],
       notes: <><p>The readouts are Equation 16-1 with the CODATA 2010 values the text quotes, and the particle’s density is taken over a sphere of the mean diameter, as he takes it. The ovals are illustrative: small ones inside, large ones outside, none of the excluded sizes. The shell is drawn solid; the text says it is a virtual structure.</p>
-        <p>The electron’s printed shell does not match its description. The text sets the mean diameter to the Compton wavelength, 2.426 pm, and gives <V>d</V><sub>i</sub> = 2.123 pm and <V>d</V><sub>o</sub> = 2.472 pm, whose mean is 2.298 pm (<Pg n={125}/>). Over a sphere of that mean the shell excludes 0.555 MeV; the shell that solves his condition is 2.247 to 2.606 pm, 0.179 pm thick against his 0.175 pm. His second solution, a shell 0.6066 pm thick, comes out at 2.880 and 3.487 pm exactly as printed, so the method is his and the first pair looks like a slip. All three shells are offered.</p></>,
+        <p>The electron’s printed shell does not match its description. The text sets the mean diameter to the Compton wavelength, 2.426 pm, and gives <V>d</V><sub>i</sub> = 2.123 pm and <V>d</V><sub>o</sub> = 2.472 pm, whose mean is 2.298 pm (<Pg n={125}/>). Over a sphere of that mean the shell excludes 0.555 MeV; the shell that solves his condition is 2.247 to 2.606 pm, 0.179 pm thick against his 0.175 pm. His second solution sets the difference between the diameters to the pair wavelength, 0.6066 pm, which makes the shell half that, 0.3033 pm, thick. It comes out at 2.880 and 3.487 pm exactly as printed, so the method is his and the first pair looks like a slip. All three shells are offered.</p></>,
       labs: [
         { lab: 'electron', scenario: 'mass-shell', why: 'The same calculation as a laboratory study of the electron, with the excluded band plotted.' },
         { lab: 'electron', scenario: 'radius-limit', why: 'Why the shell must be virtual: the effective speed of its turning against its radius.' },

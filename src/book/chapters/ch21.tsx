@@ -19,7 +19,8 @@ function AetherStream() {
   const play = usePlayback({ speed: 0.4 });
   const H = 400, x0 = 150, yTop = 60, yBottom = 320, b = yBottom - yTop, alpha = headingAngle(v), slow = model === 'kinetic' ? expectedSlowing(v) : 1;
   // Two signals leave together: one across the stream and back, one the same distance along it and back.
-  const u = (play.t % 2.6) / 2, across = Math.min(1, u / slow), along = Math.min(1, u), tri = (k: number) => (k < 0.5 ? k * 2 : 2 - k * 2);
+  // One cycle lets the slower signal get back, then pauses briefly before both set out again.
+  const cycle = 2 * Math.max(slow, 1) + 0.6, u = (play.t % cycle) / 2, across = Math.min(1, u / slow), along = Math.min(1, u), tri = (k: number) => (k < 0.5 ? k * 2 : 2 - k * 2);
   const ax = x0 + Math.tan((alpha * Math.PI) / 180) * b;
   return <Diagram stage={
     <Stage w={W} h={H} label={`Light crossing between two walls with an æther stream of ${fmt(v, 2)} of the speed of light flowing across. ${model === 'kinetic' ? `If the æther carried light as a stream carries a swimmer, the crossing would take ${fmt(expectedSlowing(v), 3)} times as long.` : 'With the æther as the zero-point field the crossing takes the same time in every direction, which is what was found.'}`}>
