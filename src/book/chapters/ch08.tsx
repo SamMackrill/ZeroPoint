@@ -159,8 +159,8 @@ function MovingSourceField() {
   const strength = r < 1 || speed === 0 ? 0 : speed * movingField(r, alpha, 150), none = strength < 1e-6, right = dx > 0, name = matter ? 'B_m' : 'B';
   const arc = pathThrough(Array.from({ length: 20 }, (_, i) => polar(sx, sy, 56, 90 - (Math.sign(dx) || 1) * (alpha * i) / 19)));
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A ${matter ? 'body of matter' : 'positive charge'} moving up the page. At the point marked, ${Math.round(r)} units away at ${Math.round(alpha)} degrees from the motion, ${none ? `there is no ${matter ? 'mattermagnetic' : 'magnetic'} field` : `the ${matter ? 'mattermagnetic' : 'magnetic'} field points ${right ? 'into' : 'out of'} the page with relative strength ${fmt(strength, 2)}`}.`}>
-      <Arrow x1={sx} y1={sy} x2={sx} y2={sy - 60 - 110 * speed} tone="motion" w={3}/><T x={sx - 14} y={sy - 90} anchor="end" tone="motion" size="lg">v</T>
+    <Stage w={W} h={H} label={`A ${matter ? 'body of matter' : 'positive charge'} ${speed === 0 ? 'at rest' : 'moving up the page'}. At the point marked, ${Math.round(r)} units away at ${Math.round(alpha)} degrees from the motion, ${none ? `there is no ${matter ? 'mattermagnetic' : 'magnetic'} field` : `the ${matter ? 'mattermagnetic' : 'magnetic'} field points ${right ? 'into' : 'out of'} the page with relative strength ${fmt(strength, 2)}`}.`}>
+      {speed > 0 && <><Arrow x1={sx} y1={sy} x2={sx} y2={sy - 60 - 110 * speed} tone="motion" w={3}/><T x={sx - 14} y={sy - 90} anchor="end" tone="motion" size="lg">v</T></>}
       <Arrow x1={sx} y1={sy} x2={p.x} y2={p.y} tone="mark" w={2.2}/><T x={(sx + p.x) / 2 + 12} y={(sy + p.y) / 2 + 16} tone="mark" anchor="start" size="lg">r</T>
       <Line d={arc} tone="accent" w={1.6}/><T x={polar(sx, sy, 74, 90 - (Math.sign(dx) || 1) * alpha / 2)[0]} y={polar(sx, sy, 74, 90 - (Math.sign(dx) || 1) * alpha / 2)[1]} tone="accent">α</T>
       {matter ? <Body x={sx} y={sy} r={18}/> : <Charge x={sx} y={sy} sign={1} r={18}/>}
