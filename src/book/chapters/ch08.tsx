@@ -95,7 +95,8 @@ function PrecessingTop() {
       <circle cx={mx} cy={my} r={6} className="bk-f-mark"/>
       <circle cx={cx} cy={cy} r={4} className="bk-f-text"/><T x={cx - 10} y={cy + 22} anchor="end" size="sm">tip</T>
       {field && <>
-        <Arrow x1={hx} y1={hy} x2={polar(hx, hy, 70, a + 180)[0]} y2={polar(hx, hy, 70, a + 180)[1]} tone="b" w={3} opacity={clockwise ? 1 : 0.9}/>
+        {/* Along the axis: toward the tip for a clockwise spin, away from it (toward the head) for a counter-clockwise one. */}
+        <Arrow x1={hx} y1={hy} x2={polar(hx, hy, 70, clockwise ? a + 180 : a)[0]} y2={polar(hx, hy, 70, clockwise ? a + 180 : a)[1]} tone="b" w={3}/>
         <InOut x={mx} y={my} out={false} r={11} tone="motion"/>
         <BlockArrow x1={mx} y1={my} x2={tx} y2={ty} thick={9}/>
         <T x={560} y={120} anchor="start" size="sm" tone="b">B_m along the axis,</T><T x={560} y={136} anchor="start" size="sm" tone="b">{clockwise ? 'downward (toward the tip)' : 'upward (toward the head)'}</T>
@@ -154,7 +155,8 @@ function MovingSourceField() {
   const [speed, setSpeed] = useState(1);
   const [p, setP] = useState({ x: 480, y: 130 });
   const H = 380, sx = 280, sy = 300, dx = p.x - sx, dy = p.y - sy, r = Math.hypot(dx, dy), alpha = deg(Math.acos(clamp(-dy / (r || 1), -1, 1)));
-  const strength = speed * movingField(r, alpha, 150), right = dx > 0, name = matter ? 'B_m' : 'B';
+  // At the source itself the inverse square has no value, and a body at rest makes no field: both read as none.
+  const strength = r < 1 || speed === 0 ? 0 : speed * movingField(r, alpha, 150), right = dx > 0, name = matter ? 'B_m' : 'B';
   const arc = pathThrough(Array.from({ length: 20 }, (_, i) => polar(sx, sy, 56, 90 - (Math.sign(dx) || 1) * (alpha * i) / 19)));
   return <Diagram stage={
     <Stage w={W} h={H} label={`A ${matter ? 'body of matter' : 'positive charge'} moving up the page. At the point marked, ${Math.round(r)} units away at ${Math.round(alpha)} degrees from the motion, the ${matter ? 'mattermagnetic' : 'magnetic'} field points ${right ? 'into' : 'out of'} the page with relative strength ${fmt(strength, 2)}.`}>

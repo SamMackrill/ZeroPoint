@@ -46,7 +46,8 @@ function MatterInertia() {
   if (play.t < state.current.t) state.current = { t: 0, p: 0, push: 0, until: 0, angle: 0, flow: 0 };
   const dt = Math.max(0, Math.min(0.1, play.t - state.current.t)), s = state.current;
   s.t = play.t;
-  if (play.t < s.until) s.p = clamp(s.p + s.push * dt * 1.6, -9, 9); else s.push = 0;
+  // Momentum has no limit; only the velocity does (bodyVelocity), as the zeptons cannot turn faster.
+  if (play.t < s.until) s.p += s.push * dt * 1.6; else s.push = 0;
   const v = bodyVelocity(s.p, matter);
   s.angle += s.p * 60 * dt; s.flow += v * 110 * dt;
   const push = (dir: 1 | -1) => { s.push = dir; s.until = play.t + 0.9; };

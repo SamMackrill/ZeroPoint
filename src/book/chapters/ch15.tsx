@@ -18,7 +18,9 @@ function CombinedForce() {
   const [m, setM] = useState(2);
   const [E, setE] = useState(0.6);
   const [M, setM2] = useState(-0.4);
-  const { electric, matter, total } = electroMatterForce(q, E, m, M), H = 320, cx = 360, unit = 70;
+  const { electric, matter, total } = electroMatterForce(q, E, m, M), H = 320, cx = 360;
+  // One scale for all three arrows, so they still add up, small enough that the longest stays on the stage.
+  const unit = Math.min(70, 280 / Math.max(1, Math.abs(electric), Math.abs(matter), Math.abs(total)));
   const way = (v: number) => (Math.abs(v) < 0.005 ? 'none' : `${fmt(Math.abs(v), 2)} ${v > 0 ? 'right' : 'left'}`);
   return <Diagram stage={
     <Stage w={W} h={H} label={`A body with electric charge ${q} and matter charge ${m}. The electric field pushes it ${way(electric)}, the matter field ${way(matter)}, and the total force is ${way(total)}.`}>

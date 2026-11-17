@@ -102,7 +102,8 @@ function SynchronousRotation() {
   const inner = sun ? sunFieldAt('inner', 0.35) : 0, outer = sun ? sunFieldAt('outer', 0.35) : 0, against = 1 + inner, withIt = 1 + outer, differential = against - withIt;
   // The side working against the rotation is the stronger, so the rotation slows, and what it loses goes to the orbit.
   const lost = s.spin * differential * 0.9 * dt;
-  s.spin = Math.max(0.04, s.spin - lost); s.distance += lost * 0.25; s.angle += s.spin * 200 * dt;
+  // What the orbit gains is what the rotation actually lost; once the rotation reaches its floor, nothing more passes.
+  const before = s.spin; s.spin = Math.max(0.04, s.spin - lost); s.distance += (before - s.spin) * 0.25; s.angle += s.spin * 200 * dt;
   const H = 380, cx = 410, cy = 200, R = 60, grid = [-70, -25, 20, 65];
   return <Diagram stage={
     <Stage w={W} h={H} label={`A planet moving up the page in its orbit, with the Sun to the left. Its orbital motion makes a field out of the page on the Sun's side and into the page on the far side. ${sun ? 'The Sun’s own rotational field, into the page, is stronger on the near side, so the planet’s rotation slows.' : 'Without the Sun’s field the two sides are equal and the rotation does not change.'}`}>
@@ -129,8 +130,9 @@ function SynchronousRotation() {
   </Diagram>;
 }
 
-/** The radius of a precessing ellipse at an angle: the ellipse turns by `advance` of a turn in each orbit. */
-export const precessingRadius = (theta: number, a: number, e: number, advance: number) => (a * (1 - e * e)) / (1 + e * Math.cos((1 - advance) * theta));
+/** The radius of a precessing ellipse at an angle: successive perihelia are (1 + advance) turns apart, so the ellipse
+ * turns by `advance` of a turn in each orbit. */
+export const precessingRadius = (theta: number, a: number, e: number, advance: number) => (a * (1 - e * e)) / (1 + e * Math.cos(theta / (1 + advance)));
 
 /** Figure 12-5: an elliptical orbit whose perihelion advances with each revolution. */
 function PrecessingOrbit() {
@@ -153,7 +155,7 @@ function PrecessingOrbit() {
       <Line d={trail} tone="muted" w={1.6}/>
       <Body x={cx} y={cy} r={16} tone="matter"/>
       <Body x={px} y={py} r={8} tone="plain"/>
-      {advance > 0 && Array.from({ length: Math.min(5, Math.floor(orbits) + 1) }, (_, k) => { const n = Math.floor(orbits) - k; if (n < 0) return null; const [x, y] = at((n * 2 * Math.PI) / (1 - advance)); return <circle key={n} cx={x} cy={y} r={4} className="bk-f-mark" opacity={1 - k * 0.18}/>; })}
+      {advance > 0 && Array.from({ length: Math.min(5, Math.floor(orbits) + 1) }, (_, k) => { const n = Math.floor(orbits) - k; if (n < 0) return null; const [x, y] = at(n * 2 * Math.PI * (1 + advance)); return <circle key={n} cx={x} cy={y} r={4} className="bk-f-mark" opacity={1 - k * 0.18}/>; })}
       <T x={590} y={70} size="sm" tone="mark">● perihelion, orbit by orbit</T>
     </Stage>}>
     <Slider label="Advance of the perihelion per orbit" value={advance} min={0} max={0.15} step={0.005} onChange={setAdvance} show={v => (v === 0 ? 'none (Newton, two bodies)' : `${fmt(v * 360, 2)}°`)}/>
@@ -257,13 +259,14 @@ function ParallelStars() {
   // The force follows the product of the two momenta, so the square of the speed when the stars are alike.
   const force = speed * speed * (same ? 1 : -1);
   s.gap = clamp(s.gap - force * 9 * dt, 70, 230); s.travel += speed * 60 * dt;
-  const H = 360, cy = 180, x = 470 - (s.travel % 220), y1 = cy - s.gap / 2, y2 = cy + s.gap / 2, mid = x - 110;
+  // The first star moves left; the second moves with it, or right when they move opposite ways.
+  const H = 360, cy = 180, x = 470 - (s.travel % 220), x2 = same ? x : 250 + (s.travel % 220), y1 = cy - s.gap / 2, y2 = cy + s.gap / 2, mid = x - 110;
   return <Diagram stage={
     <Stage w={W} h={H} label={`Two stars moving ${same ? 'in the same direction' : 'in opposite directions'} side by side. Their mattermagnetic fields ${same ? 'oppose each other in the space between, and the stars are drawn together' : 'add in the space between, and the stars are pushed apart'}.`}>
-      <Body x={x} y={y1} r={22} tone="plain"/><Body x={same ? x : x - 220} y={y2} r={22} tone="plain"/>
+      <Body x={x} y={y1} r={22} tone="plain"/><Body x={x2} y={y2} r={22} tone="plain"/>
       {speed > 0.05 && <>
         <Arrow x1={x - 28} y1={y1} x2={x - 28 - 70 * speed} y2={y1} tone="motion" w={2.6}/><T x={x - 110 - 70 * (speed - 1)} y={y1 - 10} tone="motion" italic>υ</T>
-        <Arrow x1={(same ? x : x - 220) + (same ? -28 : 28)} y1={y2} x2={(same ? x : x - 220) + (same ? -28 - 70 * speed : 28 + 70 * speed)} y2={y2} tone="motion" w={2.6}/>
+        <Arrow x1={x2 + (same ? -28 : 28)} y1={y2} x2={x2 + (same ? -28 - 70 * speed : 28 + 70 * speed)} y2={y2} tone="motion" w={2.6}/>
         <Spin x={mid + 40} y={cy - 22} r={15} ccw sweep={230} w={1.8}/><Spin x={mid + 40} y={cy + 22} r={15} ccw={!same} sweep={230} w={1.8}/>
         <BlockArrow x1={mid - 30} y1={y1 + 14} x2={mid - 30} y2={y1 + 14 + (same ? 1 : -1) * 34 * Math.min(1.4, speed * speed)} thick={9}/><BlockArrow x1={mid - 30} y1={y2 - 14} x2={mid - 30} y2={y2 - 14 - (same ? 1 : -1) * 34 * Math.min(1.4, speed * speed)} thick={9}/>
         <T x={mid - 54} y={cy + 5} tone="text" italic>F</T>
