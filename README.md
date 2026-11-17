@@ -10,7 +10,7 @@ On 10 November 2026 the five laboratories were audited against Fleming's papers 
 
 ## Reading the book alongside
 
-The [interactive companion](book/index.html) follows *The Zero-Point Universe* chapter by chapter, with a diagram for each of the book's 86 figures and an explorer for each chapter that has none. Each diagram works the way Fleming's text says the figure works. It notes what the companion had to choose and where his text and figures disagree, links into the laboratory scenarios that go further, and proposes simulations for future work. Open `/book/` on the dev server or the deployed site. [How it is built and checked](docs/book-companion.md).
+The [interactive companion](book/index.html) follows *The Zero-Point Universe* chapter by chapter, with a diagram for each of the book's 86 figures and an explorer for each chapter that has none. Each diagram works the way Fleming's text says the figure works. It notes what the companion had to choose and where his text and figures disagree, links into the laboratory scenarios that go further, and proposes simulations for future work. Two appendices supply what the book lacks: its 133 endnotes gathered by chapter, and an index. Open `/book/` on the dev server or the deployed site. [How it is built and checked](docs/book-companion.md).
 
 ## Planned experiments
 

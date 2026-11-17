@@ -28,6 +28,13 @@ export function ContentsPage() {
           <span className="bk-toc-meta">appendix</span>
         </a>
       </li>
+      <li>
+        <a className="bk-toc-row" href="#/index">
+          <span className="bk-toc-n">App.</span>
+          <span className="bk-toc-main"><strong>Index</strong><span>People, ideas, experiments and effects, with every page whose text uses them.</span></span>
+          <span className="bk-toc-meta">appendix</span>
+        </a>
+      </li>
     </ol>
     <p className="bk-footnote">Ray Fleming died in 2024. These pages follow his text and figures as closely as they can; they are a study aid, not a statement of established physics, and where a diagram has to choose something he does not give, it says so.</p>
   </div>;
