@@ -149,7 +149,8 @@ function PrecessingOrbit() {
   state.current.theta += ((a * a * 2.4) / (rNow * rNow)) * dt;
   const theta = state.current.theta, at = (th: number): [number, number] => { const r = precessingRadius(th, a, e, advance); return [cx + r * Math.sin(th), cy + r * Math.cos(th)]; };
   const from = Math.max(0, theta - 5 * 2 * Math.PI), trail = pathThrough(Array.from({ length: 400 }, (_, i) => at(from + ((theta - from) * i) / 399)));
-  const [px, py] = at(theta), orbits = theta / (2 * Math.PI);
+  // An orbit runs perihelion to perihelion, (1 + advance) turns, so a perihelion is marked only once the planet has passed it.
+  const [px, py] = at(theta), orbits = theta / (2 * Math.PI * (1 + advance));
   return <Diagram stage={
     <Stage w={W} h={H} label={`A planet on an elliptical orbit round a sun. The ellipse turns ${fmt(advance * 360, 2)} degrees further round with each orbit: the perihelion advances.`}>
       <Line d={trail} tone="muted" w={1.6}/>
