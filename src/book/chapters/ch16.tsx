@@ -14,8 +14,8 @@ interface Shell { label: string; d: [number, number] }
 /**
  * The particles of the chapter, with the CODATA 2010 values Fleming uses and the shells he gives. The electron's
  * printed shell (p. 125) does not have the Compton wavelength as its mean, as the text says it should; the shell
- * that does, solved here from Equation 16-1, is offered beside it. His second electron shell, with the pair
- * wavelength as its thickness, is reproduced by the equation to the digits he prints.
+ * that does, solved here from Equation 16-1, is offered beside it. His second electron shell, whose diameters differ
+ * by the pair wavelength, is reproduced by the equation to the digits he prints.
  */
 export const PARTICLES: Record<'proton' | 'electron', { name: string; unit: string; energy: number; diameter: number; shells: Shell[]; range: [number, number]; pair: number }> = {
   proton: { name: 'Proton', unit: 'fm', energy: 938.272046, diameter: 1.755, shells: [{ label: 'Fleming’s shell', d: [1.586, 1.924] }], range: [1.2, 2.8], pair: 0.330 },
@@ -170,7 +170,7 @@ const chapter: ChapterContent = {
         'Switch to the electron and press “Mean at the Compton wavelength”: the same construction gives 0.511 MeV. Then try “Fleming’s printed shell” (see the note below) and “Diameters a pair wavelength apart”, his second solution, which also gives 0.511 MeV.',
       ],
       notes: <><p>The readouts are Equation 16-1 with the CODATA 2010 values the text quotes, and the particle’s density is taken over a sphere of the mean diameter, as he takes it. The ovals are illustrative: small ones inside, large ones outside, none of the excluded sizes. The shell is drawn solid; the text says it is a virtual structure.</p>
-        <p>The electron’s printed shell does not match its description. The text sets the mean diameter to the Compton wavelength, 2.426 pm, and gives <V>d</V><sub>i</sub> = 2.123 pm and <V>d</V><sub>o</sub> = 2.472 pm, whose mean is 2.298 pm (<Pg n={125}/>). Over a sphere of that mean the shell excludes 0.555 MeV; the shell that solves his condition is 2.247 to 2.606 pm, 0.179 pm thick against his 0.175 pm. His second solution sets the difference between the diameters to the pair wavelength, 0.6066 pm, which makes the shell half that, 0.3033 pm, thick. It comes out at 2.880 and 3.487 pm exactly as printed, so the method is his and the first pair looks like a slip. All three shells are offered.</p></>,
+        <p>The electron’s printed shell does not match its description. The text sets the mean diameter to the Compton wavelength, 2.426 pm, and gives <V>d</V><sub>i</sub> = 2.123 pm and <V>d</V><sub>o</sub> = 2.472 pm, whose mean is 2.298 pm (<Pg n={125}/>). Over a sphere of that mean the shell excludes 0.555 MeV; the shell that solves his condition is 2.247 to 2.606 pm, 0.179 pm thick against his 0.175 pm. His second solution sets the difference between the diameters to the pair wavelength, 0.6066 pm, which makes the shell half that, 0.3033 pm, thick (0.3035 pm from the diameters as printed, to three decimals). It comes out at 2.880 and 3.487 pm exactly as printed, so the method is his and the first pair looks like a slip. All three shells are offered.</p></>,
       labs: [
         { lab: 'electron', scenario: 'mass-shell', why: 'The same calculation as a laboratory study of the electron, with the excluded band plotted.' },
         { lab: 'electron', scenario: 'radius-limit', why: 'Why the shell must be virtual: the effective speed of its turning against its radius.' },

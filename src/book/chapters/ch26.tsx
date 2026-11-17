@@ -34,14 +34,14 @@ function PairAtBoundary() {
       {process === 'hawking' && <><circle cx={cx} cy={cy} r={R - 26} className="bk-f-faint" opacity={0.5}/><T x={cx} y={cy + 5} tone="text">black hole</T><T x={cx} y={cy - R - 12} size="sm">event horizon</T></>}
       {process === 'neutron' && <><Charge x={cx - 26} y={cy} sign={1} r={18}/><Charge x={cx + 30} y={cy + 6} sign={-1} r={11} opacity={1 - annihilate}/><T x={cx} y={cy - R - 12} size="sm">{done ? 'now a proton' : 'neutron: a proton with an electron'}</T></>}
       {process === 'capture' && <><circle cx={cx} cy={cy} r={230} className="bk-s-faint" fill="none" strokeDasharray="2 6"/><Charge x={cx} y={cy} sign={1} r={16} opacity={1 - 0.6 * settled}/><T x={cx} y={cy - R - 12} size="sm">{done ? 'proton and electron: a neutron' : 'nucleus'}</T><Charge x={orbital.x} y={orbital.y} sign={-1} r={10} opacity={1 - flashOut} label="orbital electron"/></>}
-      {u < 0.3 && <Zepton x={bx} y={cy - 0} angle={inSign > 0 ? 180 : 0} len={capture ? 212 : 34} open={forming} oval={!capture} signs={false} emphasis="key" opacity={forming}/>}
+      {u < 0.3 && <Zepton x={bx} y={cy - 0} angle={inSign > 0 ? 180 : 0} len={capture ? 212 : 34} open={capture ? 1 : forming} oval={!capture} signs={false} emphasis="key" opacity={forming}/>}
       {u >= 0.25 && <>
         <Charge x={inward} y={cy} sign={inSign} r={9} opacity={process === 'neutron' ? 1 - annihilate : process === 'capture' ? 1 : 1 - 0.7 * settled}/>
         <Charge x={outward} y={cy} sign={outSign} r={9} opacity={process === 'capture' ? 1 - flashOut : 1}/>
       </>}
       {annihilate > 0.2 && annihilate < 0.95 && <circle cx={cx + 34} cy={cy + 4} r={10 + 26 * annihilate} className="bk-s-mark" fill="none" strokeWidth="2" opacity={1 - annihilate}/>}
       {flashOut > 0.2 && flashOut < 0.95 && <circle cx={orbital.x} cy={orbital.y} r={10 + 26 * flashOut} className="bk-s-mark" fill="none" strokeWidth="2" opacity={1 - flashOut}/>}
-      <T x={W - 24} y={H - 44} anchor="end" size="sm" tone="mark">{u < 0.25 ? 'a virtual pair forms just outside' : u < 0.6 ? 'one half crosses the boundary' : spec.freed.toLowerCase()}</T>
+      <T x={W - 24} y={H - 44} anchor="end" size="sm" tone="mark">{capture ? (u < 0.25 ? 'a pair as wide as the atom forms' : u < 0.6 ? 'its electron half is in the nucleus' : spec.freed.toLowerCase()) : u < 0.25 ? 'a virtual pair forms just outside' : u < 0.6 ? 'one half crosses the boundary' : spec.freed.toLowerCase()}</T>
       <T x={W - 24} y={H - 22} anchor="end" size="sm">{done ? `left: ${spec.left}` : ''}</T>
     </Stage>}>
     <Choice label="Process" value={process} onChange={setProcess} options={[{ value: 'hawking', label: 'Hawking' }, { value: 'neutron', label: 'Neutron decay' }, { value: 'capture', label: 'Capture' }]}/>
