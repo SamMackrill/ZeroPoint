@@ -3,17 +3,19 @@
 //   #/            contents          #/ch/6        chapter 6          #/ch/6/6-10   chapter 6 at Figure 6-10
 //   #/guide       how to read       #/future      future simulations
 //   #/references  references, by chapter (#/references/6 at chapter 6's notes)
+//   #/index       the index (#/index/m at the letter M)
 import { useEffect, useState } from 'react';
 import { ChapterPage } from './pages/ChapterPage';
 import { ContentsPage } from './pages/ContentsPage';
 import { FuturePage } from './pages/FuturePage';
 import { GuidePage } from './pages/GuidePage';
+import { IndexPage } from './pages/IndexPage';
 import { ReferencesPage } from './pages/ReferencesPage';
 import { BOOK_PDF, LAB_APP } from './labs';
 import { CHAPTERS, chapterLabel, chapterMeta, chapterTitle } from './toc';
 
 /** A decoded companion route. */
-export type BookRoute = { page: 'contents' } | { page: 'guide' } | { page: 'future'; id?: string } | { page: 'chapter'; n: number; item?: string } | { page: 'references'; chapter?: number };
+export type BookRoute = { page: 'contents' } | { page: 'guide' } | { page: 'future'; id?: string } | { page: 'chapter'; n: number; item?: string } | { page: 'references'; chapter?: number } | { page: 'index'; letter?: string };
 
 /** Decode a hash into a route; anything unrecognised is the contents page. */
 export function parseRoute(hash: string): BookRoute {
@@ -23,6 +25,8 @@ export function parseRoute(hash: string): BookRoute {
   const future = /^#\/future(?:\/([\w-]+))?$/.exec(hash);
   if (future) return { page: 'future', id: future[1] };
   const references = /^#\/references(?:\/(\d+))?$/.exec(hash);
+  const index = /^#\/index(?:\/([a-z]))?$/.exec(hash);
+  if (index) return { page: 'index', letter: index[1] };
   if (references) return { page: 'references', chapter: references[1] !== undefined && chapterMeta(Number(references[1])) ? Number(references[1]) : undefined };
   return { page: 'contents' };
 }
@@ -44,6 +48,7 @@ function PageLinks({ page, className, onNavigate }: { page: BookRoute['page']; c
     <a href="#/" aria-current={page === 'contents' ? 'page' : undefined} onClick={onNavigate}>Contents</a>
     <a href="#/guide" aria-current={page === 'guide' ? 'page' : undefined} onClick={onNavigate}>How to read</a>
     <a href="#/references" aria-current={page === 'references' ? 'page' : undefined} onClick={onNavigate}>References</a>
+    <a href="#/index" aria-current={page === 'index' ? 'page' : undefined} onClick={onNavigate}>Index</a>
     <a href="#/future" aria-current={page === 'future' ? 'page' : undefined} onClick={onNavigate}>Future simulations</a>
     <a href={BOOK_PDF} target="_blank" rel="noreferrer">The book (PDF)</a>
     <a className="bk-top-lab" href={LAB_APP}>Laboratory</a>
@@ -73,7 +78,7 @@ export function BookApp() {
   // The document title follows the page, so browser history and tabs read like the book.
   useEffect(() => {
     const meta = chapter !== undefined ? chapterMeta(chapter) : undefined;
-    const name = meta ? `${chapterLabel(meta.n)}: ${chapterTitle(meta)}` : route.page === 'guide' ? 'How to read' : route.page === 'future' ? 'Future simulations' : route.page === 'references' ? 'References' : 'Contents';
+    const name = meta ? `${chapterLabel(meta.n)}: ${chapterTitle(meta)}` : route.page === 'guide' ? 'How to read' : route.page === 'future' ? 'Future simulations' : route.page === 'references' ? 'References' : route.page === 'index' ? 'Index' : 'Contents';
     document.title = `${name} — The Zero-Point Universe, interactive companion`;
   }, [route.page, chapter]);
   return <div className="bk-shell">
@@ -89,6 +94,7 @@ export function BookApp() {
           : route.page === 'guide' ? <GuidePage/>
           : route.page === 'future' ? <FuturePage id={route.id}/>
           : route.page === 'references' ? <ReferencesPage key={route.chapter ?? 'all'} chapter={route.chapter}/>
+          : route.page === 'index' ? <IndexPage key={route.letter ?? 'all'} letter={route.letter}/>
           : <ContentsPage/>}
       </main>
     </div>

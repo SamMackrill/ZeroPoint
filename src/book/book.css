@@ -1176,6 +1176,84 @@ input {
   font-size: var(--fs-body);
 }
 
+/* Appendices: the index */
+.bk-letters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 22px;
+}
+
+.bk-letters a,
+.bk-letters span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  font-family: var(--mono);
+  font-size: var(--fs-body);
+  border-radius: 6px;
+}
+
+.bk-letters a {
+  color: var(--accent);
+  text-decoration: none;
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+}
+
+.bk-letters a:hover {
+  border-color: var(--accent-line);
+}
+
+.bk-letters span {
+  color: var(--text-3);
+  opacity: 0.5;
+}
+
+.bk-index-letter {
+  font-family: var(--mono);
+  color: var(--accent-2);
+}
+
+.bk-index {
+  margin: 8px 0 0;
+}
+
+.bk-index-entry {
+  display: grid;
+  grid-template-columns: minmax(180px, 280px) minmax(0, 1fr);
+  gap: 4px 18px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.bk-index-entry dt {
+  color: var(--text);
+}
+
+.bk-index-entry dd {
+  margin: 0;
+}
+
+.bk-index-pages {
+  display: block;
+  color: var(--text-2);
+}
+
+.bk-index-chapters {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--fs-body);
+  color: var(--text-3);
+}
+
+@media (max-width: 640px) {
+  .bk-index-entry {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Between the drawer and a wide screen the header keeps its links on one row: the subtitle goes, the links close up. */
 @media (max-width: 1240px) {
   .bk-brand-sub {

@@ -21,6 +21,12 @@ The book has no reference list and no index of its own. Its references are endno
 
   The notes come from the PDF. `scripts/book-references.py` (needs PyMuPDF) separates them from the body text by font size: 15 pt body, 11.3 pt notes, 8.7 pt superscript citations. It writes `src/book/appendix/references.json`. The wording is Fleming's, slips included.
 
+- **Index** (`#/index`, and `#/index/m` for the letter M): about 145 entries for people, ideas, experiments and effects. Each entry lists every PDF page whose text uses the term, grouped into runs, with links to the companion's chapters that cover those pages.
+
+  The entries are chosen; the pages are searched for. `scripts/book-index.py` (needs PyMuPDF) holds the entries and their patterns. It matches them against the body text and captions from p. 7 on, leaving out the endnotes, and writes `src/book/appendix/index.json`. To add an entry, add it to the script and run it again.
+
+`tests/book-appendix.test.tsx` checks the notes' numbering, chapters and citation pages, the index's order and page ranges, and spot-checks both against the book.
+
 ## Conventions
 
 The diagrams follow the yardstick of the [fidelity review](fleming-fidelity-report.html): Fleming's own text and figures, not consensus physics.

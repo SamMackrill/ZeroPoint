@@ -14,6 +14,7 @@ import { ChapterPage } from '../src/book/pages/ChapterPage';
 import { ContentsPage } from '../src/book/pages/ContentsPage';
 import { FuturePage } from '../src/book/pages/FuturePage';
 import { GuidePage } from '../src/book/pages/GuidePage';
+import { IndexPage } from '../src/book/pages/IndexPage';
 import { ReferencesPage } from '../src/book/pages/ReferencesPage';
 import { ALL_FIGURES, CHAPTERS } from '../src/book/toc';
 import type { ChapterContent, LabLink } from '../src/book/types';
@@ -110,6 +111,7 @@ describe('book companion: pages', () => {
     if (route.page === 'chapter') return !route.item || loaded.get(route.n)!.items.some(i => i.id === route.item);
     if (route.page === 'future') return !route.id || FUTURE.some(f => f.id === route.id);
     if (route.page === 'references') return hash === '#/references' || route.chapter !== undefined;
+    if (route.page === 'index') return true;
     return route.page !== 'contents' || hash === '#/';
   };
 
@@ -123,7 +125,7 @@ describe('book companion: pages', () => {
       for (const hash of routes(container)) seen.add(hash);
       unmount();
     }
-    for (const Page of [ContentsPage, GuidePage, () => <FuturePage/>, () => <ReferencesPage/>]) {
+    for (const Page of [ContentsPage, GuidePage, () => <FuturePage/>, () => <ReferencesPage/>, () => <IndexPage/>]) {
       const { container, unmount } = render(<Page/>);
       for (const hash of routes(container)) seen.add(hash);
       unmount();
