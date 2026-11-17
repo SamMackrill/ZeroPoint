@@ -202,6 +202,13 @@ button.workbench-chip:focus-visible {
   outline-offset: 2px;
 }
 
+/* Phones keep the header's room for the scenario name; the book companion stays one tap away in Help › Sources. */
+@media (max-width: 600px) {
+  .workbench-header .book-link {
+    display: none;
+  }
+}
+
 .workbench-icon-button {
   display: grid;
   place-items: center;

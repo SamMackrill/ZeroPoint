@@ -243,3 +243,15 @@
   color: var(--text-3);
   font-size: var(--fs-ui);
 }
+
+.about-book {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--text-2);
+  font-size: var(--fs-ui);
+}
+
+.about-book a {
+  font-weight: 600;
+}

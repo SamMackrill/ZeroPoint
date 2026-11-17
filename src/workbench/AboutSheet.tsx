@@ -2,6 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import * as Tabs from '@radix-ui/react-tabs';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { BOOK_COMPANION } from '../app/BookLink';
 import { ACTION_GROUPS, keyLabel, useCommand, type Action } from './actions';
 import './about-sheet.css';
 
@@ -39,6 +40,11 @@ function ShortcutList({ actions, pointer = [] }: { actions: readonly Action[]; p
   })}<p className="about-shortcuts-note">Shortcuts are ignored while typing in a field or while a dialog is open.</p></>;
 }
 
+
+/** Every lab's Sources end with the book companion, where each figure of Fleming's book links back to these labs. */
+function BookNote() {
+  return <p className="about-book" data-testid="about-book"><a href={BOOK_COMPANION}>Read the book alongside</a>: an interactive diagram for every figure of <em>The Zero-Point Universe</em>, each linked to the laboratory scenarios that take it further.</p>;
+}
 
 /** Open state for one lab's About sheet: `show()` opens it, at a section if given. */
 export function useAbout() {
@@ -106,7 +112,7 @@ export function AboutSheet({ open, onOpenChange, section, onSection, experiment,
             <Tabs.List className="about-tab-list" aria-label="About sections">
               {sections.map(s => <Tabs.Trigger key={s.id} value={s.id} data-testid={`about-${s.id}`}>{LABELS[s.id]}</Tabs.Trigger>)}
             </Tabs.List>
-            {sections.map(s => <Tabs.Content key={s.id} value={s.id} className="about-body">{s.content}</Tabs.Content>)}
+            {sections.map(s => <Tabs.Content key={s.id} value={s.id} className="about-body">{s.content}{s.id === 'sources' && <BookNote/>}</Tabs.Content>)}
           </Tabs.Root>
         </Dialog.Content>
       </Dialog.Portal>
