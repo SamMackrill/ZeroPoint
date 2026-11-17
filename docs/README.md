@@ -30,6 +30,8 @@ node scripts/compare-screens.mjs --before "$BEFORE_WORKTREE" --out docs/fidelity
 
 The previews page prints the full command it was made with, including its description.
 
+The [book companion](book-companion.md) describes the interactive companion to *The Zero-Point Universe* (`book/index.html`). It covers the companion's conventions, its checks, and the places where the book's text and figures disagree.
+
 Additional experiments:
 
 - [Van der Waals & vacuum pressure](van-der-waals-model.md): implemented polarization, correlated-dipole and plate-pressure stages based on Chapter 3, with original extracted figures, analytic references and a CSV gap sweep.

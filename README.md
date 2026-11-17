@@ -8,6 +8,10 @@ The current laboratory is a single-page workbench for the **reduced medium lifec
 
 On 10 November 2026 the five laboratories were audited against Fleming's papers and *The Zero-Point Universe*, and changed where they departed from his text and figures. The reading, the findings and before/after screens are in [the fidelity review](docs/fleming-fidelity-report.html). In short: a zepton makes a half-turn in its lifetime and opens to its own wavelength; a photon's central pair spans half the photon wavelength and produces the field, which collapses and reverses at each hand-off; pairs round an electron are born at random and polarize by a share that thins with distance, with one shared rotation preference; mass can be explored as the zero-point energy a shell excludes; the chain of zeptons between opposite charges shortens; and the Casimir plates are drawn with every wavelength outside and only the short ones between.
 
+## Reading the book alongside
+
+The [interactive companion](book/index.html) follows *The Zero-Point Universe* chapter by chapter, with a diagram for each of the book's 86 figures and an explorer for each chapter that has none. Each diagram works the way Fleming's text says the figure works. It notes what the companion had to choose and where his text and figures disagree, links into the laboratory scenarios that go further, and proposes simulations for future work. Open `/book/` on the dev server or the deployed site. [How it is built and checked](docs/book-companion.md).
+
 ## Planned experiments
 
 The roadmap includes visualisations of:
