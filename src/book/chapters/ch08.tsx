@@ -286,15 +286,14 @@ export const movingField = (r: number, alpha: number, reference: number) => (Mat
 /** Figure 8-6: the magnetic field of a moving charge, and of a moving body of matter by the same form. */
 function MovingSourceField() {
   const [matter, setMatter] = useState(false);
-  const [speed, setSpeed] = useState(1);
   const [p, setP] = useState({ x: 480, y: 130 });
   const H = 380, sx = 280, sy = 300, dx = p.x - sx, dy = p.y - sy, r = Math.hypot(dx, dy), alpha = deg(Math.acos(clamp(-dy / (r || 1), -1, 1)));
-  // At the source itself the inverse square has no value, and a body at rest makes no field: both read as none.
-  const strength = r < 1 || speed === 0 ? 0 : speed * movingField(r, alpha, 150), none = strength < 1e-6, right = dx > 0, name = matter ? 'B_m' : 'B';
+  // At the source itself the inverse square has no value: it reads as none.
+  const strength = r < 1 ? 0 : movingField(r, alpha, 150), none = strength < 1e-6, right = dx > 0, name = matter ? 'B_m' : 'B';
   const arc = pathThrough(Array.from({ length: 20 }, (_, i) => polar(sx, sy, 56, 90 - (Math.sign(dx) || 1) * (alpha * i) / 19)));
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A ${matter ? 'body of matter' : 'positive charge'} ${speed === 0 ? 'at rest' : 'moving up the page'}. At the point marked, ${Math.round(r)} units away at ${Math.round(alpha)} degrees from the motion, ${none ? `there is no ${matter ? 'mattermagnetic' : 'magnetic'} field` : `the ${matter ? 'mattermagnetic' : 'magnetic'} field points ${right ? 'into' : 'out of'} the page with relative strength ${fmt(strength, 2)}`}.`}>
-      {speed > 0 && <><Arrow x1={sx} y1={sy} x2={sx} y2={sy - 60 - 110 * speed} tone="motion" w={3}/><T x={sx - 14} y={sy - 90} anchor="end" tone="motion" size="lg">v</T></>}
+    <Stage w={W} h={H} label={`A ${matter ? 'body of matter' : 'positive charge'} moving up the page. At the point marked, ${Math.round(r)} units away at ${Math.round(alpha)} degrees from the motion, ${none ? `there is no ${matter ? 'mattermagnetic' : 'magnetic'} field` : `the ${matter ? 'mattermagnetic' : 'magnetic'} field points ${right ? 'into' : 'out of'} the page with relative strength ${fmt(strength, 2)}`}.`}>
+      <Arrow x1={sx} y1={sy} x2={sx} y2={sy - 170} tone="motion" w={3}/><T x={sx - 14} y={sy - 90} anchor="end" tone="motion" size="lg">v</T>
       <Arrow x1={sx} y1={sy} x2={p.x} y2={p.y} tone="mark" w={2.2}/><T x={(sx + p.x) / 2 + 12} y={(sy + p.y) / 2 + 16} tone="mark" anchor="start" size="lg">r</T>
       <Line d={arc} tone="accent" w={1.6}/><T x={polar(sx, sy, 74, 90 - (Math.sign(dx) || 1) * alpha / 2)[0]} y={polar(sx, sy, 74, 90 - (Math.sign(dx) || 1) * alpha / 2)[1]} tone="accent">α</T>
       {matter ? <Body x={sx} y={sy} r={18}/> : <Charge x={sx} y={sy} sign={1} r={18}/>}
@@ -306,7 +305,6 @@ function MovingSourceField() {
       <T x={30} y={H - 14} anchor="start" size="sm">⊗ into the page on the right of the motion · ⊙ out of it on the left</T>
     </Stage>}>
     <Choice label="What is moving" value={matter ? 'matter' : 'charge'} onChange={v => setMatter(v === 'matter')} options={[{ value: 'charge', label: 'Charge q' }, { value: 'matter', label: 'Matter m' }]}/>
-    <Slider label="Velocity" value={speed} min={0} max={1.5} step={0.05} onChange={setSpeed} show={v => `${fmt(v, 2)} ×`}/>
     <Readout label="Distance r" value={`${Math.round(r)} units`}/>
     <Readout label="Angle α" value={`${Math.round(alpha)}°`}/>
     <Readout label={`${name}, relative`} value={none ? 'none' : `${fmt(strength, 2)} ${right ? 'into the page' : 'out of the page'}`} tone="b"/>
@@ -398,7 +396,7 @@ const chapter: ChapterContent = {
         <p>where μ<sub>0m</sub> is <Q>the matter permeability of the vacuum</Q> and <V>m</V> a quantity of matter charge, both still to be determined at this point in the book.</p>
       </>,
       tryThis: ['Drag the measuring point to the right of the motion: B is into the page. To the left: out of it.', 'Move it straight ahead of the charge: α is zero and so is the field.', 'Switch to matter. Nothing in the geometry changes; the source is now momentum mυ.'],
-      notes: <p>The strength is relative: it uses sin α / <V>r</V>² and the velocity, and leaves out the constants. Fleming gives no value for μ<sub>0m</sub> in this chapter.</p>,
+      notes: <p>The strength is relative: it uses sin α / <V>r</V>² for a source moving at one speed, and leaves out the constants. Fleming gives no value for μ<sub>0m</sub> in this chapter.</p>,
       labs: [{ lab: 'electron', scenario: 'moving', query: 'L=+magnetic', why: 'The motion field of a moving electron as rotating pairs.' }],
     },
   ],
