@@ -148,6 +148,9 @@ interface Fluctuation { x: number; y: number; len: number; angle: number; phase:
 /** Whether a fluctuation of a wavelength can exist in a gap: Fleming's rule for Figure 3-3. */
 export const fitsBetween = (wavelength: number, gap: number) => wavelength <= gap;
 
+/** Half the horizontal width of an ellipse with semi-axes rx, ry turned by `angle` degrees. */
+export const halfWidth = (rx: number, ry: number, angle: number) => Math.hypot(rx * Math.cos((angle * Math.PI) / 180), ry * Math.sin((angle * Math.PI) / 180));
+
 /** Figure 3-3: fluctuations of every wavelength outside the plates, and only those that fit between them. */
 function PlatesAndFluctuations() {
   const [gap, setGap] = useState(70);
@@ -155,29 +158,44 @@ function PlatesAndFluctuations() {
   const W = 720, H = 430, top = 16, floor = 350, plate = 20, cx = W / 2, shortest = 10, range = 17;
   const population = useMemo(() => {
     const random = rng(33), list: Fluctuation[] = [];
-    // Outside: every size. Wavelengths are spread evenly on a logarithmic scale, as "of any size".
-    for (let i = 0; i < 46; i++) {
-      const len = shortest * (range ** random()), side = i % 2 ? 1 : -1;
-      list.push({ x: cx + side * (150 + random() * 190), y: top + 16 + random() * (floor - top - 32), len, angle: random() * 180, phase: random(), between: false });
+    // Outside: every size, scattered evenly across the whole stage; those that fall outside the plates are drawn, so the
+    // vacuum fills the space beside the plates at the same density whatever the gap. Wavelengths are spread evenly on a
+    // logarithmic scale, as "of any size".
+    for (let i = 0; i < 130; i++) {
+      const len = shortest * (range ** random());
+      list.push({ x: 12 + random() * (W - 24), y: top + 16 + random() * (floor - top - 32), len, angle: random() * 180, phase: random(), between: false });
     }
     // Between: the same spread of sizes is offered; the gap decides which can exist there.
     for (let i = 0; i < 26; i++) list.push({ x: random() - 0.5, y: top + 14 + random() * (floor - top - 28), len: shortest * (range ** random()), angle: 60 + random() * 60, phase: random(), between: true });
     return list;
-  }, [cx]);
+  }, [W]);
   const inside = population.filter(f => f.between), fit = inside.filter(f => fitsBetween(f.len, gap));
+  // The push on each plate grows as 1/d⁴ (Equation 3-1). Its arrow follows the logarithm, so both ends of the slider show.
+  const widest = 170, narrowest = 14, push = (widest / gap) ** 4, pushLen = 18 + 62 * (Math.log(widest / gap) / Math.log(widest / narrowest)), mid = (top + floor) / 2;
   // The strip under the plates: every wavelength offered to the gap, on a logarithmic scale, and where the gap falls.
   const sx = (len: number) => 90 + (Math.log(len / shortest) / Math.log(range)) * 540;
   return <Diagram stage={
     <Stage w={W} h={H} label={`Two plates ${gap} units apart. Fluctuations of every size appear outside; between the plates only those no longer than the gap appear, ${fit.length} of the ${inside.length} sizes offered.`}>
       {population.map((f, i) => {
-        if (f.between && !fitsBetween(f.len, gap)) return null;
+        // Every fluctuation is whole: one that would reach into a plate at its fullest is not there.
+        const rx = f.len / 2, ry = Math.max(3, f.len * 0.19);
+        let x = f.x, angle = f.angle;
+        if (f.between) {
+          if (!fitsBetween(f.len, gap)) return null;
+          // Between the plates a fluctuation leans upright as the gap narrows, and upright if it would otherwise not fit.
+          angle = 90 + (f.angle - 90) * Math.min(1, gap / 120);
+          if (halfWidth(rx, ry, angle) > gap / 2) angle = 90;
+          x = cx + f.x * 2 * Math.max(0, gap / 2 - halfWidth(rx, ry, angle));
+        } else if (Math.abs(f.x - cx) - halfWidth(rx, ry, angle) < gap / 2 + plate + 1) return null;
         // Each fluctuation appears, swells and vanishes; longer wavelengths are shown lasting longer.
         const life = ((play.t * 22) / (f.len + 14) + f.phase) % 1, swell = 0.35 + 0.65 * Math.sin(Math.PI * life);
-        const x = f.between ? cx + f.x * Math.max(0, gap - f.len * 0.5) * 0.7 : f.x, angle = f.between ? 90 + (f.angle - 90) * Math.min(1, gap / 120) : f.angle;
-        return <ellipse key={i} cx={x} cy={f.y} rx={(f.len / 2) * swell} ry={Math.max(3, f.len * 0.19) * swell} transform={`rotate(${-angle} ${x} ${f.y})`} className="bk-zepton-oval" opacity={0.3 + 0.7 * Math.sin(Math.PI * life)}/>;
+        return <ellipse key={i} cx={x} cy={f.y} rx={rx * swell} ry={ry * swell} transform={`rotate(${-angle} ${x} ${f.y})`} className="bk-zepton-oval" opacity={0.3 + 0.7 * Math.sin(Math.PI * life)}/>;
       })}
       <rect x={cx - gap / 2 - plate} y={top} width={plate} height={floor - top} className="bk-plate"/>
       <rect x={cx + gap / 2} y={top} width={plate} height={floor - top} className="bk-plate"/>
+      {/* The net push of the outside vacuum on each plate: an extension of Fleming's figure, sized by Equation 3-1. */}
+      <BlockArrow x1={cx - gap / 2 - plate - 6 - pushLen} y1={mid} x2={cx - gap / 2 - plate - 4} y2={mid} thick={16}/>
+      <BlockArrow x1={cx + gap / 2 + plate + 6 + pushLen} y1={mid} x2={cx + gap / 2 + plate + 4} y2={mid} thick={16}/>
       <Arrow x1={cx - gap / 2} y1={floor + 10} x2={cx + gap / 2} y2={floor + 10} both tone="mark" w={1.4} head={6}/>
       <T x={90} y={floor + 34} anchor="start" size="sm">Wavelengths offered to the gap</T>
       <line x1={90} y1={floor + 54} x2={630} y2={floor + 54} className="bk-s-faint" strokeWidth="1"/>
@@ -189,7 +207,8 @@ function PlatesAndFluctuations() {
     <PlayBar play={play} label="the fluctuations"/>
     <Readout label="Longest wavelength that fits" value={`${gap} units`}/>
     <Readout label="Sizes shut out of the gap" value={`${inside.length - fit.length} of ${inside.length}`} tone={inside.length - fit.length ? 'bad' : undefined}/>
-    <Remark>Outside the plates nothing is excluded, at any gap.</Remark>
+    <Readout label="Push on the plates" value={`${fmt(push)} × at the widest gap`} tone="force"/>
+    <Remark>Outside the plates nothing is excluded, at any gap. The outside presses harder than the inside, and the plates are pushed together.</Remark>
   </Diagram>;
 }
 
@@ -287,13 +306,18 @@ const chapter: ChapterContent = {
       text: <>
         <p>The ovals are vacuum fluctuations of various wavelengths. In open space they may be of any size. Between the plates, <Q>vacuum fluctuations with wavelengths that are longer than the distance between the plates will be excluded from that space. These longer wavelengths will however still exist outside the plates</Q> (<Pg n={29}/>).</p>
         <p>As the plates come together, <Q>an increasing number of shorter and shorter wavelength, higher and higher energy, zero-point vacuum fluctuations are excluded from the space between</Q> (<Pg n={30}/>). Most of the energy is in fluctuations smaller than any drawn, so the two pressures stay close to equal.</p>
+        <p>The caption’s “retarded” is Casimir and Polder’s word, from the title of their paper, and Fleming reads it as <Q>retarded, or reduced</Q> (<Pg n={29}/>). What is reduced is a pressure: <Q>The pressure pushing the plates together stays the same, while the pressure pushing the plates apart becomes slightly smaller</Q> (<Pg n={30}/>). The force on the plates is the difference between the two.</p>
       </>,
       tryThis: [
-        'Narrow the gap. Longer fluctuations stop appearing between the plates one size after another, while every size goes on appearing outside.',
+        'Narrow the gap. Longer fluctuations stop appearing between the plates one size after another, while every size goes on appearing outside, filling the space the plates leave.',
+        'Watch the arrows on the plates as you narrow the gap: the push grows as the fourth power of the closeness, as Equation 3-1 says.',
         'Watch the strip under the plates: each mark is a wavelength offered to the gap. Marks to the right of the dashed line are longer than the gap and are shut out.',
         'Open the gap wide. Almost everything fits again, which is why the force is negligible at everyday distances.',
       ],
-      notes: <p>The sizes drawn span a range of 17 to 1 so they can be seen; the real range runs from the Planck length upward. How long each oval lasts is illustrative (longer wavelengths are shown lasting longer).</p>,
+      notes: <>
+        <p>The sizes drawn span a range of 17 to 1 so they can be seen; the real range runs from the Planck length upward. How long each oval lasts is illustrative (longer wavelengths are shown lasting longer).</p>
+        <p>The arrows on the plates are not in Fleming’s figure. They show the net push his text describes (<Pg n={30}/>), growing as 1/<V>d</V>⁴ as in Equation 3-1 (<Pg n={31}/>); their length follows the logarithm of the push, so it is a display scale. Figure 3-4 shows the two pressures that make it.</p>
+      </>,
       labs: [{ lab: 'vdw', scenario: 'pressure', query: 'split=fig-3-3', why: 'Adjustable plates with the pressure, force and energy the gap gives, beside this figure.' }],
     },
     {

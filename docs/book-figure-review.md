@@ -10,7 +10,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 |---|---|---|---|---|
 | 3-1 | Debye’s dipoles: why the average is attraction | still | changed | Animated: dipoles move under the force, moments respond; motion arrows fade while playing, 𝔈 stays |
 | 3-2 | A neutral atom becomes a dipole | animated | changed | E label; A and B are one atom, as in the text |
-| 3-3 | What the plates shut out | animated | to review | |
+| 3-3 | What the plates shut out | animated | changed | Outside vacuum fills to the plates, whole ovals only; push arrows (Eq. 3-1); “retarded” explained |
 | 3-4 | Two great pressures, almost in balance | still | to review | |
 | 4-1 | Pairs either side of zero energy | animated | to review | |
 | 4-2 | A sea of dipoles that answers to charge | animated | to review | |
@@ -139,3 +139,11 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 - **Done:** the label above the arrow is now *E*. The controls read “Strength of E” and “E points to the right”. Fleming’s caption keeps his own wording.
 - **Owner:** A and B are the same hydrogen atom, without and with an electric field; the text should say so. **Agreed:** Fleming’s text on p. 29 follows one atom, although his caption calls B “the second hydrogen atom”.
 - **Done:** the card’s text says that A and B are one atom and quotes the fuller p. 29 passage. The stage labels read “A · no E” and “B · in E”, and the Try steps refer to A and B as one atom. A note records that the caption speaks of a second atom while the text and the diagram follow one.
+
+### Fig. 3-3 (changed, agreed 2026-11-18)
+
+- **Owner:** as the plates close, the outside fluctuations should fill the space outside. At the moment a blank area opens up, which is not what happens. There should also be some sign of the force pressing the plates together: an extension of the original, but important.
+- **Done:** the outside fluctuations are now scattered across the whole stage. Every one whose centre lies outside the plates is drawn, clipped at the plates’ outer faces, so the vacuum beside the plates stays at the same density whatever the gap. A block arrow presses on each plate’s outer face. The arrows grow with the push, which goes as 1/d⁴ (Equation 3-1, p. 31; p. 30 for the pressure from outside). A readout gives the push relative to the widest gap. The notes say that the arrows are not in Fleming’s figure and that their length is a log display scale.
+- **Owner:** the fluctuations should not clip into the plates.
+- **Done:** no clipping now. Every fluctuation is drawn whole, and one that would reach into a plate at its fullest is not drawn. Outside the plates, a fluctuation is drawn only if all of it clears the outer faces. Between them, each one leans upright as the gap narrows, stands upright if it would not otherwise fit, and is placed so that it clears both plates.
+- **Owner:** “The force between the two plates is retarded” does not seem right; would pressure be better? **Discussed:** that sentence is Fleming’s caption, which stays as printed. “Retarded” is Casimir and Polder’s word for the force, and Fleming reads it as “retarded, or reduced” (p. 29). **Done:** a paragraph in the card’s text explains this, quotes p. 30 to show that what drops is the pressure between the plates, and says that the force is the difference.
