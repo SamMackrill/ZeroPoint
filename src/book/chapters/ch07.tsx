@@ -1,9 +1,10 @@
 // Chapter 7: Maxwell's Equations (PDF pp. 62–69). Figures 7-1 to 7-5.
-import { useMemo, useRef, useState } from 'react';
-import { Action, Dial, Arrow, BlockArrow, Charge, Choice, Diagram, FieldPicture, FieldZeptons, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
+import { Suspense, lazy, useCallback, useMemo, useRef, useState } from 'react';
+import { Action, Dial, Arrow, BlockArrow, Charge, Choice, Diagram, FallbackOnError, FieldPicture, FieldZeptons, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { HAND_DIGITS, HAND_PATH, HAND_SIZE } from '../art/fleming-hand';
+import type { SweepView } from '../three/SweepScene';
 import type { FieldMode } from './shared';
 
 const W = 720;
@@ -222,11 +223,19 @@ function ElectricDeflection() {
 /** The radius of the circle a charge follows in a field of spinning zeptons: larger for a weaker field. */
 export const sweepRadius = (strength: number) => 520 / Math.max(strength, 0.05);
 
-/** Figure 7-5: a moving charge swept aside by a field of rotating zepton dipoles. */
+/** Figure 7-5 drawn in three dimensions: loaded on demand, since three.js is large. */
+const SweepScene = lazy(() => import('../three/SweepScene'));
+
+/** Figure 7-5: a moving charge swept aside by a field of rotating zepton dipoles, in the plane they spin in. */
 function MagneticDeflection() {
   const [clockwise, setClockwise] = useState(true);
   const [sign, setSign] = useState<'pos' | 'neg'>('pos');
   const [strength, setStrength] = useState(1.6);
+  const [view, setView] = useState<SweepView>('turned');
+  const [reset, setReset] = useState(0);
+  const [layers, setLayers] = useState(true);
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const fail = useCallback(() => setFlat(true), []);
   const play = usePlayback({ speed: 0.3 });
   const H = 400, x0 = 360, y0 = H - 20, top = 300, q = sign === 'pos' ? 1 : -1;
   // A positive charge moving up the page is swept left by clockwise dipoles (a field into the page), right by
@@ -238,8 +247,28 @@ function MagneticDeflection() {
     return points;
   }, [side, R]);
   const index = Math.min(path.length - 1, Math.floor((play.t % 1.15) * path.length)), [px, py] = path[index];
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`A ${sign === 'pos' ? 'positive' : 'negative'} charge moving up the page into a field of zepton dipoles spinning ${clockwise ? 'clockwise' : 'counter-clockwise'}. It is swept to the ${side < 0 ? 'left' : 'right'}.`}>
+  // The same path on the plane of the 3D view: the page's x across, its y toward the reader, sixty units to one.
+  const onPlane = useMemo(() => path.map(([x, y]) => [(x - 360) / 60, (y - 200) / 60] as [number, number]), [path]);
+  const label = `A ${sign === 'pos' ? 'positive' : 'negative'} charge moving across a plane into a field of zepton dipoles spinning ${clockwise ? 'clockwise' : 'counter-clockwise'} in that same plane, so the magnetic field points ${clockwise ? 'down' : 'up'} through it. The charge is swept to the ${side < 0 ? 'left' : 'right'}, in the plane.`;
+  return <Diagram stage={flat ? flatSweep() : <FallbackOnError onError={fail} fallback={flatSweep()}>
+      <Suspense fallback={flatSweep()}>
+        <SweepScene state={{ path: onPlane, at: onPlane[index], positive: q > 0, clockwise, spin: play.t * 260 * strength, strength: (strength - 0.4) / 2.6, view, reset, layers }} onFail={fail} description={`${label} Drag to turn the view.`}/>
+      </Suspense>
+    </FallbackOnError>}>
+    {!flat && <Choice label="View" value={view} onChange={setView} options={[{ value: 'turned', label: 'Turned' }, { value: 'above', label: 'From above' }]}/>}
+    {!flat && <Action onClick={() => setReset(n => n + 1)}>Back to this view</Action>}
+    {!flat && <Toggle label="Layers above and below" checked={layers} onChange={setLayers}/>}
+    <Choice label="Dipoles spin" value={clockwise ? 'cw' : 'ccw'} onChange={v => setClockwise(v === 'cw')} options={[{ value: 'cw', label: 'Clockwise' }, { value: 'ccw', label: 'Counter' }]}/>
+    <Choice label="Moving charge" value={sign} onChange={setSign} options={[{ value: 'pos', label: 'Positive' }, { value: 'neg', label: 'Negative' }]}/>
+    <Slider label="Strength of the field (rate of spin)" value={strength} min={0.4} max={3} step={0.1} onChange={setStrength}/>
+    <PlayBar play={play} label="the moving charge"/>
+    <Readout label="Swept to the" value={side < 0 ? 'left' : 'right'} tone="force"/>
+    <Remark>The rotation of the dipoles is in the same plane as the motion of the body, and sweeps it to the side.</Remark>
+  </Diagram>;
+
+  /** The printed page's view, flat: the fallback where 3D cannot be drawn (called, not mounted, so it keeps its elements). */
+  function flatSweep() {
+    return <Stage w={W} h={H} label={label}>
       <rect x={30} y={20} width={W - 60} height={top - 20} rx={8} className="bk-fill-panel"/>
       {Array.from({ length: 4 }, (_, r) => Array.from({ length: 8 }, (_, c) => {
         const x = 80 + c * 80, y = 56 + r * 66;
@@ -249,14 +278,8 @@ function MagneticDeflection() {
       <Line d={pathThrough(path)} tone="motion" w={1.6} dash="5 4"/>
       <Charge x={px} y={py} sign={q as 1 | -1} r={11}/>
       <T x={x0 + 14} y={H - 26} anchor="start" size="sm">no field here: a straight path</T>
-    </Stage>}>
-    <Choice label="Dipoles spin" value={clockwise ? 'cw' : 'ccw'} onChange={v => setClockwise(v === 'cw')} options={[{ value: 'cw', label: 'Clockwise' }, { value: 'ccw', label: 'Counter' }]}/>
-    <Choice label="Moving charge" value={sign} onChange={setSign} options={[{ value: 'pos', label: 'Positive' }, { value: 'neg', label: 'Negative' }]}/>
-    <Slider label="Strength of the field (rate of spin)" value={strength} min={0.4} max={3} step={0.1} onChange={setStrength}/>
-    <PlayBar play={play} label="the moving charge"/>
-    <Readout label="Swept to the" value={side < 0 ? 'left' : 'right'} tone="force"/>
-    <Remark>The rotation of the dipoles is in the same plane as the motion of the body, and sweeps it to the side.</Remark>
-  </Diagram>;
+    </Stage>;
+  }
 }
 
 type Law = 'gauss' | 'gaussB' | 'faraday' | 'ampere';
@@ -365,8 +388,13 @@ const chapter: ChapterContent = {
         <p><Q>The magnetic field direction now just tells us the direction of spin of the dipoles, not to be confused at all with the direction of force. The rotation of the dipoles is now in the same plane as the body moving through the field</Q>. <Q>A positive charge is deflected to the left by a clockwise spinning dipole field, a downward directed magnetic field</Q> (<Pg n={65}/>).</p>
         <p>Negative charges deflect the other way, so that <Q>mechanically we have to think of a negative charge acting like a positive charge moving backwards through time</Q>. As with every force, <Q>it is ultimately a pressure differential that produces movement</Q> (<Pg n={66}/>).</p>
       </>,
-      tryThis: ['Run it as it starts: a positive charge, clockwise dipoles, swept to the left.', 'Reverse the spin, or the sign of the charge: swept to the right. Reverse both: left again.', 'Raise the rate of spin and the path curls more tightly.'],
-      notes: <p>The printed figure shows one dipole; a field of them is drawn here. The path is the circular arc of the Lorentz force (Equation 8-7), and its radius for a given rate of spin is a display choice.</p>,
+      tryThis: [
+        'Drag the picture to turn it: the dipoles spin flat in the plane the charge moves in, and the field B stands at right angles to that plane, down for a clockwise spin.',
+        'Run it as it starts: a positive charge, clockwise dipoles, swept to the left. Choose “From above” for the page’s view.',
+        'Reverse the spin, or the sign of the charge: swept to the right. Reverse both: left again.',
+        'Raise the rate of spin and the path curls more tightly.',
+      ],
+      notes: <p>The printed figure shows one dipole, seen from above; a field of them is drawn here, in three dimensions so that the plane of their spin, the plane of the motion and the field at right angles to both can be seen together. The path is the circular arc of the Lorentz force (Equation 8-7), and its radius for a given rate of spin is a display choice.</p>,
       labs: [{ lab: 'electron', scenario: 'moving', why: 'The rotating pairs that make the magnetic field of a moving charge.' }],
     },
     {
