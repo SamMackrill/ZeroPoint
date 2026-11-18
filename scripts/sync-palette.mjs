@@ -21,6 +21,8 @@ export const SCENE = {
   copper: '#c8783f', copperGlow: '#3a1a08',
   // Turned wood (the tops of chapter 8): the base colour and the darker grain drawn on it.
   wood: '#c08a55', woodGrain: '#7d5230',
+  // Brass (the mass circuit of Wallace's apparatus, Figure 9-2) and steel (its frames, supports and wheels).
+  brass: '#b8964a', steel: '#8d99a4',
 };
 
 /** Convert a token name (--data-pos-hi) to its palette key (dataPosHi). */

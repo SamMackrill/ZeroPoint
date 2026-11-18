@@ -70,4 +70,6 @@ export const scene = {
   copperGlow: '#3a1a08',
   wood: '#c08a55',
   woodGrain: '#7d5230',
+  brass: '#b8964a',
+  steel: '#8d99a4',
 } as const;

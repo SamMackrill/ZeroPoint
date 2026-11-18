@@ -1,6 +1,6 @@
 // Chapter 9: Tops, Flywheels, and Gyroscopes (PDF pp. 81–85). Figures 9-1 and 9-2.
 import { Suspense, lazy, useCallback, useRef, useState } from 'react';
-import { Action, Arrow, BlockArrow, Choice, Diagram, FallbackOnError, canDraw3D, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, polar, rad, usePlayback } from '../kit';
+import { Action, Arrow, BlockArrow, Choice, Diagram, FallbackOnError, canDraw3D, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, fmt, polar, rad, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -75,40 +75,81 @@ function MorganFlywheels() {
   </Diagram>;
 }
 
-/** Figure 9-2: Wallace's gyroscopes, some distance apart, with the driven one's plane turned over as it spins. */
+/** Wallace's apparatus drawn in three dimensions: loaded on demand, since three.js is large. */
+const WallaceScene = lazy(() => import('../three/WallaceScene'));
+
+/** How the generator stands to the detector: poles aligned, poles opposed, or turned over continuously. */
+type Poles = 'aligned' | 'opposed' | 'turning';
+
+/**
+ * The detector's shift from its resting angle in Wallace's measurements, in arc minutes: about 13 either side of
+ * equilibrium with the poles aligned or opposed, 26 between the two (US 3,626,605, cols. 10-11). Taken here as in
+ * proportion to the wheels' speed (a fraction of 20,000 rpm), and following the generator's orientation as it is
+ * turned over.
+ */
+export const wallaceShift = (poles: Poles, speed: number, over: number) => 13 * speed * (poles === 'aligned' ? 1 : poles === 'opposed' ? -1 : Math.cos(rad(over)));
+
+/** On screen the detector's tilt is magnified, so a shift of arc minutes can be seen: degrees drawn per arc minute (13 arc minutes are drawn as 5.2 degrees). */
+const TILT_SHOWN = 0.4;
+
+/** Figure 9-2: Wallace's apparatus, after his patent. The generator is turned over; the detector, restrained on a knife edge, tilts. */
 function WallaceGyros() {
-  const [spin, setSpin] = useState(0.8);
-  const [tumble, setTumble] = useState(0.6);
+  const [speed, setSpeed] = useState(0.75);
+  const [poles, setPoles] = useState<Poles>('turning');
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const [reset, setReset] = useState(0);
+  const fail = useCallback(() => setFlat(true), []);
   const play = usePlayback();
-  const state = useRef({ t: 0, a1: 0, a2: 0, tilt: 0, passive: 0 });
+  const state = useRef({ t: 0, wheel: 0, over: 0, shift: 0 });
   // Restart (or a step back) begins again from the starting state.
-  if (play.t < state.current.t) state.current = { t: 0, a1: 0, a2: 0, tilt: 0, passive: 0 };
-  const dt = Math.max(0, Math.min(0.05, play.t - state.current.t));
-  state.current.t = play.t;
-  // The induced rotation is drawn as following both the spin and the turning-over of the first gyroscope's plane.
-  state.current.passive += (-0.7 * spin * (0.25 + tumble) - state.current.passive) * Math.min(1, dt * 1.5);
-  state.current.a1 += spin * 520 * dt; state.current.a2 += state.current.passive * 520 * dt; state.current.tilt += tumble * 70 * dt;
-  const { a1, a2, tilt, passive } = state.current, H = 340, y = 160, squash = Math.abs(Math.cos(rad(tilt)));
-  const gyro = (x: number, angle: number, k: number, label: string) => <g>
-    <ellipse cx={x} cy={y} rx={84} ry={Math.max(6, 84 * k)} className="bk-body bk-body-plain"/>
-    {[0, 60, 120].map(a => { const c = Math.cos(rad(angle + a)), s = Math.sin(rad(angle + a)); return <line key={a} x1={x - 78 * c} y1={y + 78 * s * k} x2={x + 78 * c} y2={y - 78 * s * k} className="bk-s-muted" strokeWidth="2"/>; })}
-    <circle cx={x + 66 * Math.cos(rad(angle))} cy={y - 66 * Math.sin(rad(angle)) * k} r={5} className="bk-f-mark"/>
-    <line x1={x - 104} y1={y} x2={x + 104} y2={y} className="bk-s-text" strokeWidth="2"/>
-    <text x={x} y={y + 116} textAnchor="middle" className="bk-t bk-t-sm bk-f-muted">{label}</text>
-  </g>;
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`Two gyroscopes some distance apart. The first is spun by a motor while its plane is turned over; the second, passive, is induced to rotate the opposite way at ${Math.round(Math.abs(passive) * 100)} per cent of the display's full speed.`}>
-      {gyro(190, a1, Math.max(0.08, squash), 'driven gyroscope: spun, and its plane turned over')}
-      {gyro(530, a2, 0.75, 'passive gyroscope')}
-      <Spin x={190} y={y - 96} r={16} ccw sweep={200} tone="muted"/>
-      {Math.abs(passive) > 0.03 && <Spin x={530} y={y} r={98} ccw={passive > 0} sweep={50 + 200 * Math.min(1, Math.abs(passive))}/>}
-      <Arrow x1={290} y1={y} x2={430} y2={y} tone="faint" w={1.4} dash="4 4"/><T x={360} y={y - 12} size="sm">some distance apart</T>
-    </Stage>}>
-    <Slider label="Spin of the driven gyroscope" value={spin} min={0} max={1} step={0.05} onChange={setSpin} show={v => `${Math.round(v * 100)} %`}/>
-    <Slider label="Rate its plane is turned over" value={tumble} min={0} max={1} step={0.05} onChange={setTumble} show={v => (v === 0 ? 'fixed (as Morgan)' : `${Math.round(v * 100)} %`)}/>
-    <PlayBar play={play} label="the gyroscopes"/>
-    <Readout label="Induced rotation" value={`${Math.round(Math.abs(passive) * 100)} %`}/>
-    <Remark>Wallace turned the plane of his discs with respect to the Earth, which Fleming says produces a greater force than spinning about a fixed axle as Morgan did.</Remark>
+  if (play.t < state.current.t) state.current = { t: 0, wheel: 0, over: 0, shift: 0 };
+  const dt = Math.max(0, Math.min(0.05, play.t - state.current.t)), s = state.current;
+  s.t = play.t;
+  s.wheel += speed * 520 * dt;
+  // Turned over steadily; held aligned or opposed, the generator stands still at 0 or 180 degrees.
+  s.over = poles === 'turning' ? s.over + 36 * dt : poles === 'aligned' ? 0 : 180;
+  // The detector is heavy and hangs on a knife edge: it settles toward the shift over a second or two.
+  s.shift += (wallaceShift(poles, speed, s.over) - s.shift) * Math.min(1, dt * 0.8);
+  const { wheel, over, shift } = s, rpm = Math.round(speed * 20000);
+  const side = Math.abs(shift) < 0.5 ? 'at its resting angle' : `${fmt(Math.abs(shift), 1)} arc minutes ${shift > 0 ? 'one way' : 'the other way'} from its resting angle`;
+  const label = `Wallace's apparatus: two U-shaped brass members leave two gaps. In one, the generator's wheel spins at ${rpm.toLocaleString('en-GB')} rpm between its pole pieces${poles === 'turning' ? ' while the whole generator is turned over by a motor and belt' : `, held with its poles ${poles} with the detector's`}. In the other, the detector hangs on a knife edge; the light spot on the scale shows it ${side}.`;
+  /** The flat drawing, face on as in the patent's FIG. 2: the fallback where 3D cannot be drawn (called, not mounted). */
+  const flatRig = () => {
+    const H = 360, gy = 170, gx = 230, dx = 420, lamp = [600, 250] as const, scaleX = 660;
+    const assembly = (x: number, angle: number, turned: number) => <g transform={`translate(${x} ${gy}) rotate(${angle})`}>
+      <rect x={-50} y={-6} width={100} height={12} rx={2} className="bk-body bk-body-plain"/>
+      <line x1={-40 * Math.cos(rad(turned))} y1={0} x2={40 * Math.cos(rad(turned))} y2={0} className="bk-s-mark" strokeWidth="3"/>
+      <rect x={-34} y={-22} width={68} height={12} className="bk-plate"/><rect x={-34} y={10} width={68} height={12} className="bk-plate"/>
+      <rect x={-34} y={-22} width={68} height={4} className="bk-f-accent"/>
+    </g>;
+    // The beam from the lamp to the detector's mirror and on to the scale: the mirror turns with the tilt, the beam twice as far.
+    const mx = dx + 20, my = gy, tilt = rad(shift * TILT_SHOWN);
+    const toScale = Math.atan2(gy - 70 - my, scaleX - mx);
+    const out = toScale + 2 * tilt, sy = my + (scaleX - mx) * Math.tan(out);
+    return <Stage w={W} h={H} label={label}>
+      <rect x={110} y={gy - 140} width={420} height={40} className="bk-body bk-body-matter"/><rect x={110} y={gy + 100} width={420} height={40} className="bk-body bk-body-matter"/>
+      {[gx, dx].map(x => <g key={x}><rect x={x - 45} y={gy - 100} width={90} height={42} className="bk-body bk-body-matter"/><rect x={x - 45} y={gy + 58} width={90} height={42} className="bk-body bk-body-matter"/></g>)}
+      {assembly(gx, -over, over)}
+      {assembly(dx, -45 + shift * TILT_SHOWN, 0)}
+      <line x1={lamp[0]} y1={lamp[1]} x2={mx} y2={my} className="bk-s-warn" strokeWidth="1.5"/><line x1={mx} y1={my} x2={scaleX} y2={sy} className="bk-s-warn" strokeWidth="1.5"/>
+      <rect x={lamp[0] - 10} y={lamp[1] - 7} width={20} height={14} className="bk-plate"/>
+      <line x1={scaleX} y1={gy - 140} x2={scaleX} y2={gy} className="bk-s-text" strokeWidth="3"/><circle cx={scaleX} cy={sy} r={5} className="bk-f-warn"/>
+      <T x={gx} y={gy - 150} size="sm">generator</T><T x={dx} y={gy - 150} size="sm">detector, on a knife edge</T>
+      <T x={320} y={H - 14} size="sm" tone="muted">brass mass circuit, face on as in the patent; the detector’s tilt is magnified {Math.round(60 * TILT_SHOWN)} times</T>
+      <T x={scaleX + 8} y={gy - 146} anchor="start" size="sm">scale</T><T x={lamp[0]} y={lamp[1] + 24} size="sm">lamp</T>
+    </Stage>;
+  };
+  return <Diagram stage={flat ? flatRig() : <FallbackOnError onError={fail} fallback={flatRig()}>
+      <Suspense fallback={flatRig()}>
+        <WallaceScene state={{ wheel, over, tilt: shift * TILT_SHOWN, turning: poles === 'turning', reset }} onFail={fail} description={`${label} Drag to turn the view.`}/>
+      </Suspense>
+    </FallbackOnError>}>
+    {!flat && <Action onClick={() => setReset(n => n + 1)}>Back to this view</Action>}
+    <Slider label="Speed of the wheels (compressed air)" value={speed} min={0} max={1} step={0.05} onChange={setSpeed} show={v => `${Math.round(v * 20000).toLocaleString('en-GB')} rpm`}/>
+    <Choice label="The generator’s poles, to the detector’s" value={poles} onChange={setPoles} options={[{ value: 'aligned', label: 'Aligned' }, { value: 'opposed', label: 'Opposed' }, { value: 'turning', label: 'Turning' }]}/>
+    <PlayBar play={play} label="the apparatus"/>
+    <Readout label="Detector, from its resting angle" value={Math.abs(shift) < 0.05 ? 'at rest' : `${fmt(shift, 1)} arc minutes`}/>
+    <Remark>{poles === 'turning' ? 'Turned over, the generator’s poles change their orientation to the Earth, and the detector swings one way and the other with them.' : 'Wallace reversed the poles every 30 or 40 minutes and found the detector’s resting angle shifted by about 26 arc minutes between the two.'}</Remark>
   </Diagram>;
 }
 
@@ -186,8 +227,16 @@ const chapter: ChapterContent = {
       caption: 'Wallace’s inductive gyroscope experimental apparatus',
       Diagram: WallaceGyros,
       text: <p>Wallace <Q>produced the inductive effect by rotating his gyroscopes such that the orientation of the plane of the disc changes with respect to the Earth. This produces a greater force directed in the normal direction of procession, however, his gyroscopes were restrained from moving in that direction</Q>. His gyroscopes were some distance apart, where Morgan’s discs nearly touched. <Q>That the inductive force is demonstrated in two different mechanical configurations makes the reports more convincing</Q> (<Pg n={84}/>).</p>,
-      tryThis: ['Set the turning-over of the plane to zero: this is Morgan’s arrangement, a disc spinning about a fixed axle, and the induced rotation is smaller.', 'Raise it: the induced rotation grows.', 'Set the spin to zero: nothing is induced however the plane is turned.'],
-      notes: <p>Fleming says turning the plane gives <Q>a greater force</Q> but not how much greater; the dependence drawn here is a display choice. Wallace’s further claim of an upward force Fleming thinks <Q>highly unlikely</Q>, and it is not shown.</p>,
+      tryThis: [
+        'Hold the generator’s poles aligned, then opposed: the light spot on the scale moves between two places, as Wallace’s detector settled about 26 arc minutes apart.',
+        'Let it turn over: as the poles change their orientation, the detector swings one way and the other with them.',
+        'Slow the wheels to zero: the detector stays at rest however the generator is turned.',
+        'Drag the picture to look at the generator’s wheel between its pole pieces, and the detector hanging on its knife edge.',
+      ],
+      notes: <>
+        <p>The figure prints two of the drawings from Wallace’s patent (US 3,626,605, FIGS. 2 and 6); the apparatus here follows the patent. Two U-shaped brass members, mirrored, leave two gaps. The generator sits in one: its wheel, spun by compressed air on buckets cut in its rim, turns a hair’s breadth from a pole piece on each face. The detector, built the same way, hangs in the other gap on a knife edge. The patent reads its tilt with a light beam off a mirror onto a scale on the wall, and the generator assembly turns over on a shaft (in FIG. 7, by a motor, pulley and belt). Fleming calls 31 the pulley; in the patent 31 is the shaft’s bearings.</p>
+        <p>The detector’s shift is about 13 arc minutes from rest, 26 between poles aligned and opposed, as the patent reports; on screen its tilt is magnified 24 times. Taking the shift as in proportion to the wheels’ speed, and as following the generator round as it turns over, are display choices. Wallace’s further claim of an upward force Fleming thinks <Q>highly unlikely</Q>, and it is not shown.</p>
+      </>,
     },
   ],
 };
