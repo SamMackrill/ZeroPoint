@@ -37,7 +37,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 6-12 | Attraction: the chain shortens | animated | agreed | No change |
 | 6-13 | Attraction drawn in zeptons | animated | agreed | No change |
 | 6-14 | A moving charge turns the zeptons | still | agreed | No change |
-| 6-15 | A current keeps the zeptons spinning | animated | to review | |
+| 6-15 | A current keeps the zeptons spinning | animated | agreed | No change |
 | 6-16 | From rotation to B: the right hand grip | animated | to review | |
 | 6-17 | A magnet’s lines, threaded with spinning zeptons | animated | to review | |
 | 6-18 | A coil: spin inside, opposite spin outside | animated | to review | |
