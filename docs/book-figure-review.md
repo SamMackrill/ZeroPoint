@@ -34,11 +34,11 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 6-9 | Between like charges, like ends meet | animated | agreed | No change |
 | 6-10 | Repulsion: a hole filled, and pressure | animated | agreed | No change |
 | 6-11 | Repulsion drawn in zeptons | animated | agreed | No change |
-| 6-12 | Attraction: the chain shortens | animated | agreed | No change |
+| 6-12 | Attraction: the chain shortens | animated | changed | Agreed; later the chain spacing went from 62 to 54 so the arrow and label fit (clipping sweep) |
 | 6-13 | Attraction drawn in zeptons | animated | agreed | No change |
 | 6-14 | A moving charge turns the zeptons | still | agreed | No change |
 | 6-15 | A current keeps the zeptons spinning | animated | agreed | No change |
-| 6-16 | From rotation to B: the right hand grip | animated | to review | |
+| 6-16 | From rotation to B: the right hand grip | animated | changed | Taller stage so B (clockwise) is not clipped |
 | 6-17 | A magnet’s lines, threaded with spinning zeptons | animated | to review | |
 | 6-18 | A coil: spin inside, opposite spin outside | animated | to review | |
 | 7-1 | Maxwell’s current in a field of vortices | still | to review | |
@@ -198,3 +198,11 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 
 - **Owner:** would this be clearer in 3D, since it is a sphere? **My view:** yes, and the flat drawing also misleads. On a page, the lines cross circles, whose length grows as r, so the picture alone suggests 1/r. The inverse square comes from the sphere’s area, 4πr², as Fleming says. **Chosen:** build it in 3D.
 - **Done:** the 3D view (three.js, loaded on demand) has 26 lines coming in evenly from every direction, a translucent sphere with three faint great circles, a dot where each line crosses it, and a highlighted patch of fixed area. As the sphere grows, the patch holds fewer crossings. The reader can drag to orbit, and the wheel scrolls the page. The density curve sits underneath. The flat page view, with eight lines, is the fallback. The shared 3D helpers moved to `three/common.ts` and the error boundary to the kit (`FallbackOnError`). The notes give the reason for 3D and say that the line count and the patch are display choices.
+
+### Fig. 6-16 (changed, agreed 2026-11-18)
+
+- **Owner:** the clockwise case clips the B arrow. **Done:** the stage is 40 units taller, and a check of both senses at leans of 0°, 35° and 70° finds nothing outside it.
+
+### Clipping sweep (after 6-16)
+
+A sweep of all 101 stages at their starting settings found drawing past the edge in 15. Most is deliberate: field lines and background zeptons or fluctuations that continue beyond the frame (3-3, 4-2, 6-5, 6-6, 6-13, 6-17, 6-18, x14-2, 16-1), and fields drawn larger than the stage (19-2, x23-1). A real fault turned up in the already-agreed 6-12: at the longest chain, the left arrow and “pressure outside” label ran off the stage. The chain spacing is now 54 instead of 62, so it fits (x 13 to 707 of 720). To check when we reach them: 7-3, 17-1 and x20-2.

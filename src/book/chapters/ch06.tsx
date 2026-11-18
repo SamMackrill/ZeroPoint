@@ -277,7 +277,7 @@ function AttractionChain() {
   const play = usePlayback({ speed: 0.6 });
   const H = 290, y = 120, start = 8, end = 2, steps = start - end, phase = play.t % (steps + 1.5), k = Math.min(steps, Math.floor(phase)), u = k < steps ? phase - k : 0;
   // In each step one zepton collapses to a point and is not replaced at full size; the chain closes over the space.
-  const count = start - k, pitch = 62, length = (count - ease(u)) * pitch, xa = W / 2 - length / 2 - 24, xb = W / 2 + length / 2 + 24, gone = Math.floor(count / 2);
+  const count = start - k, pitch = 54, length = (count - ease(u)) * pitch, xa = W / 2 - length / 2 - 24, xb = W / 2 + length / 2 + 24, gone = Math.floor(count / 2);
   let x = xa + 24;
   return <Diagram stage={
     <Stage w={W} h={H} label={`An electron and a proton with a chain of ${count} zeptons between them. As zeptons annihilate the space available for the next is smaller, the chain shortens, and the pressure from outside pushes the particles together.`}>
@@ -368,7 +368,8 @@ function GripRule() {
   const [tilt, setTilt] = useState(0);
   const [left, setLeft] = useState(false);
   const play = usePlayback({ speed: 0.35 });
-  const H = 360, ox = 270, oy = 210, R = 96;
+  // Tall enough for B pointing straight down (clockwise), 160 below the origin, with its arrowhead and label.
+  const H = 400, ox = 270, oy = 210, R = 96;
   // Oblique view: x right, y up, z toward the lower left. The axis of rotation leans from y toward x by `tilt`.
   const project = (x: number, y: number, z: number): [number, number] => [ox + x - 0.6 * z, oy - y + 0.48 * z];
   const c = Math.cos((tilt * Math.PI) / 180), s = Math.sin((tilt * Math.PI) / 180);
