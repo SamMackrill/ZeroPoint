@@ -24,7 +24,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 5-1 | A photon, pair by pair | animated | changed | Spacing slider removed; slow-fading labels, “annihilate & reverse”; steady readouts |
 | 5-2 | The pairs round the photon are its wave | animated | agreed | No change; the Light lab illustrates it better |
 | 6-1 | A free electron polarizes hydrogen | animated | changed | Smooth orbits dwelling on the far side; dipole markers; larger atoms |
-| 6-2 | The vacuum polarizes in the same way | animated | to review | |
+| 6-2 | The vacuum polarizes in the same way | animated | changed | Line-count slider removed; eight lines as printed |
 | 6-3 | Faraday’s lines are the zeptons | still | to review | |
 | 6-4 | The same lines through every sphere | still | to review | |
 | 6-5 | Opposite charges: lines from one to the other | still | to review | |
@@ -189,3 +189,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 
 - **Owner:** this is a bit flickery; make it smoother. **Cause:** each atom’s electron jumped to a fresh random place 14 times a second. **Done:** each electron now moves smoothly round its proton. It is slowest on the far side from the free electron and quickest on the near side, so it spends most of its time away and the proton faces the free electron (p. 49). With no free electron it circles evenly. The dashed shell is centred on the electron’s average place.
 - **Owner:** better, but the polarization of the hydrogen is still hard to see. **Done:** the electron now dwells much more strongly on the far side (an eccentric-anomaly orbit, smooth and always moving forward), and the polarization reaches further. A mark-coloured line runs from each proton to its electron’s average place, showing each atom’s dipole. The atoms are drawn half as large again. A test checks that the motion is smooth and forward-only, and that a lone atom is neutral on average.
+
+### Fig. 6-2 (changed, agreed 2026-11-18)
+
+- **Owner:** the slider (the number of lines of zeptons) adds nothing and makes the figure more confusing. **Done:** the slider is gone. The figure draws eight lines, as printed, and the Try step no longer mentions it.

@@ -68,7 +68,7 @@ function useBackground(seed: number, cols: number, rows: number, h: number) {
 
 /** Figure 6-2: zeptons polarized round a free charge, with the many that barely turn shown on request. */
 function ZeptonsRoundCharge() {
-  const [count, setCount] = useState(8);
+  const count = 8; // as printed
   const [sign, setSign] = useState<'neg' | 'pos'>('neg');
   const [rest, setRest] = useState(false);
   const play = usePlayback();
@@ -86,7 +86,6 @@ function ZeptonsRoundCharge() {
       <Charge x={W / 2} y={H / 2} sign={q as 1 | -1} r={15}/>
     </Stage>}>
     <Choice label="Free charge" value={sign} onChange={setSign} options={[{ value: 'neg', label: 'Electron' }, { value: 'pos', label: 'Positive' }]}/>
-    <Slider label="Lines of zeptons drawn" value={count} min={8} max={24} step={4} onChange={setCount}/>
     <Toggle label="Show the zeptons that barely turn" checked={rest} onChange={setRest}/>
     <PlayBar play={play} label="the zeptons"/>
     <Remark>{rest ? 'Most zeptons are oriented only to a slight degree; the lines pick out the few that align.' : 'The figure shows a few lines. There are polarized zeptons all the way round, at every distance.'}</Remark>
@@ -470,7 +469,7 @@ const items: BookItem[] = [
       <p><Q>Zepton dipoles align with their positive charge, such as a virtual positron, facing toward the free electron</Q>. <Q>While Figure 6-2 only shows a few lines, there are polarized zeptons all the way around the charge at every distance, extending toward infinity</Q> (<Pg n={50}/>).</p>
       <p>The polarization is partial: a single charge <Q>only causes a small percentage of zeptons to orient their dipoles in the charge’s direction, and most are only oriented to a slight degree</Q> (<Pg n={53}/>).</p>
     </>,
-    tryThis: ['Look at any zepton on a line: its warm (positive) end is the one nearer the electron.', 'Change the free charge to positive. Every zepton turns round.', 'Draw more lines, then turn on “the zeptons that barely turn” to see how the few that align sit among the many that do not.'],
+    tryThis: ['Look at any zepton on a line: its warm (positive) end is the one nearer the electron.', 'Change the free charge to positive. Every zepton turns round.', 'Turn on “the zeptons that barely turn” to see how the few that align sit among the many that do not.'],
     notes: <p>The share of the background zeptons’ turn, and its thinning with distance, are display choices: Fleming says only that most are oriented to a slight degree.</p>,
     labs: [
       { lab: 'electron', scenario: 'stationary', why: 'The polarization round an electron building up from pairs born at random, in three dimensions.' },
