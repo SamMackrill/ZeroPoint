@@ -1,5 +1,6 @@
 // Helpers shared by the companion's three-dimensional figures (Figures 4-9 and 6-4).
 import * as THREE from 'three';
+import { scene as sceneColours } from '../../ui/palette';
 
 /** A text label that always faces the reader. */
 export function label(text: string, color: string, size = 0.5) {
@@ -46,4 +47,39 @@ export function disposeAll(root: THREE.Object3D) {
     const mats = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
     for (const m of mats) { (m as THREE.SpriteMaterial).map?.dispose(); m.dispose(); }
   });
+}
+
+/**
+ * A wood-grain texture drawn on a canvas, for a turned wooden body: the base colour with fine lengthwise grain and a few
+ * broader, darker streaks, wavering a little along their length. On a lathe geometry, u runs round the body and v along
+ * it, so the grain follows the axis, as on a turned top. The same every time (seeded).
+ */
+export function woodTexture(width = 512, height = 512) {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const g = canvas.getContext('2d'), texture = new THREE.CanvasTexture(canvas);
+  if (!g) return texture; // no 2D context: a plain body rather than a failed scene
+  let seed = 7;
+  const random = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+  g.fillStyle = sceneColours.wood;
+  g.fillRect(0, 0, width, height);
+  g.strokeStyle = sceneColours.woodGrain;
+  // Fine grain and a few broad streaks, each a line down the body that wanders slightly from side to side.
+  for (let k = 0; k < 150; k++) {
+    const broad = k % 12 === 0, x0 = random() * width, wobble = 2 + random() * 6, phase = random() * 6.28, freq = 1.5 + random() * 3;
+    g.globalAlpha = broad ? 0.16 : 0.04 + random() * 0.09;
+    g.lineWidth = broad ? 4 + random() * 5 : 0.6 + random() * 1.6;
+    g.beginPath();
+    for (let y = 0; y <= height; y += 8) {
+      const x = x0 + wobble * Math.sin((y / height) * freq * 6.28 + phase);
+      if (y === 0) g.moveTo(x, y); else g.lineTo(x, y);
+    }
+    g.stroke();
+  }
+  g.globalAlpha = 1;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.anisotropy = 4;
+  return texture;
 }

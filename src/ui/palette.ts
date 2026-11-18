@@ -68,4 +68,6 @@ export const scene = {
   coreGlowElectron: '#7e42ce',
   copper: '#c8783f',
   copperGlow: '#3a1a08',
+  wood: '#c08a55',
+  woodGrain: '#7d5230',
 } as const;

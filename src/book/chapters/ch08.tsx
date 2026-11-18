@@ -1,8 +1,9 @@
 // Chapter 8: The Mattermagnetic Field (PDF pp. 70–80). Figures 8-1 to 8-6.
-import { useId, useMemo, useRef, useState } from 'react';
-import { Action, Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
+import { Suspense, lazy, useCallback, useId, useMemo, useRef, useState } from 'react';
+import { Action, Arrow, BlockArrow, Body, Charge, Choice, Diagram, FallbackOnError, canDraw3D, Drag, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
+import { TOP_LAID } from '../three/top-math';
 import { HandRule } from './shared';
 
 const W = 720;
@@ -119,20 +120,29 @@ function topOutline(x: number, y: number, lean: number, size = 1) {
   return pathThrough(pts.map(([u, v]) => [x + size * (u * c + v * s), y - size * (-u * s + v * c)] as const)) + ' Z';
 }
 
+/** The chapter's tops drawn in three dimensions: loaded on demand, since three.js is large. */
+const TopScene = lazy(() => import('../three/TopScene'));
+
 /** Figure 8-2: a top that is not spinning, stood on its tip, falls over. */
 function FallingTop() {
   const [start, setStart] = useState(22);
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const [reset, setReset] = useState(0);
+  const fail = useCallback(() => setFlat(true), []);
   const play = usePlayback({ autoplay: false });
   const state = useRef({ t: 0, lean: 22, rate: 0, from: 22 });
   // An inverted pendulum: the further it leans, the faster it falls, until it lies on the surface.
   if (state.current.from !== start || play.t < state.current.t) state.current = { t: play.t, lean: start, rate: 0, from: start };
   const dt = Math.max(0, Math.min(0.05, play.t - state.current.t));
   state.current.t = play.t;
-  if (state.current.lean < 78) { state.current.rate += 260 * Math.sin(rad(state.current.lean)) * dt; state.current.lean = Math.min(78, state.current.lean + state.current.rate * dt); }
+  // It falls until it lies on the floor: in 3D, where its side meets the floor; in the flat drawing, at 78°.
+  const laid = flat ? 78 : TOP_LAID;
+  if (state.current.lean < laid) { state.current.rate += 260 * Math.sin(rad(state.current.lean)) * dt; state.current.lean = Math.min(laid, state.current.lean + state.current.rate * dt); }
   const lean = state.current.lean, H = 340, x = 250, y = 290, cm = 96, [cx, cy] = [x + cm * Math.sin(rad(lean)), y - cm * Math.cos(rad(lean))];
   const arc = pathThrough(Array.from({ length: 30 }, (_, i) => { const a = start + ((78 - start) * i) / 29; return [x + cm * Math.sin(rad(a)), y - cm * Math.cos(rad(a))] as const; }));
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`A top that is not spinning, standing on its tip and leaning ${Math.round(lean)} degrees. Gravity acts straight down through its centre of mass and it falls over.`}>
+  const label = `A top that is not spinning, standing on its tip and leaning ${Math.round(lean)} degrees. Gravity acts straight down through its centre of mass and it falls over.`;
+  /** The printed page's view, flat: the fallback where 3D cannot be drawn (called, not mounted, so it keeps its elements). */
+  const flatTop = () => <Stage w={W} h={H} label={label}>
       <line x1={60} y1={y} x2={W - 60} y2={y} className="bk-s-text" strokeWidth="2"/>
       <Line d={arc} tone="muted" dash="5 5"/>
       <path d={topOutline(x, y, lean)} className="bk-body bk-body-plain"/>
@@ -140,9 +150,16 @@ function FallingTop() {
       <Arrow x1={cx} y1={cy} x2={cx} y2={y - 4} tone="force" w={2.4}/>
       <T x={cx + 12} y={(cy + y) / 2} anchor="start" size="sm">gravity, through the centre of mass</T>
       <T x={520} y={120} tone="text">{lean >= 78 ? 'fallen' : play.playing ? 'falling' : 'held'}</T>
-    </Stage>}>
+    </Stage>;
+  return <Diagram stage={flat ? flatTop() : <FallbackOnError onError={fail} fallback={flatTop()}>
+      <Suspense fallback={flatTop()}>
+        <TopScene state={{ lean, heading: 0, spun: 0, path: { kind: 'fall', from: start }, gravity: true, reset }} onFail={fail} description={`${label} Drag the top to tilt it; drag elsewhere to turn the view.`}
+          onLean={v => { setStart(Math.round(clamp(v, 4, 50))); if (play.playing) play.toggle(); play.seek(0); }}/>
+      </Suspense>
+    </FallbackOnError>}>
     <Slider label="Lean when released" value={start} min={4} max={50} step={1} onChange={v => { setStart(v); play.seek(0); }} unit="°"/>
     <Action onClick={() => { state.current = { t: 0, lean: start, rate: 0, from: start }; play.restart(); }}>Release the top</Action>
+    {!flat && <Action onClick={() => setReset(n => n + 1)}>Back to this view</Action>}
     <Readout label="Lean" value={`${Math.round(lean)}°`}/>
     <Remark>Gravity is a point-to-point force between centres of mass, and the top follows that line. This is what the laws of gravity say should happen to a spinning top too.</Remark>
   </Diagram>;
@@ -288,8 +305,8 @@ const chapter: ChapterContent = {
       caption: 'A stationary top with the center of mass shown as a dot, the force of gravity a straight solid line arrow, and the falling motion shown by a dashed line arrow',
       Diagram: FallingTop,
       text: <p><Q>If we visualize a top when it is not spinning, and stand it on its tip, it will fall over in one direction. There is a point-to-point force, gravity, between the center of mass of the top and the center of mass of the Earth and it will follow that line</Q> (<Pg n={71}/>).</p>,
-      tryThis: ['Press “Release the top” and watch the centre of mass follow the dashed path to the surface.', 'Release it from nearly upright: it starts slowly and gathers speed as the lean grows.'],
-      notes: <p>The fall is that of a rigid body pivoting on its tip, with the time scale chosen to be watchable.</p>,
+      tryThis: ['Grab the top and tilt it, then press “Release the top” and watch the centre of mass follow the dashed path to the floor, with gravity pulling straight down from it.', 'Release it from nearly upright: it starts slowly and gathers speed as the lean grows.', 'Drag the picture to look at the top from any side.'],
+      notes: <p>The fall is that of a rigid body pivoting on its tip, with the time scale chosen to be watchable. The top’s shape follows the printed outline, turned in three dimensions; its coloured band and marks are there to show turning in the figures that follow. The path of the centre of mass is drawn down to the floor, as in the printed figure; the top itself comes to rest a little before, when its side meets the floor, with its centre of mass still above it.</p>,
     },
     {
       kind: 'figure', id: '8-3', page: 72, title: 'A spinning top precesses the way it spins',
