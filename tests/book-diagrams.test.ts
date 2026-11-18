@@ -9,7 +9,7 @@ import { vortexCells } from '../src/book/chapters/ch08';
 import { wallaceShift } from '../src/book/chapters/ch09';
 import { COIL_LENGTH, COIL_RADIUS, COIL_ZEPTONS, SEEDS, ZEPTON_COUNTS, coilField, coilFieldLine, linesForCurrent } from '../src/book/three/coil-math';
 import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/book/three/sphere-math';
-import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
+import { bodyVelocity, pushOfDrag, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
@@ -174,5 +174,11 @@ describe('book companion: diagrams', () => {
     expect(wallaceShift('aligned', 1, 0) - wallaceShift('opposed', 1, 0)).toBeCloseTo(26);
     expect(wallaceShift('turning', 1, 180)).toBeCloseTo(wallaceShift('opposed', 1, 0));
     expect(wallaceShift('turning', 0, 37)).toBe(0);
+  });
+
+  it('Figure 10-2: a drag along the matter pushes harder the further it goes, up to a full push either way', () => {
+    expect(pushOfDrag(0)).toBe(0);
+    expect(pushOfDrag(45)).toBeCloseTo(0.5);
+    expect(pushOfDrag(-300)).toBe(-1);
   });
 });
