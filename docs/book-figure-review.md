@@ -19,7 +19,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 4-5 | Out a quarter wavelength | animated | agreed | No change |
 | 4-6 | Out an eighth of a wavelength | animated | agreed | No change |
 | 4-7 | One photon, half a wavelength | animated | agreed | No change |
-| 4-8 | The pair inside the photon | animated | to review | |
+| 4-8 | The pair inside the photon | animated | agreed | No change |
 | 4-9 | A rotating pair makes E and B | animated | to review | |
 | 5-1 | A photon, pair by pair | animated | to review | |
 | 5-2 | The pairs round the photon are its wave | animated | to review | |
