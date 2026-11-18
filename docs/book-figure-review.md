@@ -55,7 +55,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 9-1 | Morgan’s flywheels: induction across an air gap | animated | changed | 3D, as in the photo: the discs face to face on one axis across the gap; turn arrows only when paused |
 | 9-2 | Wallace’s gyroscopes: the plane turned over | animated | changed | 3D after Wallace’s patent: brass mass circuit, generator turned over, detector on a knife edge read by a light beam |
 | 10-1 | The inertia of a current | animated | fine | No change |
-| 10-2 | The inertia of matter | animated | to review | |
+| 10-2 | The inertia of matter | animated | changed | The reader pushes the matter: drag along it, or hold an arrow key; a force arrow shows the push; one fixed status line |
 | 10-3 | Why a body at rest stays at rest | animated | to review | |
 | 11-1 | The matter field of a body | animated | to review | |
 | 11-2 | Matter repels matter | animated | to review | |
@@ -301,3 +301,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 ### Fig. 10-1
 
 - **Owner:** fine as it is.
+
+### Fig. 10-2
+
+- **Owner:** the pushes are real pushes on the matter; better than text buttons, and dragging (or an arrow key) should push. **Done:** drag along the row of matter, forward to the right or back to the left, harder the further; or hold → or ← once it has the focus. A force arrow lies on the matter while it is pushed. Pushing starts the animation if paused.
+- **Owner:** the text jumped about, and the arrow keys did not work. **Fixed:** what is happening is one line, always in the same place at the top of the picture, and the remark no longer changes; a click on the row also gives it the keyboard focus.
+- **Owner:** great now.

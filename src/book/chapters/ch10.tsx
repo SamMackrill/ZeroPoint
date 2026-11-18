@@ -1,6 +1,6 @@
 // Chapter 10: Inertia (PDF pp. 86–90). Figures 10-1 to 10-3.
-import { useMemo, useRef, useState } from 'react';
-import { Action, Body, Choice, Diagram, Drag, FieldPicture, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, bearing, clamp, fmt, usePlayback, type Source } from '../kit';
+import { useMemo, useRef, useState, type PointerEvent } from 'react';
+import { BlockArrow, Body, Choice, Diagram, Drag, FieldPicture, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, bearing, clamp, fmt, usePlayback, type Source } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { SpinRow } from './shared';
@@ -45,33 +45,58 @@ export function speedOfLight(v: number) {
   return gap < 1e-9 ? 'within a billionth of c' : `${u.toFixed(Math.ceil(-Math.log10(gap)) + 1)} c`;
 }
 
-/** Figure 10-2: matter in motion sets zeptons rotating in proportion to its momentum, and their rotation keeps it moving. */
+/** How hard a drag of this many units along the row pushes: a full push at 90 units, either way. */
+export const pushOfDrag = (dragged: number) => clamp(dragged / 90, -1, 1);
+
+/**
+ * Figure 10-2: matter in motion sets zeptons rotating in proportion to its momentum, and their rotation keeps it moving.
+ * The reader pushes the matter directly: drag along the row (harder the further), or hold an arrow key.
+ */
 function MatterInertia() {
   const [matter, setMatter] = useState(2);
   const play = usePlayback();
-  const state = useRef({ t: 0, p: 0, push: 0, until: 0, angle: 0, flow: 0 });
+  const state = useRef({ t: 0, p: 0, angle: 0, flow: 0 });
+  // The push in hand: a drag along the row (where it was pressed, and where the pointer is now), or an arrow key held.
+  const grip = useRef<{ from: number; at: number } | null>(null);
+  const held = useRef<0 | 1 | -1>(0);
   // Restart (or a step back) begins again from the starting state.
-  if (play.t < state.current.t) state.current = { t: 0, p: 0, push: 0, until: 0, angle: 0, flow: 0 };
+  if (play.t < state.current.t) state.current = { t: 0, p: 0, angle: 0, flow: 0 };
   const dt = Math.max(0, Math.min(0.1, play.t - state.current.t)), s = state.current;
   s.t = play.t;
+  const push = grip.current ? pushOfDrag(grip.current.at - grip.current.from) : held.current;
   // Momentum has no limit; only the velocity does (bodyVelocity), as the zeptons cannot turn faster.
-  if (play.t < s.until) s.p += s.push * dt * 1.6; else s.push = 0;
+  s.p += push * dt * 1.6;
   const v = bodyVelocity(s.p, matter);
   s.angle += s.p * 60 * dt; s.flow += v * 110 * dt;
-  const push = (dir: 1 | -1) => { s.push = dir; s.until = play.t + 0.9; };
+  const mid = 160;
+  /** The pointer's position along the row, in diagram units. */
+  const along = (e: PointerEvent<SVGRectElement>) => { const m = e.currentTarget.ownerSVGElement?.getScreenCTM?.(); return m ? new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse()).x : null; };
+  // Pushing sets the figure going if it was paused, so the push has an effect to see.
+  const start = () => { if (!play.playing) play.toggle(); };
+  const arrow = grip.current ? [grip.current.from, grip.current.at] : held.current ? [W / 2 - 55 * held.current, W / 2 + 55 * held.current] : null;
   return <Diagram stage={
-    <Stage w={W} h={320} label={`Pieces of matter moving along a line at ${Math.round(Math.abs(v) * 100)} per cent of the speed of light, with momentum ${fmt(Math.abs(s.p), 2)}. The zeptons either side rotate in proportion to the momentum.`}>
+    <Stage w={W} h={320} label={`Pieces of matter moving along a line at ${Math.round(Math.abs(v) * 100)} per cent of the speed of light, with momentum ${fmt(Math.abs(s.p), 2)}. The zeptons either side rotate in proportion to the momentum.${push ? ` It is being pushed ${push > 0 ? 'forward' : 'back'}.` : ''}`}>
       <SpinRow kind="matter" current={clamp(s.p / 4, -1, 1)} angle={s.angle} flow={s.flow} t={play.t} field/>
-      {s.push !== 0 && <T x={W / 2} y={24} tone="text">{s.push > 0 ? 'pushing forward: the zeptons are forced to turn faster' : 'pushing back: the zeptons are forced to slow'}</T>}
+      {arrow && Math.abs(arrow[1] - arrow[0]) > 6 && <BlockArrow x1={arrow[0]} y1={mid} x2={arrow[1]} y2={mid} thick={16} opacity={0.9}/>}
+      {/* One line, always in the same place, says what is happening, so nothing beside the figure changes size as it goes. */}
+      <T x={W / 2} y={24} tone={push ? 'text' : 'muted'}>{push > 0 ? 'pushing forward: the zeptons are forced to turn faster' : push < 0 ? 'pushing back: the zeptons are forced to slow' : Math.abs(s.p) < 0.05 ? 'at rest it stays at rest: drag along the matter, or hold → or ←, to push it' : 'no push, and it keeps moving: the turning zeptons carry it on'}</T>
+      {/* The row of matter is what the reader pushes: by dragging along it, or with the arrow keys once it has the focus. */}
+      <rect x={20} y={mid - 34} width={W - 40} height={68} fill="transparent" className="bk-push" tabIndex={0} role="application"
+        aria-label="The moving matter. Drag along it to push it, forward to the right or back to the left, harder the further you drag; or hold the right or left arrow key."
+        onPointerDown={e => { const x = along(e); if (x === null) return; e.preventDefault(); e.currentTarget.focus({ preventScroll: true }); /* focused, so the arrow keys work next, without the browser's own focus handling */ grip.current = { from: x, at: x }; e.currentTarget.setPointerCapture?.(e.pointerId); start(); }}
+        onPointerMove={e => { if (!grip.current) return; const x = along(e); if (x !== null) grip.current.at = x; }}
+        onPointerUp={e => { grip.current = null; e.currentTarget.releasePointerCapture?.(e.pointerId); }}
+        onPointerCancel={() => { grip.current = null; }}
+        onKeyDown={e => { const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!dir) return; e.preventDefault(); held.current = dir; start(); }}
+        onKeyUp={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') held.current = 0; }}
+        onBlur={() => { held.current = 0; }}/>
     </Stage>}>
-    <Action onClick={() => push(1)}>Push forward for a moment</Action>
-    <Action onClick={() => push(-1)}>Push back for a moment</Action>
     <Slider label="Matter charge of the body, m" value={matter} min={1} max={5} step={0.5} onChange={setMatter} unit="units"/>
     <PlayBar play={play} label="the moving matter"/>
     <Readout label="Velocity, υ" value={speedOfLight(v)}/>
     <Readout label="Momentum, p" value={fmt(Math.abs(s.p), 2)} tone="force"/>
     <Readout label="Rotation of the zeptons" value={`${fmt(Math.abs(s.p), 2)} (follows p)`} tone="b"/>
-    <Remark>{s.push === 0 ? (Math.abs(s.p) < 0.05 ? 'At rest it stays at rest. Push it.' : 'No push, and it keeps moving: the rotating zeptons induce the matter to move, as the matter induced them to rotate.') : 'The resistance you are pushing against is the zeptons being made to change their rotation.'}</Remark>
+    <Remark>The resistance you push against is the zeptons being made to change their rotation. With no push the matter keeps moving: the rotating zeptons induce it to move, as it induced them to rotate.</Remark>
   </Diagram>;
 }
 
@@ -136,7 +161,7 @@ const chapter: ChapterContent = {
         <p>The zeptons also set the limit of speed. A zepton <Q>can only rotate 180 degrees at its maximum extent of travel, its wavelength. So it can only cover a distance equivalent to the speed of light</Q>; <Q>as a body accelerates to near light speed, increasing momentum means an increasing number of zeptons rotating in response to the motion</Q>. And since matter is saturated with zeptons, <Q>a body of matter cannot be isolated from its inertial field</Q> (<Pg n={88}/>, <Pg n={89}/>).</p>
         <Eq n="10-1"><V>B</V><sub>m</sub> = <Frac top={<>μ<sub>0m</sub><V>m</V></>} bottom="4π"/> <Frac top={<><V>υ</V> × r̂</>} bottom={<><V>r</V>²</>}/></Eq>
       </>,
-      tryThis: ['Push forward once and let go. The body keeps its velocity, and the zeptons keep turning: neither stops the other.', 'Push back the same amount: it comes to rest.', 'Raise the matter charge and push again: the same push gives the same momentum and the same rotation, but less velocity.', 'Keep pushing forward. The momentum and the rotation go on rising while the velocity closes on c and never reaches it.'],
+      tryThis: ['Drag along the row of matter to the right and let go: that is a push forward. The body keeps its velocity, and the zeptons keep turning: neither stops the other.', 'Drag to the left to push it back until it comes to rest. With the keyboard, hold → or ← instead.', 'Raise the matter charge and push again: the same push gives the same momentum and the same rotation, but less velocity.', 'Keep pushing forward. The momentum and the rotation go on rising while the velocity closes on c and never reaches it.'],
       notes: <p>The symbols ⊙ and ⊗ mark the mattermagnetic field as Figure 11-4 states it: out of the page above matter moving to the right, into it below. How the velocity approaches the limit as momentum rises is a display choice (the usual relativistic form); Fleming says only that the zeptons cannot rotate faster. So the momentum shown is p = mυ/√(1 − υ²/c²), which is Fleming’s mυ at low speeds and goes on rising as υ approaches c.</p>,
     },
     {
