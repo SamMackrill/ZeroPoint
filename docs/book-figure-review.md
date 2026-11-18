@@ -25,7 +25,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 5-2 | The pairs round the photon are its wave | animated | agreed | No change; the Light lab illustrates it better |
 | 6-1 | A free electron polarizes hydrogen | animated | changed | Smooth orbits dwelling on the far side; dipole markers; larger atoms |
 | 6-2 | The vacuum polarizes in the same way | animated | changed | Line-count slider removed; eight lines as printed |
-| 6-3 | Faraday’s lines are the zeptons | still | to review | |
+| 6-3 | Faraday’s lines are the zeptons | still | agreed | No change |
 | 6-4 | The same lines through every sphere | still | to review | |
 | 6-5 | Opposite charges: lines from one to the other | still | to review | |
 | 6-6 | Like charges: lines that turn aside | still | to review | |
