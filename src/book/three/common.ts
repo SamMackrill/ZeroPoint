@@ -6,12 +6,15 @@ export function label(text: string, color: string, size = 0.5) {
   const canvas = document.createElement('canvas'), wide = Math.max(1, text.length * 0.62);
   canvas.width = Math.round(128 * wide);
   canvas.height = 128;
-  const g = canvas.getContext('2d')!;
-  g.font = '600 84px "DM Sans", system-ui, sans-serif';
-  g.textAlign = 'center';
-  g.textBaseline = 'middle';
-  g.fillStyle = color;
-  g.fillText(text, canvas.width / 2, 70);
+  const g = canvas.getContext('2d');
+  // A browser that cannot give a 2D context draws the label blank rather than failing the whole scene.
+  if (g) {
+    g.font = '600 84px "DM Sans", system-ui, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillStyle = color;
+    g.fillText(text, canvas.width / 2, 70);
+  }
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(canvas), depthTest: false, transparent: true }));
   sprite.scale.set(size * wide, size, 1);
   sprite.renderOrder = 2;

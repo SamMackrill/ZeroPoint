@@ -21,6 +21,8 @@ export interface PairState {
   /** The rotation arrow is shown only while the motion is paused. */
   showSpin: boolean;
   view: PairView;
+  /** Changes each time the reader asks to go back to the chosen view after turning it by hand. */
+  reset?: number;
 }
 
 const CAMERA: Record<PairView, [number, number, number]> = { turned: [4.5, 2.1, 4.1], page: [0, 0, 6.8], path: [6.5, 1.1, 1.6] };
@@ -66,100 +68,111 @@ export default function PairScene({ state, onFail, description }: { state: PairS
     // If the browser takes the drawing context away (a GPU reset, too many contexts), fall back to the flat view.
     const lost = (e: Event) => { e.preventDefault(); onFail(); };
     renderer.domElement.addEventListener('webglcontextlost', lost);
-    const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(34, 720 / 330, 0.1, 100);
-    scene.add(new THREE.AmbientLight(0xffffff, 1.6));
-    const key = new THREE.DirectionalLight(0xffffff, 2.2);
-    key.position.set(3, 5, 6);
-    scene.add(key);
+    // Build the scene; if anything fails part way, undo what was set up and show the flat view instead.
+    try {
+      const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(34, 720 / 330, 0.1, 100);
+      scene.add(new THREE.AmbientLight(0xffffff, 1.6));
+      const key = new THREE.DirectionalLight(0xffffff, 2.2);
+      key.position.set(3, 5, 6);
+      scene.add(key);
 
-    // The plane of rotation, the photon's path through it, and the axis the pair turns about.
-    const disc = new THREE.Mesh(new THREE.CircleGeometry(1.3, 64), new THREE.MeshBasicMaterial({ color: palette.bg3, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
-    const rim = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 64 }, (_, i) => new THREE.Vector3(1.3 * Math.cos((i / 64) * 2 * Math.PI), 1.3 * Math.sin((i / 64) * 2 * Math.PI), 0))), new THREE.LineBasicMaterial({ color: palette.text4 }));
-    const path = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-3, 0, 0), new THREE.Vector3(3, 0, 0)]), new THREE.LineDashedMaterial({ color: palette.text4, dashSize: 0.12, gapSize: 0.1 }));
-    path.computeLineDistances();
-    // The photon moves along x (Fig. 5-2, p. 44): an arrowhead at the far end, and the label above the line's near end.
-    const travel = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.22, 12), new THREE.MeshBasicMaterial({ color: palette.text3 }));
-    travel.position.set(3.05, 0, 0);
-    travel.rotation.z = -Math.PI / 2;
-    const pathLabel = label('photon’s path', palette.text3, 0.3);
-    pathLabel.position.set(-2.2, 0.28, 0);
-    scene.add(disc, rim, path, travel, pathLabel);
+      // The plane of rotation, the photon's path through it, and the axis the pair turns about.
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(1.3, 64), new THREE.MeshBasicMaterial({ color: palette.bg3, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+      const rim = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(Array.from({ length: 64 }, (_, i) => new THREE.Vector3(1.3 * Math.cos((i / 64) * 2 * Math.PI), 1.3 * Math.sin((i / 64) * 2 * Math.PI), 0))), new THREE.LineBasicMaterial({ color: palette.text4 }));
+      const path = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-3, 0, 0), new THREE.Vector3(3, 0, 0)]), new THREE.LineDashedMaterial({ color: palette.text4, dashSize: 0.12, gapSize: 0.1 }));
+      path.computeLineDistances();
+      // The photon moves along x (Fig. 5-2, p. 44): an arrowhead at the far end, and the label above the line's near end.
+      const travel = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.22, 12), new THREE.MeshBasicMaterial({ color: palette.text3 }));
+      travel.position.set(3.05, 0, 0);
+      travel.rotation.z = -Math.PI / 2;
+      const pathLabel = label('photon’s path', palette.text3, 0.3);
+      pathLabel.position.set(-2.2, 0.28, 0);
+      scene.add(disc, rim, path, travel, pathLabel);
 
-    // The pair: two charges on a rod, turning in the plane.
-    const pair = new THREE.Group();
-    const sphere = new THREE.SphereGeometry(0.2, 32, 20);
-    const pos = new THREE.Mesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataPos, roughness: 0.45, transparent: true }));
-    const neg = new THREE.Mesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataNeg, roughness: 0.45, transparent: true }));
-    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2 * ARM, 12), new THREE.MeshStandardMaterial({ color: palette.text3, transparent: true }));
-    rod.rotation.z = Math.PI / 2;
-    pos.position.x = ARM;
-    neg.position.x = -ARM;
-    const plus = label('+', palette.bg0, 0.42), minus = label('−', palette.bg0, 0.42);
-    plus.position.x = ARM;
-    minus.position.x = -ARM;
-    pair.add(rod, pos, neg, plus, minus);
-    scene.add(pair);
+      // The pair: two charges on a rod, turning in the plane.
+      const pair = new THREE.Group();
+      const sphere = new THREE.SphereGeometry(0.2, 32, 20);
+      const pos = new THREE.Mesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataPos, roughness: 0.45, transparent: true }));
+      const neg = new THREE.Mesh(sphere, new THREE.MeshStandardMaterial({ color: palette.dataNeg, roughness: 0.45, transparent: true }));
+      const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 2 * ARM, 12), new THREE.MeshStandardMaterial({ color: palette.text3, transparent: true }));
+      rod.rotation.z = Math.PI / 2;
+      pos.position.x = ARM;
+      neg.position.x = -ARM;
+      const plus = label('+', palette.bg0, 0.42), minus = label('−', palette.bg0, 0.42);
+      plus.position.x = ARM;
+      minus.position.x = -ARM;
+      pair.add(rod, pos, neg, plus, minus);
+      scene.add(pair);
 
-    // E in the plane of rotation, beside the pair; B along the axis of rotation.
-    const eArrow = solidArrow(palette.dataE), bArrow = solidArrow(palette.dataBHi);
-    scene.add(eArrow.group, bArrow.group);
-    const eLabel = label('E', palette.dataE), bLabel = label('B', palette.dataBHi);
-    scene.add(eLabel, bLabel);
-    let spin = spinArrow(true), spinCw = true;
-    scene.add(spin);
+      // E in the plane of rotation, beside the pair; B along the axis of rotation.
+      const eArrow = solidArrow(palette.dataE), bArrow = solidArrow(palette.dataBHi);
+      scene.add(eArrow.group, bArrow.group);
+      const eLabel = label('E', palette.dataE), bLabel = label('B', palette.dataBHi);
+      scene.add(eLabel, bLabel);
+      let spin = spinArrow(true), spinCw = true;
+      scene.add(spin);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enablePan = false;
-    controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page
-    controls.minDistance = 4;
-    controls.maxDistance = 16;
-    const draw = () => renderer.render(scene, camera);
-    controls.addEventListener('change', draw);
-    const view = (v: PairView) => { camera.position.set(...CAMERA[v]); controls.target.set(0, 0, 0); camera.lookAt(0, 0, 0); controls.update(); draw(); };
-    const resize = new ResizeObserver(() => {
-      const w = el.clientWidth, h = el.clientHeight;
-      if (!w || !h) return;
-      renderer.setSize(w, h, false);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      draw();
-    });
-    resize.observe(el);
-
-    api.current = {
-      view,
-      update(s) {
-        // The positive end starts on the left of the page and turns over the top (clockwise) or under the bottom.
-        pair.rotation.z = ((s.cw ? 180 - s.turned : 180 + s.turned) * Math.PI) / 180;
-        for (const m of [pos.material, neg.material, rod.material] as THREE.MeshStandardMaterial[]) m.opacity = s.presence;
-        for (const sp of [plus, minus]) sp.material.opacity = s.presence;
-        const up = s.cw ? 1 : -1, len = PEAK * s.field;
-        // E points toward the positive end's side of the path (Fig. 6-7); B follows the right-hand grip rule.
-        const shown = len > 0.32, drawn = Math.max(len, 0.33);
-        eArrow.group.visible = bArrow.group.visible = eLabel.visible = bLabel.visible = shown;
-        eArrow.set(new THREE.Vector3(E_AT, (-up * drawn) / 2, 0), new THREE.Vector3(0, up, 0), drawn);
-        bArrow.set(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -up), drawn);
-        eLabel.position.set(E_AT + 0.4, up * (drawn / 2 - 0.1), 0);
-        bLabel.position.set(0.28, 0.22, -up * (drawn + 0.22));
-        if (s.cw !== spinCw) { scene.remove(spin); disposeAll(spin); spin = spinArrow(s.cw); spinCw = s.cw; scene.add(spin); }
-        spin.visible = s.showSpin;
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.enablePan = false;
+      controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page
+      // A vertical swipe scrolls the page, as the wheel does; a sideways one turns the view.
+      renderer.domElement.style.touchAction = 'pan-y pinch-zoom';
+      controls.minDistance = 4;
+      controls.maxDistance = 16;
+      const draw = () => renderer.render(scene, camera);
+      controls.addEventListener('change', draw);
+      const view = (v: PairView) => { camera.position.set(...CAMERA[v]); controls.target.set(0, 0, 0); camera.lookAt(0, 0, 0); controls.update(); draw(); };
+      const resize = new ResizeObserver(() => {
+        const w = el.clientWidth, h = el.clientHeight;
+        if (!w || !h) return;
+        renderer.setSize(w, h, false);
+        camera.aspect = w / h;
+        camera.updateProjectionMatrix();
         draw();
-      },
-    };
-    view('turned');
-    return () => {
-      api.current = null;
-      resize.disconnect();
+      });
+      resize.observe(el);
+
+      api.current = {
+        view,
+        update(s) {
+          // The positive end starts on the left of the page and turns over the top (clockwise) or under the bottom.
+          pair.rotation.z = ((s.cw ? 180 - s.turned : 180 + s.turned) * Math.PI) / 180;
+          for (const m of [pos.material, neg.material, rod.material] as THREE.MeshStandardMaterial[]) m.opacity = s.presence;
+          for (const sp of [plus, minus]) sp.material.opacity = s.presence;
+          const up = s.cw ? 1 : -1, len = PEAK * s.field;
+          // E points toward the positive end's side of the path (Fig. 6-7); B follows the right-hand grip rule.
+          const shown = s.field * s.presence > 0.01, drawn = Math.max(len, 0.33);
+          eArrow.group.visible = bArrow.group.visible = eLabel.visible = bLabel.visible = shown;
+          eArrow.set(new THREE.Vector3(E_AT, (-up * drawn) / 2, 0), new THREE.Vector3(0, up, 0), drawn);
+          bArrow.set(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -up), drawn);
+          eLabel.position.set(E_AT + 0.4, up * (drawn / 2 - 0.1), 0);
+          bLabel.position.set(0.28, 0.22, -up * (drawn + 0.22));
+          if (s.cw !== spinCw) { scene.remove(spin); disposeAll(spin); spin = spinArrow(s.cw); spinCw = s.cw; scene.add(spin); }
+          spin.visible = s.showSpin;
+          draw();
+        },
+      };
+      view('turned');
+      return () => {
+        api.current = null;
+        resize.disconnect();
+        renderer.domElement.removeEventListener('webglcontextlost', lost);
+        controls.dispose();
+        renderer.dispose();
+        disposeAll(scene);
+        renderer.domElement.remove();
+      };
+    } catch {
       renderer.domElement.removeEventListener('webglcontextlost', lost);
-      controls.dispose();
       renderer.dispose();
-      disposeAll(scene);
       renderer.domElement.remove();
-    };
+      onFail();
+      return undefined;
+    }
   }, [onFail]);
 
   useEffect(() => { api.current?.update(state); }, [state]);
-  useEffect(() => { api.current?.view(state.view); }, [state.view]);
+  useEffect(() => { api.current?.view(state.view); }, [state.view, state.reset]);
 
   return <div ref={host} className="bk-stage-3d" role="img" aria-label={description}/>;
 }

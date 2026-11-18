@@ -27,8 +27,9 @@ export function Slider({ label, value, min, max, step = 1, onChange, unit, show 
     let n = say(max).length;
     for (let i = 0; i <= steps; i++) n = Math.max(n, say(Math.min(max, min + i * step)).length);
     return n;
-    // `show` is usually an inline function, so it is left out: the range decides the widest reading.
-  }, [min, max, step, unit]);
+    // `show` is usually an inline function, remade each render, so it is not a dependency itself. A few sample readings
+    // stand in for it: if the formatter's rules change (a new mode, a new suffix), they change, and the scan runs again.
+  }, [min, max, step, unit, say(min), say(min + Math.round((max - min) / step / 2) * step), say(max)]); // the middle sample is a real step
   // A short reading sits beside the label in room reserved for the longest; a long one always has a line of its own,
   // where it needs no reserved room and may wrap if the column is narrow.
   const stacked = widest > LONG_READING;
@@ -70,7 +71,9 @@ export function Dial({ label, value, min, max, step = 1, onChange, show, marks }
   const arc = (from: number, to: number, r: number) => { const [x1, y1] = at(from, r), [x2, y2] = at(to, r); return `M ${x1} ${y1} A ${r} ${r} 0 ${Math.abs(to - from) > 180 ? 1 : 0} 1 ${x2} ${y2}`; };
   const zero = min < 0 && max > 0 ? angleOf(0) : -DIAL_SWEEP;
   return <div className="bk-control bk-dial">
-    <div className="bk-control-label"><span id={`${id}-label`}>{label}</span><output htmlFor={id}>{text}</output></div>
+    {/* The label has the full width above; the reading sits under the knob, like a controller's display, so a reading
+        that changes length never rewraps the label. */}
+    <div className="bk-control-label"><span id={`${id}-label`}>{label}</span></div>
     <svg ref={knob} id={id} viewBox="0 -10 100 110" className="bk-dial-knob" role="slider" tabIndex={0} aria-labelledby={`${id}-label`}
       aria-valuemin={min} aria-valuemax={max} aria-valuenow={value} aria-valuetext={text} onKeyDown={onKey}
       onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); turnTo(e); }} onPointerMove={e => { if (e.currentTarget.hasPointerCapture(e.pointerId)) turnTo(e); }}>
@@ -85,6 +88,7 @@ export function Dial({ label, value, min, max, step = 1, onChange, show, marks }
         <text x={at(DIAL_SWEEP, 30)[0] - 2} y={at(DIAL_SWEEP, 30)[1] + 14} className="bk-dial-mark" textAnchor="middle" fontSize={8}>{marks[2]}</text>
       </>}
     </svg>
+    <output htmlFor={id} className="bk-dial-reading">{text}</output>
   </div>;
 }
 

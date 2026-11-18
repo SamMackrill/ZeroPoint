@@ -66,7 +66,7 @@ export function HandRule({ first, second, thumb, signed, remark }: HandRuleProps
     <Choice label={`Second finger: ${second.name}`} value={b} onChange={setB} options={OPTIONS}/>
     {signed && <Choice label={signed} value={negative ? 'neg' : 'pos'} onChange={v => setNegative(v === 'neg')} options={[{ value: 'pos', label: 'Positive' }, { value: 'neg', label: 'Negative' }]}/>}
     <Readout label={`Thumb: ${thumb.name}`} value={result ? NAMES[result] : 'none'} tone={result ? 'good' : 'bad'}/>
-    <Remark>{result ? remark : 'With the two fingers along the same line there is nothing for the thumb to show: only the perpendicular part counts.'}</Remark>
+    <Remark>{!result ? 'With the two fingers along the same line there is nothing for the thumb to show: only the perpendicular part counts.' : negative ? `For a negative ${signed?.toLowerCase() ?? 'charge'} the ${thumb.name} is opposite to where the right thumb points.` : remark}</Remark>
   </Diagram>;
 }
 

@@ -4,13 +4,29 @@ import { DEBYE_FAR, DEBYE_NEAREST, debyeMotion } from '../src/book/chapters/ch03
 import { PAIR_CYCLE, pairLife, sightedBySeek } from '../src/book/chapters/ch04';
 import { percentOfPeak } from '../src/book/kit';
 import { dwellAngle, meanOffset } from '../src/book/chapters/ch06';
-import { deflectionPath } from '../src/book/chapters/ch07';
+import { channelFlow, circleRadii, deflectionPath, fieldLineXs } from '../src/book/chapters/ch07';
 import { COIL_LENGTH, COIL_RADIUS, COIL_ZEPTONS, SEEDS, ZEPTON_COUNTS, coilField, coilFieldLine, linesForCurrent } from '../src/book/three/coil-math';
 import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/book/three/sphere-math';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
+  it('Figure 7-2: idle wheels between vortices turning together only turn; between rows that differ they travel', () => {
+    expect(channelFlow(0.6, 0.6)).toBe(0);
+    expect(channelFlow(0.8, -0.8)).toBeCloseTo(0.8, 9); // along A–B: the current
+    expect(channelFlow(0.2, 0.8)).toBeLessThan(0); // an outer row lagging: the drift runs the other way
+  });
+
+  it('Figure 7-1: the lines of force grow in number with strength, and the circles spread out as 1/r', () => {
+    expect(fieldLineXs(0.7)).toHaveLength(6); // as printed
+    expect(fieldLineXs(0)).toHaveLength(0);
+    expect(circleRadii(1)).toHaveLength(5);
+    expect(circleRadii(0.5).length).toBeLessThan(circleRadii(1).length);
+    expect(circleRadii(-1)).toEqual(circleRadii(1)); // the direction does not change the count
+    const r = circleRadii(1), ratios = r.slice(1).map((v, i) => v / r[i]);
+    for (const q of ratios) expect(q).toBeCloseTo(ratios[0], 1); // a constant ratio: density falling as 1/r
+  });
+
   it('Figure 6-18: the coil’s field runs to the north pole on the right inside, and back the other way outside', () => {
     expect(coilField(0, 0)[0]).toBeGreaterThan(0); // inside, along +x: north to the right, as the caption says
     expect(coilField(0, COIL_RADIUS * 1.75)[0]).toBeLessThan(0); // outside, the opposite way (p. 59)
@@ -96,14 +112,15 @@ describe('book companion: diagrams', () => {
 
   it('Figure 7-3: at every slider setting the moving charge passes the fixed one, away if positive, toward if negative', () => {
     const body: [number, number] = [320, 190];
-    for (let offset = 30; offset <= 160; offset += 5) { // the slider's range and step
+    for (let offset = 110; offset <= 200; offset += 5) { // the slider's range and step
       for (const q of [1, -1]) {
         const path = deflectionPath([body[0] + offset, 380], [0, -1.4], body, q * 40), [ex, ey] = path.at(-1)!;
         expect(ey, `offset ${offset}, charge ${q}`).toBeLessThan(body[1]); // it goes on past, not back
         expect(Math.sign(ex - (body[0] + offset)), `offset ${offset}, charge ${q}`).toBe(q);
+        // Never so close that the zeptons between the two are squeezed out: room for a few between the glyphs.
+        const nearest = Math.min(...path.map(([x, y]) => Math.hypot(x - body[0], y - body[1])));
+        expect(nearest, `offset ${offset}, charge ${q}`).toBeGreaterThan(95);
       }
-      // Near enough at the default and closer starts for the pressure between them to be drawn.
-      if (offset <= 100) expect(Math.min(...deflectionPath([body[0] + offset, 380], [0, -1.4], body, 40).map(([x, y]) => Math.hypot(x - body[0], y - body[1])))).toBeLessThan(130);
     }
   });
 

@@ -13,7 +13,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 3-3 | What the plates shut out | animated | changed | Outside vacuum fills to the plates, whole ovals only; push arrows (Eq. 3-1); “retarded” explained |
 | 3-4 | Two great pressures, almost in balance | still | changed | Area slider and stage labels removed; force per 1 cm²; slider and readout layout fixed companion-wide |
 | 4-1 | Pairs either side of zero energy | animated | changed | Holes switch removed; Fleming’s matter/antimatter reading |
-| 4-2 | A sea of dipoles that answers to charge | animated | changed | Free charge removed (not in the figure); every pair turns half a turn through its life (p. 39) |
+| 4-2 | A sea of turning dipoles (was: … that answers to charge) | animated | changed | Free charge removed (not in the figure); every pair turns half a turn through its life (p. 39) |
 | 4-3 | A photon pair, out a wavelength and back | animated | agreed | No change |
 | 4-4 | Out half a wavelength and back | animated | agreed | No change |
 | 4-5 | Out a quarter wavelength | animated | agreed | No change |
@@ -37,15 +37,15 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 6-12 | Attraction: the chain shortens | animated | changed | Agreed; later the chain spacing went from 62 to 54 so the arrow and label fit (clipping sweep) |
 | 6-13 | Attraction drawn in zeptons | animated | agreed | No change |
 | 6-14 | A moving charge turns the zeptons | still | agreed | No change |
-| 6-15 | A current keeps the zeptons spinning | animated | agreed | No change |
+| 6-15 | A current keeps the zeptons spinning | animated | changed | Agreed; later its current control became the Dial (consistency with 6-18) |
 | 6-16 | From rotation to B: the right hand grip | animated | changed | Taller stage so B (clockwise) is not clipped |
 | 6-17 | A magnet’s lines, threaded with spinning zeptons | animated | agreed | No change |
 | 6-18 | A coil: spin inside, opposite spin outside | animated | changed | 3D copper coil, cut away; current dial; line density follows the current; Few/More/Many zeptons |
-| 7-1 | Maxwell’s current in a field of vortices | still | to review | |
-| 7-2 | Vortices set spinning by a current | animated | to review | |
-| 7-3 | An electric field deflects by pressure | animated | to review | |
-| 7-4 | The right hand rule for the magnetic force | still | to review | |
-| 7-5 | A spinning dipole field sweeps the charge aside | animated | to review | |
+| 7-1 | Maxwell’s current in a field of vortices | still | changed | Current dial; line density follows field and current (circles as 1/r) |
+| 7-2 | Vortices set spinning by a current | animated | changed | Maxwell’s honeycomb with idle wheels in every channel; induced drifts; current dial |
+| 7-3 | An electric field deflects by pressure | animated | changed | Field of both charges; zeptons turn in place (FieldZeptons); wider start; no pressure label |
+| 7-4 | The right hand rule for the magnetic force | still | changed | Fleming’s traced hand, fixed pose; left hand (mirrored) for a negative charge; note on J. A. Fleming |
+| 7-5 | A spinning dipole field sweeps the charge aside | animated | changed | 3D plane of motion; zeptons spin in it, in layers; B upright through them |
 | 8-1 | Vortices: Descartes’s, and much smaller ones | animated | to review | |
 | 8-2 | A top that is not spinning falls | still | to review | |
 | 8-3 | A spinning top precesses the way it spins | animated | to review | |
@@ -216,3 +216,38 @@ A sweep of all 101 stages at their starting settings found drawing past the edge
 - **Owner:** make the coil look like copper. **Done:** the wire is now copper: a metallic material with a faint warm glow so it reads as copper in shadow. The colours are named scene constants (`copper`, `copperGlow`) in `scripts/sync-palette.mjs`, and the palette was regenerated, so no colour literal sits in the figure.
 - **Owner:** add a few more rotating zeptons, perhaps with a control. **Done:** a “Spinning zeptons” control offers Few (7), More (20) and Many (40). The extra zeptons are scattered, the same every time, about two in five inside the coil and the rest round the outside and out past the ends. Each spins about the field where it is, so they tilt to follow the field as it turns back. A test checks that every zepton has a place, that those inside sit in a field along +x, and that those outside stay clear of the wire.
 - **Owner:** the current should affect the density of the magnetic field lines. **Agreed:** line density is how the companion shows field strength (6-4). **Done:** the number of field lines now follows the current: one seed (four lines) per sixth of full current, at least one, up to 24 lines plus the axis. The seeds come in an order that keeps them spread through the coil at every setting. The old brightness scaling is gone, and each line carries two arrowheads instead of four. A test covers the count.
+
+### Fig. 7-1 (changed, agreed 2026-11-18)
+
+- **Owner:** reuse the dial from 6-18 for the current. **Done:** “Current at C” is now a Dial (down, off, up), reading as a percentage, ascending or descending.
+- **Owner:** use the dial for every current control. **Done:** 6-15 (“Electron flow when driven”: left, off, right) and 7-2 (“Current from A to B”: B→A, off, A→B) now use the Dial as well.
+- **Also:** the dial’s reading now sits under the knob, like a controller’s display, and its label has the full width above. A long label beside a reading that changes length would otherwise rewrap.
+- **Owner:** the circles are lines of force, so should their density grow with the current? **Agreed:** Maxwell calls them the current’s lines of force (p. 62), and line density is how the companion shows strength. **Done:** the number of circles follows the current (five at full). They are spaced by a constant ratio, so their density falls as 1/r round the straight current. The field’s straight lines likewise follow its strength (six at the starting 0.7, as printed, nine at full). Both kinds now have one stroke width, where they used to thicken. A note and a Try step say this, and a test covers the counts and the spacing.
+
+### Fig. 7-2 (changed, agreed 2026-11-18)
+
+- **Owner:** this does not match Maxwell’s model, which has ball bearings (idle wheels) between every pair of spinning hexagons.
+- **Done:** the figure is now Maxwell’s honeycomb: hexagonal vortices in five rows (three +, two −, as printed), with idle wheels in every channel between them. The wheels follow his mechanism, each rolling between the faces of the vortices either side, so it travels at half the difference of their spins. Between vortices turning together a wheel only turns, against them. Along A–B the wheels carry the current. While an outer row catches up, the wheels between it and the next drift the other way: the induced currents of Maxwell’s conclusion, which Fleming quotes (p. 63). Wheels light up while they travel. The current is the Dial. A test covers the wheel rule.
+
+### Fig. 7-3 (changed, agreed 2026-11-18)
+
+- **Owner:** this does not show how the zeptons behave. It should match chapter 6’s attraction and repulsion figures, but more dynamically, since the charge moves and the zeptons polarize continuously.
+- **Done:** the figure now draws the field of both charges, as 6-11 and 6-13 do, recomputed every frame from the moving charge’s position, so the zeptons re-polarize as it passes. With a positive charge they turn aside and crowd between the two (the pressure builds up). With a negative one they bridge across. The same “Draw the field as” choice (zeptons, lines, both) and “Show the push on each charge” switch as chapter 6 are added. The Try steps and notes point to 6-11 and 6-13. (This also covers the clipping sweep’s note on 7-3: the path running off the stage is the charge leaving.)
+- **Owner:** the “pressure builds up between” text and the dotted circle are no longer needed; the effect is now obvious. **Done:** both are removed (and their “lower” counterpart for a negative charge).
+- **Owner:** the changing lines of zeptons look odd and jumpy; make the animation smoother. **Cause:** the chains were re-traced every frame, and as the charge moved, lines switched between ending on it and escaping past it, so they popped. **Done:** a new kit drawing, `FieldZeptons`, sets the zeptons in a fixed, even scatter. Each turns to the field at its place and is polarized more fully where the field is stronger: as the charge moves, “the dipoles change their orientation in order to stay aligned” (p. 56). The chains show in them as Faraday’s lines show in iron filings, and nothing pops. Lines mode still re-traces the lines. The notes say this.
+- **Owner:** the moving charge comes too close to the fixed one, leaving very few zeptons between them at closest approach, which is misleading. **Done:** the start offset now runs from 110 to 200 (default 130), so the closest approach, centre to centre, stays above 95 units for either sign (it had fallen to 17 with a negative charge). `FieldZeptons` now clears only each source’s own glyph (`radii`), so no wider hole opens round the small charge. The test asserts the minimum distance across the slider’s range.
+
+### CodeRabbit’s second review of #74, fixed in the top layer
+
+Under the stack rule (a reviewed layer gets only blocking fixes), these went into the next layer: 3-1’s wording for an unchanged moment; 3-2’s average marker kept on the side the field puts the electron; 4-2 renamed “A sea of turning dipoles”; 4-9 describes the gap between pairs, its slider shows 0° in the gap so any move shows a pair, the 3D view uses the flat view’s rule for showing E and B, and a “Back to this view” action restores the chosen camera; sliders re-measure when a formatter’s rules change; the 3D figures let a vertical swipe scroll the page (`touch-action: pan-y pinch-zoom`), draw labels blank if no 2D context is available, and undo a partly built scene and fall back if setup fails.
+
+### Fig. 7-4 (changed, agreed 2026-11-18)
+
+- **Owner:** can we add a transparent human hand? **Done:** the shared right-hand-rule diagram (7-4 and 8-4) now draws a see-through right hand in the same oblique view as the arrows. The index finger lies along the first finger’s arrow, the middle finger is bent out along the second, the thumb runs along their cross product, and the ring and little fingers curl into the palm. Because it is built from the three directions, it turns to fit any choice and is always a right hand. The arrows draw over it, and “Show the right hand” hides it. For a negative charge the remark says the force is opposite to where the right thumb points.
+- **Owner:** that looks horrible; perhaps remove all the finger options. **Agreed:** Fleming’s figure is one fixed hand, a memory aid. **Done:** 7-4 now shows Fleming’s own drawing, traced from the 163 × 148 image in the PDF into a smooth vector outline (`scripts/book-trace-hand.py` writes `src/book/art/fleming-hand.ts`). Arrows run on from his fingertips: motion from the first finger (drawn up and left, in perspective into the page), field B from the second, force from the thumb. The finger choices are gone. The charge choice stays: for a negative charge the force arrow runs against the thumb. The stroke-built hand came out of the shared diagram, so 8-4 is unchanged.
+- **Owner:** reversing the charge makes it the left-hand rule, and this is Fleming’s rule (a different Fleming). **Agreed**, with a nuance: J. A. Fleming’s motor rule is left-handed, with the first finger along the field and the second along the current. Ray Fleming’s right-handed version swaps the two fingers, which is the same as changing hands. **Done:** with a negative charge the drawing is mirrored top to bottom into a left hand, thumb down along the force, and a caption names the hand. A note records J. A. Fleming’s rules and why both give the same force.
+
+### Fig. 7-5 (changed, agreed 2026-11-18)
+
+- **Owner:** easier to see in 3D, because the zeptons spin in the same plane as the motion. **Done:** the figure is a 3D scene (three.js, on demand). A plane of motion carries a field region of zeptons spinning flat in it. Upright B arrows stand through the plane, down for a clockwise spin (“a downward directed magnetic field”, p. 65). The charge moves across the plane and is swept aside in it. Views: Turned, From above (the page’s view), and “Back to this view”. The other controls are unchanged, and the flat page view is the fallback. The Try steps and notes say this.
+- **Owner:** only one layer of spinning zeptons; would more layers be clearer? Certainly more accurate. **My view:** yes for accuracy, since the field fills the space round the path; the risk is clutter. **Done:** two layers above and two below the plane of motion, fainter with distance (42 % and 20 %). The nearer layers are shifted half a cell so they do not stack in the view from above. The B arrows lengthen to run through every layer. A switch, “Layers above and below” (on by default), hides them for comparison. The plane of motion stays the brightest.

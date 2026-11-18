@@ -354,7 +354,7 @@ function CurrentAndSpin() {
       })}
       {Math.abs(current) > 0.05 && <Still><Arrow x1={W / 2 - Math.sign(current) * 40} y1={top - 14} x2={W / 2 + Math.sign(current) * 40} y2={top - 14} tone="motion" w={2}/></Still>}
     </Stage>}>
-    <Slider label="Electron flow when driven" value={drive} min={-1} max={1} step={0.05} onChange={setDrive} show={v => (v === 0 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'right' : 'left'}`)}/>
+    <Dial label="Electron flow when driven" value={drive} min={-1} max={1} step={0.05} onChange={setDrive} marks={['left', 'off', 'right']} show={v => (v === 0 ? 'off' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'right' : 'left'}`)}/>
     <Toggle label="Drive the current" checked={on} onChange={setOn}/>
     <PlayBar play={play} label="the current"/>
     <Readout label="Current" value={`${Math.round(Math.abs(current) * 100)} %${Math.abs(current) > 0.01 ? (current > 0 ? ' right' : ' left') : ''}`}/>
