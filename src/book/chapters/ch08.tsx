@@ -173,6 +173,9 @@ function PrecessingTop() {
   const [clockwise, setClockwise] = useState(true);
   const [spin, setSpin] = useState(1);
   const [field, setField] = useState(false);
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const [reset, setReset] = useState(0);
+  const fail = useCallback(() => setFlat(true), []);
   const play = usePlayback();
   const state = useRef({ t: 0, angle: 20, spun: 0 });
   // Restart (or a step back) begins again from the starting state.
@@ -183,8 +186,9 @@ function PrecessingTop() {
   state.current.spun += sense * spin * 500 * dt;
   const H = 380, cx = 300, cy = 190, R = 118, a = state.current.angle, [hx, hy] = polar(cx, cy, R + 34, a), [mx, my] = polar(cx, cy, R * 0.7, a);
   const [p1x, p1y] = polar(hx, hy, 30, a + 90), [p2x, p2y] = polar(hx, hy, 30, a - 90), [tx, ty] = polar(mx, my, 46, a + sense * 90);
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`A top seen from above, spinning ${clockwise ? 'clockwise' : 'counter-clockwise'}. It precesses round the point where its tip meets the surface, also ${clockwise ? 'clockwise' : 'counter-clockwise'}.`}>
+  const label = `A top spinning ${clockwise ? 'clockwise' : 'counter-clockwise'} as seen from above. It precesses round the point where its tip meets the surface, also ${clockwise ? 'clockwise' : 'counter-clockwise'}, its centre of mass circling.${field ? ` Its mattermagnetic field points along its axis, ${clockwise ? 'toward the tip' : 'toward the head'}; gravity gives it a velocity downward; the force is at right angles to both, round the circle.` : ''}`;
+  /** The printed page's view from above, flat: the fallback where 3D cannot be drawn (called, not mounted). */
+  const flatTop = () => <Stage w={W} h={H} label={label}>
       <circle cx={cx} cy={cy} r={R * 0.7} className="bk-s-muted" fill="none" strokeDasharray="7 7"/>
       <Spin x={cx} y={cy} r={R * 0.7 + 22} ccw={!clockwise} from={a + sense * 20} sweep={50} tone="muted"/>
       <path d={`M${cx} ${cy} L${p1x} ${p1y} L${p2x} ${p2y} Z`} className="bk-body bk-body-plain"/>
@@ -202,10 +206,16 @@ function PrecessingTop() {
         <T x={560} y={166} anchor="start" size="sm" tone="motion">⊗ v: falling, into the page</T>
         <T x={560} y={196} anchor="start" size="sm" tone="text">force F_m, at 90° to both</T>
       </>}
-    </Stage>}>
+    </Stage>;
+  return <Diagram stage={flat ? flatTop() : <FallbackOnError onError={fail} fallback={flatTop()}>
+      <Suspense fallback={flatTop()}>
+        <TopScene state={{ lean: 22, heading: a, spun: state.current.spun, path: { kind: 'circle' }, gravity: true, account: field ? { toTip: clockwise, ahead: clockwise ? -1 : 1 } : null, look: 'above', reset }} onFail={fail} description={`${label} Drag to turn the view.`}/>
+      </Suspense>
+    </FallbackOnError>}>
+    {!flat && <Action onClick={() => setReset(n => n + 1)}>Back to this view</Action>}
     <Choice label="Spin, seen from above" value={clockwise ? 'cw' : 'ccw'} onChange={v => setClockwise(v === 'cw')} options={[{ value: 'cw', label: 'Clockwise' }, { value: 'ccw', label: 'Counter' }]}/>
     <Slider label="Rate of spin" value={spin} min={0.3} max={3} step={0.1} onChange={setSpin} show={v => `${fmt(v, 2)} ×`}/>
-    <Toggle label="Show the mattermagnetic account" checked={field} onChange={setField}/>
+    <Toggle label="Show Fleming’s explanation: the force on the spinning top" checked={field} onChange={setField}/>
     <PlayBar play={play} label="the top"/>
     <Readout label="Precession" value={`${fmt(precessionRate(spin), 2)} × , ${clockwise ? 'clockwise' : 'counter-clockwise'}`}/>
     <Remark>{field ? 'The spinning top produces a mattermagnetic field, and gravity gives it a velocity downward. The force is at 90 degrees to that velocity, so it moves round and does not fall.' : 'Spin it the other way and it precesses the other way. Spin it faster and it precesses more slowly.'}</Remark>
@@ -316,10 +326,10 @@ const chapter: ChapterContent = {
         <p><Q>If the top spins one direction, it precesses in that direction and if the top is spun the opposite direction, it processes in the new direction.</Q> Fleming asks what holds it up: not air, not electromagnetism. <Q>A force must be applied to the top continuously by some means, a very strong force</Q> (<Pg n={72}/>).</p>
         <p>His account comes at the end of the chapter. A clockwise top produces a mattermagnetic field <Q>directed downward along its axis of rotation</Q>. Gravity gives the off-balance top a velocity toward Earth, and <Q>This produces a Lorentz Force, F<sub>m</sub> = m (υ x B<sub>m</sub>). Since the force is a result of a cross product, the movement of the top is perpendicular to the motion due to the gravitational acceleration</Q> (<Pg n={80}/>).</p>
       </>,
-      tryThis: ['Reverse the spin: the precession reverses with it.', 'Spin it faster. It precesses more slowly, as Equation 8-5 requires for the same torque and a larger L.', 'Turn on the mattermagnetic account to see the three things Fleming’s force is built from, and that the force lies along the circle.'],
+      tryThis: ['Reverse the spin: the precession reverses with it.', 'Spin it faster. It precesses more slowly, as Equation 8-5 requires for the same torque and a larger L.', 'Turn on Fleming’s explanation. The top’s own mattermagnetic field (Bm, along its axis) and its downward velocity from gravity (v) give the force on the spinning top (Fm), which points round the circle, the way it precesses.'],
       notes: <>
         <p>Fleming gives the force as <V>m</V>(<V>υ</V> × <V>B</V><sub>m</sub>) and says it is at 90 degrees to gravity’s acceleration; he does not work through its sign. Taken literally with the field and velocity as he describes them (the field down the axis, toward the tip, for a clockwise top, and the velocity downward), the cross product points the other way round the circle from the precession he describes, for either sense of spin. The force arrow is drawn the way he says the top precesses, and the sign is left as he leaves it.</p>
-        <p>The top is not shown slowing down and falling.</p>
+        <p>The top is not shown slowing down and falling. It is the wooden top of Figure 8-2, drawn in three dimensions, spinning and circling its tip; the printed figure shows it from above. With Fleming’s explanation shown, the force F<sub>m</sub> is drawn from the centre of mass, because it acts on the spinning top as a whole. B<sub>m</sub> is the top’s field along its whole axis, not a force applied at the head. It is drawn above the head only to keep it clear of the other arrows.</p>
       </>,
     },
     {

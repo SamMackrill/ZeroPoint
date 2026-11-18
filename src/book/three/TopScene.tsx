@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette } from '../../ui/palette';
-import { disposeAll, solidArrow, woodTexture } from './common';
+import { disposeAll, label, solidArrow, woodTexture } from './common';
 import { PROFILE, TOP_CM, TOP_LAID } from './top-math';
 
 /** What the scene shows at a moment. Angles in degrees. */
@@ -19,6 +19,14 @@ export interface TopState {
   /** The path its centre of mass follows: falling over from `from` degrees, or circling at the present lean. */
   path: { kind: 'fall'; from: number } | { kind: 'circle' } | null;
   gravity: boolean;
+  /**
+   * Fleming's mattermagnetic account of a spinning top (p. 80): the field B_m along the axis, toward the tip for a
+   * clockwise top (`toTip`), and the force F_m round the circle the way it precesses (`ahead`: +1 the way the heading
+   * grows). The velocity downward is gravity's arrow.
+   */
+  account?: { toTip: boolean; ahead: 1 | -1 } | null;
+  /** Where the view looks from: beside the top, or higher and centred on the tip, to watch it circle. */
+  look?: 'side' | 'above';
   reset?: number;
 }
 
@@ -98,6 +106,11 @@ export default function TopScene({ state, onFail, description, onLean }: { state
       // Drawn over the body, so gravity's pull and the path show through the solid top.
       pull.group.traverse(o => { const m = (o as THREE.Mesh).material as THREE.Material | undefined; if (m) m.depthTest = false; o.renderOrder = 5; });
       scene.add(centre, pull.group, pathLine);
+      // The arrows of the mattermagnetic account, drawn over the body, with their labels.
+      const fieldArrow = solidArrow(palette.dataBHi), forceArrow = solidArrow(palette.text);
+      for (const a of [fieldArrow, forceArrow]) a.group.traverse(o => { const m = (o as THREE.Mesh).material as THREE.Material | undefined; if (m) m.depthTest = false; o.renderOrder = 5; });
+      const fieldLabel = label('Bₘ', palette.dataBHi, 0.3), forceLabel = label('Fₘ', palette.text, 0.3), fallLabel = label('v', palette.warn, 0.3);
+      scene.add(fieldArrow.group, forceArrow.group, fieldLabel, forceLabel, fallLabel);
 
       // Grabbing the top tilts it: registered before the orbit controls, so a press on the top is ours and does not
       // turn the view. The pointer's ray meets the upright plane the top leans in, and the lean is the angle there
@@ -145,7 +158,11 @@ export default function TopScene({ state, onFail, description, onLean }: { state
       controls.maxPolarAngle = Math.PI / 2 - 0.04; // never look from under the floor
       const draw = () => renderer.render(scene, camera);
       controls.addEventListener('change', draw);
-      const view = () => { camera.position.set(1.9, 1.75, 4.5); controls.target.set(0.55, 0.78, 0); camera.lookAt(0.55, 0.78, 0); controls.update(); draw(); };
+      const look = { current: state.look ?? 'side' };
+      const view = () => {
+        const [p, t] = look.current === 'above' ? [[1.7, 2.9, 4.9], [0, 1.05, 0]] : [[1.9, 1.75, 4.5], [0.55, 0.78, 0]];
+        camera.position.set(p[0], p[1], p[2]); controls.target.set(t[0], t[1], t[2]); camera.lookAt(t[0], t[1], t[2]); controls.update(); draw();
+      };
       const resize = new ResizeObserver(() => {
         const w = el.clientWidth, h = el.clientHeight;
         if (!w || !h) return;
@@ -170,6 +187,20 @@ export default function TopScene({ state, onFail, description, onLean }: { state
           centre.position.copy(c);
           pull.group.visible = s.gravity && c.y > 0.12;
           pull.set(c, up.clone().negate(), Math.max(0.12, c.y - 0.02));
+          // The account's arrows: B_m along the axis from the centre of mass, F_m along the circle the centre follows.
+          const shown = !!s.account;
+          fieldArrow.group.visible = forceArrow.group.visible = fieldLabel.visible = forceLabel.visible = fallLabel.visible = shown;
+          if (s.account) {
+            const axis = c.clone().normalize(), along = s.account.toTip ? axis.clone().negate() : axis;
+            // B_m lies along the whole axis; it is drawn above the head, on the axis, clear of the body and the other
+            // arrows. F_m runs from the centre of mass along the circle; v's label sits on the side away from F_m.
+            const h = (s.heading * Math.PI) / 180, tangent = new THREE.Vector3(-Math.sin(h), 0, -Math.cos(h)).multiplyScalar(s.account.ahead);
+            fieldArrow.set(axis.clone().multiplyScalar(s.account.toTip ? 2.4 : 1.9), along, 0.5);
+            fieldLabel.position.copy(axis).multiplyScalar(2.2).addScaledVector(tangent, -0.2);
+            forceArrow.set(c, tangent, 0.6);
+            forceLabel.position.copy(c).addScaledVector(tangent, 0.76);
+            fallLabel.position.copy(c).addScaledVector(tangent, -0.16).setY(Math.max(0.12, c.y * 0.4));
+          }
           const key = JSON.stringify([s.path, s.path?.kind === 'circle' ? s.lean : 0, s.path?.kind === 'fall' ? s.heading : 0]);
           if (key !== drawnPath) {
             const points = !s.path ? [] : s.path.kind === 'fall'
