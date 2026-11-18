@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette } from '../../ui/palette';
-import { disposeAll, label, solidArrow } from './common';
+import { disposeAll, label, solidArrow, turnWithKeys } from './common';
 
 /** Where the reader looks from: the printed page face on, turned to show depth, or along the photon's path. */
 export type PairView = 'turned' | 'page' | 'path';
@@ -68,9 +68,13 @@ export default function PairScene({ state, onFail, description }: { state: PairS
     // If the browser takes the drawing context away (a GPU reset, too many contexts), fall back to the flat view.
     const lost = (e: Event) => { e.preventDefault(); onFail(); };
     renderer.domElement.addEventListener('webglcontextlost', lost);
+    // Everything set up is undone in reverse, the same way on unmount and when setup fails part way.
+    const undo: (() => void)[] = [() => renderer.domElement.remove(), () => renderer.dispose(), () => renderer.domElement.removeEventListener('webglcontextlost', lost)];
+    const teardown = () => { api.current = null; while (undo.length) { try { undo.pop()!(); } catch { /* keep releasing the rest */ } } };
     // Build the scene; if anything fails part way, undo what was set up and show the flat view instead.
     try {
       const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(34, 720 / 330, 0.1, 100);
+      undo.push(() => disposeAll(scene));
       scene.add(new THREE.AmbientLight(0xffffff, 1.6));
       const key = new THREE.DirectionalLight(0xffffff, 2.2);
       key.position.set(3, 5, 6);
@@ -113,6 +117,9 @@ export default function PairScene({ state, onFail, description }: { state: PairS
       scene.add(spin);
 
       const controls = new OrbitControls(camera, renderer.domElement);
+
+      undo.push(() => controls.dispose());
+      undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page
       // A vertical swipe scrolls the page, as the wheel does; a sideways one turns the view.
@@ -131,6 +138,7 @@ export default function PairScene({ state, onFail, description }: { state: PairS
         draw();
       });
       resize.observe(el);
+      undo.push(() => resize.disconnect());
 
       api.current = {
         view,
@@ -153,19 +161,10 @@ export default function PairScene({ state, onFail, description }: { state: PairS
         },
       };
       view('turned');
-      return () => {
-        api.current = null;
-        resize.disconnect();
-        renderer.domElement.removeEventListener('webglcontextlost', lost);
-        controls.dispose();
-        renderer.dispose();
-        disposeAll(scene);
-        renderer.domElement.remove();
-      };
-    } catch {
-      renderer.domElement.removeEventListener('webglcontextlost', lost);
-      renderer.dispose();
-      renderer.domElement.remove();
+      return teardown;
+    } catch (error) {
+      console.error('A 3D figure failed to set up; showing its flat drawing instead.', error);
+      teardown();
       onFail();
       return undefined;
     }
@@ -174,5 +173,5 @@ export default function PairScene({ state, onFail, description }: { state: PairS
   useEffect(() => { api.current?.update(state); }, [state]);
   useEffect(() => { api.current?.view(state.view); }, [state.view, state.reset]);
 
-  return <div ref={host} className="bk-stage-3d" role="img" aria-label={description}/>;
+  return <div ref={host} className="bk-stage-3d" role="img" aria-label={`${description} With the figure focused, the arrow keys turn it too.`}/>;
 }

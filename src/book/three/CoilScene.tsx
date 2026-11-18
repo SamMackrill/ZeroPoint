@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette, scene as sceneColours } from '../../ui/palette';
 import { COIL_LENGTH, COIL_PITCH, COIL_RADIUS, COIL_TURNS, COIL_ZEPTONS, FIELD_BOX, SEEDS, coilField, coilFieldLine, linesForCurrent } from './coil-math';
-import { disposeAll, label } from './common';
+import { disposeAll, label, turnWithKeys } from './common';
 
 /** What the scene shows at a moment: the current (−1 to 1, sign for direction), the clock, and whether the front is cut away. */
 export interface CoilState { current: number; t: number; cutaway: boolean; zeptons: number }
@@ -48,9 +48,13 @@ export default function CoilScene({ state, onFail, description }: { state: CoilS
     // If the browser takes the drawing context away (a GPU reset, too many contexts), fall back to the flat view.
     const lost = (e: Event) => { e.preventDefault(); onFail(); };
     renderer.domElement.addEventListener('webglcontextlost', lost);
+    // Everything set up is undone in reverse, the same way on unmount and when setup fails part way.
+    const undo: (() => void)[] = [() => renderer.domElement.remove(), () => renderer.dispose(), () => renderer.domElement.removeEventListener('webglcontextlost', lost)];
+    const teardown = () => { api.current = null; while (undo.length) { try { undo.pop()!(); } catch { /* keep releasing the rest */ } } };
     // Build the scene; if anything fails part way, undo what was set up and show the flat view instead.
     try {
       const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(32, 720 / 380, 0.1, 100);
+      undo.push(() => disposeAll(scene));
       scene.add(new THREE.AmbientLight(0xffffff, 1.4));
       const key = new THREE.DirectionalLight(0xffffff, 2.2);
       key.position.set(3, 6, 8);
@@ -113,6 +117,9 @@ export default function CoilScene({ state, onFail, description }: { state: CoilS
       });
 
       const controls = new OrbitControls(camera, renderer.domElement);
+
+      undo.push(() => controls.dispose());
+      undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page
       // A vertical swipe scrolls the page, as the wheel does; a sideways one turns the view.
@@ -131,15 +138,21 @@ export default function CoilScene({ state, onFail, description }: { state: CoilS
         draw();
       });
       resize.observe(el);
+      undo.push(() => resize.disconnect());
 
       const up = new THREE.Vector3(0, 1, 0);
+      // The markers' and zeptons' phases build up from the time that passes at the current then set, so changing or
+      // reversing the current changes how fast they go from here on, without a jump. Going back in time starts again.
+      let lastT = 0, markerPhase = 0, zeptonPhase = 0;
       api.current = s => {
-        const on = Math.abs(s.current) > 0.05, sense = Math.sign(s.current) || 1;
+        const on = Math.abs(s.current) > 0.05, sense = Math.sign(s.current) || 1, dt = s.t - lastT;
+        if (dt < 0) { markerPhase = sense * s.t * 2.2; zeptonPhase = s.t * 4 * s.current; } else { markerPhase += sense * dt * 2.2; zeptonPhase += dt * 4 * s.current; }
+        lastT = s.t;
         whole.visible = !s.cutaway;
         back.visible = s.cutaway;
         // The current runs toward increasing θ when positive; the markers move along the wire that way.
         markers.forEach((m, i) => {
-          const theta = ((i + 0.5) / markers.length) * 2 * Math.PI * COIL_TURNS + sense * s.t * 2.2;
+          const theta = ((i + 0.5) / markers.length) * 2 * Math.PI * COIL_TURNS + markerPhase;
           const wrapped = ((theta % (2 * Math.PI * COIL_TURNS)) + 2 * Math.PI * COIL_TURNS) % (2 * Math.PI * COIL_TURNS), here = helix(wrapped);
           m.visible = on && (!s.cutaway || here.z <= 0.02);
           m.position.copy(here);
@@ -154,23 +167,14 @@ export default function CoilScene({ state, onFail, description }: { state: CoilS
         north.position.set(sense * (COIL_LENGTH / 2 + 1.5), 0.4, 0);
         south.position.set(-sense * (COIL_LENGTH / 2 + 1.5), 0.4, 0);
         // Each zepton spins about the field where it is, faster for more current; reversing the current reverses them.
-        zeptons.forEach((z, i) => { z.holder.visible = on && i < s.zeptons; z.spinner.rotation.y = s.t * 4 * s.current + i * 0.8; });
+        zeptons.forEach((z, i) => { z.holder.visible = on && i < s.zeptons; z.spinner.rotation.y = zeptonPhase + i * 0.8; });
         draw();
       };
       api.current(state);
-      return () => {
-        api.current = null;
-        resize.disconnect();
-        renderer.domElement.removeEventListener('webglcontextlost', lost);
-        controls.dispose();
-        renderer.dispose();
-        disposeAll(scene);
-        renderer.domElement.remove();
-      };
-    } catch {
-      renderer.domElement.removeEventListener('webglcontextlost', lost);
-      renderer.dispose();
-      renderer.domElement.remove();
+      return teardown;
+    } catch (error) {
+      console.error('A 3D figure failed to set up; showing its flat drawing instead.', error);
+      teardown();
       onFail();
       return undefined;
     }
@@ -179,5 +183,5 @@ export default function CoilScene({ state, onFail, description }: { state: CoilS
 
   useEffect(() => { api.current?.(state); }, [state]);
 
-  return <div ref={host} className="bk-stage-3d" style={{ aspectRatio: '720 / 400' }} role="img" aria-label={description}/>;
+  return <div ref={host} className="bk-stage-3d" style={{ aspectRatio: '720 / 400' }} role="img" aria-label={`${description} With the figure focused, the arrow keys turn it too.`}/>;
 }

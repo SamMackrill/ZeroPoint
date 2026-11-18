@@ -83,3 +83,28 @@ export function woodTexture(width = 512, height = 512) {
   texture.anisotropy = 4;
   return texture;
 }
+
+/**
+ * Turn the view with the arrow keys, for readers who cannot drag: once the figure has the keyboard focus, left and
+ * right go round the target, up and down tilt the view, ten degrees a press, within the orbit's own limits. Returns
+ * the undo for the scene's teardown.
+ */
+export function turnWithKeys(el: HTMLElement, camera: THREE.Camera, controls: { target: THREE.Vector3; minPolarAngle: number; maxPolarAngle: number; update(): unknown }, draw: () => void) {
+  el.tabIndex = 0;
+  const step = Math.PI / 18;
+  const key = (e: KeyboardEvent) => {
+    const turn = ({ ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] } as Record<string, [number, number]>)[e.key];
+    if (!turn) return;
+    e.preventDefault();
+    const where = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+    where.theta += turn[0];
+    where.phi = Math.min(controls.maxPolarAngle, Math.max(controls.minPolarAngle + 0.01, where.phi + turn[1]));
+    where.makeSafe();
+    camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(where));
+    camera.lookAt(controls.target);
+    controls.update();
+    draw();
+  };
+  el.addEventListener('keydown', key);
+  return () => { el.removeEventListener('keydown', key); el.removeAttribute('tabindex'); };
+}

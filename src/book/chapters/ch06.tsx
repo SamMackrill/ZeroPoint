@@ -137,15 +137,19 @@ function EqualLinesSpheres() {
   const [r, setR] = useState(90);
   const [flat, setFlat] = useState(() => !canDraw3D());
   const fail = useCallback(() => setFlat(true), []);
-  const ref = 45, lines = flat ? 8 : SPHERE_LINES, density = polarizationDensity(r, ref), px = 90, pw = 540, ph = 110, py = 30;
+  // Until the 3D scene has loaded and drawn, the flat page (eight lines) is what shows, so the words describe that.
+  const [ready, setReady] = useState(false);
+  const ready3D = useCallback(() => setReady(true), []);
+  const flatShown = flat || !ready;
+  const ref = 45, lines = flatShown ? 8 : SPHERE_LINES, density = polarizationDensity(r, ref), px = 90, pw = 540, ph = 110, py = 30;
   const curve = pathThrough(Array.from({ length: 61 }, (_, i) => { const rr = ref + (i / 60) * 115; return [px + ((rr - ref) / 115) * pw, py + ph - polarizationDensity(rr, ref) * ph] as const; }));
-  const label = `A free electron with ${lines} field lines coming in to it ${flat ? 'in the plane of the page' : 'from every direction'}, and a sphere of radius ${fmt(r / ref, 3)} times the smallest round it. The sphere is crossed by all ${lines} lines; its area is ${fmt((r / ref) ** 2)} times that of the smallest sphere, so the density of polarization is ${fmt(density)} of the density there.`;
+  const label = `A free electron with ${lines} field lines coming in to it ${flatShown ? 'in the plane of the page' : 'from every direction'}, and a sphere of radius ${fmt(r / ref, 3)} times the smallest round it. The sphere is crossed by all ${lines} lines; its area is ${fmt((r / ref) ** 2)} times that of the smallest sphere, so the density of polarization is ${fmt(density)} of the density there.`;
   return <Diagram stage={<>
     {flat
       ? <FlatSpheres r={r} label={label}/>
       : <FallbackOnError onError={fail} fallback={<FlatSpheres r={r} label={label}/>}>
           <Suspense fallback={<FlatSpheres r={r} label={label}/>}>
-            <SphereScene radius={(r / ref) * SPHERE_R_MIN} onFail={fail} description={`${label} The highlighted patch on the sphere has a fixed area. Drag to turn the view.`}/>
+            <SphereScene radius={(r / ref) * SPHERE_R_MIN} onFail={fail} onReady={ready3D} description={`${label} The highlighted patch on the sphere has a fixed area. Drag to turn the view.`}/>
           </Suspense>
         </FallbackOnError>}
     <Stage w={W} h={190} label={`The density of polarization against distance from the charge: it falls as the inverse square. Now at ${fmt(density)} of its value at the smallest sphere.`}>

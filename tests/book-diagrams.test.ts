@@ -15,8 +15,29 @@ describe('book companion: diagrams', () => {
   it('Figure 8-1: Descartes’s vortex cells tile the engraving’s frame without gaps or overlaps', () => {
     const area = (p: [number, number][]) => Math.abs(p.reduce((a, [x, y], i) => { const [u, v] = p[(i + 1) % p.length]; return a + x * v - u * y; }, 0)) / 2;
     const cells = vortexCells();
+    // Every cell lies inside the frame, no two overlap, and together they fill it: so there are no gaps either.
+    for (const c of cells) {
+      expect(c.length).toBeGreaterThanOrEqual(3);
+      for (const [x, y] of c) { expect(x).toBeGreaterThanOrEqual(-1e-6); expect(x).toBeLessThanOrEqual(900 + 1e-6); expect(y).toBeGreaterThanOrEqual(-1e-6); expect(y).toBeLessThanOrEqual(1360 + 1e-6); }
+    }
+    // The cells are convex (each is the frame cut by half-planes), so their overlap is one clipped by the other's edges.
+    const overlap = (p: [number, number][], q: [number, number][]) => {
+      const turn = Math.sign(q.reduce((a, [x, y], i) => { const [u, v] = q[(i + 1) % q.length]; return a + x * v - u * y; }, 0));
+      let out = p;
+      q.forEach(([ax, ay], i) => {
+        const [bx, by] = q[(i + 1) % q.length], side = ([x, y]: [number, number]) => turn * ((bx - ax) * (y - ay) - (by - ay) * (x - ax));
+        const next: [number, number][] = [];
+        out.forEach((cur, k) => {
+          const prev = out[(k + out.length - 1) % out.length], sc = side(cur), sp = side(prev);
+          if (sc >= 0 !== sp >= 0) { const f = sp / (sp - sc); next.push([prev[0] + f * (cur[0] - prev[0]), prev[1] + f * (cur[1] - prev[1])]); }
+          if (sc >= 0) next.push(cur);
+        });
+        out = next;
+      });
+      return out.length < 3 ? 0 : area(out);
+    };
+    for (let i = 0; i < cells.length; i++) for (let j = i + 1; j < cells.length; j++) expect(overlap(cells[i], cells[j])).toBeLessThan(1);
     expect(cells.reduce((a, c) => a + area(c), 0)).toBeCloseTo(900 * 1360, -2);
-    for (const c of cells) expect(c.length).toBeGreaterThanOrEqual(3);
   });
 
   it('Figure 7-2: idle wheels between vortices turning together only turn; between rows that differ they travel', () => {
