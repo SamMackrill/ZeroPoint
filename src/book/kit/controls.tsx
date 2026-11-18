@@ -27,8 +27,9 @@ export function Slider({ label, value, min, max, step = 1, onChange, unit, show 
     let n = say(max).length;
     for (let i = 0; i <= steps; i++) n = Math.max(n, say(Math.min(max, min + i * step)).length);
     return n;
-    // `show` is usually an inline function, so it is left out: the range decides the widest reading.
-  }, [min, max, step, unit]);
+    // `show` is usually an inline function, remade each render, so it is not a dependency itself. A few sample readings
+    // stand in for it: if the formatter's rules change (a new mode, a new suffix), they change, and the scan runs again.
+  }, [min, max, step, unit, say(min), say(min + Math.round((max - min) / step / 2) * step), say(max)]); // the middle sample is a real step
   // A short reading sits beside the label in room reserved for the longest; a long one always has a line of its own,
   // where it needs no reserved room and may wrap if the column is narrow.
   const stacked = widest > LONG_READING;

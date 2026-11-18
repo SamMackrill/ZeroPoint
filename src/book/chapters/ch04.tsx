@@ -1,6 +1,6 @@
 // Chapter 4: What is a Virtual Photon? (PDF pp. 33–42). Figures 4-1 to 4-9.
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
-import { Arrow, Choice, Diagram, FallbackOnError, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback } from '../kit';
+import { Action, Arrow, Choice, Diagram, FallbackOnError, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { PairView } from '../three/PairScene';
 import type { ChapterContent } from '../types';
@@ -220,6 +220,7 @@ function FlatPair({ turned, cw, presence, label }: { turned: number; cw: boolean
 function RotatingPair() {
   const [sense, setSense] = useState<'cw' | 'ccw'>('cw');
   const [view, setView] = useState<PairView>('turned');
+  const [reset, setReset] = useState(0); // a press of “Back to this view” after the reader has turned it by hand
   const [flat, setFlat] = useState(() => !canDraw3D());
   const fail = useCallback(() => setFlat(true), []);
   const [sought, setSought] = useState(false);
@@ -230,13 +231,13 @@ function RotatingPair() {
   const field = pairField(turned), up = cw ? 1 : -1;
   const px = 70, pw = 580, py = 70;
   const trace = pathThrough(Array.from({ length: 61 }, (_, i) => [px + (pw * i) / 60, py - up * 50 * pairField(i * 3)] as const));
-  const label = `A virtual electron-positron pair rotating ${cw ? 'clockwise' : 'counter-clockwise'} on the page, turned ${Math.round(turned)}° of its half-turn. Its electric field lies in its plane of rotation, pointing ${up > 0 ? 'up' : 'down'} the page; its magnetic field lies along the axis of rotation, ${cw ? 'into' : 'out of'} the page.`;
+  const label = presence === 0 ? 'Between pairs: the last pair has gone and the next has not yet formed, so there is no field.' : `A virtual electron-positron pair rotating ${cw ? 'clockwise' : 'counter-clockwise'} on the page, turned ${Math.round(turned)}° of its half-turn. Its electric field lies in its plane of rotation, pointing ${up > 0 ? 'up' : 'down'} the page; its magnetic field lies along the axis of rotation, ${cw ? 'into' : 'out of'} the page.`;
   return <Diagram stage={<>
     {flat
       ? <FlatPair turned={turned} cw={cw} presence={presence} label={label}/>
       : <FallbackOnError onError={fail} fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
           <Suspense fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
-            <PairScene state={{ turned, cw, field, presence, showSpin: !play.playing, view }} onFail={fail} description={`${label} Drag to turn the view.`}/>
+            <PairScene state={{ turned, cw, field, presence, showSpin: !play.playing, view, reset }} onFail={fail} description={`${label} Drag to turn the view.`}/>
           </Suspense>
         </FallbackOnError>}
     <Stage h={140} label={`E through the pair's half-turn: zero along the path, greatest across it at 90°, zero again at 180°. Now at ${Math.round(turned)}°.`}>
@@ -248,9 +249,10 @@ function RotatingPair() {
     </Stage>
   </>}>
     {!flat && <Choice label="View" value={view} onChange={setView} options={[{ value: 'turned', label: 'Turned' }, { value: 'page', label: 'As printed' }, { value: 'path', label: 'Along path' }]}/>}
+    {!flat && <Action onClick={() => setReset(n => n + 1)}>Back to this view</Action>}
     <Choice label="Rotation" value={sense} onChange={setSense} options={[{ value: 'cw', label: 'Clockwise' }, { value: 'ccw', label: 'Counter' }]}/>
     <PlayBar play={play} label="the rotation"/>
-    <Slider label="Angle turned" value={Math.round(turned)} min={0} max={180} step={1} onChange={v => { setSought(sightedBySeek(play.playing)); play.seek(v / 180); }} unit="°"/>
+    <Slider label="Angle turned" value={presence === 0 ? 0 : Math.round(turned)} min={0} max={180} step={1} onChange={v => { setSought(sightedBySeek(play.playing)); play.seek(v / 180); }} unit="°"/>
     <Readout label={`E, in the plane of rotation, ${up > 0 ? 'up' : 'down'} the page`} value={percentOfPeak(field)} tone="e"/>
     <Readout label={`B, along the axis, ${cw ? 'into' : 'out of'} the page`} value={percentOfPeak(field)} tone="b"/>
   </Diagram>;
@@ -298,7 +300,7 @@ const chapter: ChapterContent = {
       labs: [{ lab: 'medium', scenario: 'sparse', why: 'Single fluctuations followed through their lives, with the energy and lifetime of each.' }],
     },
     {
-      kind: 'figure', id: '4-2', page: 35, title: 'A sea of dipoles that answers to charge',
+      kind: 'figure', id: '4-2', page: 35, title: 'A sea of turning dipoles',
       caption: 'A different illustration of the Dirac Sea where virtual particle pairs are shown as oval shaped electric dipoles filling space.',
       Diagram: DipoleSea,
       text: <>

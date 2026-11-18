@@ -66,7 +66,7 @@ function DebyeDipoles() {
   // Arrow lengths grow with the square root of what they show (the force; the field 2p/r³), so they stay visible.
   const push = 14 + 86 * Math.sqrt(Math.abs(force)), reach = Math.min(60, 14 + 90 * Math.sqrt((2 * p) / r ** 3));
   return <Diagram stage={
-    <Stage h={290} label={`Two dipoles on a line in Debye's orientation ${orientation}, ${fmt(r)} dipole lengths apart. Each moment is ${change} than when alone, and the dipoles are ${force > 0 ? 'moving apart' : 'moving together'}.`}>
+    <Stage h={290} label={`Two dipoles on a line in Debye's orientation ${orientation}, ${fmt(r)} dipole lengths apart. Each moment is ${change === 'unchanged' ? 'unchanged from its value when alone' : `${change} than when alone`}, and the dipoles are ${force > 0 ? 'moving apart' : 'moving together'}.`}>
       <T x={cx} y={34} size="lg" tone="text">{orientation === 'I' ? 'I · like charges face each other' : 'II · opposite charges face each other'}</T>
       {[{ x: xl, signs: [-1, 1] as [1 | -1, 1 | -1], dir: -1 }, { x: xr, signs: rightSigns, dir: 1 }].map(d => <g key={d.dir}>
         <line x1={d.x - half} x2={d.x + half} y1={y} y2={y} className="bk-s-muted" strokeWidth="3"/>
@@ -119,7 +119,9 @@ function InducedDipole() {
     const random = rng(1000 + frame - i), a = electronAngle(random(), field, toward), rr = R + (random() - 0.5) * 16;
     return { x: cx + rr * Math.cos((a * Math.PI) / 180), y: cy - rr * Math.sin((a * Math.PI) / 180) * (1 - 0.25 * field), age: i };
   }), [frame, field, toward]);
-  const meanX = trail.reduce((s, p) => s + p.x, 0) / trail.length - cx, moment = Math.abs(meanX) / R;
+  // The average is drawn on the side the field draws the electron to (against the field), however few the samples: at a
+  // weak field the trail's own average can stray past the proton, which would show the dipole the wrong way round.
+  const meanX = (right ? -1 : 1) * Math.abs(trail.reduce((s, p) => s + p.x, 0) / trail.length - cx), moment = Math.abs(meanX) / R;
   return <Diagram stage={
     <Stage h={340} label={field === 0 ? 'A hydrogen atom with no field: the electron is found all round the proton, so the atom appears neutral.' : `A hydrogen atom in an electric field: the electron stays mostly to the ${right ? 'left' : 'right'} of the proton, making an induced dipole.`}>
       <circle cx={cx} cy={cy} r={R} className="bk-s-faint" fill="none" strokeDasharray="2 5"/>

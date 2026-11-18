@@ -87,4 +87,12 @@ describe('book companion: rotation arrows step aside while a figure plays', () =
     press('End'); expect(value).toBe(1);
     expect(getByRole('slider').getAttribute('aria-valuetext')).toBe('1');
   });
+
+  it('measures a slider again when its formatter changes its rules, not only its range', () => {
+    const short = (v: number) => `${v}`, long = (v: number) => (v === 1 ? 'a long reading here' : `${v}`);
+    const { container, rerender } = render(<Slider label="Mode" value={0} min={0} max={2} step={1} onChange={() => {}} show={short}/>);
+    expect(container.querySelector('.bk-control')!.classList.contains('is-stacked')).toBe(false);
+    rerender(<Slider label="Mode" value={0} min={0} max={2} step={1} onChange={() => {}} show={long}/>);
+    expect(container.querySelector('.bk-control')!.classList.contains('is-stacked')).toBe(true);
+  });
 });

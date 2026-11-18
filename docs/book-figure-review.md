@@ -13,7 +13,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 3-3 | What the plates shut out | animated | changed | Outside vacuum fills to the plates, whole ovals only; push arrows (Eq. 3-1); “retarded” explained |
 | 3-4 | Two great pressures, almost in balance | still | changed | Area slider and stage labels removed; force per 1 cm²; slider and readout layout fixed companion-wide |
 | 4-1 | Pairs either side of zero energy | animated | changed | Holes switch removed; Fleming’s matter/antimatter reading |
-| 4-2 | A sea of dipoles that answers to charge | animated | changed | Free charge removed (not in the figure); every pair turns half a turn through its life (p. 39) |
+| 4-2 | A sea of turning dipoles (was: … that answers to charge) | animated | changed | Free charge removed (not in the figure); every pair turns half a turn through its life (p. 39) |
 | 4-3 | A photon pair, out a wavelength and back | animated | agreed | No change |
 | 4-4 | Out half a wavelength and back | animated | agreed | No change |
 | 4-5 | Out a quarter wavelength | animated | agreed | No change |
@@ -236,3 +236,7 @@ A sweep of all 101 stages at their starting settings found drawing past the edge
 - **Owner:** the “pressure builds up between” text and the dotted circle are no longer needed; the effect is now obvious. **Done:** both are removed (and their “lower” counterpart for a negative charge).
 - **Owner:** the changing lines of zeptons look odd and jumpy; make the animation smoother. **Cause:** the chains were re-traced every frame, and as the charge moved, lines switched between ending on it and escaping past it, so they popped. **Done:** a new kit drawing, `FieldZeptons`, sets the zeptons in a fixed, even scatter. Each turns to the field at its place and is polarized more fully where the field is stronger: as the charge moves, “the dipoles change their orientation in order to stay aligned” (p. 56). The chains show in them as Faraday’s lines show in iron filings, and nothing pops. Lines mode still re-traces the lines. The notes say this.
 - **Owner:** the moving charge comes too close to the fixed one, leaving very few zeptons between them at closest approach, which is misleading. **Done:** the start offset now runs from 110 to 200 (default 130), so the closest approach, centre to centre, stays above 95 units for either sign (it had fallen to 17 with a negative charge). `FieldZeptons` now clears only each source’s own glyph (`radii`), so no wider hole opens round the small charge. The test asserts the minimum distance across the slider’s range.
+
+### CodeRabbit’s second review of #74, fixed in the top layer
+
+Under the stack rule (a reviewed layer gets only blocking fixes), these went into the next layer: 3-1’s wording for an unchanged moment; 3-2’s average marker kept on the side the field puts the electron; 4-2 renamed “A sea of turning dipoles”; 4-9 describes the gap between pairs, its slider shows 0° in the gap so any move shows a pair, the 3D view uses the flat view’s rule for showing E and B, and a “Back to this view” action restores the chosen camera; sliders re-measure when a formatter’s rules change; the 3D figures let a vertical swipe scroll the page (`touch-action: pan-y pinch-zoom`), draw labels blank if no 2D context is available, and undo a partly built scene and fall back if setup fails.
