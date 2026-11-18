@@ -9,7 +9,6 @@ const H_EV = 4.135667696e-15, C = 299792458;
 /** Figure 4-1: the Dirac sea as pairs either side of zero energy, each lasting a time set by its energy. */
 function DiracSea() {
   const [level, setLevel] = useState(0.55);
-  const [reading, setReading] = useState<'holes' | 'anti'>('anti');
   const play = usePlayback();
   const W = 720, H = 330, zero = 170, x0 = 80;
   const pairs = useMemo(() => { const random = rng(41); return Array.from({ length: 7 }, (_, i) => ({ x: x0 + 70 + i * 82 + (random() - 0.5) * 22, e: 0.25 + random() * 0.75, phase: random() })); }, []);
@@ -26,13 +25,12 @@ function DiracSea() {
     <Stage w={W} h={H} label="The Dirac sea: virtual particle pairs appear on opposite sides of a line of zero energy, move apart and return. Pairs of higher energy last a shorter time.">
       <Arrow x1={x0} y1={H - 22} x2={x0} y2={22} tone="muted" w={2}/><T x={x0 - 16} y={34} tone="text" size="lg">E</T>
       <line x1={x0} y1={zero} x2={W - 30} y2={zero} className="bk-s-text" strokeWidth="3"/><T x={x0 - 16} y={zero + 5} tone="text">0</T>
-      <T x={W - 36} y={48} anchor="end" size="sm" tone="pos">positive: {reading === 'anti' ? 'matter' : 'electrons'}</T>
-      <T x={W - 36} y={H - 34} anchor="end" size="sm" tone="neg">negative: {reading === 'anti' ? 'antimatter' : 'holes in space'}</T>
+      <T x={W - 36} y={48} anchor="end" size="sm" tone="pos">positive: matter</T>
+      <T x={W - 36} y={H - 34} anchor="end" size="sm" tone="neg">negative: antimatter</T>
       {pairs.map((p, i) => dot(p.x, p.e, p.phase, `p${i}`, false))}
       {dot(x0 + 34, level, 0, 'marked', true)}
     </Stage>}>
     <Slider label="Energy of the marked pair" value={level} min={0.2} max={1} step={0.01} onChange={setLevel} show={v => `${fmt(v / 0.2, 2)} × the lowest`}/>
-    <Choice label="Read the lower half as" value={reading} onChange={setReading} options={[{ value: 'anti', label: 'Antimatter' }, { value: 'holes', label: 'Holes' }]}/>
     <PlayBar play={play} label="the pairs"/>
     <Readout label="Time the marked pair lasts" value={`${fmt(0.2 / level, 2)} × the longest`}/>
     <Readout label="Energy × time" value="h/2, whatever the energy" tone="good"/>
@@ -258,13 +256,12 @@ const chapter: ChapterContent = {
       caption: 'An illustration of the Dirac Sea where pairs of virtual particles exist on opposite sides of a line indicating zero energy. The black circles are positive and the gray are negative. We can also think of the 0 line being the division between matter and antimatter.',
       Diagram: DiracSea,
       text: <>
-        <p>Dirac’s equation for the electron held a second solution, the positron, and he came to think of the vacuum as filled with electrons and positrons. <Q>He saw the positrons as holes in space. They can alternatively be viewed as anti-particles in positive space</Q> (<Pg n={34}/>).</p>
+        <p>Dirac’s equation for the electron held a second solution, the positron, and he came to think of the vacuum as filled with electrons and positrons. <Q>He saw the positrons as holes in space. They can alternatively be viewed as anti-particles in positive space, since we do not have a reasonable model for a hole in space</Q> (<Pg n={34}/>). The diagram follows that second reading, as the caption does: the zero line divides matter from antimatter.</p>
         <p>The pairs are <Q>produced in pairs from out of nothing and then rush back together and annihilate, returning to nothing, all within the energy-time parameters of Planck and Heisenberg</Q>.</p>
       </>,
       tryThis: [
         'Watch a pair: both halves leave the zero line together, one up and one down, and return together.',
         'Raise the energy of the marked pair. It reaches further from zero and is gone sooner, so that energy × time stays at h/2.',
-        'Switch the reading of the lower half between Dirac’s holes and antimatter; the picture does not change, only its name.',
       ],
       notes: <p>The figure shows circles of different sizes at different distances from the line without saying what size means. Here distance from the line is the pair’s energy, lower-energy pairs are drawn larger, and each pair is shown leaving the line and returning; all three are display choices.</p>,
       labs: [{ lab: 'medium', scenario: 'sparse', why: 'Single fluctuations followed through their lives, with the energy and lifetime of each.' }],

@@ -12,7 +12,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 3-2 | A neutral atom becomes a dipole | animated | changed | E label; A and B are one atom, as in the text |
 | 3-3 | What the plates shut out | animated | changed | Outside vacuum fills to the plates, whole ovals only; push arrows (Eq. 3-1); “retarded” explained |
 | 3-4 | Two great pressures, almost in balance | still | changed | Area slider and stage labels removed; force per 1 cm²; slider and readout layout fixed companion-wide |
-| 4-1 | Pairs either side of zero energy | animated | to review | |
+| 4-1 | Pairs either side of zero energy | animated | changed | Holes switch removed; Fleming’s matter/antimatter reading |
 | 4-2 | A sea of dipoles that answers to charge | animated | to review | |
 | 4-3 | A photon pair, out a wavelength and back | animated | to review | |
 | 4-4 | Out half a wavelength and back | animated | to review | |
@@ -156,3 +156,8 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 - **Owner:** the slider’s label jumps between one line and two as the value’s text changes length. **Done, for the whole companion:** a slider’s value now stays on the label’s row, right-aligned in room reserved for its longest reading, and only the label wraps. Ten sliders printed the current reading instead of the value they were given; they now use that value, so the longest reading can be measured. An automated sweep of all 91 sliders finds none that moves, and two kit tests guard against both faults.
 - **Owner:** the single “d” wrapping onto a line of its own is unnecessary. **Done:** the label is now “Gap between the plates, d”, which fits on one line. For the whole companion: a reading longer than 9 characters always sits on its own line under the label, and a short one sits beside it. A label that must wrap does so evenly (`text-wrap: balance`). Every label now takes one or two lines (before this, the room reserved for long readings squeezed some to five), and a sweep of all 91 sliders still finds none that jumps.
 - **Owner:** the readouts’ numbers wrap in the same way (“1.3 × 10⁻⁴ / Pa”), and the label rewraps as the value changes. **Done, for the whole companion:** a readout’s label now sits above its value, so the value has the full width and can never rewrap the label. Labels that wrap do so evenly. A sweep of all 195 readouts at their starting settings finds no numeric value that wraps. Two values that are phrases do wrap, in 4-9 (“0 of its peak, into the page”) and 26-1. To raise when we reach them: 4-9’s phrase changes as the animation runs.
+
+### Fig. 4-1 (changed, agreed 2026-11-18)
+
+- **Owner:** the Antimatter/Holes switch only changes the text and adds little, unless holes can be shown. **Discussed:** Fleming gives no picture of a hole: “we do not have a reasonable model for a hole in space” (p. 34). His caption reads the zero line as the division between matter and antimatter. **Agreed:** remove the switch.
+- **Done:** the switch is gone, and the labels read matter above the line and antimatter below. The card’s text quotes Fleming’s reason in full and says that the diagram follows the antimatter reading. The Try step about the switch is gone.
