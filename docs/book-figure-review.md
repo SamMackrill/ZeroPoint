@@ -13,7 +13,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 3-3 | What the plates shut out | animated | changed | Outside vacuum fills to the plates, whole ovals only; push arrows (Eq. 3-1); “retarded” explained |
 | 3-4 | Two great pressures, almost in balance | still | changed | Area slider and stage labels removed; force per 1 cm²; slider and readout layout fixed companion-wide |
 | 4-1 | Pairs either side of zero energy | animated | changed | Holes switch removed; Fleming’s matter/antimatter reading |
-| 4-2 | A sea of dipoles that answers to charge | animated | to review | |
+| 4-2 | A sea of dipoles that answers to charge | animated | changed | Free charge removed (not in the figure); every pair turns half a turn through its life (p. 39) |
 | 4-3 | A photon pair, out a wavelength and back | animated | to review | |
 | 4-4 | Out half a wavelength and back | animated | to review | |
 | 4-5 | Out a quarter wavelength | animated | to review | |
@@ -161,3 +161,10 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 
 - **Owner:** the Antimatter/Holes switch only changes the text and adds little, unless holes can be shown. **Discussed:** Fleming gives no picture of a hole: “we do not have a reasonable model for a hole in space” (p. 34). His caption reads the zero line as the division between matter and antimatter. **Agreed:** remove the switch.
 - **Done:** the switch is gone, and the labels read matter above the line and antimatter below. The card’s text quotes Fleming’s reason in full and says that the diagram follows the antimatter reading. The Try step about the switch is gone.
+
+### Fig. 4-2 (changed, agreed 2026-11-18)
+
+- **Owner:** the text explicitly mentions rotation, but none of the dipoles rotate. **Agreed:** they rotated only while the reader dragged the charge. Fleming says what the rotation is on p. 56: “as a free electron moves, the zepton dipoles rotate to maintain their orientation relative to the stable charge”.
+- **Done:** once a charge is added, it now moves back and forth across the sea by itself (“The charge moves”, on by default), easing round at each end, and the dipoles near its path rotate to keep pointing at it. Turning the motion off leaves the charge where it is and lets the reader drag it. The card quotes p. 56, the Try steps and remark describe the motion, and the notes call the path and speed display choices.
+- **Owner:** unsure about the free charge; the dipoles should rotate naturally through mutual attraction and repulsion. Is the free charge in the book? **Answer:** no, the printed figure is only the sea; the charge illustrated the p. 34 sentence. Fleming’s pairs rotate (a half-turn per half-wavelength, p. 39), and around a photon they rotate in response to the central pair (p. 44). I found no statement that mutual attraction is what turns the pairs of the sea. **Chosen:** pairs rotate, no charge.
+- **Done:** the free charge, its controls and its motion are gone. Each pair forms at a random angle, turns half a turn through its life (p. 39), one way or the other at random, and is gone. The card quotes p. 39, and the notes point to chapter 6 for orientation to a charge.

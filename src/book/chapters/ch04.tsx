@@ -1,6 +1,6 @@
 // Chapter 4: What is a Virtual Photon? (PDF pp. 33–42). Figures 4-1 to 4-9.
 import { useMemo, useState } from 'react';
-import { Arrow, Charge, Choice, Diagram, Drag, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, bearing, clamp, fmt, lerpAngle, pathThrough, polar, rng, usePlayback } from '../kit';
+import { Arrow, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -37,16 +37,11 @@ function DiracSea() {
   </Diagram>;
 }
 
-/** A dipole of the sea in Figure 4-2: a place, a size, and a new random direction each time it forms. */
+/** A dipole of the sea in Figure 4-2: a place, a size, and a new random direction and sense of turning each time it forms. */
 interface SeaPair { x: number; y: number; len: number; phase: number; seed: number }
 
-/** How strongly a pair at a distance takes the charge's direction: full when close, thinning with the square of distance. */
-export const alignmentShare = (distance: number, reach = 90) => clamp((reach * reach) / (distance * distance + reach * reach * 0.2), 0, 1);
-
-/** Figure 4-2: the sea as electric dipoles that orient to a charge and turn as it moves. */
+/** Figure 4-2: the sea as electric dipoles of many sizes, each turning half a turn through its short life, at random. */
 function DipoleSea() {
-  const [kind, setKind] = useState<'none' | 'neg' | 'pos'>('none');
-  const [pos, setPos] = useState({ x: 360, y: 180 });
   const play = usePlayback();
   const W = 720, H = 360;
   const sea = useMemo(() => {
@@ -54,25 +49,17 @@ function DipoleSea() {
     for (let gy = 0; gy < 6; gy++) for (let gx = 0; gx < 11; gx++) list.push({ x: 40 + gx * 64 + (random() - 0.5) * 34, y: 34 + gy * 58 + (random() - 0.5) * 30, len: 16 + random() * 26, phase: random(), seed: Math.floor(random() * 1e6) });
     return list;
   }, []);
-  const sign = kind === 'pos' ? 1 : -1;
   return <Diagram stage={
-    <Stage w={W} h={H} label={kind === 'none' ? 'Virtual particle pairs fill space as electric dipoles of many sizes, each pointing a random way.' : `A free ${kind === 'pos' ? 'positive' : 'negative'} charge among the dipoles. Nearby dipoles turn their ${kind === 'pos' ? 'negative' : 'positive'} ends toward it.`}>
+    <Stage w={W} h={H} label="Virtual particle pairs fill space as electric dipoles of many sizes. Each forms pointing a random way, turns half a turn as it opens and closes, and is gone.">
       {sea.map((p, i) => {
         const cycle = play.t * (14 / (p.len + 6)) + p.phase, generation = Math.floor(cycle), life = cycle - generation;
-        const born = rng(p.seed + generation * 97)() * 360;
-        let angle = born;
-        if (kind !== 'none') {
-          // The + end points away from a positive charge and toward a negative one; the pair turns to it as it lives.
-          const away = bearing(pos.x, pos.y, p.x, p.y), target = sign > 0 ? away : away + 180;
-          angle = lerpAngle(born, target, alignmentShare(Math.hypot(p.x - pos.x, p.y - pos.y)) * Math.min(1, life * 2.5));
-        }
-        return <Zepton key={i} x={p.x} y={p.y} angle={angle} len={p.len} open={Math.sin(Math.PI * life)} signs={p.len > 30} opacity={0.35 + 0.65 * Math.sin(Math.PI * life)}/>;
+        // Each generation forms at a random angle and turns 180° over its life (p. 39), one way or the other at random.
+        const random = rng(p.seed + generation * 97), born = random() * 360, sense = random() < 0.5 ? -1 : 1;
+        return <Zepton key={i} x={p.x} y={p.y} angle={born + sense * 180 * life} len={p.len} open={Math.sin(Math.PI * life)} signs={p.len > 30} opacity={0.35 + 0.65 * Math.sin(Math.PI * life)}/>;
       })}
-      {kind !== 'none' && <Drag x={pos.x} y={pos.y} onMove={(x, y) => setPos({ x, y })} bounds={{ x0: 30, y0: 30, x1: W - 30, y1: H - 30 }} label={`Free ${kind === 'pos' ? 'positive' : 'negative'} charge`}><Charge x={pos.x} y={pos.y} sign={sign as 1 | -1} r={14}/></Drag>}
     </Stage>}>
-    <Choice label="Free charge" value={kind} onChange={setKind} options={[{ value: 'none', label: 'None' }, { value: 'neg', label: '−' }, { value: 'pos', label: '+' }]}/>
     <PlayBar play={play} label="the dipoles"/>
-    <Remark>{kind === 'none' ? 'Each pair forms pointing a random way, opens, and is gone.' : 'Drag the charge. Dipoles near it turn to follow: orientation to a charge, rotation to its motion.'}</Remark>
+    <Remark>Each pair forms pointing a random way, turns half a turn as it opens and closes, and is gone. No direction is favoured.</Remark>
   </Diagram>;
 }
 
@@ -272,14 +259,15 @@ const chapter: ChapterContent = {
       Diagram: DipoleSea,
       text: <>
         <p>With pairs in place of photons, <Q>we see a vacuum filled with electric dipoles that can orient with respect to charge and rotate in response to charge motion</Q>. A field of this kind <Q>absolutely must interact with matter electromagnetically</Q> (<Pg n={34}/>).</p>
+        <p>The pairs rotate. Later in the chapter Fleming says a pair <Q>rotates 180 degrees</Q> during a half-wavelength period (<Pg n={39}/>), and Figure 4-9 draws one turning.</p>
         <p>The Casimir effect of chapter 3 already depends on a polarizable vacuum, which favours this picture over the photon one (<Pg n={35}/>).</p>
       </>,
       tryThis: [
-        'With no charge, look at the directions: there is no pattern. Each pair forms pointing its own way.',
-        'Add a negative charge. Pairs near it turn their positive ends toward it, less so further away. Change it to positive and they turn round.',
-        'Drag the charge (or move it with the arrow keys). The pairs near its path rotate as it passes.',
+        'Look at the directions: there is no pattern. Each pair forms pointing its own way and turns its own way.',
+        'Follow one pair: it opens from a point, turns half a turn, and closes again. Smaller pairs are quicker.',
+        'Pause and look at the sea as Fleming drew it: ovals of every size, pointing every way.',
       ],
-      notes: <p>How much a pair turns at a given distance, and that it turns during its life after forming at random, follow the laboratory’s reading of chapter 6; the figure itself shows only the unpolarized sea.</p>,
+      notes: <p>The figure is a still of the sea. The half-turn through each pair’s life is p. 39’s; that each pair forms at a random angle and turns either way at random, and how long each lasts, are display choices. How the sea orients to a charge is drawn in chapter 6 (Figures 6-1, 6-2 and 6-14).</p>,
       labs: [
         { lab: 'medium', scenario: 'balanced', why: 'The sea in three dimensions, with creation rate, frequency and pair size to set.' },
         { lab: 'electron', scenario: 'stationary', why: 'The polarization round a single electron, built up generation by generation.' },
