@@ -47,7 +47,11 @@ function PairSeries() {
           annihilation fades in and lingers into the next pair's start, slowly enough to read. */}
       {[active - 1, active].filter(n => n >= 0).map(n => {
         const tau = cycle - n, x = x0 + n * spacing, ly = y + spacing * 0.5 + 24;
-        const name = Math.min(ramp(tau, 0, 0.18), 1 - ramp(tau, 0.5, 0.68)), gone = Math.min(ramp(tau, 0.62, 0.8), 1 - ramp(tau, 1.2, 1.4));
+        // Paused (or stepped with Next pair) there is no fading to watch: the pair in hand shows its name, or its
+        // annihilation once its turn is nearly done, and the one before shows nothing.
+        const still = !play.playing, mine = n === active;
+        const name = still ? (mine && u < 0.8 ? 1 : 0) : Math.min(ramp(tau, 0, 0.18), 1 - ramp(tau, 0.5, 0.68));
+        const gone = still ? (mine && u >= 0.8 ? 1 : 0) : Math.min(ramp(tau, 0.62, 0.8), 1 - ramp(tau, 1.2, 1.4));
         return <g key={n}>
           {name > 0 && <T x={x} y={ly} tone="mark" opacity={name}>pair {n + 1}</T>}
           {gone > 0 && <T x={x} y={ly + 20} tone="mark" opacity={gone}>annihilate &amp; reverse</T>}

@@ -5,6 +5,7 @@ import { render, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BookApp } from '../src/book/BookApp';
 import { readdirSync, readFileSync } from 'node:fs';
+import { mediumAt } from '../src/book/chapters/ch20';
 import { FigureRunning, RunningReport, Slider, Spin, Still, traceField, usePlayback, wireField } from '../src/book/kit';
 
 describe('book companion: kit', () => {
@@ -53,6 +54,21 @@ describe('book companion: rotation arrows step aside while a figure plays', () =
   it('keeps room for a slider’s longest reading, so its label does not rewrap as it moves', () => {
     const { container } = render(<Slider label="Distance" value={0} min={0} max={2} step={1} onChange={() => {}} show={v => ['1 µm', '1.78 µm', '10 µm'][v]}/>);
     expect(container.querySelector('output')!.style.minWidth).toBe('7ch');
+  });
+
+  it('reserves room for a reading that only one step of the range gives, and probes no value outside the range', () => {
+    const seen: number[] = [];
+    const { container } = render(<Slider label="Rate" value={0} min={0} max={120} step={1} onChange={() => {}} show={v => { seen.push(v); return v === 1 ? 'long reading' : '0'; }}/>);
+    expect(container.querySelector('.bk-control')!.classList.contains('is-stacked')).toBe(true);
+    expect(Math.min(...seen)).toBe(0);
+    expect(Math.max(...seen)).toBe(120);
+    render(<Slider label="Only" value={0} min={0} max={0} step={1} onChange={() => {}} show={v => ['zero'][v]}/>); // must not throw
+  });
+
+  it('names the refraction explorer’s medium from the value shown, not the current one', () => {
+    expect(mediumAt(2.42)?.name).toBe('diamond');
+    expect(mediumAt(1.515)?.name).toBe('typical glass');
+    expect(mediumAt(1.9)).toBeUndefined();
   });
 
   it('every slider reads its value from the value it is given, which the room for its longest reading relies on', () => {

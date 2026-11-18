@@ -1,5 +1,5 @@
 // Chapter 4: What is a Virtual Photon? (PDF pp. 33–42). Figures 4-1 to 4-9.
-import { Suspense, lazy, useCallback, useMemo, useState } from 'react';
+import { Component, Suspense, lazy, useCallback, useMemo, useState, type ReactNode } from 'react';
 import { Arrow, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { PairView } from '../three/PairScene';
@@ -56,7 +56,7 @@ function DipoleSea() {
         const cycle = play.t * (14 / (p.len + 6)) + p.phase, generation = Math.floor(cycle), life = cycle - generation;
         // Each generation forms at a random angle and turns 180° over its life (p. 39), one way or the other at random.
         const random = rng(p.seed + generation * 97), born = random() * 360, sense = random() < 0.5 ? -1 : 1;
-        return <Zepton key={i} x={p.x} y={p.y} angle={born + sense * 180 * life} len={p.len} open={Math.sin(Math.PI * life)} signs={p.len > 30} opacity={0.35 + 0.65 * Math.sin(Math.PI * life)}/>;
+        return <Zepton key={i} x={p.x} y={p.y} angle={born + sense * 180 * life} len={p.len} open={Math.sin(Math.PI * life)} signs={p.len > 30} opacity={Math.min(1, 1.6 * Math.sin(Math.PI * life))}/>;
       })}
     </Stage>}>
     <PlayBar play={play} label="the dipoles"/>
@@ -185,14 +185,24 @@ export const pairField = (turned: number) => Math.sin((clamp(turned, 0, 180) * M
 /** Figure 4-9 drawn in three dimensions: loaded on demand, since three.js is large. */
 const PairScene = lazy(() => import('../three/PairScene'));
 
+/** Shows `fallback` in place of its children if they fail, such as the 3D scene's code failing to download. */
+class FlatOnError extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  /** Switch to the fallback on any error below. */
+  static getDerivedStateFromError() { return { failed: true }; }
+  /** The children, or the fallback once they have failed. */
+  render() { return this.state.failed ? this.props.fallback : this.props.children; }
+}
+
 /** One pair's life is the half-turn (p. 39); then it is gone, and after a moment a new pair forms where it began. */
 export const PAIR_CYCLE = 1.15;
 
 /** Where the pair is in its life at time `t` (in turns of the clock): the angle turned, and how fully it is there. */
 export function pairLife(t: number, playing: boolean) {
-  // A paused clock sought to the end of the turn shows 180°, not the start of the next pair.
-  const local = t > 0 && !playing && t % PAIR_CYCLE === 0 ? 1 : t % PAIR_CYCLE, u = Math.min(1, local);
-  const presence = !playing ? 1 : local > 1 ? 0 : clamp(Math.min(u, 1 - u) / 0.06, 0, 1);
+  // Paused within the turn (or sought there with the angle slider, up to 180°) the pair is shown in full; paused in the
+  // gap between pairs, there is none. Playing, it fades in as it forms and out as its turn ends.
+  const local = t % PAIR_CYCLE, u = Math.min(1, local);
+  const presence = local > 1 ? 0 : !playing ? 1 : clamp(Math.min(u, 1 - u) / 0.06, 0, 1);
   return { turned: u * 180, presence };
 }
 
@@ -202,8 +212,10 @@ function FlatPair({ turned, cw, presence, label }: { turned: number; cw: boolean
   return <Stage h={300} label={label}>
     <Spin x={cx} y={cy} r={62} ccw={!cw} from={cw ? 150 : 210} sweep={100}/>
     <Zepton x={cx} y={cy} angle={angle} len={84} oval={false} signs opacity={presence}/>
-    <Vector x={cx + 100} y={cy} angle={90 * up} len={12 + 78 * field} centred tone="e" w={3}/><T x={cx + 124} y={cy + 5} tone="e" size="lg" anchor="start">E</T>
-    <InOut x={cx - 104} y={cy} out={!cw} r={7 + 9 * field} opacity={0.3 + 0.7 * field}/><T x={cx - 104} y={cy + 40} tone="b" size="lg">B</T>
+    {field * presence > 0.01 && <g opacity={presence}>
+      <Vector x={cx + 100} y={cy} angle={90 * up} len={12 + 78 * field} centred tone="e" w={3}/><T x={cx + 124} y={cy + 5} tone="e" size="lg" anchor="start">E</T>
+      <InOut x={cx - 104} y={cy} out={!cw} r={7 + 9 * field} opacity={0.3 + 0.7 * field}/><T x={cx - 104} y={cy + 40} tone="b" size="lg">B</T>
+    </g>}
   </Stage>;
 }
 
@@ -222,9 +234,11 @@ function RotatingPair() {
   return <Diagram stage={<>
     {flat
       ? <FlatPair turned={turned} cw={cw} presence={presence} label={label}/>
-      : <Suspense fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
-          <PairScene state={{ turned, cw, field, presence, showSpin: !play.playing, view }} onFail={fail} description={`${label} Drag to turn the view.`}/>
-        </Suspense>}
+      : <FlatOnError fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
+          <Suspense fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
+            <PairScene state={{ turned, cw, field, presence, showSpin: !play.playing, view }} onFail={fail} description={`${label} Drag to turn the view.`}/>
+          </Suspense>
+        </FlatOnError>}
     <Stage h={140} label={`E through the pair's half-turn: zero along the path, greatest across it at 90°, zero again at 180°. Now at ${Math.round(turned)}°.`}>
       <line x1={px} y1={py} x2={px + pw} y2={py} className="bk-s-faint" strokeWidth="1"/>
       <Line d={trace} tone="e" w={2} opacity={0.45}/>
@@ -359,10 +373,10 @@ const chapter: ChapterContent = {
         <p>The names electron and positron are <Q>a mere convenience</Q>: these pairs <Q>exist over a continuum of energies and are not limited by the rest mass energy</Q> of the stable particles (<Pg n={40}/>).</p>
       </>,
       tryThis: [
-        'Drag the picture to turn it. E lies in the plane the pair turns in; B lies along the axis it turns about, at right angles to both E and the path.',
+        'In the 3D view, drag the picture to turn it. E lies in the plane the pair turns in; B lies along the axis it turns about, at right angles to both E and the path.',
         'Let the pair turn clockwise. E, toward the positive end, rises to its peak when the pair stands across the path and falls again: half a wave, drawn underneath. Then the pair is gone, and a new one forms where it began.',
         'Reverse the rotation. E points down and B comes out of the page: the next half wavelength of the photon, which Figure 5-1 sets in a row.',
-        'Choose the view “As printed”, pause and drag the angle to 90°: the moment the printed figure shows.',
+        'Pause and set the angle to 90° (in the 3D view, choose “As printed” first): the moment the printed figure shows.',
       ],
       notes: <>
         <p>The caption says the magnetic field points into the page, but the printed figure marks B with a dot in a circle, the sign for out of the page. The diagram follows the caption, which agrees with the right-hand grip rule of chapter 6 for a clockwise rotation.</p>

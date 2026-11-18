@@ -75,6 +75,16 @@ function spinArrow(cw: boolean) {
   return group;
 }
 
+/** Free the geometry, materials and textures of an object and everything in it. */
+function disposeAll(root: THREE.Object3D) {
+  root.traverse(o => {
+    const mesh = o as THREE.Mesh;
+    mesh.geometry?.dispose();
+    const mats = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
+    for (const m of mats) { (m as THREE.SpriteMaterial).map?.dispose(); m.dispose(); }
+  });
+}
+
 /** The figure's scene. Reports `false` through `onFail` when the browser cannot draw WebGL, so the card can fall back. */
 export default function PairScene({ state, onFail, description }: { state: PairState; onFail(): void; description: string }) {
   const host = useRef<HTMLDivElement>(null);
@@ -96,6 +106,9 @@ export default function PairScene({ state, onFail, description }: { state: PairS
     renderer.domElement.style.height = '100%';
     renderer.domElement.style.touchAction = 'none';
     el.appendChild(renderer.domElement);
+    // If the browser takes the drawing context away (a GPU reset, too many contexts), fall back to the flat view.
+    const lost = (e: Event) => { e.preventDefault(); onFail(); };
+    renderer.domElement.addEventListener('webglcontextlost', lost);
     const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(34, 720 / 330, 0.1, 100);
     scene.add(new THREE.AmbientLight(0xffffff, 1.6));
     const key = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -140,6 +153,7 @@ export default function PairScene({ state, onFail, description }: { state: PairS
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enablePan = false;
+    controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page
     controls.minDistance = 4;
     controls.maxDistance = 16;
     const draw = () => renderer.render(scene, camera);
@@ -170,7 +184,7 @@ export default function PairScene({ state, onFail, description }: { state: PairS
         bArrow.set(new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -up), drawn);
         eLabel.position.set(E_AT + 0.4, up * (drawn / 2 - 0.1), 0);
         bLabel.position.set(0.28, 0.22, -up * (drawn + 0.22));
-        if (s.cw !== spinCw) { scene.remove(spin); spin = spinArrow(s.cw); spinCw = s.cw; scene.add(spin); }
+        if (s.cw !== spinCw) { scene.remove(spin); disposeAll(spin); spin = spinArrow(s.cw); spinCw = s.cw; scene.add(spin); }
         spin.visible = s.showSpin;
         draw();
       },
@@ -179,14 +193,10 @@ export default function PairScene({ state, onFail, description }: { state: PairS
     return () => {
       api.current = null;
       resize.disconnect();
+      renderer.domElement.removeEventListener('webglcontextlost', lost);
       controls.dispose();
       renderer.dispose();
-      scene.traverse(o => {
-        const mesh = o as THREE.Mesh;
-        mesh.geometry?.dispose();
-        const mats = Array.isArray(mesh.material) ? mesh.material : mesh.material ? [mesh.material] : [];
-        for (const m of mats) { (m as THREE.SpriteMaterial).map?.dispose(); m.dispose(); }
-      });
+      disposeAll(scene);
       renderer.domElement.remove();
     };
   }, [onFail]);

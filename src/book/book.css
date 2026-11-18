@@ -615,6 +615,8 @@ input {
 
 .bk-control.is-stacked label > output {
   text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .bk-control input[type=range] {

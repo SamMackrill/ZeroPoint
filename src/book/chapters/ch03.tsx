@@ -78,8 +78,8 @@ function DebyeDipoles() {
             <Arrow x1={d.x - half - (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x - half - (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
             <Arrow x1={d.x + half + (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x + half + (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
           </>}
-          {/* The force on this dipole. */}
-          <BlockArrow x1={d.x} y1={y - 50} x2={d.x + d.dir * Math.sign(force) * push} y2={y - 50} thick={12}/>
+          {/* The force on this dipole; drawn inward, it stops short of the midpoint so the two never cross. */}
+          <BlockArrow x1={d.x} y1={y - 50} x2={d.x + d.dir * Math.sign(force) * (force < 0 ? Math.min(push, (r * unit) / 2 - 12) : push)} y2={y - 50} thick={12}/>
         </Still>
         {/* Debye's 𝔈 (E): a map of the force the other dipole puts on a charge here, not the motion itself, so it stays while the figure plays. */}
         <Arrow x1={d.x - (orientation === 'I' ? d.dir : 1) * reach} y1={y + 62} x2={d.x + (orientation === 'I' ? d.dir : 1) * reach} y2={y + 62} tone="e" w={2}/>
@@ -95,7 +95,7 @@ function DebyeDipoles() {
     <Readout label="Distance now" value={`${fmt(r)} lengths`}/>
     <Readout label="Electric moment" value={`${fmt(p)} × alone`} tone={p < 0.999 ? 'bad' : p > 1.001 ? 'good' : undefined}/>
     <Readout label="Force in this orientation" value={`${fmt(Math.abs(force), 3)} ${force > 0 ? 'apart' : 'together'}`}/>
-    <Readout label="Average of I and II at the starting distance" value={Math.abs(mean) < 1e-9 ? 'zero' : `${fmt(Math.abs(mean), 3)} ${mean > 0 ? 'apart' : 'together'}`} tone={mean < -1e-9 ? 'good' : undefined}/>
+    <Readout label="Average of I and II once the moments respond, at the starting distance" value={Math.abs(mean) < 1e-9 ? 'zero' : `${fmt(Math.abs(mean), 3)} ${mean > 0 ? 'apart' : 'together'}`} tone={mean < -1e-9 ? 'good' : undefined}/>
     <Remark>{alpha === 0 ? 'With rigid dipoles the forces in I and II start equal and opposite, and their average is zero.' : orientation === 'I' ? 'The charges draw in, so the moments shrink and the repulsion is weakened.' : 'The charges spread, so the moments grow and the attraction is strengthened.'}</Remark>
   </Diagram>;
 }
@@ -121,24 +121,24 @@ function InducedDipole() {
   }), [frame, field, toward]);
   const meanX = trail.reduce((s, p) => s + p.x, 0) / trail.length - cx, moment = Math.abs(meanX) / R;
   return <Diagram stage={
-    <Stage h={340} label={field < 0.05 ? 'A hydrogen atom with no field: the electron is found all round the proton, so the atom appears neutral.' : `A hydrogen atom in an electric field: the electron stays mostly to the ${right ? 'left' : 'right'} of the proton, making an induced dipole.`}>
+    <Stage h={340} label={field === 0 ? 'A hydrogen atom with no field: the electron is found all round the proton, so the atom appears neutral.' : `A hydrogen atom in an electric field: the electron stays mostly to the ${right ? 'left' : 'right'} of the proton, making an induced dipole.`}>
       <circle cx={cx} cy={cy} r={R} className="bk-s-faint" fill="none" strokeDasharray="2 5"/>
       {trail.map(p => <circle key={p.age} cx={p.x} cy={p.y} r={p.age === 0 ? 6 : 3.4} className="bk-f-neg" opacity={p.age === 0 ? 1 : 0.5 * (1 - p.age / 44)}/>)}
       <Charge x={cx} y={cy} sign={1} r={13} label="proton"/>
-      {field > 0.04 && <>
+      {field > 0 && <>
         <Arrow x1={cx - (right ? 1 : -1) * (20 + 60 * field)} y1={52} x2={cx + (right ? 1 : -1) * (20 + 60 * field)} y2={52} tone="e" w={2.5}/>
         <T x={cx} y={38} tone="e" size="lg">E</T>
         <line x1={cx} y1={cy + 118} x2={cx + meanX} y2={cy + 118} className="bk-s-mark" strokeWidth="3"/>
         <circle cx={cx + meanX} cy={cy + 118} r={4} className="bk-f-neg"/><circle cx={cx} cy={cy + 118} r={4} className="bk-f-pos"/>
         <T x={cx} y={cy + 142} size="sm" tone="mark">average positions: an electric dipole</T>
       </>}
-      <T x={560} y={150} tone="text" size="lg">{field < 0.05 ? 'A · no E' : field > 0.6 ? 'B · in E' : 'A → B'}</T>
-      <T x={560} y={174} size="sm">{field < 0.05 ? 'appears neutral' : 'induced dipole'}</T>
+      <T x={560} y={150} tone="text" size="lg">{field === 0 ? 'A · no E' : field > 0.6 ? 'B · in E' : 'A → B'}</T>
+      <T x={560} y={174} size="sm">{field === 0 ? 'appears neutral' : 'induced dipole'}</T>
     </Stage>}>
     <Slider label="Strength of E" value={field} min={0} max={1} step={0.02} onChange={setField} show={v => (v === 0 ? 'none' : `${Math.round(v * 100)} %`)}/>
     <Toggle label="E points to the right" checked={right} onChange={setRight}/>
     <PlayBar play={play} label="the electron"/>
-    <Readout label="Induced moment" value={`${fmt(field < 0.02 ? 0 : moment)} of the most it could be`}/>
+    <Readout label="Induced moment" value={`${fmt(field === 0 ? 0 : moment)} of the most it could be`}/>
   </Diagram>;
 }
 

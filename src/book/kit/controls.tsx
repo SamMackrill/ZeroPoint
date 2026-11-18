@@ -22,15 +22,18 @@ export function Slider({ label, value, min, max, step = 1, onChange, unit, show 
   // Room for the longest reading the slider can give, so the label's wrapping does not jump as it moves (the value is
   // monospaced, so a character count is its width).
   const widest = useMemo(() => {
-    const steps = Math.max(1, Math.round((max - min) / step)), every = Math.max(1, Math.ceil(steps / 60));
-    let n = 0;
-    for (let i = 0; i <= steps; i += every) n = Math.max(n, say(min + i * step).length);
-    return Math.max(n, say(max).length);
+    // Every value the slider can take, from min in whole steps, never past max (and max itself).
+    const steps = Math.max(0, Math.floor((max - min) / step + 1e-9));
+    let n = say(max).length;
+    for (let i = 0; i <= steps; i++) n = Math.max(n, say(Math.min(max, min + i * step)).length);
+    return n;
     // `show` is usually an inline function, so it is left out: the range decides the widest reading.
   }, [min, max, step, unit]);
-  // A short reading sits beside the label; a long one always has a line of its own, so the label keeps its width.
-  return <div className={`bk-control${widest > LONG_READING ? ' is-stacked' : ''}`}>
-    <label htmlFor={id}><span>{label}</span><output htmlFor={id} style={{ minWidth: `${widest}ch` }}>{text}</output></label>
+  // A short reading sits beside the label in room reserved for the longest; a long one always has a line of its own,
+  // where it needs no reserved room and may wrap if the column is narrow.
+  const stacked = widest > LONG_READING;
+  return <div className={`bk-control${stacked ? ' is-stacked' : ''}`}>
+    <label htmlFor={id}><span>{label}</span><output htmlFor={id} style={stacked ? undefined : { minWidth: `${widest}ch` }}>{text}</output></label>
     <input id={id} type="range" min={min} max={max} step={step} value={value} aria-valuetext={text} onChange={e => onChange(Number(e.target.value))}/>
   </div>;
 }
