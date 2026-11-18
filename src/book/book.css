@@ -556,6 +556,17 @@ input {
   height: auto;
 }
 
+/* A diagram drawn in three dimensions (three.js), the same width and proportion as a flat stage; drag to turn it. */
+.bk-stage-3d {
+  width: 100%;
+  aspect-ratio: 720 / 330;
+  cursor: grab;
+}
+
+.bk-stage-3d:active {
+  cursor: grabbing;
+}
+
 .bk-diagram-controls {
   display: flex;
   flex-direction: column;

@@ -1,11 +1,29 @@
 // Behaviour of individual companion diagrams that a reader relies on, beyond the book's numbers.
 import { describe, expect, it } from 'vitest';
 import { DEBYE_FAR, DEBYE_NEAREST, debyeMotion } from '../src/book/chapters/ch03';
+import { PAIR_CYCLE, pairLife, percentOfPeak } from '../src/book/chapters/ch04';
 import { deflectionPath } from '../src/book/chapters/ch07';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
+  it('Figure 4-9: each pair turns its half-turn and is gone before the next forms, so the charges never jump', () => {
+    let last = -1;
+    for (let t = 0; t < PAIR_CYCLE; t += 0.001) {
+      const { turned, presence } = pairLife(t, true);
+      if (t < 1) { expect(turned).toBeGreaterThanOrEqual(last); last = turned; } // one pair turns one way only
+      else expect(presence).toBe(0); // between pairs nothing is drawn
+    }
+    expect(pairLife(PAIR_CYCLE - 1e-9, true).presence).toBe(0);
+    expect(pairLife(0.5, true).presence).toBe(1);
+    expect(pairLife(1, false)).toEqual({ turned: 180, presence: 1 }); // paused at the end of the turn
+  });
+
+  it('Figure 4-9: the field readouts keep one width as the value changes', () => {
+    const widths = new Set(Array.from({ length: 101 }, (_, i) => percentOfPeak(i / 100).length));
+    expect([...widths]).toHaveLength(1);
+  });
+
   it('Figure 3-1: released dipoles part in I with shrunken moments and close in II with grown ones', () => {
     for (let r0 = 1.9; r0 <= 3.6; r0 += 0.05) { // the slider's range and step
       const one = debyeMotion('I', 0.8, r0), two = debyeMotion('II', 0.8, r0);

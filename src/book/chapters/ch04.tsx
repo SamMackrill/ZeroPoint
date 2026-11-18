@@ -1,7 +1,8 @@
 // Chapter 4: What is a Virtual Photon? (PDF pp. 33–42). Figures 4-1 to 4-9.
-import { useMemo, useState } from 'react';
+import { Suspense, lazy, useCallback, useMemo, useState } from 'react';
 import { Arrow, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
+import type { PairView } from '../three/PairScene';
 import type { ChapterContent } from '../types';
 
 const H_EV = 4.135667696e-15, C = 299792458;
@@ -181,34 +182,66 @@ function PairInPhoton() {
 /** The transverse field of a pair that has turned through an angle (degrees) of its half-turn: half a wave. */
 export const pairField = (turned: number) => Math.sin((clamp(turned, 0, 180) * Math.PI) / 180);
 
+/** Figure 4-9 drawn in three dimensions: loaded on demand, since three.js is large. */
+const PairScene = lazy(() => import('../three/PairScene'));
+
+/** One pair's life is the half-turn (p. 39); then it is gone, and after a moment a new pair forms where it began. */
+export const PAIR_CYCLE = 1.15;
+
+/** Where the pair is in its life at time `t` (in turns of the clock): the angle turned, and how fully it is there. */
+export function pairLife(t: number, playing: boolean) {
+  // A paused clock sought to the end of the turn shows 180°, not the start of the next pair.
+  const local = t > 0 && !playing && t % PAIR_CYCLE === 0 ? 1 : t % PAIR_CYCLE, u = Math.min(1, local);
+  const presence = !playing ? 1 : local > 1 ? 0 : clamp(Math.min(u, 1 - u) / 0.06, 0, 1);
+  return { turned: u * 180, presence };
+}
+
+/** A share of a field's peak as a whole percentage, padded so the readout keeps its width as the number changes. */
+export const percentOfPeak = (share: number) => `${String(Math.round(share * 100)).padStart(3, ' ')} % of its peak`;
+
+/** The printed page's view of Figure 4-9, drawn flat: the fallback where the browser cannot draw in three dimensions. */
+function FlatPair({ turned, cw, presence, label }: { turned: number; cw: boolean; presence: number; label: string }) {
+  const angle = cw ? 180 - turned : 180 + turned, field = pairField(turned), up = cw ? 1 : -1, cx = 360, cy = 150;
+  return <Stage h={300} label={label}>
+    <Spin x={cx} y={cy} r={62} ccw={!cw} from={cw ? 150 : 210} sweep={100}/>
+    <Zepton x={cx} y={cy} angle={angle} len={84} oval={false} signs opacity={presence}/>
+    <Vector x={cx + 100} y={cy} angle={90 * up} len={12 + 78 * field} centred tone="e" w={3}/><T x={cx + 124} y={cy + 5} tone="e" size="lg" anchor="start">E</T>
+    <InOut x={cx - 104} y={cy} out={!cw} r={7 + 9 * field} opacity={0.3 + 0.7 * field}/><T x={cx - 104} y={cy + 40} tone="b" size="lg">B</T>
+  </Stage>;
+}
+
 /** Figure 4-9: a rotating pair, its electric field in the plane of rotation and its magnetic field through it. */
 function RotatingPair() {
   const [sense, setSense] = useState<'cw' | 'ccw'>('cw');
+  const [view, setView] = useState<PairView>('turned');
+  const [flat, setFlat] = useState(false);
+  const fail = useCallback(() => setFlat(true), []);
   const play = usePlayback({ speed: 0.25 });
-  // A paused clock sought to the end of the turn shows 180°, not the start of the next turn.
-  const phase = play.t > 0 && !play.playing && play.t % 1 === 0 ? 1 : play.t % 1, turned = phase * 180, cw = sense === 'cw';
-  // The pair starts along the path and turns half a turn; clockwise carries its positive end over the top.
-  const angle = cw ? 180 - turned : 180 + turned, field = pairField(turned), up = cw ? 1 : -1;
-  const cx = 210, cy = 165, px = 420, pw = 250, py = 165;
-  const trace = pathThrough(Array.from({ length: 61 }, (_, i) => [px + (pw * i) / 60, py - up * 70 * pairField(i * 3)] as const));
-  return <Diagram stage={
-    <Stage h={330} label={`A virtual electron-positron pair rotating ${cw ? 'clockwise' : 'counter-clockwise'}. Its electric field points ${up > 0 ? 'up' : 'down'} the page, toward its positive end, and its magnetic field points ${cw ? 'into' : 'out of'} the page.`}>
-      <Spin x={cx} y={cy} r={62} ccw={!cw} from={cw ? 150 : 210} sweep={100}/>
-      <Zepton x={cx} y={cy} angle={angle} len={84} oval={false} signs/>
-      <Vector x={cx + 100} y={cy} angle={90 * up} len={12 + 78 * field} centred tone="e" w={3}/><T x={cx + 124} y={cy + 5} tone="e" size="lg" anchor="start">E</T>
-      <InOut x={cx - 104} y={cy} out={!cw} r={7 + 9 * field} opacity={0.3 + 0.7 * field}/><T x={cx - 104} y={cy + 40} tone="b" size="lg">B</T>
-      <T x={cx} y={34} size="sm">{cw ? 'clockwise' : 'counter-clockwise'} · turned {Math.round(turned)}° of 180°</T>
+  const { turned, presence } = pairLife(play.t, play.playing), cw = sense === 'cw';
+  const field = pairField(turned), up = cw ? 1 : -1;
+  const px = 70, pw = 580, py = 70;
+  const trace = pathThrough(Array.from({ length: 61 }, (_, i) => [px + (pw * i) / 60, py - up * 50 * pairField(i * 3)] as const));
+  const label = `A virtual electron-positron pair rotating ${cw ? 'clockwise' : 'counter-clockwise'} on the page, turned ${Math.round(turned)}° of its half-turn. Its electric field lies in its plane of rotation, pointing ${up > 0 ? 'up' : 'down'} the page; its magnetic field lies along the axis of rotation, ${cw ? 'into' : 'out of'} the page.`;
+  return <Diagram stage={<>
+    {flat
+      ? <FlatPair turned={turned} cw={cw} presence={presence} label={label}/>
+      : <Suspense fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
+          <PairScene state={{ turned, cw, field, presence, showSpin: !play.playing, view }} onFail={fail} description={`${label} Drag to turn the view.`}/>
+        </Suspense>}
+    <Stage h={140} label={`E through the pair's half-turn: zero along the path, greatest across it at 90°, zero again at 180°. Now at ${Math.round(turned)}°.`}>
       <line x1={px} y1={py} x2={px + pw} y2={py} className="bk-s-faint" strokeWidth="1"/>
       <Line d={trace} tone="e" w={2} opacity={0.45}/>
-      <circle cx={px + (pw * turned) / 180} cy={py - up * 70 * field} r={6} className="bk-f-e"/>
-      <T x={px + pw / 2} y={34} size="sm">E across the path, through the half-turn</T>
-      <T x={px} y={py + 96} size="sm" anchor="start">0°</T><T x={px + pw} y={py + 96} size="sm" anchor="end">180°</T><T x={px + pw / 2} y={py + 96} size="sm">half a wavelength of the photon</T>
-    </Stage>}>
+      <circle cx={px + (pw * turned) / 180} cy={py - up * 50 * field} r={6} className="bk-f-e" opacity={presence}/>
+      <T x={px - 10} y={py + 5} size="sm" anchor="end" tone="e">E</T>
+      <T x={px} y={py + 66} size="sm" anchor="start">0°</T><T x={px + pw} y={py + 66} size="sm" anchor="end">180°</T><T x={px + pw / 2} y={py + 66} size="sm">the half-turn: half a wavelength of the photon (B follows the same curve)</T>
+    </Stage>
+  </>}>
+    {!flat && <Choice label="View" value={view} onChange={setView} options={[{ value: 'turned', label: 'Turned' }, { value: 'page', label: 'As printed' }, { value: 'path', label: 'Along path' }]}/>}
     <Choice label="Rotation" value={sense} onChange={setSense} options={[{ value: 'cw', label: 'Clockwise' }, { value: 'ccw', label: 'Counter' }]}/>
     <PlayBar play={play} label="the rotation"/>
     <Slider label="Angle turned" value={Math.round(turned)} min={0} max={180} step={1} onChange={v => play.seek(v / 180)} unit="°"/>
-    <Readout label="E" value={`${fmt(field)} of its peak, ${up > 0 ? 'up' : 'down'}`} tone="e"/>
-    <Readout label="B" value={`${fmt(field)} of its peak, ${cw ? 'into' : 'out of'} the page`} tone="b"/>
+    <Readout label={`E, in the plane of rotation, ${up > 0 ? 'up' : 'down'} the page`} value={percentOfPeak(field)} tone="e"/>
+    <Readout label={`B, along the axis, ${cw ? 'into' : 'out of'} the page`} value={percentOfPeak(field)} tone="b"/>
   </Diagram>;
 }
 
@@ -329,13 +362,15 @@ const chapter: ChapterContent = {
         <p>The names electron and positron are <Q>a mere convenience</Q>: these pairs <Q>exist over a continuum of energies and are not limited by the rest mass energy</Q> of the stable particles (<Pg n={40}/>).</p>
       </>,
       tryThis: [
-        'Let the pair turn clockwise. E, toward the positive end, rises to its peak when the pair stands across the path and falls again: half a wave, drawn at the right.',
+        'Drag the picture to turn it. E lies in the plane the pair turns in; B lies along the axis it turns about, at right angles to both E and the path.',
+        'Let the pair turn clockwise. E, toward the positive end, rises to its peak when the pair stands across the path and falls again: half a wave, drawn underneath. Then the pair is gone, and a new one forms where it began.',
         'Reverse the rotation. E points down and B comes out of the page: the next half wavelength of the photon, which Figure 5-1 sets in a row.',
-        'Pause and drag the angle to 90°, the moment the printed figure shows.',
+        'Choose the view “As printed”, pause and drag the angle to 90°: the moment the printed figure shows.',
       ],
       notes: <>
         <p>The caption says the magnetic field points into the page, but the printed figure marks B with a dot in a circle, the sign for out of the page. The diagram follows the caption, which agrees with the right-hand grip rule of chapter 6 for a clockwise rotation.</p>
         <p>The pair is drawn at one size, as printed. The laboratory also lets it open and close as it turns. That the field follows the sine of the angle turned is a reading of “equivalent to a photon during a half wavelength”.</p>
+        <p>The three-dimensional view is ours; the printed figure is the page seen face on. E is drawn beside the pair, in its plane of rotation, and B through its centre, along the axis. Each pair lives for its half-turn and is gone; the moment before a new pair forms, and the fading in and out, are display choices.</p>
       </>,
       labs: [{ lab: 'light', scenario: 'induction', query: 'cam=pair', why: 'The same pair with its field measured at a probe as it turns.' }],
     },

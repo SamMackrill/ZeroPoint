@@ -20,7 +20,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 4-6 | Out an eighth of a wavelength | animated | agreed | No change |
 | 4-7 | One photon, half a wavelength | animated | agreed | No change |
 | 4-8 | The pair inside the photon | animated | agreed | No change |
-| 4-9 | A rotating pair makes E and B | animated | to review | |
+| 4-9 | A rotating pair makes E and B | animated | changed | 3D (three.js) with views; pair fades at the end of its half-turn; steady readouts |
 | 5-1 | A photon, pair by pair | animated | to review | |
 | 5-2 | The pairs round the photon are its wave | animated | to review | |
 | 6-1 | A free electron polarizes hydrogen | animated | to review | |
@@ -168,3 +168,10 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 - **Done:** once a charge is added, it now moves back and forth across the sea by itself (“The charge moves”, on by default), easing round at each end, and the dipoles near its path rotate to keep pointing at it. Turning the motion off leaves the charge where it is and lets the reader drag it. The card quotes p. 56, the Try steps and remark describe the motion, and the notes call the path and speed display choices.
 - **Owner:** unsure about the free charge; the dipoles should rotate naturally through mutual attraction and repulsion. Is the free charge in the book? **Answer:** no, the printed figure is only the sea; the charge illustrated the p. 34 sentence. Fleming’s pairs rotate (a half-turn per half-wavelength, p. 39), and around a photon they rotate in response to the central pair (p. 44). I found no statement that mutual attraction is what turns the pairs of the sea. **Chosen:** pairs rotate, no charge.
 - **Done:** the free charge, its controls and its motion are gone. Each pair forms at a random angle, turns half a turn through its life (p. 39), one way or the other at random, and is gone. The card quotes p. 39, and the notes point to chapter 6 for orientation to a charge.
+
+### Fig. 4-9 (changed, agreed 2026-11-18)
+
+- **Owner:** this tries to show a 3D interaction on a flat page; it would be better in 3D, so that the reader can turn it and see E and B. The E and B numbers flicker and keep wrapping. The charges change magically as the pair rotates, which cannot be intended.
+- **Cause of the charge “swap”:** the half-turn looped straight back to 0°, so the + end jumped from right to left. Fleming’s pair lives only for its half-turn (p. 39).
+- **Done:** the figure is now drawn in three dimensions with three.js, loaded only when needed. The reader can drag to turn the view and choose Turned, As printed or Along path. The pair turns in its plane, E is beside it in that plane, B runs along the axis, and a dashed line marks the photon’s path. Each pair fades out at the end of its half-turn, and after a moment a new pair fades in at 0°, so nothing jumps. The rotation arrow shows only when the motion is paused (the #73 rule). The E trace through the half-turn sits underneath. The readouts are whole percentages padded to a fixed width, and their direction moved into the label. Where WebGL is not available, the flat page view is drawn instead. The notes say that the 3D view and the fading are ours. Two new tests cover this.
+- **Owner:** what is the cut-off “path” label? **Answer:** it labelled the dashed line, the photon’s path, and its box was too narrow. **Done:** it now reads “photon’s path” in full, and an arrowhead on the line shows the photon moving along x (Fig. 5-2, p. 44).
