@@ -25,8 +25,13 @@ export interface TopState {
    * grows). The velocity downward is gravity's arrow.
    */
   account?: { toTip: boolean; ahead: 1 | -1 } | null;
-  /** Where the view looks from: beside the top, or higher and centred on the tip, to watch it circle. */
-  look?: 'side' | 'above';
+  /** Where the view looks from: beside the top, higher and centred on the tip to watch it circle, or square on to the plane it leans in, as a printed side view. */
+  look?: 'side' | 'above' | 'front';
+  /**
+   * The parts of the torque of gravity, as Figure 8-5 labels them (Equation 8-4): the upright through the tip, r from
+   * the tip to the centre of mass, the angle α between them, mg on gravity's arrow, and the lever r sin α on the floor.
+   */
+  torque?: boolean;
   reset?: number;
 }
 
@@ -111,6 +116,18 @@ export default function TopScene({ state, onFail, description, onLean }: { state
       for (const a of [fieldArrow, forceArrow]) a.group.traverse(o => { const m = (o as THREE.Mesh).material as THREE.Material | undefined; if (m) m.depthTest = false; o.renderOrder = 5; });
       const fieldLabel = label('Bₘ', palette.dataBHi, 0.3), forceLabel = label('Fₘ', palette.text, 0.3), fallLabel = label('v', palette.warn, 0.3);
       scene.add(fieldArrow.group, forceArrow.group, fieldLabel, forceLabel, fallLabel);
+      // Figure 8-5's parts of the torque: the upright, r, the angle α, mg and the lever r sin α, all over the body.
+      const overlay = (m: THREE.Material) => { m.depthTest = false; m.transparent = true; return m; };
+      const upright = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 2.1, 0)]), overlay(new THREE.LineDashedMaterial({ color: palette.text3, dashSize: 0.07, gapSize: 0.06 })));
+      upright.computeLineDistances();
+      const reach = solidArrow(palette.dataMark);
+      reach.group.traverse(o => { const m = (o as THREE.Mesh).material as THREE.Material | undefined; if (m) overlay(m); o.renderOrder = 5; });
+      const arc = new THREE.Line(new THREE.BufferGeometry(), overlay(new THREE.LineBasicMaterial({ color: palette.accent })));
+      const lever = new THREE.Line(new THREE.BufferGeometry(), overlay(new THREE.LineBasicMaterial({ color: palette.dataE })));
+      for (const o of [upright, arc, lever]) o.renderOrder = 5;
+      const reachLabel = label('r', palette.dataMark, 0.3), angleLabel = label('α', palette.accent, 0.3), weightLabel = label('mg', palette.warn, 0.3), leverLabel = label('r sin α', palette.dataE, 0.24);
+      const torqueParts = [upright, reach.group, arc, lever, reachLabel, angleLabel, weightLabel, leverLabel];
+      scene.add(...torqueParts);
 
       // Grabbing the top tilts it: registered before the orbit controls, so a press on the top is ours and does not
       // turn the view. The pointer's ray meets the upright plane the top leans in, and the lean is the angle there
@@ -160,7 +177,7 @@ export default function TopScene({ state, onFail, description, onLean }: { state
       controls.addEventListener('change', draw);
       const look = { current: state.look ?? 'side' };
       const view = () => {
-        const [p, t] = look.current === 'above' ? [[1.7, 2.9, 4.9], [0, 1.05, 0]] : [[1.9, 1.75, 4.5], [0.55, 0.78, 0]];
+        const [p, t] = look.current === 'above' ? [[1.7, 2.9, 4.9], [0, 1.05, 0]] : look.current === 'front' ? [[0.5, 1.05, 4.1], [0.5, 0.8, 0]] : [[1.9, 1.75, 4.5], [0.55, 0.78, 0]];
         camera.position.set(p[0], p[1], p[2]); controls.target.set(t[0], t[1], t[2]); camera.lookAt(t[0], t[1], t[2]); controls.update(); draw();
       };
       const resize = new ResizeObserver(() => {
@@ -200,6 +217,25 @@ export default function TopScene({ state, onFail, description, onLean }: { state
             forceArrow.set(c, tangent, 0.6);
             forceLabel.position.copy(c).addScaledVector(tangent, 0.76);
             fallLabel.position.copy(c).addScaledVector(tangent, -0.16).setY(Math.max(0.12, c.y * 0.4));
+          }
+          // Figure 8-5's parts: all in the upright plane the top leans in, except the lever, drawn on the floor a
+          // little toward the reader so the body does not hide it.
+          for (const o of torqueParts) o.visible = !!s.torque;
+          if (s.torque) {
+            const l = (lean * Math.PI) / 180, h = (s.heading * Math.PI) / 180;
+            const toward = new THREE.Vector3(Math.cos(h), 0, -Math.sin(h)), front = new THREE.Vector3(Math.sin(h), 0, Math.cos(h));
+            const axis = c.clone().normalize(), below = toward.clone().multiplyScalar(Math.cos(l)).addScaledVector(up, -Math.sin(l));
+            reach.set(new THREE.Vector3(), axis, TOP_CM);
+            reachLabel.position.copy(c).multiplyScalar(0.55).addScaledVector(below, -0.17);
+            const swing = (t: number, radius: number) => toward.clone().multiplyScalar(Math.sin(t) * radius).addScaledVector(up, Math.cos(t) * radius);
+            arc.geometry.dispose();
+            arc.geometry = new THREE.BufferGeometry().setFromPoints(Array.from({ length: 25 }, (_, i) => swing((l * i) / 24, 1.25)));
+            angleLabel.position.copy(swing(l / 2, 1.45));
+            weightLabel.position.copy(c).setY(Math.max(0.1, c.y * 0.45)).addScaledVector(toward, 0.26);
+            const lift = new THREE.Vector3(0, 0.004, 0), start = front.clone().multiplyScalar(0.3).add(lift), end = start.clone().add(new THREE.Vector3(c.x, 0, c.z)), tick = up.clone().multiplyScalar(0.06);
+            lever.geometry.dispose();
+            lever.geometry = new THREE.BufferGeometry().setFromPoints([start.clone().add(tick), start, end, end.clone().add(tick)]);
+            leverLabel.position.copy(start).lerp(end, 0.5).addScaledVector(front, 0.22);
           }
           const key = JSON.stringify([s.path, s.path?.kind === 'circle' ? s.lean : 0, s.path?.kind === 'fall' ? s.heading : 0]);
           if (key !== drawnPath) {

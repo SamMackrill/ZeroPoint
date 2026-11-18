@@ -225,17 +225,33 @@ function PrecessingTop() {
 /** The torque of gravity on a leaning top (Equation 8-4). */
 export const gravityTorque = (m: number, g: number, r: number, alpha: number) => m * g * r * Math.sin(rad(alpha));
 
-/** Figure 8-5: where each part of the torque of gravity on a top comes from. */
+/** The 3D top's size: its centre of mass is 4 cm up its axis from the tip, a toy top about 7.4 cm tall. */
+const TOP_R = 0.04;
+
+/** Figure 8-5: where each part of the torque of gravity on a top comes from, on the wooden top of Figures 8-2 and 8-3. */
 function TopTorque() {
   const [alpha, setAlpha] = useState(28);
   const [mass, setMass] = useState(0.2);
-  const [r, setR] = useState(0.04);
   const [spin, setSpin] = useState(30);
-  const H = 360, x = 240, y = 310, cm = 60 + r * 1500, [cx, cy] = [x + cm * Math.sin(rad(alpha)), y - cm * Math.cos(rad(alpha))];
+  const [precess, setPrecess] = useState(false);
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const [reset, setReset] = useState(0);
+  const fail = useCallback(() => setFlat(true), []);
+  const r = TOP_R;
   const torque = gravityTorque(mass, 9.81, r, alpha), inertia = 0.5 * mass * 0.03 ** 2, L = inertia * spin * 2 * Math.PI, wp = (mass * 9.81 * r) / L;
+  // Spinning clockwise from above, as in Figure 8-3; it circles only when asked, so the figure's angle stays put.
+  const play = usePlayback();
+  const state = useRef({ t: 0, heading: 0, spun: 0 });
+  if (play.t < state.current.t) state.current = { t: 0, heading: 0, spun: 0 };
+  const dt = Math.max(0, Math.min(0.05, play.t - state.current.t));
+  state.current.t = play.t;
+  state.current.spun -= Math.min(spin, 40) * 30 * dt;
+  if (precess) state.current.heading -= ((wp * 180) / Math.PI) * dt;
+  const H = 360, x = 240, y = 310, cm = 60 + r * 1500, [cx, cy] = [x + cm * Math.sin(rad(alpha)), y - cm * Math.cos(rad(alpha))];
   const arc = pathThrough(Array.from({ length: 20 }, (_, i) => { const a = (alpha * i) / 19; return [x + 70 * Math.sin(rad(a)), y - 70 * Math.cos(rad(a))] as const; }));
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`A spinning top leaning ${alpha} degrees from the perpendicular. Its weight acts at the centre of mass, a distance r from the tip, giving a torque of ${fmt(torque)} newton metres.`}>
+  const label = `A spinning top leaning ${alpha} degrees from the perpendicular. Its weight mg acts straight down at the centre of mass, a distance r from the tip, and acts with a lever of r sin α, giving a torque of ${fmt(torque)} newton metres.`;
+  /** The printed page's view, flat: the fallback where 3D cannot be drawn (called, not mounted). */
+  const flatTop = () => <Stage w={W} h={H} label={label}>
       <line x1={60} y1={y} x2={W - 60} y2={y} className="bk-s-text" strokeWidth="2"/>
       <path d={topOutline(x, y, alpha, 0.9 + r * 6)} className="bk-body bk-body-plain" opacity={0.7}/>
       <line x1={x} y1={y} x2={x} y2={y - 190} className="bk-s-muted" strokeDasharray="4 4"/>
@@ -244,11 +260,20 @@ function TopTorque() {
       <circle cx={cx} cy={cy} r={6} className="bk-f-mark"/>
       <Arrow x1={cx} y1={cy} x2={cx} y2={cy + 40 + mass * 120} tone="force" w={3}/><T x={cx + 12} y={cy + 40 + mass * 60} anchor="start" tone="text">mg</T>
       <Arrow x1={x} y1={y + 18} x2={cx} y2={y + 18} both tone="e" w={1.4} head={6}/><T x={(x + cx) / 2} y={y + 36} size="sm" tone="e">r sin α</T>
-    </Stage>}>
+    </Stage>;
+  return <Diagram stage={flat ? flatTop() : <FallbackOnError onError={fail} fallback={flatTop()}>
+      <Suspense fallback={flatTop()}>
+        <TopScene state={{ lean: alpha, heading: state.current.heading, spun: state.current.spun, path: precess ? { kind: 'circle' } : null, gravity: true, torque: true, look: 'front', reset }} onFail={fail} description={`${label} Drag the top to tilt it; drag elsewhere to turn the view.`}
+          onLean={v => setAlpha(Math.round(clamp(v, 2, 60)))}/>
+      </Suspense>
+    </FallbackOnError>}>
+    {!flat && <Action onClick={() => setReset(n => n + 1)}>Back to this view</Action>}
     <Slider label="Angle from the perpendicular, α" value={alpha} min={2} max={60} step={1} onChange={setAlpha} unit="°"/>
     <Slider label="Mass of the top, m" value={mass} min={0.05} max={0.5} step={0.01} onChange={setMass} unit="kg"/>
-    <Slider label="Tip to centre of mass, r" value={r} min={0.02} max={0.08} step={0.005} onChange={setR} show={v => `${fmt(v * 100, 2)} cm`}/>
     <Slider label="Spin" value={spin} min={5} max={80} step={1} onChange={setSpin} unit="turns/s"/>
+    <Toggle label="Let it precess" checked={precess} onChange={setPrecess}/>
+    <PlayBar play={play} label="the top"/>
+    <Readout label="Tip to centre of mass, r" value={`${fmt(r * 100, 2)} cm`}/>
     <Readout label="Torque, mgr sin α" value={`${fmt(torque)} N m`} tone="force"/>
     <Readout label="Precession, from τ = ω_p × L" value={`${fmt(wp / (2 * Math.PI))} turns/s`}/>
     <Remark>The torque grows with the lean; the precession rate does not, because the part of L it has to turn grows with the lean too.</Remark>
@@ -355,8 +380,11 @@ const chapter: ChapterContent = {
         <Eq n="8-4">τ = <V>m</V><V>g</V><V>r</V> sin α</Eq>
         <p>The precession follows from another cross product, τ = ω<sub>p</sub> × <V>L</V> (Equation 8-5). <Q>Really, is that all we get for an explanation?</Q> It works mathematically, <Q>but it still begs the question, if there is an equal and opposite reaction related to this force, what is the top pushing against in order to stay upright?</Q> (<Pg n={75}/>).</p>
       </>,
-      tryThis: ['Lean the top further: the lever arm r sin α lengthens and the torque grows.', 'Raise the spin: the precession slows.', 'Change the mass: torque and angular momentum both follow it, and the precession rate does not change.'],
-      notes: <p>The readouts use Equations 8-4 and 8-5 with <V>g</V> = 9.81 m/s². The top’s moment of inertia is taken as that of a disc of radius 3 cm, which Fleming does not specify.</p>,
+      tryThis: ['Lean the top further, with the slider or by grabbing it: the lever r sin α on the floor lengthens and the torque grows.', 'Turn on “Let it precess”, then raise the spin: the precession slows.', 'Change the mass: torque and angular momentum both follow it, and the precession rate does not change.'],
+      notes: <>
+        <p>The readouts use Equations 8-4 and 8-5 with <V>g</V> = 9.81 m/s². Fleming gives no sizes, so the wooden top of Figures 8-2 and 8-3 is taken to be about 7.4 cm tall with its centre of mass 4 cm from the tip, and its moment of inertia is taken as that of a disc of radius 3 cm.</p>
+        <p>The printed figure labels r, α and mg. The lever r sin α is added on the floor, a little in front of the top so the body does not hide it: it is the distance Fleming describes on p. 74, from the tip to the point on the surface below the centre of mass. The top spins clockwise from above, as in Figure 8-3, and stays at its angle unless it is let precess.</p>
+      </>,
     },
     {
       kind: 'figure', id: '8-6', page: 78, section: 'A Different Explanation?!', title: 'The field of a moving charge, and of moving matter',

@@ -50,7 +50,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 8-2 | A top that is not spinning falls | still | changed | 3D wooden top; grab to tilt; release to topple; dotted path to the floor |
 | 8-3 | A spinning top precesses the way it spins | animated | changed | 3D wooden top precessing; Fleming's force on the spinning top, F<sub>m</sub> = m(υ × B<sub>m</sub>) |
 | 8-4 | The right hand rule again: torque and angular momentum | still | changed | Figure 7-4 again, with a switch: torque (r, F, Γ; p. 73) or the magnetic force (7-4's labels) |
-| 8-5 | The torque of gravity on a leaning top | still | to review | |
+| 8-5 | The torque of gravity on a leaning top | still | changed | 3D wooden top, side view as printed; r, α, mg, and the lever r sin α on the floor |
 | 8-6 | The field of a moving charge, and of moving matter | still | to review | |
 | 9-1 | Morgan’s flywheels: induction across an air gap | animated | to review | |
 | 9-2 | Wallace’s gyroscopes: the plane turned over | animated | to review | |
@@ -277,3 +277,8 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **From the 7-4 decision (one fixed hand, Fleming's own):** 8-4 prints the same drawing as 7-4, so it now uses the same traced hand, through a shared `FlemingHandStage`. The first finger carries the distance r (into the page), the second the force F, and the thumb the torque Γ, as Fleming describes on p. 73. The arrow-picking `HandRule` that only 8-4 still used is gone. For a top's angular momentum Fleming uses the grip rule (p. 74), which the try-this list says.
 - **Owner:** 8-4 seems a repetition; can we copy the earlier figure? **Agreed in part:** the book prints the same drawing, so 8-4 is now Figure 7-4 again. But Fleming uses it here for torque (p. 73: r on the first finger, F on the second, torque on the thumb), so it starts with those labels, and a switch puts back 7-4's motion, field and force. That keeps the point he makes, that it is the same memory device for any cross product.
+
+### Fig. 8-5
+
+- **From the 8-2 decision (match the figures):** 8-5 now uses the same 3D wooden top, spinning clockwise from above as in 8-3, seen square on to the plane it leans in, like the printed side view. Over it, as Fleming labels them: the upright through the tip (dashed), r from the tip to the centre of mass, the angle α, and mg on gravity's arrow. Added: the lever r sin α on the floor, a little in front of the top, which is the distance he describes on p. 74. Grab the top or use the slider to change α. "Let it precess" sets it circling at the rate from Equation 8-5; off by default, so the figure's angle stays put. The r slider is gone because the 3D top has a fixed shape: its r is taken as 4 cm (a top about 7.4 cm tall), which the notes say. The flat drawing is the fallback.
+- **Owner:** fine as it is.
