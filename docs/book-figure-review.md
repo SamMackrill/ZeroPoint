@@ -29,7 +29,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 6-4 | The same lines through every sphere | still | changed | 3D sphere with 26 lines and a fixed-area patch; flat view as fallback |
 | 6-5 | Opposite charges: lines from one to the other | still | agreed | No change |
 | 6-6 | Like charges: lines that turn aside | still | agreed | No change |
-| 6-7 | Which way E points | still | to review | |
+| 6-7 | Which way E points | still | agreed | No change |
 | 6-8 | A bridge of zeptons between opposite charges | animated | to review | |
 | 6-9 | Between like charges, like ends meet | animated | to review | |
 | 6-10 | Repulsion: a hole filled, and pressure | animated | to review | |
