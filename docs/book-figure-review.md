@@ -37,11 +37,11 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 6-12 | Attraction: the chain shortens | animated | changed | Agreed; later the chain spacing went from 62 to 54 so the arrow and label fit (clipping sweep) |
 | 6-13 | Attraction drawn in zeptons | animated | agreed | No change |
 | 6-14 | A moving charge turns the zeptons | still | agreed | No change |
-| 6-15 | A current keeps the zeptons spinning | animated | agreed | No change |
+| 6-15 | A current keeps the zeptons spinning | animated | changed | Agreed; later its current control became the Dial (consistency with 6-18) |
 | 6-16 | From rotation to B: the right hand grip | animated | changed | Taller stage so B (clockwise) is not clipped |
 | 6-17 | A magnet’s lines, threaded with spinning zeptons | animated | agreed | No change |
 | 6-18 | A coil: spin inside, opposite spin outside | animated | changed | 3D copper coil, cut away; current dial; line density follows the current; Few/More/Many zeptons |
-| 7-1 | Maxwell’s current in a field of vortices | still | to review | |
+| 7-1 | Maxwell’s current in a field of vortices | still | changed | Current dial; line density follows field and current (circles as 1/r) |
 | 7-2 | Vortices set spinning by a current | animated | to review | |
 | 7-3 | An electric field deflects by pressure | animated | to review | |
 | 7-4 | The right hand rule for the magnetic force | still | to review | |
@@ -216,3 +216,10 @@ A sweep of all 101 stages at their starting settings found drawing past the edge
 - **Owner:** make the coil look like copper. **Done:** the wire is now copper: a metallic material with a faint warm glow so it reads as copper in shadow. The colours are named scene constants (`copper`, `copperGlow`) in `scripts/sync-palette.mjs`, and the palette was regenerated, so no colour literal sits in the figure.
 - **Owner:** add a few more rotating zeptons, perhaps with a control. **Done:** a “Spinning zeptons” control offers Few (7), More (20) and Many (40). The extra zeptons are scattered, the same every time, about two in five inside the coil and the rest round the outside and out past the ends. Each spins about the field where it is, so they tilt to follow the field as it turns back. A test checks that every zepton has a place, that those inside sit in a field along +x, and that those outside stay clear of the wire.
 - **Owner:** the current should affect the density of the magnetic field lines. **Agreed:** line density is how the companion shows field strength (6-4). **Done:** the number of field lines now follows the current: one seed (four lines) per sixth of full current, at least one, up to 24 lines plus the axis. The seeds come in an order that keeps them spread through the coil at every setting. The old brightness scaling is gone, and each line carries two arrowheads instead of four. A test covers the count.
+
+### Fig. 7-1 (changed, agreed 2026-11-18)
+
+- **Owner:** reuse the dial from 6-18 for the current. **Done:** “Current at C” is now a Dial (down, off, up), reading as a percentage, ascending or descending.
+- **Owner:** use the dial for every current control. **Done:** 6-15 (“Electron flow when driven”: left, off, right) and 7-2 (“Current from A to B”: B→A, off, A→B) now use the Dial as well.
+- **Also:** the dial’s reading now sits under the knob, like a controller’s display, and its label has the full width above. A long label beside a reading that changes length would otherwise rewrap.
+- **Owner:** the circles are lines of force, so should their density grow with the current? **Agreed:** Maxwell calls them the current’s lines of force (p. 62), and line density is how the companion shows strength. **Done:** the number of circles follows the current (five at full). They are spaced by a constant ratio, so their density falls as 1/r round the straight current. The field’s straight lines likewise follow its strength (six at the starting 0.7, as printed, nine at full). Both kinds now have one stroke width, where they used to thicken. A note and a Try step say this, and a test covers the counts and the spacing.

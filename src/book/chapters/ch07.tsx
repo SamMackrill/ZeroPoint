@@ -1,11 +1,33 @@
 // Chapter 7: Maxwell's Equations (PDF pp. 62–69). Figures 7-1 to 7-5.
 import { useMemo, useRef, useState } from 'react';
-import { Action, Arrow, BlockArrow, Charge, Choice, Diagram, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
+import { Action, Dial, Arrow, BlockArrow, Charge, Choice, Diagram, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { HandRule } from './shared';
 
 const W = 720;
+
+/**
+ * Where Figure 7-1 draws the field's straight lines of force: as many as the field's strength calls for (six at 0.7, as
+ * printed, nine at full), spread evenly across the field, so their density shows its strength.
+ */
+export function fieldLineXs(field: number) {
+  const n = field < 0.02 ? 0 : Math.max(1, Math.round(field * 9)), span = 420;
+  return Array.from({ length: n }, (_, i) => Math.round(360 - span / 2 + (span * (i + 0.5)) / n));
+}
+
+/**
+ * The radii of the current's circular lines of force round C. The strength round a straight current falls as 1/r, so
+ * the number of lines inside a radius grows as log r: the circles are spaced by a constant ratio, which widens as the
+ * current falls. Five circles at full current, between 34 and 175 units.
+ */
+export function circleRadii(current: number, inner = 34, outer = 175) {
+  const k = Math.abs(current);
+  if (k < 0.02) return [];
+  const step = Math.log(outer / inner) / (4 * k), radii: number[] = [];
+  for (let r = inner; r <= outer + 0.5; r *= Math.exp(step)) radii.push(Math.round(r));
+  return radii;
+}
 
 /** Figure 7-1: Maxwell's current in a field. The lines add on one side and subtract on the other, and the current is urged across. */
 function CurrentInField() {
@@ -16,8 +38,8 @@ function CurrentInField() {
   const east = field + current * 0.6, west = field - current * 0.6, push = (east ** 2 - west ** 2) * 60;
   return <Diagram stage={
     <Stage w={W} h={H} label={`A magnetic field pointing up the page from s to n, and a current ${current >= 0 ? 'rising out of' : 'going into'} the page at C. The lines of force are ${fmt(Math.abs(east), 2)} on the east side and ${fmt(Math.abs(west), 2)} on the west side, so the current is urged toward the ${push > 0 ? 'west' : push < 0 ? 'east' : 'neither side'}.`}>
-      {field > 0.02 && Array.from({ length: 6 }, (_, i) => <Arrow key={i} x1={210 + i * 60} y1={H - 40} x2={210 + i * 60} y2={40} tone="b" w={1 + 1.6 * field} opacity={0.75}/>)}
-      {Math.abs(current) > 0.02 && [50, 95, 140].map(r => <g key={r} opacity={0.9}><circle cx={cx} cy={cy} r={r} className="bk-s-motion" fill="none" strokeWidth={1 + Math.abs(current)} strokeDasharray="6 4"/>
+      {fieldLineXs(field).map(x => <Arrow key={x} x1={x} y1={H - 40} x2={x} y2={40} tone="b" w={1.8} opacity={0.75}/>)}
+      {circleRadii(current).map(r => <g key={r} opacity={0.9}><circle cx={cx} cy={cy} r={r} className="bk-s-motion" fill="none" strokeWidth={1.8} strokeDasharray="6 4"/>
         {[0, 180].map(a => { const [x, y] = polar(cx, cy, r, a), s = current > 0 ? 1 : -1; return <Arrow key={a} x1={x} y1={y + s * (a === 0 ? 8 : -8)} x2={x} y2={y - s * (a === 0 ? 8 : -8)} tone="motion" w={0.1} head={11}/>; })}</g>)}
       <circle cx={cx} cy={cy} r={17} className="bk-plate"/><InOut x={cx} y={cy} out={current >= 0} r={9} tone="text"/><T x={cx + 4} y={cy + 40} tone="text">C</T>
       {Math.abs(push) > 1 && <BlockArrow x1={cx - Math.sign(push) * 24} y1={cy} x2={cx - Math.sign(push) * (24 + Math.min(110, Math.abs(push)))} y2={cy} thick={14}/>}
@@ -26,7 +48,7 @@ function CurrentInField() {
       <Spin x={90} y={cy} r={8 + 22 * clamp(Math.abs(west) / 1.4)} ccw={west >= 0} sweep={300}/><T x={90} y={cy + 52} size="sm">vortices: {fmt(Math.abs(west), 2)}</T>
     </Stage>}>
     <Slider label="Strength of the field" value={field} min={0} max={1} step={0.05} onChange={setField}/>
-    <Slider label="Current at C" value={current} min={-1} max={1} step={0.05} onChange={setCurrent} show={v => (v === 0 ? 'none' : `${fmt(Math.abs(v), 2)} ${v > 0 ? 'ascending' : 'descending'}`)}/>
+    <Dial label="Current at C" value={current} min={-1} max={1} step={0.05} onChange={setCurrent} marks={['down', 'off', 'up']} show={v => (v === 0 ? 'off' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'ascending' : 'descending'}`)}/>
     <Readout label="Lines of force at e" value={fmt(Math.abs(east), 2)} tone="b"/>
     <Readout label="Lines of force at w" value={fmt(Math.abs(west), 2)} tone="b"/>
     <Readout label="Current is urged" value={Math.abs(push) < 1 ? 'nowhere' : push > 0 ? 'toward the west' : 'toward the east'} tone="force"/>
@@ -74,7 +96,7 @@ function MolecularVortices() {
       {Array.from({ length: 16 }, (_, k) => <circle key={k} cx={30 + ((((k * 42 + state.current.flow) % 660) + 660) % 660)} cy={line - 16} r={5} className="bk-f-motion"/>)}
       <T x={22} y={line - 28} tone="text" anchor="start">A</T><T x={W - 22} y={line - 28} tone="text" anchor="end">B</T>
     </Stage>}>
-    <Slider label="Current from A to B" value={drive} min={-1} max={1} step={0.05} onChange={setDrive} show={v => (v === 0 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'A to B' : 'B to A'}`)}/>
+    <Dial label="Current from A to B" value={drive} min={-1} max={1} step={0.05} onChange={setDrive} marks={['B→A', 'off', 'A→B']} show={v => (v === 0 ? 'off' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'A to B' : 'B to A'}`)}/>
     <Toggle label="Show each vortex as a rotating zepton" checked={zeptons} onChange={setZeptons}/>
     <PlayBar play={play} label="the vortices"/>
     <Readout label="Nearest rows" value={`${Math.round(Math.abs(state.current.rate[2]) * 100)} % of full spin`}/>
@@ -202,8 +224,11 @@ const chapter: ChapterContent = {
       text: <>
         <p>The chapter opens with Maxwell’s own description. The field runs from s to n; C is <Q>an ascending magnetic current perpendicular to the paper</Q>, whose lines of force are circles <Q>in the direction n w s e</Q>. <Q>At e the lines of force will be the sum of those of the field and of the current and at w they will be the difference of the two sets of lines; so that the vortices on the east side of the current will be more powerful than those on the west side</Q>, and <Q>the resultant effect on the current is to urge it towards the west</Q> (<Pg n={62}/>).</p>
       </>,
-      tryThis: ['Compare the two readouts: the lines add at e and subtract at w.', 'Reverse the current: its circles reverse, the stronger side changes, and the current is urged east.', 'Set either slider to zero. With no field, or no current, the two sides are equal and nothing is urged anywhere.'],
-      notes: <p>The numbers are in arbitrary units. That the push follows the difference of the squares of the two strengths is a display choice (Maxwell’s pressure is greater where the vortices are more powerful; neither he nor Fleming gives a formula here).</p>,
+      tryThis: ['Compare the two readouts: the lines add at e and subtract at w.', 'Turn the current up and down: its circles crowd in or thin out. The field’s slider does the same for its straight lines.', 'Reverse the current: its circles reverse, the stronger side changes, and the current is urged east.', 'Set either slider to zero. With no field, or no current, the two sides are equal and nothing is urged anywhere.'],
+      notes: <>
+        <p>The numbers are in arbitrary units. That the push follows the difference of the squares of the two strengths is a display choice (Maxwell’s pressure is greater where the vortices are more powerful; neither he nor Fleming gives a formula here).</p>
+        <p>The density of the lines shows strength: the field’s straight lines grow in number with its strength (six at the starting setting, as printed), and the current’s circles with the current, spaced more widely further out because the strength round a straight current falls as 1/<i>r</i>.</p>
+      </>,
     },
     {
       kind: 'figure', id: '7-2', page: 63, section: 'On Physical Lines of Force', title: 'Vortices set spinning by a current',

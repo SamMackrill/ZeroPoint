@@ -1572,8 +1572,12 @@ input {
 }
 
 /* A rotary control, like the knob of a current controller (Dial). */
-.bk-dial .bk-control-label {
-  flex-wrap: nowrap;
+.bk-dial-reading {
+  display: block;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: var(--fs-ui);
+  color: var(--accent);
 }
 
 .bk-dial-knob {

@@ -4,13 +4,23 @@ import { DEBYE_FAR, DEBYE_NEAREST, debyeMotion } from '../src/book/chapters/ch03
 import { PAIR_CYCLE, pairLife, sightedBySeek } from '../src/book/chapters/ch04';
 import { percentOfPeak } from '../src/book/kit';
 import { dwellAngle, meanOffset } from '../src/book/chapters/ch06';
-import { deflectionPath } from '../src/book/chapters/ch07';
+import { circleRadii, deflectionPath, fieldLineXs } from '../src/book/chapters/ch07';
 import { COIL_LENGTH, COIL_RADIUS, COIL_ZEPTONS, SEEDS, ZEPTON_COUNTS, coilField, coilFieldLine, linesForCurrent } from '../src/book/three/coil-math';
 import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/book/three/sphere-math';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
+  it('Figure 7-1: the lines of force grow in number with strength, and the circles spread out as 1/r', () => {
+    expect(fieldLineXs(0.7)).toHaveLength(6); // as printed
+    expect(fieldLineXs(0)).toHaveLength(0);
+    expect(circleRadii(1)).toHaveLength(5);
+    expect(circleRadii(0.5).length).toBeLessThan(circleRadii(1).length);
+    expect(circleRadii(-1)).toEqual(circleRadii(1)); // the direction does not change the count
+    const r = circleRadii(1), ratios = r.slice(1).map((v, i) => v / r[i]);
+    for (const q of ratios) expect(q).toBeCloseTo(ratios[0], 1); // a constant ratio: density falling as 1/r
+  });
+
   it('Figure 6-18: the coil’s field runs to the north pole on the right inside, and back the other way outside', () => {
     expect(coilField(0, 0)[0]).toBeGreaterThan(0); // inside, along +x: north to the right, as the caption says
     expect(coilField(0, COIL_RADIUS * 1.75)[0]).toBeLessThan(0); // outside, the opposite way (p. 59)
