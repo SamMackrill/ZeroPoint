@@ -22,7 +22,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 4-8 | The pair inside the photon | animated | agreed | No change |
 | 4-9 | A rotating pair makes E and B | animated | changed | 3D (three.js) with views; pair fades at the end of its half-turn; steady readouts |
 | 5-1 | A photon, pair by pair | animated | changed | Spacing slider removed; slow-fading labels, “annihilate & reverse”; steady readouts |
-| 5-2 | The pairs round the photon are its wave | animated | to review | |
+| 5-2 | The pairs round the photon are its wave | animated | agreed | No change; the Light lab illustrates it better |
 | 6-1 | A free electron polarizes hydrogen | animated | to review | |
 | 6-2 | The vacuum polarizes in the same way | animated | to review | |
 | 6-3 | Faraday’s lines are the zeptons | still | to review | |
@@ -180,3 +180,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 
 - **Owner:** the pair-spacing slider adds little to the illustration. **Done:** the slider is gone, the spacing is fixed at 68 units, and its Try step is removed. The E and B readouts take the 4-9 treatment: whole percentages at a fixed width, with the direction in the label. The shared formatter (`percentOfPeak`) now lives in the kit.
 - **Owner:** the text by each pair is hard to read; it should fade in and out more slowly. The annihilation text is too long (“annihilate & reverse”?) and hard to see. **Done:** “pair N” fades in as the pair forms and out as its turn ends. “annihilate & reverse”, the owner’s wording and Fleming’s sequence on p. 44, fades in as the pair ends and lingers about a second into the next pair. Each label has its own line and is a size larger, so the two never overlap. The stage is 22 units taller to make room.
+
+### Fig. 5-2 (agreed 2026-11-18, no change)
+
+- **Owner:** accurate to the original, but hard to understand. After the explanation (the central pair is the particle; the pairs turning in sympathy round it are the wave, p. 44; in reality only slightly biased, p. 45), the owner judged the card fine as it is: the Light laboratory, which the card links to, illustrates this better.
