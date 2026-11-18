@@ -43,7 +43,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 6-18 | A coil: spin inside, opposite spin outside | animated | changed | 3D copper coil, cut away; current dial; line density follows the current; Few/More/Many zeptons |
 | 7-1 | Maxwell’s current in a field of vortices | still | changed | Current dial; line density follows field and current (circles as 1/r) |
 | 7-2 | Vortices set spinning by a current | animated | changed | Maxwell’s honeycomb with idle wheels in every channel; induced drifts; current dial |
-| 7-3 | An electric field deflects by pressure | animated | to review | |
+| 7-3 | An electric field deflects by pressure | animated | changed | Field of both charges; zeptons turn in place (FieldZeptons); wider start; no pressure label |
 | 7-4 | The right hand rule for the magnetic force | still | to review | |
 | 7-5 | A spinning dipole field sweeps the charge aside | animated | to review | |
 | 8-1 | Vortices: Descartes’s, and much smaller ones | animated | to review | |
@@ -228,3 +228,11 @@ A sweep of all 101 stages at their starting settings found drawing past the edge
 
 - **Owner:** this does not match Maxwell’s model, which has ball bearings (idle wheels) between every pair of spinning hexagons.
 - **Done:** the figure is now Maxwell’s honeycomb: hexagonal vortices in five rows (three +, two −, as printed), with idle wheels in every channel between them. The wheels follow his mechanism, each rolling between the faces of the vortices either side, so it travels at half the difference of their spins. Between vortices turning together a wheel only turns, against them. Along A–B the wheels carry the current. While an outer row catches up, the wheels between it and the next drift the other way: the induced currents of Maxwell’s conclusion, which Fleming quotes (p. 63). Wheels light up while they travel. The current is the Dial. A test covers the wheel rule.
+
+### Fig. 7-3 (changed, agreed 2026-11-18)
+
+- **Owner:** this does not show how the zeptons behave. It should match chapter 6’s attraction and repulsion figures, but more dynamically, since the charge moves and the zeptons polarize continuously.
+- **Done:** the figure now draws the field of both charges, as 6-11 and 6-13 do, recomputed every frame from the moving charge’s position, so the zeptons re-polarize as it passes. With a positive charge they turn aside and crowd between the two (the pressure builds up). With a negative one they bridge across. The same “Draw the field as” choice (zeptons, lines, both) and “Show the push on each charge” switch as chapter 6 are added. The Try steps and notes point to 6-11 and 6-13. (This also covers the clipping sweep’s note on 7-3: the path running off the stage is the charge leaving.)
+- **Owner:** the “pressure builds up between” text and the dotted circle are no longer needed; the effect is now obvious. **Done:** both are removed (and their “lower” counterpart for a negative charge).
+- **Owner:** the changing lines of zeptons look odd and jumpy; make the animation smoother. **Cause:** the chains were re-traced every frame, and as the charge moved, lines switched between ending on it and escaping past it, so they popped. **Done:** a new kit drawing, `FieldZeptons`, sets the zeptons in a fixed, even scatter. Each turns to the field at its place and is polarized more fully where the field is stronger: as the charge moves, “the dipoles change their orientation in order to stay aligned” (p. 56). The chains show in them as Faraday’s lines show in iron filings, and nothing pops. Lines mode still re-traces the lines. The notes say this.
+- **Owner:** the moving charge comes too close to the fixed one, leaving very few zeptons between them at closest approach, which is misleading. **Done:** the start offset now runs from 110 to 200 (default 130), so the closest approach, centre to centre, stays above 95 units for either sign (it had fallen to 17 with a negative charge). `FieldZeptons` now clears only each source’s own glyph (`radii`), so no wider hole opens round the small charge. The test asserts the minimum distance across the slider’s range.

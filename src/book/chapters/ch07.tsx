@@ -1,9 +1,9 @@
 // Chapter 7: Maxwell's Equations (PDF pp. 62–69). Figures 7-1 to 7-5.
 import { useMemo, useRef, useState } from 'react';
-import { Action, Dial, Arrow, BlockArrow, Charge, Choice, Diagram, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
+import { Action, Dial, Arrow, BlockArrow, Charge, Choice, Diagram, FieldPicture, FieldZeptons, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
-import { HandRule } from './shared';
+import { HandRule, type FieldMode } from './shared';
 
 const W = 720;
 
@@ -183,24 +183,35 @@ export function deflectionPath(start: [number, number], velocity: [number, numbe
 /** Figure 7-3: a moving charge deflected by a fixed one, through the pressure of the zeptons between them. */
 function ElectricDeflection() {
   const [sign, setSign] = useState<'pos' | 'neg'>('pos');
-  const [offset, setOffset] = useState(60);
+  const [offset, setOffset] = useState(130);
   const play = usePlayback({ speed: 0.3 });
   const H = 400, body: [number, number] = [320, 190], q = sign === 'pos' ? 1 : -1;
   const path = useMemo(() => deflectionPath([body[0] + offset, H - 20], [0, -1.4], body, q * 40), [offset, q]);
-  const sources = useMemo<Source[]>(() => [{ x: body[0], y: body[1], q: 1.5 }], []);
+  const [mode, setMode] = useState<FieldMode>('zeptons');
+  const [push, setPush] = useState(false);
   const index = Math.min(path.length - 1, Math.floor((play.t % 1.15) * path.length)), [px, py] = path[index], near = Math.hypot(px - body[0], py - body[1]) < 130;
+  // Both charges are sources, so the zeptons between them re-polarize continuously as the small one moves, as in the
+  // two-charge figures of chapter 6 (6-11, 6-13).
+  const sources = useMemo<Source[]>(() => [{ x: body[0], y: body[1], q: 1.5 }, { x: px, y: py, q }], [px, py, q]);
   const [ex, ey] = path[path.length - 1], drift = ex - (body[0] + offset);
+  const d = Math.hypot(px - body[0], py - body[1]) || 1, ux = (px - body[0]) / d, uy = (py - body[1]) / d, s = q > 0 ? 1 : -1;
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A small ${sign === 'pos' ? 'positive' : 'negative'} charge moving up the page past a larger fixed positive charge. It is deflected ${drift > 0 ? 'away from' : 'toward'} the fixed charge.`}>
-      <FieldPicture sources={sources} w={W} h={H} perUnit={8} lines={0} zeptons={0.5} t={play.t} zeptonLen={15}/>
+    <Stage w={W} h={H} label={`A small ${sign === 'pos' ? 'positive' : 'negative'} charge moving up the page past a larger fixed positive charge, with the field of both drawn as ${mode === 'both' ? 'lines and zeptons' : mode}. ${q > 0 ? 'Between the two like charges the zeptons turn aside and crowd: the pressure builds up and the charge is deflected away.' : 'Between the opposite charges the zeptons bridge from one to the other: the pressure between is lower and the charge is deflected toward the fixed one.'}`}>
+      {/* The zeptons stay where they are and turn to the field as the charge moves (p. 56), so nothing jumps; the lines are re-traced. */}
+      {mode !== 'zeptons' && <FieldPicture sources={sources} w={W} h={H} perUnit={9} lines={mode === 'both' ? 0.45 : 1} zeptons={0}/>}
+      {mode !== 'lines' && <FieldZeptons sources={sources} w={W} h={H} t={play.t} spacing={27} zeptonLen={15} radii={[24, 10]}/>}
       <Line d={pathThrough(path)} tone="motion" w={1.6} dash="5 4"/>
-      {near && <circle cx={(px + body[0]) / 2} cy={(py + body[1]) / 2} r={26} className={q > 0 ? 'bk-s-danger' : 'bk-s-accent'} fill="none" strokeWidth="1.5" strokeDasharray="3 3"/>}
-      {near && <T x={(px + body[0]) / 2} y={(py + body[1]) / 2 - 34} size="sm" tone={q > 0 ? 'danger' : 'accent'}>{q > 0 ? 'pressure builds up between' : 'pressure between is lower'}</T>}
+      {push && near && <>
+        <BlockArrow x1={px + s * ux * 16} y1={py + s * uy * 16} x2={px + s * ux * 56} y2={py + s * uy * 56} thick={10}/>
+        <BlockArrow x1={body[0] - s * ux * 30} y1={body[1] - s * uy * 30} x2={body[0] - s * ux * 70} y2={body[1] - s * uy * 70} thick={10}/>
+      </>}
       <Charge x={body[0]} y={body[1]} sign={1} r={24}/>
       <Charge x={px} y={py} sign={q as 1 | -1} r={10}/>
     </Stage>}>
     <Choice label="Moving charge" value={sign} onChange={setSign} options={[{ value: 'pos', label: 'Positive' }, { value: 'neg', label: 'Negative' }]}/>
-    <Slider label="How wide of the fixed charge it starts" value={offset} min={30} max={160} step={5} onChange={setOffset} unit="units"/>
+    <Choice label="Draw the field as" value={mode} onChange={setMode} options={[{ value: 'lines', label: 'Lines' }, { value: 'zeptons', label: 'Zeptons' }, { value: 'both', label: 'Both' }]}/>
+    <Toggle label="Show the push on each charge" checked={push} onChange={setPush}/>
+    <Slider label="How wide of the fixed charge it starts" value={offset} min={110} max={200} step={5} onChange={setOffset} unit="units"/>
     <PlayBar play={play} label="the moving charge"/>
     <Readout label="Deflected" value={`${Math.abs(Math.round(drift))} units ${drift > 0 ? 'away' : 'toward'}`} tone="force"/>
     <Remark>{q > 0 ? 'The two fields of zeptons repel each other, building up pressure in between, and the pressure deflects the moving body away.' : 'A moving negative charge is deflected in the opposite direction.'}</Remark>
@@ -316,10 +327,15 @@ const chapter: ChapterContent = {
       caption: 'A simple static electric interaction between a small moving positively charged body and a larger positively charged body.',
       Diagram: ElectricDeflection,
       text: <p>The fixed positive body is surrounded by zepton dipoles with their negative ends toward it; the approaching particle has its own. <Q>As the second particle moves toward the first the two fields of zeptons will interact, repelling each other building up pressure in between. The increased pressure of the vacuum deflects the moving positively charged body away from the static charge. A moving negative charge is deflected in the opposite direction</Q> (<Pg n={64}/>).</p>,
-      tryThis: ['Run it with a positive charge: the path bends away as it passes.', 'Start it closer to the fixed charge: the deflection is sharper.', 'Make the moving charge negative: it bends toward the fixed charge.'],
+      tryThis: [
+        'Run it with a positive charge and watch the zeptons between the two: as it nears, they turn aside and crowd together, as between the like charges of Figure 6-11, and the path bends away.',
+        'Make the moving charge negative: the zeptons bridge from one charge to the other, as in Figure 6-13, and it bends toward the fixed charge.',
+        'Start it closer to the fixed charge: the zeptons between are squeezed harder and the deflection is sharper.',
+        'Switch the field to Lines or Both to compare with Faraday’s picture of the same moment.',
+      ],
       notes: <>
         <p>The sentence about the negative charge ends <Q>as the pressure between two like charges is lower than the natural background pressure</Q>. Chapter 6 gives lower pressure between <em>opposite</em> charges, which is the case being described, so “like” there reads as a slip. The diagram follows chapter 6.</p>
-        <p>The path is computed for an inverse-square force in arbitrary units.</p>
+        <p>The path is computed for an inverse-square force in arbitrary units. The zeptons stay where they are and turn to the field of both charges at each moment, polarized more fully where it is stronger: as the charge moves <Q>the dipoles change their orientation in order to stay aligned</Q> (<Pg n={56}/>). The chains of Figures 6-11 and 6-13 show in them as Faraday’s lines show in iron filings. The printed figure shows the two bodies only; the spacing of the zeptons is a display choice.</p>
       </>,
       labs: [{ lab: 'casimir', scenario: 'electron-electron', why: 'The build-up of pressure between two like charges, with the charges free to move.' }],
     },

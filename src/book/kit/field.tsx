@@ -2,7 +2,7 @@
 // up end to end that Fleming says the lines stand for (ch. 6). The same picture serves electric charge and, from
 // chapter 11, matter charge.
 import { useMemo } from 'react';
-import { deg, fieldAt, pathThrough, traceLine, type Source } from './geom';
+import { deg, fieldAngle, fieldAt, pathThrough, traceLine, type Source } from './geom';
 import { Zepton, type Tone } from './svg';
 
 /** A traced line of the field, running the way the field points. */
@@ -87,6 +87,29 @@ export function FieldPicture({ sources, w, h, perUnit = 8, lines = 1, zeptons = 
       const life = t === undefined ? 0.5 : (t * 0.9 + ((i * 7 + k * 3) % 10) / 10) % 1;
       return <Zepton key={`${i}-${k}`} x={m.x} y={m.y} angle={m.angle} len={zeptonLen} open={0.45 + 0.55 * Math.sin(Math.PI * life)} polarity={polarity} oval={false} signs={false} opacity={zeptons * (0.45 + 0.55 * Math.sin(Math.PI * life))}/>;
     }))}
+  </g>;
+}
+
+/**
+ * A field as zeptons that stay where they are and turn to it: a fixed, even scatter, each zepton pointing along the field
+ * at its place and polarized more fully where the field is stronger. As a source moves they turn smoothly to stay aligned
+ * (p. 56), and the chains of Faraday's lines show in them as in iron filings, with nothing re-traced from frame to frame.
+ */
+export function FieldZeptons({ sources, w, h, t, spacing = 24, zeptonLen = 14, polarity = 'electric', radii }: { sources: readonly Source[]; w: number; h: number; t?: number; spacing?: number; zeptonLen?: number; polarity?: 'electric' | 'matter'; radii?: readonly number[] }) {
+  const places = useMemo(() => {
+    const rowH = spacing * 0.866, out: { x: number; y: number; phase: number }[] = [];
+    for (let r = 0, y = rowH / 2; y < h; r++, y += rowH) {
+      for (let x = (r % 2 ? spacing / 2 : 0) + spacing / 2; x < w; x += spacing) out.push({ x, y, phase: ((r * 7 + Math.round(x / spacing) * 3) % 10) / 10 });
+    }
+    return out;
+  }, [w, h, spacing]);
+  return <g>
+    {places.map((p, k) => {
+      // Hidden only under a source's own glyph (`radii`, as drawn), so the zeptons between two sources are all shown.
+      if (sources.some((s, i) => Math.hypot(p.x - s.x, p.y - s.y) < (radii?.[i] ?? 14) + zeptonLen / 2)) return null;
+      const strength = Math.min(1, Math.sqrt(relativeStrength(sources, p.x, p.y, 70))), life = t === undefined ? 0.5 : (t * 0.9 + p.phase) % 1, pulse = 0.45 + 0.55 * Math.sin(Math.PI * life);
+      return <Zepton key={k} x={p.x} y={p.y} angle={fieldAngle(sources, p.x, p.y)} len={zeptonLen} open={pulse} polarity={polarity} oval={false} signs={false} opacity={(0.12 + 0.88 * strength) * pulse}/>;
+    })}
   </g>;
 }
 
