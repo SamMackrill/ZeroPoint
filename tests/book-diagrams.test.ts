@@ -4,13 +4,19 @@ import { DEBYE_FAR, DEBYE_NEAREST, debyeMotion } from '../src/book/chapters/ch03
 import { PAIR_CYCLE, pairLife, sightedBySeek } from '../src/book/chapters/ch04';
 import { percentOfPeak } from '../src/book/kit';
 import { dwellAngle, meanOffset } from '../src/book/chapters/ch06';
-import { circleRadii, deflectionPath, fieldLineXs } from '../src/book/chapters/ch07';
+import { channelFlow, circleRadii, deflectionPath, fieldLineXs } from '../src/book/chapters/ch07';
 import { COIL_LENGTH, COIL_RADIUS, COIL_ZEPTONS, SEEDS, ZEPTON_COUNTS, coilField, coilFieldLine, linesForCurrent } from '../src/book/three/coil-math';
 import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/book/three/sphere-math';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
+  it('Figure 7-2: idle wheels between vortices turning together only turn; between rows that differ they travel', () => {
+    expect(channelFlow(0.6, 0.6)).toBe(0);
+    expect(channelFlow(0.8, -0.8)).toBeCloseTo(0.8, 9); // along A–B: the current
+    expect(channelFlow(0.2, 0.8)).toBeLessThan(0); // an outer row lagging: the drift runs the other way
+  });
+
   it('Figure 7-1: the lines of force grow in number with strength, and the circles spread out as 1/r', () => {
     expect(fieldLineXs(0.7)).toHaveLength(6); // as printed
     expect(fieldLineXs(0)).toHaveLength(0);

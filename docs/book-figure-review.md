@@ -42,7 +42,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 6-17 | A magnet’s lines, threaded with spinning zeptons | animated | agreed | No change |
 | 6-18 | A coil: spin inside, opposite spin outside | animated | changed | 3D copper coil, cut away; current dial; line density follows the current; Few/More/Many zeptons |
 | 7-1 | Maxwell’s current in a field of vortices | still | changed | Current dial; line density follows field and current (circles as 1/r) |
-| 7-2 | Vortices set spinning by a current | animated | to review | |
+| 7-2 | Vortices set spinning by a current | animated | changed | Maxwell’s honeycomb with idle wheels in every channel; induced drifts; current dial |
 | 7-3 | An electric field deflects by pressure | animated | to review | |
 | 7-4 | The right hand rule for the magnetic force | still | to review | |
 | 7-5 | A spinning dipole field sweeps the charge aside | animated | to review | |
@@ -223,3 +223,8 @@ A sweep of all 101 stages at their starting settings found drawing past the edge
 - **Owner:** use the dial for every current control. **Done:** 6-15 (“Electron flow when driven”: left, off, right) and 7-2 (“Current from A to B”: B→A, off, A→B) now use the Dial as well.
 - **Also:** the dial’s reading now sits under the knob, like a controller’s display, and its label has the full width above. A long label beside a reading that changes length would otherwise rewrap.
 - **Owner:** the circles are lines of force, so should their density grow with the current? **Agreed:** Maxwell calls them the current’s lines of force (p. 62), and line density is how the companion shows strength. **Done:** the number of circles follows the current (five at full). They are spaced by a constant ratio, so their density falls as 1/r round the straight current. The field’s straight lines likewise follow its strength (six at the starting 0.7, as printed, nine at full). Both kinds now have one stroke width, where they used to thicken. A note and a Try step say this, and a test covers the counts and the spacing.
+
+### Fig. 7-2 (changed, agreed 2026-11-18)
+
+- **Owner:** this does not match Maxwell’s model, which has ball bearings (idle wheels) between every pair of spinning hexagons.
+- **Done:** the figure is now Maxwell’s honeycomb: hexagonal vortices in five rows (three +, two −, as printed), with idle wheels in every channel between them. The wheels follow his mechanism, each rolling between the faces of the vortices either side, so it travels at half the difference of their spins. Between vortices turning together a wheel only turns, against them. Along A–B the wheels carry the current. While an outer row catches up, the wheels between it and the next drift the other way: the induced currents of Maxwell’s conclusion, which Fleming quotes (p. 63). Wheels light up while they travel. The current is the Dial. A test covers the wheel rule.

@@ -59,49 +59,110 @@ function CurrentInField() {
 /** The rows of Maxwell's vortices: how far each is from the line of the current, and which side. */
 const ROWS = [-3, -2, -1, 1, 2];
 
-/** Figure 7-2: a current between rows of vortices sets them spinning, opposite ways on each side, row after row. */
+/** The circumradius of one of Maxwell's hexagonal cells, counting half the channel of idle wheels round it. */
+const CELL = 36;
+
+/** Maxwell's honeycomb for Figure 7-2: the cells, the idle wheels between cells of one row, and the zigzag channels between rows. */
+function honeycomb(cols: number, x0: number, y0: number) {
+  const w = Math.sqrt(3) * CELL, rowH = 1.5 * CELL;
+  const cells = ROWS.flatMap((_, r) => Array.from({ length: cols }, (__, c) => ({ r, x: x0 + c * w + (r % 2 ? w / 2 : 0), y: y0 + r * rowH })));
+  const vertex = (x: number, y: number, a: number) => polar(x, y, CELL, a);
+  // Idle wheels on the upright edges between neighbours in a row: two to an edge. They roll between two vortices
+  // turning together, so they turn but never travel.
+  const still = cells.filter(c => cells.some(d => d.r === c.r && Math.abs(d.x - c.x - w) < 1)).flatMap(c => {
+    const [ax, ay] = vertex(c.x, c.y, 30), [bx, by] = vertex(c.x, c.y, -30);
+    return [1 / 3, 2 / 3].map(k => ({ x: ax + (bx - ax) * k, y: ay + (by - ay) * k, r: c.r }));
+  });
+  // The zigzag channel under each row but the last: down to each cell's lowest corner and up again.
+  const channels = ROWS.slice(0, -1).map((_, r) => {
+    const row = cells.filter(c => c.r === r), last = row[row.length - 1];
+    const points = [...row.flatMap(c => [vertex(c.x, c.y, 210), vertex(c.x, c.y, 270)]), vertex(last.x, last.y, 330)];
+    const lengths = points.slice(1).map((p, i) => Math.hypot(p[0] - points[i][0], p[1] - points[i][1]));
+    return { points, lengths, total: lengths.reduce((a, b) => a + b, 0) };
+  });
+  return { cells, still, channels };
+}
+
+/** The point a distance `d` along a channel's zigzag. */
+function alongChannel(ch: { points: [number, number][]; lengths: number[] }, d: number): [number, number] {
+  for (let i = 0; i < ch.lengths.length; i++) {
+    if (d <= ch.lengths[i]) {
+      const k = d / ch.lengths[i], [ax, ay] = ch.points[i], [bx, by] = ch.points[i + 1];
+      return [ax + (bx - ax) * k, ay + (by - ay) * k];
+    }
+    d -= ch.lengths[i];
+  }
+  return ch.points[ch.points.length - 1];
+}
+
+/**
+ * How fast the idle wheels in a channel travel, from the spin of the rows either side (positive spin is counter-
+ * clockwise, positive travel is toward B). A wheel rolls between the lower face of the vortex above and the upper face
+ * of the one below, so it travels at the average of those faces' speeds: half the difference of the two spins. When
+ * the rows turn together it only turns; when they differ, it travels: a current (Maxwell, Part II).
+ */
+export const channelFlow = (above: number, below: number) => (above - below) / 2;
+
+/** Figure 7-2: Maxwell's vortices and idle wheels; a current from A to B sets the rows spinning, and the spin spreads outward. */
 function MolecularVortices() {
   const [drive, setDrive] = useState(0.8);
   const [zeptons, setZeptons] = useState(false);
   const play = usePlayback();
-  const state = useRef({ t: 0, rate: ROWS.map(() => 0), angle: ROWS.map(() => 0), flow: 0 });
+  const H = 400, comb = useMemo(() => honeycomb(10, 58, 84), []), inner = ROWS.indexOf(-1);
+  const fresh = () => ({ t: 0, rate: ROWS.map(() => 0), angle: ROWS.map(() => 0), offset: comb.channels.map(() => 0), roll: ROWS.map(() => 0) });
+  const state = useRef(fresh());
   // Restart (or a step back) starts every row from rest again.
-  if (play.t < state.current.t) state.current = { t: 0, rate: ROWS.map(() => 0), angle: ROWS.map(() => 0), flow: 0 };
-  // Each row takes its rotation from the row nearer the current, so the motion spreads outward a row at a time.
-  const dt = Math.max(0, Math.min(0.1, play.t - state.current.t));
-  state.current.t = play.t;
-  state.current.flow += drive * 60 * dt;
+  if (play.t < state.current.t) state.current = fresh();
+  const st = state.current, dt = Math.max(0, Math.min(0.1, play.t - st.t)), speed = 60; // surface speed at full spin, units a second
+  st.t = play.t;
+  // The rows either side of A–B take their spin from the current; each row further out from the row inside it.
   ROWS.forEach((row, i) => {
-    const side = Math.sign(row), inner = Math.abs(row) === 1 ? drive * side : state.current.rate[ROWS.indexOf(row - side)];
-    state.current.rate[i] += (inner - state.current.rate[i]) * Math.min(1, dt * 1.6);
-    state.current.angle[i] += state.current.rate[i] * 140 * dt;
+    const target = Math.abs(row) === 1 ? drive * Math.sign(-row) : st.rate[ROWS.indexOf(row - Math.sign(row))];
+    st.rate[i] += (target - st.rate[i]) * Math.min(1, dt * 1.6);
+    st.angle[i] += st.rate[i] * 140 * dt;
+    st.roll[i] -= st.rate[i] * 420 * dt; // idle wheels turn against their vortices
   });
-  const H = 400, size = 34, line = 228, hex = (cx: number, cy: number) => pathThrough(Array.from({ length: 7 }, (_, k) => polar(cx, cy, size, 30 + k * 60)));
+  // The channel along A–B carries the current itself; the others travel only while the rows either side differ.
+  const flows = comb.channels.map((_, b) => (b === inner ? drive : channelFlow(st.rate[b], st.rate[b + 1])));
+  flows.forEach((v, b) => { st.offset[b] += v * speed * dt; });
+  const hex = (cx: number, cy: number) => pathThrough(Array.from({ length: 7 }, (_, k) => polar(cx, cy, CELL - 10, 30 + k * 60)));
+  const wheel = (x: number, y: number, spin: number, key: string, travelling: number) => {
+    const [ax, ay] = polar(x, y, 4, spin), [bx, by] = polar(x, y, 4, spin + 180), lit = travelling > 0.04;
+    return <g key={key}>
+      <circle cx={x} cy={y} r={4.6} className={lit ? 'bk-f-motion' : 'bk-f-faint'} opacity={lit ? 0.35 + 0.65 * Math.min(1, travelling) : 1}/>
+      <line x1={ax} y1={ay} x2={bx} y2={by} className="bk-s-text" strokeWidth="1"/>
+    </g>;
+  };
+  const lineY = comb.channels[inner].points[0][1] + CELL / 4;
   return <Diagram stage={
-    <Stage w={W} h={H} label={`Maxwell's hexagonal vortices either side of a line from A to B. With a current along the line the vortices above spin one way and those below the other; rows further from the line follow after a delay.`}>
-      {ROWS.map((row, i) => {
-        const y = line + row * 62 - Math.sign(row) * 16, shift = Math.abs(row) % 2 ? 0 : 31;
-        return Array.from({ length: 9 }, (_, c) => {
-          const x = 86 + c * 68 + shift, rate = state.current.rate[i], angle = state.current.angle[i];
-          return <g key={`${row}-${c}`}>
-            <path d={hex(x, y)} className="bk-s-faint" fill="none" strokeWidth="1.2"/>
-            {zeptons ? <Zepton x={x} y={y} angle={angle} len={34} oval={false} signs={false}/> : <>
-              <line x1={polar(x, y, 22, angle)[0]} y1={polar(x, y, 22, angle)[1]} x2={polar(x, y, 22, angle + 180)[0]} y2={polar(x, y, 22, angle + 180)[1]} className="bk-s-muted" strokeWidth="1.5"/>
-              <T x={x} y={y + 5} tone={rate > 0.03 ? 'pos' : rate < -0.03 ? 'neg' : 'muted'} size="lg">{rate > 0.03 ? '+' : rate < -0.03 ? '−' : '·'}</T>
-            </>}
-          </g>;
+    <Stage w={W} h={H} label="Maxwell's hexagonal vortices with idle wheels in every channel between them, either side of a current from A to B. The vortices above spin one way and those below the other; the idle wheels along A–B travel with the current, and while outer rows catch up the wheels between them drift: induced currents.">
+      {comb.cells.map((c, k) => {
+        const rate = st.rate[c.r], angle = st.angle[c.r], [ax, ay] = polar(c.x, c.y, 16, angle), [bx, by] = polar(c.x, c.y, 16, angle + 180);
+        return <g key={k}>
+          <path d={hex(c.x, c.y)} className="bk-s-faint" fill="none" strokeWidth="1.2"/>
+          {zeptons ? <Zepton x={c.x} y={c.y} angle={angle} len={30} oval={false} signs={false}/> : <>
+            <line x1={ax} y1={ay} x2={bx} y2={by} className="bk-s-muted" strokeWidth="1.5"/>
+            <T x={c.x} y={c.y + 5} tone={rate > 0.03 ? 'pos' : rate < -0.03 ? 'neg' : 'muted'} size="lg">{rate > 0.03 ? '+' : rate < -0.03 ? '−' : '·'}</T>
+          </>}
+        </g>;
+      })}
+      {comb.still.map((p, k) => wheel(p.x, p.y, st.roll[p.r] + k * 37, `s${k}`, 0))}
+      {comb.channels.map((ch, b) => {
+        const gap = CELL / 2.4, n = Math.floor(ch.total / gap), spin = (st.roll[b] + st.roll[b + 1]) / 2;
+        return Array.from({ length: n }, (_, k) => {
+          const d = (((k * gap + st.offset[b]) % ch.total) + ch.total) % ch.total, [x, y] = alongChannel(ch, d);
+          return wheel(x, y, spin + k * 37, `c${b}-${k}`, Math.abs(flows[b]));
         });
       })}
-      <line x1={30} y1={line - 16} x2={W - 30} y2={line - 16} className="bk-s-motion" strokeWidth="1" strokeDasharray="3 4"/>
-      {Array.from({ length: 16 }, (_, k) => <circle key={k} cx={30 + ((((k * 42 + state.current.flow) % 660) + 660) % 660)} cy={line - 16} r={5} className="bk-f-motion"/>)}
-      <T x={22} y={line - 28} tone="text" anchor="start">A</T><T x={W - 22} y={line - 28} tone="text" anchor="end">B</T>
+      <T x={30} y={lineY + 5} tone="text" anchor="start">A</T><T x={W - 30} y={lineY + 5} tone="text" anchor="end">B</T>
+      <T x={W / 2} y={H - 16} size="sm">+ and −: the way each vortex spins · small wheels: Maxwell’s idle wheels, lit while they travel</T>
     </Stage>}>
     <Dial label="Current from A to B" value={drive} min={-1} max={1} step={0.05} onChange={setDrive} marks={['B→A', 'off', 'A→B']} show={v => (v === 0 ? 'off' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'A to B' : 'B to A'}`)}/>
     <Toggle label="Show each vortex as a rotating zepton" checked={zeptons} onChange={setZeptons}/>
     <PlayBar play={play} label="the vortices"/>
-    <Readout label="Nearest rows" value={`${Math.round(Math.abs(state.current.rate[2]) * 100)} % of full spin`}/>
-    <Readout label="Furthest row" value={`${Math.round(Math.abs(state.current.rate[0]) * 100)} % of full spin`}/>
-    <Remark>Change the current and watch the furthest row lag behind: induced currents are part of communicating the rotation from one part of the field to the other.</Remark>
+    <Readout label="Nearest rows" value={`${Math.round(Math.abs(st.rate[inner]) * 100)} % of full spin`}/>
+    <Readout label="Furthest row" value={`${Math.round(Math.abs(st.rate[0]) * 100)} % of full spin`}/>
+    <Remark>Change the current and watch the outer rows lag: while they catch up, the idle wheels between them drift the other way. Those drifts are the induced currents that carry the rotation outward.</Remark>
   </Diagram>;
 }
 
@@ -238,8 +299,16 @@ const chapter: ChapterContent = {
         <p>Maxwell’s conclusion, which Fleming quotes: <Q>the phenomena of induced currents are part of the process of communicating the rotary velocity of the vortices from one part of the field to the other</Q> (<Pg n={63}/>).</p>
         <p>This is the picture of Figures 6-14 and 6-15 seventy years early: vortices on opposite sides of a current spin opposite ways. <Q>Only now with zero-point field theory firmly established can we recognize that Maxwell’s vortex theory of magnetism was essentially correct.</Q></p>
       </>,
-      tryThis: ['Watch the signs: + above the line, − below. They mark the direction of spin, not charge.', 'Reverse the current and watch the change spread outward, the nearest rows first and the furthest last.', 'Turn on “Show each vortex as a rotating zepton” for Fleming’s reading of the same drawing.'],
-      notes: <p>The rate at which rotation passes from row to row is a display choice. Maxwell’s small idle wheels between the vortices are drawn only along the line of the current.</p>,
+      tryThis: [
+        'Watch the signs: + above the line, − below. They mark the direction of spin, not charge.',
+        'Watch the idle wheels: between vortices turning together they only turn; along A–B they travel, and that travel is the current.',
+        'Reverse the current. The change spreads outward a row at a time, and while each row catches up the wheels between it and the next drift the other way: Maxwell’s induced currents.',
+        'Turn on “Show each vortex as a rotating zepton” for Fleming’s reading of the same drawing.',
+      ],
+      notes: <>
+        <p>The idle wheels follow Maxwell’s mechanism in the paper the figure comes from: a wheel rolls between the faces of the vortices either side, so it travels at half the difference of their spins. Where they turn together it only turns; where they differ, it travels, and a travelling layer of wheels is a current.</p>
+        <p>The rate at which rotation passes from row to row, and the sizes and speeds drawn, are display choices.</p>
+      </>,
       labs: [{ lab: 'electron', scenario: 'moving', why: 'Rotation induced in the pairs beside a moving electron.' }],
     },
     {
