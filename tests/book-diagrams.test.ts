@@ -5,10 +5,19 @@ import { PAIR_CYCLE, pairLife, sightedBySeek } from '../src/book/chapters/ch04';
 import { percentOfPeak } from '../src/book/kit';
 import { dwellAngle, meanOffset } from '../src/book/chapters/ch06';
 import { deflectionPath } from '../src/book/chapters/ch07';
+import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/book/three/sphere-math';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
+  it('Figure 6-4: the lines come from every direction evenly, and the patch keeps one area as the sphere grows', () => {
+    const dirs = evenDirections(SPHERE_LINES);
+    for (const [x, y, z] of dirs) expect(Math.hypot(x, y, z)).toBeCloseTo(1, 9);
+    const mean = dirs.reduce((m, [x, y, z]) => [m[0] + x, m[1] + y, m[2] + z], [0, 0, 0]).map(v => v / dirs.length);
+    expect(Math.hypot(...mean)).toBeLessThan(0.05); // no direction favoured
+    for (const r of [1, 2, 3.56]) expect(2 * Math.PI * r * r * (1 - Math.cos(patchAngle(r)))).toBeCloseTo(PATCH_AREA, 9);
+  });
+
   it('Figure 6-1: an atom’s electron moves smoothly and always forward, lingering on the far side as the free electron nears', () => {
     for (const share of [0, 0.4, 0.92]) {
       let last = dwellAngle(-10, share);

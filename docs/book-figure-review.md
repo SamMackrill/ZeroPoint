@@ -26,7 +26,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 6-1 | A free electron polarizes hydrogen | animated | changed | Smooth orbits dwelling on the far side; dipole markers; larger atoms |
 | 6-2 | The vacuum polarizes in the same way | animated | changed | Line-count slider removed; eight lines as printed |
 | 6-3 | Faraday’s lines are the zeptons | still | agreed | No change |
-| 6-4 | The same lines through every sphere | still | to review | |
+| 6-4 | The same lines through every sphere | still | changed | 3D sphere with 26 lines and a fixed-area patch; flat view as fallback |
 | 6-5 | Opposite charges: lines from one to the other | still | to review | |
 | 6-6 | Like charges: lines that turn aside | still | to review | |
 | 6-7 | Which way E points | still | to review | |
@@ -193,3 +193,8 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 ### Fig. 6-2 (changed, agreed 2026-11-18)
 
 - **Owner:** the slider (the number of lines of zeptons) adds nothing and makes the figure more confusing. **Done:** the slider is gone. The figure draws eight lines, as printed, and the Try step no longer mentions it.
+
+### Fig. 6-4 (changed, agreed 2026-11-18)
+
+- **Owner:** would this be clearer in 3D, since it is a sphere? **My view:** yes, and the flat drawing also misleads. On a page, the lines cross circles, whose length grows as r, so the picture alone suggests 1/r. The inverse square comes from the sphere’s area, 4πr², as Fleming says. **Chosen:** build it in 3D.
+- **Done:** the 3D view (three.js, loaded on demand) has 26 lines coming in evenly from every direction, a translucent sphere with three faint great circles, a dot where each line crosses it, and a highlighted patch of fixed area. As the sphere grows, the patch holds fewer crossings. The reader can drag to orbit, and the wheel scrolls the page. The density curve sits underneath. The flat page view, with eight lines, is the fallback. The shared 3D helpers moved to `three/common.ts` and the error boundary to the kit (`FallbackOnError`). The notes give the reason for 3D and say that the line count and the patch are display choices.

@@ -1,6 +1,6 @@
 // Chapter 4: What is a Virtual Photon? (PDF pp. 33–42). Figures 4-1 to 4-9.
-import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Arrow, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback } from '../kit';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
+import { Arrow, Choice, Diagram, FallbackOnError, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { PairView } from '../three/PairScene';
 import type { ChapterContent } from '../types';
@@ -185,17 +185,6 @@ export const pairField = (turned: number) => Math.sin((clamp(turned, 0, 180) * M
 /** Figure 4-9 drawn in three dimensions: loaded on demand, since three.js is large. */
 const PairScene = lazy(() => import('../three/PairScene'));
 
-/** Shows `fallback` in place of its children if they fail, such as the 3D scene's code failing to download. */
-class FlatOnError extends Component<{ fallback: ReactNode; children: ReactNode; onError?(): void }, { failed: boolean }> {
-  state = { failed: false };
-  /** Switch to the fallback on any error below. */
-  static getDerivedStateFromError() { return { failed: true }; }
-  /** Tell the figure, so controls that only the 3D view has can step aside. */
-  componentDidCatch() { this.props.onError?.(); }
-  /** The children, or the fallback once they have failed. */
-  render() { return this.state.failed ? this.props.fallback : this.props.children; }
-}
-
 /** One pair's life is the half-turn (p. 39); then it is gone, and after a moment a new pair forms where it began. */
 export const PAIR_CYCLE = 1.15;
 
@@ -245,11 +234,11 @@ function RotatingPair() {
   return <Diagram stage={<>
     {flat
       ? <FlatPair turned={turned} cw={cw} presence={presence} label={label}/>
-      : <FlatOnError onError={fail} fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
+      : <FallbackOnError onError={fail} fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
           <Suspense fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
             <PairScene state={{ turned, cw, field, presence, showSpin: !play.playing, view }} onFail={fail} description={`${label} Drag to turn the view.`}/>
           </Suspense>
-        </FlatOnError>}
+        </FallbackOnError>}
     <Stage h={140} label={`E through the pair's half-turn: zero along the path, greatest across it at 90°, zero again at 180°. Now at ${Math.round(turned)}°.`}>
       <line x1={px} y1={py} x2={px + pw} y2={py} className="bk-s-faint" strokeWidth="1"/>
       <Line d={trace} tone="e" w={2} opacity={0.45}/>

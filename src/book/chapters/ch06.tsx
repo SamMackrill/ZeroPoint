@@ -1,7 +1,8 @@
 // Chapter 6: Zeptons and Faraday Field Lines (PDF pp. 48–61). Figures 6-1 to 6-18.
-import { useMemo, useRef, useState, type ComponentType } from 'react';
-import { Action, Arrow, BlockArrow, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fmt, lerpAngle, pathThrough, polar, rad, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
+import { Suspense, lazy, useCallback, useMemo, useRef, useState, type ComponentType } from 'react';
+import { Action, Arrow, BlockArrow, Charge, Choice, Diagram, Drag, FallbackOnError, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fmt, lerpAngle, pathThrough, polar, rad, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
 import { Pg, Q } from '../prose';
+import { SPHERE_LINES, SPHERE_R_MIN } from '../three/sphere-math';
 import type { BookItem, ChapterContent } from '../types';
 import { TwoSources } from './shared';
 
@@ -116,26 +117,46 @@ function LinesFromZeptons() {
 /** The share of a charge's polarization crossing unit area at a distance, relative to a reference distance. */
 export const polarizationDensity = (r: number, reference: number) => (reference / r) ** 2;
 
+/** Figure 6-4 drawn in three dimensions: loaded on demand, since three.js is large. */
+const SphereScene = lazy(() => import('../three/SphereScene'));
+
+/** Figure 6-4 as the printed page has it, flat: eight lines and circles. The fallback where 3D cannot be drawn. */
+function FlatSpheres({ r, label }: { r: number; label: string }) {
+  const H = 360, cx = W / 2, cy = 180, n = 8, ref = 45;
+  return <Stage w={W} h={H} label={label}>
+    {[ref, 160].map(rr => <circle key={rr} cx={cx} cy={cy} r={rr} className="bk-s-faint" fill="none" strokeDasharray="2 4"/>)}
+    {Array.from({ length: n }, (_, i) => { const a = (i / n) * 360, [x1, y1] = polar(cx, cy, 172, a), [x2, y2] = polar(cx, cy, 20, a), [mx, my] = polar(cx, cy, r, a); return <g key={i}><Arrow x1={x1} y1={y1} x2={x2} y2={y2} tone="e" w={1.6}/><circle cx={mx} cy={my} r={4.5} className="bk-f-mark"/></g>; })}
+    <circle cx={cx} cy={cy} r={r} className="bk-s-mark" fill="none" strokeWidth="2" strokeDasharray="5 4"/>
+    <Charge x={cx} y={cy} sign={-1} r={12}/>
+  </Stage>;
+}
+
 /** Figure 6-4: every sphere round the charge is crossed by the same lines, spread over more area. */
 function EqualLinesSpheres() {
   const [r, setR] = useState(90);
-  const H = 360, cx = 200, cy = 180, n = 8, ref = 45;
-  const density = polarizationDensity(r, ref), px = 420, pw = 250, ph = 200, py = 60;
+  const [flat, setFlat] = useState(false);
+  const fail = useCallback(() => setFlat(true), []);
+  const ref = 45, lines = flat ? 8 : SPHERE_LINES, density = polarizationDensity(r, ref), px = 90, pw = 540, ph = 110, py = 30;
   const curve = pathThrough(Array.from({ length: 61 }, (_, i) => { const rr = ref + (i / 60) * 115; return [px + ((rr - ref) / 115) * pw, py + ph - polarizationDensity(rr, ref) * ph] as const; }));
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`A free electron with ${n} field lines and a sphere of radius ${r} round it. The sphere is crossed by all ${n} lines; its area is ${fmt((r / ref) ** 2)} times that of the smallest sphere, so the density of polarization is ${fmt(density)} of the density there.`}>
-      {[ref, 160].map(rr => <circle key={rr} cx={cx} cy={cy} r={rr} className="bk-s-faint" fill="none" strokeDasharray="2 4"/>)}
-      {Array.from({ length: n }, (_, i) => { const a = (i / n) * 360, [x1, y1] = polar(cx, cy, 172, a), [x2, y2] = polar(cx, cy, 20, a), [mx, my] = polar(cx, cy, r, a); return <g key={i}><Arrow x1={x1} y1={y1} x2={x2} y2={y2} tone="e" w={1.6}/><circle cx={mx} cy={my} r={4.5} className="bk-f-mark"/></g>; })}
-      <circle cx={cx} cy={cy} r={r} className="bk-s-mark" fill="none" strokeWidth="2" strokeDasharray="5 4"/>
-      <Charge x={cx} y={cy} sign={-1} r={12}/>
+  const label = `A free electron with ${lines} field lines coming in to it ${flat ? 'in the plane of the page' : 'from every direction'}, and a sphere of radius ${fmt(r / ref, 3)} times the smallest round it. The sphere is crossed by all ${lines} lines; its area is ${fmt((r / ref) ** 2)} times that of the smallest sphere, so the density of polarization is ${fmt(density)} of the density there.`;
+  return <Diagram stage={<>
+    {flat
+      ? <FlatSpheres r={r} label={label}/>
+      : <FallbackOnError onError={fail} fallback={<FlatSpheres r={r} label={label}/>}>
+          <Suspense fallback={<FlatSpheres r={r} label={label}/>}>
+            <SphereScene radius={(r / ref) * SPHERE_R_MIN} onFail={fail} description={`${label} The highlighted patch on the sphere has a fixed area. Drag to turn the view.`}/>
+          </Suspense>
+        </FallbackOnError>}
+    <Stage w={W} h={190} label={`The density of polarization against distance from the charge: it falls as the inverse square. Now at ${fmt(density)} of its value at the smallest sphere.`}>
       <line x1={px} y1={py + ph} x2={px + pw} y2={py + ph} className="bk-s-muted"/><line x1={px} y1={py} x2={px} y2={py + ph} className="bk-s-muted"/>
       <Line d={curve} tone="e" w={2}/>
       <circle cx={px + ((r - ref) / 115) * pw} cy={py + ph - density * ph} r={6} className="bk-f-mark"/>
-      <T x={px + pw / 2} y={py + ph + 22} size="sm">distance from the charge</T>
+      <T x={px + pw / 2} y={py + ph + 24} size="sm">distance from the charge</T>
       <T x={px + pw / 2} y={py - 12} size="sm" tone="e">density of polarization (lines through each unit of area)</T>
-    </Stage>}>
+    </Stage>
+  </>}>
     <Slider label="Radius of the sphere" value={r} min={ref} max={160} step={1} onChange={setR} show={v => `${fmt(v / ref, 3)} ×`}/>
-    <Readout label="Lines crossing it" value={`${n}, at any radius`} tone="good"/>
+    <Readout label="Lines crossing it" value={`${lines}, at any radius`} tone="good"/>
     <Readout label="Its area (4πr²)" value={`${fmt((r / ref) ** 2)} ×`}/>
     <Readout label="Density of polarization" value={`${fmt(density)} ×`} tone="e"/>
     <Remark>Twice the distance, four times the area, a quarter of the density: the inverse square.</Remark>
@@ -494,7 +515,16 @@ const items: BookItem[] = [
       <p>Round a point charge the field has the same strength everywhere at a given distance, and falls with the square of the distance. <Q>The easiest way to see how this occurs is to recognize that the same total amount of polarization occurs at each distance away from the charge; it is just spread out over increasingly larger volumes of space</Q> (<Pg n={51}/>).</p>
       <p>The area of a sphere is 4π<i>r</i>², so <Q>the electric field density, decreases with the square of the distance</Q>. In principle it continues to infinity.</p>
     </>,
-    tryThis: ['Change the radius. The marked sphere is always crossed by all eight lines.', 'Watch the area and the density: at twice the radius, four times the area and a quarter of the density.', 'Follow the marker down the curve at the right: it never reaches zero.'],
+    tryThis: [
+      'Drag the picture to turn it. The lines come in from every direction, and the sphere is crossed by every one of them.',
+      'Grow the sphere. Its crossings spread apart over its area, and the highlighted patch, which keeps one fixed area, holds fewer and fewer of them.',
+      'Watch the area and the density: at twice the radius, four times the area and a quarter of the density.',
+      'Follow the marker down the curve: it never reaches zero.',
+    ],
+    notes: <>
+      <p>The printed figure is flat: eight lines and circles on the page. On a flat page the lines cross circles, whose length grows only as <i>r</i>, so the drawing alone would suggest a fall with distance, not with its square. The square comes from the sphere’s area, 4π<i>r</i>², as the text says, so the diagram is drawn in three dimensions.</p>
+      <p>The 26 lines, spread evenly over every direction, and the patch of fixed area are display choices; Fleming says only that each surface is crossed by the same number of lines. Where the browser cannot draw in 3D, the flat page view with its eight lines is shown.</p>
+    </>,
     labs: [{ lab: 'electron', scenario: 'charge-flux', why: 'A Gauss sphere of variable radius round the electron, with the flux through it.' }],
   },
   {
