@@ -1,6 +1,6 @@
 // Chapter 3: The Casimir Effect, The Model Force (PDF pp. 27–32). Figures 3-1 to 3-4.
-import { useMemo, useState } from 'react';
-import { Arrow, BlockArrow, Charge, Choice, Diagram, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, fmt, rng, usePlayback } from '../kit';
+import { useEffect, useMemo, useState } from 'react';
+import { Arrow, BlockArrow, Charge, Choice, Diagram, PlayBar, Readout, Remark, Slider, Stage, Still, T, Toggle, fmt, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -15,47 +15,88 @@ export function respondedMoment(orientation: 'I' | 'II', alpha: number, r: numbe
 /** The force between two collinear dipoles, positive when it pushes them apart (6p₁p₂/r⁴). */
 export const dipoleForce = (orientation: 'I' | 'II', p: number, r: number) => (orientation === 'I' ? 1 : -1) * (6 * p * p) / r ** 4;
 
-/** Figure 3-1: Debye's two orientations, with each dipole's moment free to respond to the other. */
+/** One moment of Figure 3-1 in motion: the dipoles' centre-to-centre distance and each one's moment (p₀ = 1). */
+export interface DebyeFrame { t: number; r: number; p: number }
+
+/**
+ * How far the dipoles of Figure 3-1 travel: apart to the edge of the stage, and together until the facing charges are
+ * this close (centre to centre, in dipole lengths). II stops short of contact: Fleming's dipoles end only "virtually" in
+ * contact (p. 52), and Debye's are ion dipoles, which illustrate the idea but are not zeptons.
+ */
+export const DEBYE_FAR = 4.8, DEBYE_NEAREST = 0.6;
+
+/**
+ * Figure 3-1 as a motion: two dipoles released at rest `r0` apart, each with its moment as when alone. The charges in
+ * each shift toward the moment the other's field gives (a quick response, time constant `tau`), and the force between
+ * them moves both apart (I) or together (II). Returns frames every `dt` seconds until they leave the stage or come nearly end to end.
+ */
+export function debyeMotion(orientation: 'I' | 'II', alpha: number, r0: number, { dt = 1 / 120, tau = 0.25, mass = 2, limit = 12 } = {}): DebyeFrame[] {
+  const frames: DebyeFrame[] = [];
+  let r = r0, v = 0, p = 1;
+  for (let t = 0; t <= limit; t += dt) {
+    frames.push({ t, r, p });
+    if (orientation === 'I' ? r >= DEBYE_FAR : r - p <= DEBYE_NEAREST) break;
+    // Close in, the point-dipole response runs away; the moment is held to what the stage can draw.
+    const target = Math.min(1.8, 1 / Math.max(0.35, 1 / respondedMoment(orientation, alpha, r)));
+    p += ((target - p) * dt) / tau;
+    v += ((2 * dipoleForce(orientation, p, r)) / mass) * dt; // each dipole moves by F/m, so the distance by twice that
+    r += v * dt;
+  }
+  return frames;
+}
+
+/** Figure 3-1: Debye's two orientations, released so the dipoles move and each moment responds to the other. */
 function DebyeDipoles() {
   const [orientation, setOrientation] = useState<'I' | 'II'>('I');
   const [alpha, setAlpha] = useState(0.8);
-  const [r, setR] = useState(2.4);
-  const p = respondedMoment(orientation, alpha, r), force = dipoleForce(orientation, p, r);
-  const mean = (dipoleForce('I', respondedMoment('I', alpha, r), r) + dipoleForce('II', respondedMoment('II', alpha, r), r)) / 2;
-  const unit = 118, cx = 360, y = 148, half = (unit * p) / 2, xl = cx - (r * unit) / 2, xr = cx + (r * unit) / 2;
+  const [r0, setR0] = useState(2.4);
+  const play = usePlayback();
+  const frames = useMemo(() => debyeMotion(orientation, alpha, r0), [orientation, alpha, r0]);
+  // The motion starts again whenever the set-up changes; at the end it holds a moment, then repeats.
+  const { seek } = play;
+  useEffect(() => seek(0), [orientation, alpha, r0, seek]);
+  const last = frames[frames.length - 1], step = frames[1] ? frames[1].t : 1, period = last.t + 1.2;
+  const { r, p } = frames[Math.min(frames.length - 1, Math.round((play.t % period) / step))];
+  const force = dipoleForce(orientation, p, r);
+  const mean = (dipoleForce('I', respondedMoment('I', alpha, r0), r0) + dipoleForce('II', respondedMoment('II', alpha, r0), r0)) / 2;
+  const unit = 100, cx = 360, y = 150, half = (unit * p) / 2, xl = cx - (r * unit) / 2, xr = cx + (r * unit) / 2;
   // Left dipole is always − +. The right one is + − in I (like charges face) and − + in II (opposite charges face).
   const rightSigns: [1 | -1, 1 | -1] = orientation === 'I' ? [1, -1] : [-1, 1];
   const change = p < 0.999 ? 'smaller' : p > 1.001 ? 'larger' : 'unchanged';
-  // The arrow grows with the square root of the force, so it stays visible across the slider's range.
-  const push = 14 + 86 * Math.sqrt(Math.abs(force));
+  // Arrow lengths grow with the square root of what they show (the force; the field 2p/r³), so they stay visible.
+  const push = 14 + 86 * Math.sqrt(Math.abs(force)), reach = Math.min(60, 14 + 90 * Math.sqrt((2 * p) / r ** 3));
   return <Diagram stage={
-    <Stage h={290} label={`Two dipoles on a line in Debye's orientation ${orientation}. Each moment is ${change} than when alone, and the dipoles ${force > 0 ? 'repel' : 'attract'}.`}>
+    <Stage h={290} label={`Two dipoles on a line in Debye's orientation ${orientation}, ${fmt(r)} dipole lengths apart. Each moment is ${change} than when alone, and the dipoles are ${force > 0 ? 'moving apart' : 'moving together'}.`}>
       <T x={cx} y={34} size="lg" tone="text">{orientation === 'I' ? 'I · like charges face each other' : 'II · opposite charges face each other'}</T>
-      {[{ x: xl, signs: [-1, 1] as [1 | -1, 1 | -1], dir: -1 }, { x: xr, signs: rightSigns, dir: 1 }].map(d => <g key={d.x}>
+      {[{ x: xl, signs: [-1, 1] as [1 | -1, 1 | -1], dir: -1 }, { x: xr, signs: rightSigns, dir: 1 }].map(d => <g key={d.dir}>
         <line x1={d.x - half} x2={d.x + half} y1={y} y2={y} className="bk-s-muted" strokeWidth="3"/>
         <line x1={d.x - unit / 2} x2={d.x + unit / 2} y1={y + 40} y2={y + 40} className="bk-s-muted" strokeWidth="1" strokeDasharray="3 4"/>
         <Charge x={d.x - half} y={y} sign={d.signs[0]} r={15}/><Charge x={d.x + half} y={y} sign={d.signs[1]} r={15}/>
-        {/* Debye's small arrows: toward each other when the moment shrinks, apart when it grows. */}
-        {Math.abs(p - 1) > 0.004 && <>
-          <Arrow x1={d.x - half - (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x - half - (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
-          <Arrow x1={d.x + half + (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x + half + (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
-        </>}
-        {/* The other dipole's field here. */}
-        <Arrow x1={d.x - (orientation === 'I' ? d.dir : 1) * 34} y1={y + 62} x2={d.x + (orientation === 'I' ? d.dir : 1) * 34} y2={y + 62} tone="e" w={2}/>
-        <T x={d.x} y={y + 84} size="sm" tone="e">field of the other dipole</T>
-        {/* The force on this dipole. */}
-        <BlockArrow x1={d.x} y1={y - 50} x2={d.x + d.dir * Math.sign(force) * push} y2={y - 50} thick={12}/>
+        <Still>
+          {/* Debye's small arrows: toward each other when the moment shrinks, apart when it grows. */}
+          {Math.abs(p - 1) > 0.004 && <>
+            <Arrow x1={d.x - half - (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x - half - (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
+            <Arrow x1={d.x + half + (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x + half + (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
+          </>}
+          {/* The force on this dipole. */}
+          <BlockArrow x1={d.x} y1={y - 50} x2={d.x + d.dir * Math.sign(force) * push} y2={y - 50} thick={12}/>
+        </Still>
+        {/* Debye's 𝔈 (E): a map of the force the other dipole puts on a charge here, not the motion itself, so it stays while the figure plays. */}
+        <Arrow x1={d.x - (orientation === 'I' ? d.dir : 1) * reach} y1={y + 62} x2={d.x + (orientation === 'I' ? d.dir : 1) * reach} y2={y + 62} tone="e" w={2}/>
+        <T x={d.x} y={y + 88} tone="e" size="lg">E</T>
       </g>)}
-      <T x={cx} y={y - 46} size="sm">{force > 0 ? 'pushed apart' : 'drawn together'}</T>
+      <Still><T x={cx} y={y - 46} size="sm">{force > 0 ? 'pushed apart' : 'drawn together'}</T></Still>
       <T x={cx} y={272} size="sm">Dashed line: the dipole’s length when it is alone.</T>
     </Stage>}>
     <Choice label="Orientation" value={orientation} onChange={setOrientation} options={[{ value: 'I', label: 'I' }, { value: 'II', label: 'II' }]}/>
     <Slider label="How easily the charges shift" value={alpha} min={0} max={1.5} step={0.05} onChange={setAlpha}/>
-    <Slider label="Distance between dipoles" value={r} min={1.9} max={3.6} step={0.05} onChange={setR} unit="lengths"/>
-    <Readout label="Electric moment" value={`${fmt(p)} × alone`} tone={p < 1 ? 'bad' : 'good'}/>
+    <Slider label="Starting distance" value={r0} min={1.9} max={3.6} step={0.05} onChange={setR0} unit="lengths"/>
+    <PlayBar play={play} label="the dipoles"/>
+    <Readout label="Distance now" value={`${fmt(r)} lengths`}/>
+    <Readout label="Electric moment" value={`${fmt(p)} × alone`} tone={p < 0.999 ? 'bad' : p > 1.001 ? 'good' : undefined}/>
     <Readout label="Force in this orientation" value={`${fmt(Math.abs(force), 3)} ${force > 0 ? 'apart' : 'together'}`}/>
-    <Readout label="Average of I and II" value={Math.abs(mean) < 1e-9 ? 'zero' : `${fmt(Math.abs(mean), 3)} ${mean > 0 ? 'apart' : 'together'}`} tone={mean < -1e-9 ? 'good' : undefined}/>
-    <Remark>{alpha === 0 ? 'With rigid dipoles the two orientations cancel: no net force.' : orientation === 'I' ? 'The moments shrink, so this repulsion is weakened.' : 'The moments grow, so this attraction is strengthened.'}</Remark>
+    <Readout label="Average of I and II at the starting distance" value={Math.abs(mean) < 1e-9 ? 'zero' : `${fmt(Math.abs(mean), 3)} ${mean > 0 ? 'apart' : 'together'}`} tone={mean < -1e-9 ? 'good' : undefined}/>
+    <Remark>{alpha === 0 ? 'With rigid dipoles the forces in I and II start equal and opposite, and their average is zero.' : orientation === 'I' ? 'The charges draw in, so the moments shrink and the repulsion is weakened.' : 'The charges spread, so the moments grow and the attraction is strengthened.'}</Remark>
   </Diagram>;
 }
 
@@ -206,13 +247,17 @@ const chapter: ChapterContent = {
         <p>In I the dipoles repel, and the charges inside each are drawn together, which <Q>reduces the net amount of repulsion</Q>. In II the charges inside each dipole <Q>spread out further, thus increasing their electric moments and increasing the net forces between</Q>. So <Q>In each case the secondary force is an attractive one</Q> (<Pg n={28}/>).</p>
       </>,
       tryThis: [
-        'Set “How easily the charges shift” to 0. The forces in I and II are equal and opposite, and their average is zero: the rigid-dipole gas with no van der Waals force.',
-        'Raise it again and switch between I and II. Watch the small arrows under each dipole, which are Debye’s: inward in I, outward in II.',
-        'Read the average of I and II as you bring the dipoles closer. It is always “together”, and it grows quickly.',
+        'Watch I: as the dipoles are pushed apart, the charges in each draw in, then relax back to the dashed length as the dipoles separate. In II the charges spread, and spread further as the dipoles close.',
+        'Set “How easily the charges shift” to 0. The dipoles stay their own length, the forces in I and II start equal and opposite, and their average is zero: the rigid-dipole gas with no van der Waals force.',
+        'Raise it again and compare: I now separates more slowly and II closes faster. Pause to see Debye’s small arrows, inward in I and outward in II.',
+        'Read the average of I and II as you shorten the starting distance. It is always “together”, and it grows quickly.',
       ],
       notes: <>
         <p>The text calls II <Q>a repulsive configuration</Q>, but the figure draws II with opposite charges facing, which attract, and the conclusion that both secondary effects are attractive needs that. The diagram follows the figure.</p>
+        <p>Debye marks the electric field of each dipole at the other with 𝔈, the old Fraktur letter; the diagram writes it <V>E</V>, as the rest of the companion does. A field here is a map of the force a charge would feel at that place, not a thing in itself: for Fleming what is real is the zeptons, and there <Q>no longer has to be a mythical field in space being used as a placeholder for something real</Q> (<Pg n={52}/>).</p>
         <p>The numbers are a textbook pair of dipoles on a line (field 2<V>p</V>/<V>r</V>³, force 6<V>p</V>²/<V>r</V>⁴) in arbitrary units. Fleming gives no formula here.</p>
+        <p>The motion is ours: Debye’s figure is a still with arrows, and Fleming describes it in motion (<Q>as the dipoles are repelled from one another the charges in each dipole are attracted</Q>). The dipoles’ mass, how quickly the charges respond, and the limit on how far a moment can grow close in are display choices.</p>
+        <p>In II the dipoles stop short of contact. Chapter 3 gives nothing that would stop them, but when Fleming’s zeptons line up end to end they are <Q>virtually in contact</Q> (<Pg n={52}/>), and Debye’s are ion dipoles, which illustrate the idea but are not zeptons. How near they come is a display choice.</p>
       </>,
       labs: [{ lab: 'vdw', scenario: 'correlated', why: 'Two fluctuating dipoles settle into step and attract, with the London energy plotted against their separation.' }],
     },

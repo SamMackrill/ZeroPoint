@@ -1,10 +1,25 @@
 // Behaviour of individual companion diagrams that a reader relies on, beyond the book's numbers.
 import { describe, expect, it } from 'vitest';
+import { DEBYE_FAR, DEBYE_NEAREST, debyeMotion } from '../src/book/chapters/ch03';
 import { deflectionPath } from '../src/book/chapters/ch07';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
+  it('Figure 3-1: released dipoles part in I with shrunken moments and close in II with grown ones', () => {
+    for (let r0 = 1.9; r0 <= 3.6; r0 += 0.05) { // the slider's range and step
+      const one = debyeMotion('I', 0.8, r0), two = debyeMotion('II', 0.8, r0);
+      expect(one.at(-1)!.r).toBeGreaterThanOrEqual(DEBYE_FAR);
+      expect(one.slice(1).every(f => f.p < 1), `r0 ${r0}`).toBe(true);
+      expect(two.at(-1)!.r - two.at(-1)!.p).toBeLessThanOrEqual(DEBYE_NEAREST);
+      expect(two.slice(1).every(f => f.p > 1), `r0 ${r0}`).toBe(true);
+      // Responsive dipoles part more slowly in I, and close faster in II, than rigid ones would.
+      const rigidI = debyeMotion('I', 0, r0), rigidII = debyeMotion('II', 0, r0), at = (fs: typeof one, i: number) => Math.abs(fs[Math.min(i, fs.length - 1)].r - r0);
+      expect(at(one, 30)).toBeLessThan(at(rigidI, 30));
+      expect(at(two, 30)).toBeGreaterThan(at(rigidII, 30));
+    }
+  });
+
   it('Figure 7-3: at every slider setting the moving charge passes the fixed one, away if positive, toward if negative', () => {
     const body: [number, number] = [320, 190];
     for (let offset = 30; offset <= 160; offset += 5) { // the slider's range and step
