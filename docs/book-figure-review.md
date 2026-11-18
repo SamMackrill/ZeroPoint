@@ -31,7 +31,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 6-6 | Like charges: lines that turn aside | still | agreed | No change |
 | 6-7 | Which way E points | still | agreed | No change |
 | 6-8 | A bridge of zeptons between opposite charges | animated | agreed | No change |
-| 6-9 | Between like charges, like ends meet | animated | to review | |
+| 6-9 | Between like charges, like ends meet | animated | agreed | No change |
 | 6-10 | Repulsion: a hole filled, and pressure | animated | to review | |
 | 6-11 | Repulsion drawn in zeptons | animated | to review | |
 | 6-12 | Attraction: the chain shortens | animated | to review | |
