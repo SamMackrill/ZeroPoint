@@ -39,7 +39,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 6-14 | A moving charge turns the zeptons | still | agreed | No change |
 | 6-15 | A current keeps the zeptons spinning | animated | agreed | No change |
 | 6-16 | From rotation to B: the right hand grip | animated | changed | Taller stage so B (clockwise) is not clipped |
-| 6-17 | A magnet’s lines, threaded with spinning zeptons | animated | to review | |
+| 6-17 | A magnet’s lines, threaded with spinning zeptons | animated | agreed | No change |
 | 6-18 | A coil: spin inside, opposite spin outside | animated | to review | |
 | 7-1 | Maxwell’s current in a field of vortices | still | to review | |
 | 7-2 | Vortices set spinning by a current | animated | to review | |
