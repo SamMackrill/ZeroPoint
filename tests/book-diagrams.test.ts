@@ -1,7 +1,7 @@
 // Behaviour of individual companion diagrams that a reader relies on, beyond the book's numbers.
 import { describe, expect, it } from 'vitest';
 import { DEBYE_FAR, DEBYE_NEAREST, debyeMotion } from '../src/book/chapters/ch03';
-import { PAIR_CYCLE, pairLife } from '../src/book/chapters/ch04';
+import { PAIR_CYCLE, pairLife, sightedBySeek } from '../src/book/chapters/ch04';
 import { percentOfPeak } from '../src/book/kit';
 import { deflectionPath } from '../src/book/chapters/ch07';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
@@ -22,6 +22,10 @@ describe('book companion: diagrams', () => {
     expect(pairLife(0.5, false).presence).toBe(1);
     expect(pairLife(0.03, true).presence).toBeCloseTo(0.5, 9); // paused mid-fade, the fade is kept
     expect(pairLife(0, false).presence).toBe(1); // set to 0° by hand, the pair is shown
+    // Sought while playing, then paused mid-fade: the seek did not mark the pair as shown in full, so the fade is kept.
+    const sought = sightedBySeek(true);
+    expect(pairLife(0.03, false || !sought).presence).toBeCloseTo(0.5, 9);
+    expect(sightedBySeek(false)).toBe(true);
   });
 
   it('Figure 4-9: the field readouts keep one width as the value changes', () => {

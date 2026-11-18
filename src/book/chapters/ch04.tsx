@@ -199,6 +199,9 @@ class FlatOnError extends Component<{ fallback: ReactNode; children: ReactNode; 
 /** One pair's life is the half-turn (p. 39); then it is gone, and after a moment a new pair forms where it began. */
 export const PAIR_CYCLE = 1.15;
 
+/** Whether a seek with the angle slider shows the pair in full: only while paused, since playing carries on fading. */
+export const sightedBySeek = (playing: boolean) => !playing;
+
 /**
  * Where the pair is in its life at time `t` (in turns of the clock): the angle turned, and how fully it is there.
  * `fading` is false only when the reader has set the angle with the slider: then the pair is shown in full at any angle
@@ -258,7 +261,7 @@ function RotatingPair() {
     {!flat && <Choice label="View" value={view} onChange={setView} options={[{ value: 'turned', label: 'Turned' }, { value: 'page', label: 'As printed' }, { value: 'path', label: 'Along path' }]}/>}
     <Choice label="Rotation" value={sense} onChange={setSense} options={[{ value: 'cw', label: 'Clockwise' }, { value: 'ccw', label: 'Counter' }]}/>
     <PlayBar play={play} label="the rotation"/>
-    <Slider label="Angle turned" value={Math.round(turned)} min={0} max={180} step={1} onChange={v => { setSought(true); play.seek(v / 180); }} unit="°"/>
+    <Slider label="Angle turned" value={Math.round(turned)} min={0} max={180} step={1} onChange={v => { setSought(sightedBySeek(play.playing)); play.seek(v / 180); }} unit="°"/>
     <Readout label={`E, in the plane of rotation, ${up > 0 ? 'up' : 'down'} the page`} value={percentOfPeak(field)} tone="e"/>
     <Readout label={`B, along the axis, ${cw ? 'into' : 'out of'} the page`} value={percentOfPeak(field)} tone="b"/>
   </Diagram>;
