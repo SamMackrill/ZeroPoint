@@ -556,6 +556,17 @@ input {
   height: auto;
 }
 
+/* A diagram drawn in three dimensions (three.js), the same width and proportion as a flat stage; drag to turn it. */
+.bk-stage-3d {
+  width: 100%;
+  aspect-ratio: 720 / 330;
+  cursor: grab;
+}
+
+.bk-stage-3d:active {
+  cursor: grabbing;
+}
+
 .bk-diagram-controls {
   display: flex;
   flex-direction: column;
@@ -578,6 +589,34 @@ input {
   font-size: var(--fs-ui);
   color: var(--accent);
   white-space: nowrap;
+}
+
+/* A slider keeps its value on the label's row, right-aligned in room for its longest reading; only the label wraps. */
+.bk-control label {
+  flex-wrap: nowrap;
+  align-items: baseline;
+}
+
+.bk-control label > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-wrap: balance; /* a label that must wrap does not leave one word on its own line */
+}
+
+.bk-control label > output {
+  flex: none;
+  text-align: right;
+}
+
+.bk-control.is-stacked label {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.bk-control.is-stacked label > output {
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .bk-control input[type=range] {
@@ -635,11 +674,10 @@ input {
   cursor: default;
 }
 
+/* A readout's label sits above its value, so a value that grows or shrinks as the diagram runs never rewraps the label. */
 .bk-readout {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: baseline;
+  display: grid;
+  gap: 1px;
   padding: 5px 9px;
   font-size: var(--fs-value);
   color: var(--text-3);
@@ -647,12 +685,15 @@ input {
   border-radius: 6px;
 }
 
+.bk-readout span {
+  text-wrap: balance;
+}
+
 .bk-readout strong {
   font-family: var(--mono);
   font-size: var(--fs-value);
   font-weight: 500;
   color: var(--text);
-  text-align: right;
 }
 
 .bk-readout-good strong {

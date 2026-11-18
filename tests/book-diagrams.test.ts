@@ -1,10 +1,52 @@
 // Behaviour of individual companion diagrams that a reader relies on, beyond the book's numbers.
 import { describe, expect, it } from 'vitest';
+import { DEBYE_FAR, DEBYE_NEAREST, debyeMotion } from '../src/book/chapters/ch03';
+import { PAIR_CYCLE, pairLife, sightedBySeek } from '../src/book/chapters/ch04';
+import { percentOfPeak } from '../src/book/kit';
 import { deflectionPath } from '../src/book/chapters/ch07';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
+  it('Figure 4-9: each pair turns its half-turn and is gone before the next forms, so the charges never jump', () => {
+    let last = -1;
+    for (let t = 0; t < PAIR_CYCLE; t += 0.001) {
+      const { turned, presence } = pairLife(t, true);
+      if (t < 1) { expect(turned).toBeGreaterThanOrEqual(last); last = turned; } // one pair turns one way only
+      else expect(presence).toBe(0); // between pairs nothing is drawn
+    }
+    expect(pairLife(PAIR_CYCLE - 1e-9, true).presence).toBe(0);
+    expect(pairLife(0.5, true).presence).toBe(1);
+    expect(pairLife(1, false)).toEqual({ turned: 180, presence: 1 }); // paused at the end of the turn
+    expect(pairLife(1.07, false).presence).toBe(0); // between pairs, the gap stays empty
+    expect(pairLife(0.5, false).presence).toBe(1);
+    expect(pairLife(0.03, true).presence).toBeCloseTo(0.5, 9); // paused mid-fade, the fade is kept
+    expect(pairLife(0, false).presence).toBe(1); // set to 0° by hand, the pair is shown
+    // Sought while playing, then paused mid-fade: the seek did not mark the pair as shown in full, so the fade is kept.
+    const sought = sightedBySeek(true);
+    expect(pairLife(0.03, false || !sought).presence).toBeCloseTo(0.5, 9);
+    expect(sightedBySeek(false)).toBe(true);
+  });
+
+  it('Figure 4-9: the field readouts keep one width as the value changes', () => {
+    const widths = new Set(Array.from({ length: 101 }, (_, i) => percentOfPeak(i / 100).length));
+    expect([...widths]).toHaveLength(1);
+  });
+
+  it('Figure 3-1: released dipoles part in I with shrunken moments and close in II with grown ones', () => {
+    for (let r0 = 1.9; r0 <= 3.6; r0 += 0.05) { // the slider's range and step
+      const one = debyeMotion('I', 0.8, r0), two = debyeMotion('II', 0.8, r0);
+      expect(one.at(-1)!.r).toBeGreaterThanOrEqual(DEBYE_FAR);
+      expect(one.slice(1).every(f => f.p < 1), `r0 ${r0}`).toBe(true);
+      expect(two.at(-1)!.r - two.at(-1)!.p).toBeLessThanOrEqual(DEBYE_NEAREST);
+      expect(two.slice(1).every(f => f.p > 1), `r0 ${r0}`).toBe(true);
+      // Responsive dipoles part more slowly in I, and close faster in II, than rigid ones would.
+      const rigidI = debyeMotion('I', 0, r0), rigidII = debyeMotion('II', 0, r0), at = (fs: typeof one, i: number) => Math.abs(fs[Math.min(i, fs.length - 1)].r - r0);
+      expect(at(one, 30)).toBeLessThan(at(rigidI, 30));
+      expect(at(two, 30)).toBeGreaterThan(at(rigidII, 30));
+    }
+  });
+
   it('Figure 7-3: at every slider setting the moving charge passes the fixed one, away if positive, toward if negative', () => {
     const body: [number, number] = [320, 190];
     for (let offset = 30; offset <= 160; offset += 5) { // the slider's range and step

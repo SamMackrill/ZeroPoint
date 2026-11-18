@@ -1,7 +1,8 @@
 // Chapter 4: What is a Virtual Photon? (PDF pp. 33–42). Figures 4-1 to 4-9.
-import { useMemo, useState } from 'react';
-import { Arrow, Charge, Choice, Diagram, Drag, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, bearing, clamp, fmt, lerpAngle, pathThrough, polar, rng, usePlayback } from '../kit';
+import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Arrow, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
+import type { PairView } from '../three/PairScene';
 import type { ChapterContent } from '../types';
 
 const H_EV = 4.135667696e-15, C = 299792458;
@@ -9,7 +10,6 @@ const H_EV = 4.135667696e-15, C = 299792458;
 /** Figure 4-1: the Dirac sea as pairs either side of zero energy, each lasting a time set by its energy. */
 function DiracSea() {
   const [level, setLevel] = useState(0.55);
-  const [reading, setReading] = useState<'holes' | 'anti'>('anti');
   const play = usePlayback();
   const W = 720, H = 330, zero = 170, x0 = 80;
   const pairs = useMemo(() => { const random = rng(41); return Array.from({ length: 7 }, (_, i) => ({ x: x0 + 70 + i * 82 + (random() - 0.5) * 22, e: 0.25 + random() * 0.75, phase: random() })); }, []);
@@ -26,29 +26,23 @@ function DiracSea() {
     <Stage w={W} h={H} label="The Dirac sea: virtual particle pairs appear on opposite sides of a line of zero energy, move apart and return. Pairs of higher energy last a shorter time.">
       <Arrow x1={x0} y1={H - 22} x2={x0} y2={22} tone="muted" w={2}/><T x={x0 - 16} y={34} tone="text" size="lg">E</T>
       <line x1={x0} y1={zero} x2={W - 30} y2={zero} className="bk-s-text" strokeWidth="3"/><T x={x0 - 16} y={zero + 5} tone="text">0</T>
-      <T x={W - 36} y={48} anchor="end" size="sm" tone="pos">positive: {reading === 'anti' ? 'matter' : 'electrons'}</T>
-      <T x={W - 36} y={H - 34} anchor="end" size="sm" tone="neg">negative: {reading === 'anti' ? 'antimatter' : 'holes in space'}</T>
+      <T x={W - 36} y={48} anchor="end" size="sm" tone="pos">positive: matter</T>
+      <T x={W - 36} y={H - 34} anchor="end" size="sm" tone="neg">negative: antimatter</T>
       {pairs.map((p, i) => dot(p.x, p.e, p.phase, `p${i}`, false))}
       {dot(x0 + 34, level, 0, 'marked', true)}
     </Stage>}>
     <Slider label="Energy of the marked pair" value={level} min={0.2} max={1} step={0.01} onChange={setLevel} show={v => `${fmt(v / 0.2, 2)} × the lowest`}/>
-    <Choice label="Read the lower half as" value={reading} onChange={setReading} options={[{ value: 'anti', label: 'Antimatter' }, { value: 'holes', label: 'Holes' }]}/>
     <PlayBar play={play} label="the pairs"/>
     <Readout label="Time the marked pair lasts" value={`${fmt(0.2 / level, 2)} × the longest`}/>
     <Readout label="Energy × time" value="h/2, whatever the energy" tone="good"/>
   </Diagram>;
 }
 
-/** A dipole of the sea in Figure 4-2: a place, a size, and a new random direction each time it forms. */
+/** A dipole of the sea in Figure 4-2: a place, a size, and a new random direction and sense of turning each time it forms. */
 interface SeaPair { x: number; y: number; len: number; phase: number; seed: number }
 
-/** How strongly a pair at a distance takes the charge's direction: full when close, thinning with the square of distance. */
-export const alignmentShare = (distance: number, reach = 90) => clamp((reach * reach) / (distance * distance + reach * reach * 0.2), 0, 1);
-
-/** Figure 4-2: the sea as electric dipoles that orient to a charge and turn as it moves. */
+/** Figure 4-2: the sea as electric dipoles of many sizes, each turning half a turn through its short life, at random. */
 function DipoleSea() {
-  const [kind, setKind] = useState<'none' | 'neg' | 'pos'>('none');
-  const [pos, setPos] = useState({ x: 360, y: 180 });
   const play = usePlayback();
   const W = 720, H = 360;
   const sea = useMemo(() => {
@@ -56,25 +50,17 @@ function DipoleSea() {
     for (let gy = 0; gy < 6; gy++) for (let gx = 0; gx < 11; gx++) list.push({ x: 40 + gx * 64 + (random() - 0.5) * 34, y: 34 + gy * 58 + (random() - 0.5) * 30, len: 16 + random() * 26, phase: random(), seed: Math.floor(random() * 1e6) });
     return list;
   }, []);
-  const sign = kind === 'pos' ? 1 : -1;
   return <Diagram stage={
-    <Stage w={W} h={H} label={kind === 'none' ? 'Virtual particle pairs fill space as electric dipoles of many sizes, each pointing a random way.' : `A free ${kind === 'pos' ? 'positive' : 'negative'} charge among the dipoles. Nearby dipoles turn their ${kind === 'pos' ? 'negative' : 'positive'} ends toward it.`}>
+    <Stage w={W} h={H} label="Virtual particle pairs fill space as electric dipoles of many sizes. Each forms pointing a random way, turns half a turn as it opens and closes, and is gone.">
       {sea.map((p, i) => {
         const cycle = play.t * (14 / (p.len + 6)) + p.phase, generation = Math.floor(cycle), life = cycle - generation;
-        const born = rng(p.seed + generation * 97)() * 360;
-        let angle = born;
-        if (kind !== 'none') {
-          // The + end points away from a positive charge and toward a negative one; the pair turns to it as it lives.
-          const away = bearing(pos.x, pos.y, p.x, p.y), target = sign > 0 ? away : away + 180;
-          angle = lerpAngle(born, target, alignmentShare(Math.hypot(p.x - pos.x, p.y - pos.y)) * Math.min(1, life * 2.5));
-        }
-        return <Zepton key={i} x={p.x} y={p.y} angle={angle} len={p.len} open={Math.sin(Math.PI * life)} signs={p.len > 30} opacity={0.35 + 0.65 * Math.sin(Math.PI * life)}/>;
+        // Each generation forms at a random angle and turns 180° over its life (p. 39), one way or the other at random.
+        const random = rng(p.seed + generation * 97), born = random() * 360, sense = random() < 0.5 ? -1 : 1;
+        return <Zepton key={i} x={p.x} y={p.y} angle={born + sense * 180 * life} len={p.len} open={Math.sin(Math.PI * life)} signs={p.len > 30} opacity={Math.min(1, 1.6 * Math.sin(Math.PI * life))}/>;
       })}
-      {kind !== 'none' && <Drag x={pos.x} y={pos.y} onMove={(x, y) => setPos({ x, y })} bounds={{ x0: 30, y0: 30, x1: W - 30, y1: H - 30 }} label={`Free ${kind === 'pos' ? 'positive' : 'negative'} charge`}><Charge x={pos.x} y={pos.y} sign={sign as 1 | -1} r={14}/></Drag>}
     </Stage>}>
-    <Choice label="Free charge" value={kind} onChange={setKind} options={[{ value: 'none', label: 'None' }, { value: 'neg', label: '−' }, { value: 'pos', label: '+' }]}/>
     <PlayBar play={play} label="the dipoles"/>
-    <Remark>{kind === 'none' ? 'Each pair forms pointing a random way, opens, and is gone.' : 'Drag the charge. Dipoles near it turn to follow: orientation to a charge, rotation to its motion.'}</Remark>
+    <Remark>Each pair forms pointing a random way, turns half a turn as it opens and closes, and is gone. No direction is favoured.</Remark>
   </Diagram>;
 }
 
@@ -196,34 +182,88 @@ function PairInPhoton() {
 /** The transverse field of a pair that has turned through an angle (degrees) of its half-turn: half a wave. */
 export const pairField = (turned: number) => Math.sin((clamp(turned, 0, 180) * Math.PI) / 180);
 
+/** Figure 4-9 drawn in three dimensions: loaded on demand, since three.js is large. */
+const PairScene = lazy(() => import('../three/PairScene'));
+
+/** Shows `fallback` in place of its children if they fail, such as the 3D scene's code failing to download. */
+class FlatOnError extends Component<{ fallback: ReactNode; children: ReactNode; onError?(): void }, { failed: boolean }> {
+  state = { failed: false };
+  /** Switch to the fallback on any error below. */
+  static getDerivedStateFromError() { return { failed: true }; }
+  /** Tell the figure, so controls that only the 3D view has can step aside. */
+  componentDidCatch() { this.props.onError?.(); }
+  /** The children, or the fallback once they have failed. */
+  render() { return this.state.failed ? this.props.fallback : this.props.children; }
+}
+
+/** One pair's life is the half-turn (p. 39); then it is gone, and after a moment a new pair forms where it began. */
+export const PAIR_CYCLE = 1.15;
+
+/** Whether a seek with the angle slider shows the pair in full: only while paused, since playing carries on fading. */
+export const sightedBySeek = (playing: boolean) => !playing;
+
+/**
+ * Where the pair is in its life at time `t` (in turns of the clock): the angle turned, and how fully it is there.
+ * `fading` is false only when the reader has set the angle with the slider: then the pair is shown in full at any angle
+ * up to 180°. Otherwise, playing or paused, it fades in as it forms and out as its turn ends, and between pairs there is
+ * none, so pausing never changes the frame.
+ */
+export function pairLife(t: number, fading: boolean) {
+  const local = t % PAIR_CYCLE, u = Math.min(1, local);
+  const presence = local > 1 ? 0 : !fading ? 1 : clamp(Math.min(u, 1 - u) / 0.06, 0, 1);
+  return { turned: u * 180, presence };
+}
+
+/** The printed page's view of Figure 4-9, drawn flat: the fallback where the browser cannot draw in three dimensions. */
+function FlatPair({ turned, cw, presence, label }: { turned: number; cw: boolean; presence: number; label: string }) {
+  const angle = cw ? 180 - turned : 180 + turned, field = pairField(turned), up = cw ? 1 : -1, cx = 360, cy = 150;
+  return <Stage h={300} label={label}>
+    <Spin x={cx} y={cy} r={62} ccw={!cw} from={cw ? 150 : 210} sweep={100}/>
+    <Zepton x={cx} y={cy} angle={angle} len={84} oval={false} signs opacity={presence}/>
+    {field * presence > 0.01 && <g opacity={presence}>
+      <Vector x={cx + 100} y={cy} angle={90 * up} len={12 + 78 * field} centred tone="e" w={3}/><T x={cx + 124} y={cy + 5} tone="e" size="lg" anchor="start">E</T>
+      <InOut x={cx - 104} y={cy} out={!cw} r={7 + 9 * field} opacity={0.3 + 0.7 * field}/><T x={cx - 104} y={cy + 40} tone="b" size="lg">B</T>
+    </g>}
+  </Stage>;
+}
+
 /** Figure 4-9: a rotating pair, its electric field in the plane of rotation and its magnetic field through it. */
 function RotatingPair() {
   const [sense, setSense] = useState<'cw' | 'ccw'>('cw');
+  const [view, setView] = useState<PairView>('turned');
+  const [flat, setFlat] = useState(false);
+  const fail = useCallback(() => setFlat(true), []);
+  const [sought, setSought] = useState(false);
   const play = usePlayback({ speed: 0.25 });
-  // A paused clock sought to the end of the turn shows 180°, not the start of the next turn.
-  const phase = play.t > 0 && !play.playing && play.t % 1 === 0 ? 1 : play.t % 1, turned = phase * 180, cw = sense === 'cw';
-  // The pair starts along the path and turns half a turn; clockwise carries its positive end over the top.
-  const angle = cw ? 180 - turned : 180 + turned, field = pairField(turned), up = cw ? 1 : -1;
-  const cx = 210, cy = 165, px = 420, pw = 250, py = 165;
-  const trace = pathThrough(Array.from({ length: 61 }, (_, i) => [px + (pw * i) / 60, py - up * 70 * pairField(i * 3)] as const));
-  return <Diagram stage={
-    <Stage h={330} label={`A virtual electron-positron pair rotating ${cw ? 'clockwise' : 'counter-clockwise'}. Its electric field points ${up > 0 ? 'up' : 'down'} the page, toward its positive end, and its magnetic field points ${cw ? 'into' : 'out of'} the page.`}>
-      <Spin x={cx} y={cy} r={62} ccw={!cw} from={cw ? 150 : 210} sweep={100}/>
-      <Zepton x={cx} y={cy} angle={angle} len={84} oval={false} signs/>
-      <Vector x={cx + 100} y={cy} angle={90 * up} len={12 + 78 * field} centred tone="e" w={3}/><T x={cx + 124} y={cy + 5} tone="e" size="lg" anchor="start">E</T>
-      <InOut x={cx - 104} y={cy} out={!cw} r={7 + 9 * field} opacity={0.3 + 0.7 * field}/><T x={cx - 104} y={cy + 40} tone="b" size="lg">B</T>
-      <T x={cx} y={34} size="sm">{cw ? 'clockwise' : 'counter-clockwise'} · turned {Math.round(turned)}° of 180°</T>
+  useEffect(() => { if (play.playing) setSought(false); }, [play.playing]);
+  // Setting the angle by hand shows the pair in full; playing again lets it fade at the ends of its turn as before.
+  const { turned, presence } = pairLife(play.t, play.playing || !sought), cw = sense === 'cw';
+  const field = pairField(turned), up = cw ? 1 : -1;
+  const px = 70, pw = 580, py = 70;
+  const trace = pathThrough(Array.from({ length: 61 }, (_, i) => [px + (pw * i) / 60, py - up * 50 * pairField(i * 3)] as const));
+  const label = `A virtual electron-positron pair rotating ${cw ? 'clockwise' : 'counter-clockwise'} on the page, turned ${Math.round(turned)}° of its half-turn. Its electric field lies in its plane of rotation, pointing ${up > 0 ? 'up' : 'down'} the page; its magnetic field lies along the axis of rotation, ${cw ? 'into' : 'out of'} the page.`;
+  return <Diagram stage={<>
+    {flat
+      ? <FlatPair turned={turned} cw={cw} presence={presence} label={label}/>
+      : <FlatOnError onError={fail} fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
+          <Suspense fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
+            <PairScene state={{ turned, cw, field, presence, showSpin: !play.playing, view }} onFail={fail} description={`${label} Drag to turn the view.`}/>
+          </Suspense>
+        </FlatOnError>}
+    <Stage h={140} label={`E through the pair's half-turn: zero along the path, greatest across it at 90°, zero again at 180°. Now at ${Math.round(turned)}°.`}>
       <line x1={px} y1={py} x2={px + pw} y2={py} className="bk-s-faint" strokeWidth="1"/>
       <Line d={trace} tone="e" w={2} opacity={0.45}/>
-      <circle cx={px + (pw * turned) / 180} cy={py - up * 70 * field} r={6} className="bk-f-e"/>
-      <T x={px + pw / 2} y={34} size="sm">E across the path, through the half-turn</T>
-      <T x={px} y={py + 96} size="sm" anchor="start">0°</T><T x={px + pw} y={py + 96} size="sm" anchor="end">180°</T><T x={px + pw / 2} y={py + 96} size="sm">half a wavelength of the photon</T>
-    </Stage>}>
+      <circle cx={px + (pw * turned) / 180} cy={py - up * 50 * field} r={6} className="bk-f-e" opacity={presence}/>
+      <T x={px - 10} y={py + 5} size="sm" anchor="end" tone="e">E</T>
+      <T x={px} y={py + 66} size="sm" anchor="start">0°</T><T x={px + pw} y={py + 66} size="sm" anchor="end">180°</T><T x={px + pw / 2} y={py + 66} size="sm">the half-turn: half a wavelength of the photon (B follows the same curve)</T>
+    </Stage>
+  </>}>
+    {!flat && <Choice label="View" value={view} onChange={setView} options={[{ value: 'turned', label: 'Turned' }, { value: 'page', label: 'As printed' }, { value: 'path', label: 'Along path' }]}/>}
     <Choice label="Rotation" value={sense} onChange={setSense} options={[{ value: 'cw', label: 'Clockwise' }, { value: 'ccw', label: 'Counter' }]}/>
     <PlayBar play={play} label="the rotation"/>
-    <Slider label="Angle turned" value={Math.round(turned)} min={0} max={180} step={1} onChange={v => play.seek(v / 180)} unit="°"/>
-    <Readout label="E" value={`${fmt(field)} of its peak, ${up > 0 ? 'up' : 'down'}`} tone="e"/>
-    <Readout label="B" value={`${fmt(field)} of its peak, ${cw ? 'into' : 'out of'} the page`} tone="b"/>
+    <Slider label="Angle turned" value={Math.round(turned)} min={0} max={180} step={1} onChange={v => { setSought(sightedBySeek(play.playing)); play.seek(v / 180); }} unit="°"/>
+    <Readout label={`E, in the plane of rotation, ${up > 0 ? 'up' : 'down'} the page`} value={percentOfPeak(field)} tone="e"/>
+    <Readout label={`B, along the axis, ${cw ? 'into' : 'out of'} the page`} value={percentOfPeak(field)} tone="b"/>
   </Diagram>;
 }
 
@@ -258,13 +298,12 @@ const chapter: ChapterContent = {
       caption: 'An illustration of the Dirac Sea where pairs of virtual particles exist on opposite sides of a line indicating zero energy. The black circles are positive and the gray are negative. We can also think of the 0 line being the division between matter and antimatter.',
       Diagram: DiracSea,
       text: <>
-        <p>Dirac’s equation for the electron held a second solution, the positron, and he came to think of the vacuum as filled with electrons and positrons. <Q>He saw the positrons as holes in space. They can alternatively be viewed as anti-particles in positive space</Q> (<Pg n={34}/>).</p>
+        <p>Dirac’s equation for the electron held a second solution, the positron, and he came to think of the vacuum as filled with electrons and positrons. <Q>He saw the positrons as holes in space. They can alternatively be viewed as anti-particles in positive space, since we do not have a reasonable model for a hole in space</Q> (<Pg n={34}/>). The diagram follows that second reading, as the caption does: the zero line divides matter from antimatter.</p>
         <p>The pairs are <Q>produced in pairs from out of nothing and then rush back together and annihilate, returning to nothing, all within the energy-time parameters of Planck and Heisenberg</Q>.</p>
       </>,
       tryThis: [
         'Watch a pair: both halves leave the zero line together, one up and one down, and return together.',
         'Raise the energy of the marked pair. It reaches further from zero and is gone sooner, so that energy × time stays at h/2.',
-        'Switch the reading of the lower half between Dirac’s holes and antimatter; the picture does not change, only its name.',
       ],
       notes: <p>The figure shows circles of different sizes at different distances from the line without saying what size means. Here distance from the line is the pair’s energy, lower-energy pairs are drawn larger, and each pair is shown leaving the line and returning; all three are display choices.</p>,
       labs: [{ lab: 'medium', scenario: 'sparse', why: 'Single fluctuations followed through their lives, with the energy and lifetime of each.' }],
@@ -275,14 +314,15 @@ const chapter: ChapterContent = {
       Diagram: DipoleSea,
       text: <>
         <p>With pairs in place of photons, <Q>we see a vacuum filled with electric dipoles that can orient with respect to charge and rotate in response to charge motion</Q>. A field of this kind <Q>absolutely must interact with matter electromagnetically</Q> (<Pg n={34}/>).</p>
+        <p>The pairs rotate. Later in the chapter Fleming says a pair <Q>rotates 180 degrees</Q> during a half-wavelength period (<Pg n={39}/>), and Figure 4-9 draws one turning.</p>
         <p>The Casimir effect of chapter 3 already depends on a polarizable vacuum, which favours this picture over the photon one (<Pg n={35}/>).</p>
       </>,
       tryThis: [
-        'With no charge, look at the directions: there is no pattern. Each pair forms pointing its own way.',
-        'Add a negative charge. Pairs near it turn their positive ends toward it, less so further away. Change it to positive and they turn round.',
-        'Drag the charge (or move it with the arrow keys). The pairs near its path rotate as it passes.',
+        'Look at the directions: there is no pattern. Each pair forms pointing its own way and turns its own way.',
+        'Follow one pair: it opens from a point, turns half a turn, and closes again. Smaller pairs are quicker.',
+        'Pause and look at the sea as Fleming drew it: ovals of every size, pointing every way.',
       ],
-      notes: <p>How much a pair turns at a given distance, and that it turns during its life after forming at random, follow the laboratory’s reading of chapter 6; the figure itself shows only the unpolarized sea.</p>,
+      notes: <p>The figure is a still of the sea. The half-turn through each pair’s life is p. 39’s; that each pair forms at a random angle and turns either way at random, and how long each lasts, are display choices. How the sea orients to a charge is drawn in chapter 6 (Figures 6-1, 6-2 and 6-14).</p>,
       labs: [
         { lab: 'medium', scenario: 'balanced', why: 'The sea in three dimensions, with creation rate, frequency and pair size to set.' },
         { lab: 'electron', scenario: 'stationary', why: 'The polarization round a single electron, built up generation by generation.' },
@@ -344,13 +384,15 @@ const chapter: ChapterContent = {
         <p>The names electron and positron are <Q>a mere convenience</Q>: these pairs <Q>exist over a continuum of energies and are not limited by the rest mass energy</Q> of the stable particles (<Pg n={40}/>).</p>
       </>,
       tryThis: [
-        'Let the pair turn clockwise. E, toward the positive end, rises to its peak when the pair stands across the path and falls again: half a wave, drawn at the right.',
+        'In the 3D view, drag the picture to turn it. E lies in the plane the pair turns in; B lies along the axis it turns about, at right angles to both E and the path.',
+        'Let the pair turn clockwise. E, toward the positive end, rises to its peak when the pair stands across the path and falls again: half a wave, drawn underneath. Then the pair is gone, and a new one forms where it began.',
         'Reverse the rotation. E points down and B comes out of the page: the next half wavelength of the photon, which Figure 5-1 sets in a row.',
-        'Pause and drag the angle to 90°, the moment the printed figure shows.',
+        'Pause and set the angle to 90° (in the 3D view, choose “As printed” first): the moment the printed figure shows.',
       ],
       notes: <>
         <p>The caption says the magnetic field points into the page, but the printed figure marks B with a dot in a circle, the sign for out of the page. The diagram follows the caption, which agrees with the right-hand grip rule of chapter 6 for a clockwise rotation.</p>
         <p>The pair is drawn at one size, as printed. The laboratory also lets it open and close as it turns. That the field follows the sine of the angle turned is a reading of “equivalent to a photon during a half wavelength”.</p>
+        <p>The three-dimensional view is ours; the printed figure is the page seen face on. E is drawn beside the pair, in its plane of rotation, and B through its centre, along the axis. Each pair lives for its half-turn and is gone; the moment before a new pair forms, and the fading in and out, are display choices.</p>
       </>,
       labs: [{ lab: 'light', scenario: 'induction', query: 'cam=pair', why: 'The same pair with its field measured at a probe as it turns.' }],
     },

@@ -1,6 +1,6 @@
 // Controls and layout for a companion diagram: the drawing on the left, what the reader can change on the right.
 import { Pause, Play, RotateCcw } from 'lucide-react';
-import { useId, type ReactNode } from 'react';
+import { useId, useMemo, type ReactNode } from 'react';
 import { Segmented } from '../../ui/Segmented';
 import type { Playback } from './clock';
 
@@ -12,12 +12,28 @@ export function Diagram({ stage, children }: { stage: ReactNode; children?: Reac
   </div>;
 }
 
+/** The longest reading, in characters, that sits beside a slider's label rather than on a line of its own. */
+export const LONG_READING = 9;
+
 /** A labelled slider with its value shown. */
 export function Slider({ label, value, min, max, step = 1, onChange, unit, show }: { label: string; value: number; min: number; max: number; step?: number; onChange(value: number): void; unit?: string; show?(value: number): string }) {
   const id = useId();
-  const text = show ? show(value) : `${Number(value.toFixed(4))}${unit ? ` ${unit}` : ''}`;
-  return <div className="bk-control">
-    <label htmlFor={id}><span>{label}</span><output htmlFor={id}>{text}</output></label>
+  const say = (v: number) => (show ? show(v) : `${Number(v.toFixed(4))}${unit ? ` ${unit}` : ''}`), text = say(value);
+  // Room for the longest reading the slider can give, so the label's wrapping does not jump as it moves (the value is
+  // monospaced, so a character count is its width).
+  const widest = useMemo(() => {
+    // Every value the slider can take, from min in whole steps, never past max (and max itself).
+    const steps = Math.max(0, Math.floor((max - min) / step + 1e-9));
+    let n = say(max).length;
+    for (let i = 0; i <= steps; i++) n = Math.max(n, say(Math.min(max, min + i * step)).length);
+    return n;
+    // `show` is usually an inline function, so it is left out: the range decides the widest reading.
+  }, [min, max, step, unit]);
+  // A short reading sits beside the label in room reserved for the longest; a long one always has a line of its own,
+  // where it needs no reserved room and may wrap if the column is narrow.
+  const stacked = widest > LONG_READING;
+  return <div className={`bk-control${stacked ? ' is-stacked' : ''}`}>
+    <label htmlFor={id}><span>{label}</span><output htmlFor={id} style={stacked ? undefined : { minWidth: `${widest}ch` }}>{text}</output></label>
     <input id={id} type="range" min={min} max={max} step={step} value={value} aria-valuetext={text} onChange={e => onChange(Number(e.target.value))}/>
   </div>;
 }

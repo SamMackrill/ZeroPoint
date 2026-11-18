@@ -1,6 +1,6 @@
 // Chapter 3: The Casimir Effect, The Model Force (PDF pp. 27–32). Figures 3-1 to 3-4.
-import { useMemo, useState } from 'react';
-import { Arrow, BlockArrow, Charge, Choice, Diagram, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, fmt, rng, usePlayback } from '../kit';
+import { useEffect, useMemo, useState } from 'react';
+import { Arrow, BlockArrow, Charge, Choice, Diagram, PlayBar, Readout, Remark, Slider, Stage, Still, T, Toggle, fmt, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -15,47 +15,88 @@ export function respondedMoment(orientation: 'I' | 'II', alpha: number, r: numbe
 /** The force between two collinear dipoles, positive when it pushes them apart (6p₁p₂/r⁴). */
 export const dipoleForce = (orientation: 'I' | 'II', p: number, r: number) => (orientation === 'I' ? 1 : -1) * (6 * p * p) / r ** 4;
 
-/** Figure 3-1: Debye's two orientations, with each dipole's moment free to respond to the other. */
+/** One moment of Figure 3-1 in motion: the dipoles' centre-to-centre distance and each one's moment (p₀ = 1). */
+export interface DebyeFrame { t: number; r: number; p: number }
+
+/**
+ * How far the dipoles of Figure 3-1 travel: apart to the edge of the stage, and together until the facing charges are
+ * this close (centre to centre, in dipole lengths). II stops short of contact: Fleming's dipoles end only "virtually" in
+ * contact (p. 52), and Debye's are ion dipoles, which illustrate the idea but are not zeptons.
+ */
+export const DEBYE_FAR = 4.8, DEBYE_NEAREST = 0.6;
+
+/**
+ * Figure 3-1 as a motion: two dipoles released at rest `r0` apart, each with its moment as when alone. The charges in
+ * each shift toward the moment the other's field gives (a quick response, time constant `tau`), and the force between
+ * them moves both apart (I) or together (II). Returns frames every `dt` seconds until they leave the stage or come nearly end to end.
+ */
+export function debyeMotion(orientation: 'I' | 'II', alpha: number, r0: number, { dt = 1 / 120, tau = 0.25, mass = 2, limit = 12 } = {}): DebyeFrame[] {
+  const frames: DebyeFrame[] = [];
+  let r = r0, v = 0, p = 1;
+  for (let t = 0; t <= limit; t += dt) {
+    frames.push({ t, r, p });
+    if (orientation === 'I' ? r >= DEBYE_FAR : r - p <= DEBYE_NEAREST) break;
+    // Close in, the point-dipole response runs away; the moment is held to what the stage can draw.
+    const target = Math.min(1.8, 1 / Math.max(0.35, 1 / respondedMoment(orientation, alpha, r)));
+    p += ((target - p) * dt) / tau;
+    v += ((2 * dipoleForce(orientation, p, r)) / mass) * dt; // each dipole moves by F/m, so the distance by twice that
+    r += v * dt;
+  }
+  return frames;
+}
+
+/** Figure 3-1: Debye's two orientations, released so the dipoles move and each moment responds to the other. */
 function DebyeDipoles() {
   const [orientation, setOrientation] = useState<'I' | 'II'>('I');
   const [alpha, setAlpha] = useState(0.8);
-  const [r, setR] = useState(2.4);
-  const p = respondedMoment(orientation, alpha, r), force = dipoleForce(orientation, p, r);
-  const mean = (dipoleForce('I', respondedMoment('I', alpha, r), r) + dipoleForce('II', respondedMoment('II', alpha, r), r)) / 2;
-  const unit = 118, cx = 360, y = 148, half = (unit * p) / 2, xl = cx - (r * unit) / 2, xr = cx + (r * unit) / 2;
+  const [r0, setR0] = useState(2.4);
+  const play = usePlayback();
+  const frames = useMemo(() => debyeMotion(orientation, alpha, r0), [orientation, alpha, r0]);
+  // The motion starts again whenever the set-up changes; at the end it holds a moment, then repeats.
+  const { seek } = play;
+  useEffect(() => seek(0), [orientation, alpha, r0, seek]);
+  const last = frames[frames.length - 1], step = frames[1] ? frames[1].t : 1, period = last.t + 1.2;
+  const { r, p } = frames[Math.min(frames.length - 1, Math.round((play.t % period) / step))];
+  const force = dipoleForce(orientation, p, r);
+  const mean = (dipoleForce('I', respondedMoment('I', alpha, r0), r0) + dipoleForce('II', respondedMoment('II', alpha, r0), r0)) / 2;
+  const unit = 100, cx = 360, y = 150, half = (unit * p) / 2, xl = cx - (r * unit) / 2, xr = cx + (r * unit) / 2;
   // Left dipole is always − +. The right one is + − in I (like charges face) and − + in II (opposite charges face).
   const rightSigns: [1 | -1, 1 | -1] = orientation === 'I' ? [1, -1] : [-1, 1];
   const change = p < 0.999 ? 'smaller' : p > 1.001 ? 'larger' : 'unchanged';
-  // The arrow grows with the square root of the force, so it stays visible across the slider's range.
-  const push = 14 + 86 * Math.sqrt(Math.abs(force));
+  // Arrow lengths grow with the square root of what they show (the force; the field 2p/r³), so they stay visible.
+  const push = 14 + 86 * Math.sqrt(Math.abs(force)), reach = Math.min(60, 14 + 90 * Math.sqrt((2 * p) / r ** 3));
   return <Diagram stage={
-    <Stage h={290} label={`Two dipoles on a line in Debye's orientation ${orientation}. Each moment is ${change} than when alone, and the dipoles ${force > 0 ? 'repel' : 'attract'}.`}>
+    <Stage h={290} label={`Two dipoles on a line in Debye's orientation ${orientation}, ${fmt(r)} dipole lengths apart. Each moment is ${change} than when alone, and the dipoles are ${force > 0 ? 'moving apart' : 'moving together'}.`}>
       <T x={cx} y={34} size="lg" tone="text">{orientation === 'I' ? 'I · like charges face each other' : 'II · opposite charges face each other'}</T>
-      {[{ x: xl, signs: [-1, 1] as [1 | -1, 1 | -1], dir: -1 }, { x: xr, signs: rightSigns, dir: 1 }].map(d => <g key={d.x}>
+      {[{ x: xl, signs: [-1, 1] as [1 | -1, 1 | -1], dir: -1 }, { x: xr, signs: rightSigns, dir: 1 }].map(d => <g key={d.dir}>
         <line x1={d.x - half} x2={d.x + half} y1={y} y2={y} className="bk-s-muted" strokeWidth="3"/>
         <line x1={d.x - unit / 2} x2={d.x + unit / 2} y1={y + 40} y2={y + 40} className="bk-s-muted" strokeWidth="1" strokeDasharray="3 4"/>
         <Charge x={d.x - half} y={y} sign={d.signs[0]} r={15}/><Charge x={d.x + half} y={y} sign={d.signs[1]} r={15}/>
-        {/* Debye's small arrows: toward each other when the moment shrinks, apart when it grows. */}
-        {Math.abs(p - 1) > 0.004 && <>
-          <Arrow x1={d.x - half - (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x - half - (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
-          <Arrow x1={d.x + half + (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x + half + (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
-        </>}
-        {/* The other dipole's field here. */}
-        <Arrow x1={d.x - (orientation === 'I' ? d.dir : 1) * 34} y1={y + 62} x2={d.x + (orientation === 'I' ? d.dir : 1) * 34} y2={y + 62} tone="e" w={2}/>
-        <T x={d.x} y={y + 84} size="sm" tone="e">field of the other dipole</T>
-        {/* The force on this dipole. */}
-        <BlockArrow x1={d.x} y1={y - 50} x2={d.x + d.dir * Math.sign(force) * push} y2={y - 50} thick={12}/>
+        <Still>
+          {/* Debye's small arrows: toward each other when the moment shrinks, apart when it grows. */}
+          {Math.abs(p - 1) > 0.004 && <>
+            <Arrow x1={d.x - half - (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x - half - (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
+            <Arrow x1={d.x + half + (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x + half + (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
+          </>}
+          {/* The force on this dipole; drawn inward, it stops short of the midpoint so the two never cross. */}
+          <BlockArrow x1={d.x} y1={y - 50} x2={d.x + d.dir * Math.sign(force) * (force < 0 ? Math.min(push, (r * unit) / 2 - 12) : push)} y2={y - 50} thick={12}/>
+        </Still>
+        {/* Debye's 𝔈 (E): a map of the force the other dipole puts on a charge here, not the motion itself, so it stays while the figure plays. */}
+        <Arrow x1={d.x - (orientation === 'I' ? d.dir : 1) * reach} y1={y + 62} x2={d.x + (orientation === 'I' ? d.dir : 1) * reach} y2={y + 62} tone="e" w={2}/>
+        <T x={d.x} y={y + 88} tone="e" size="lg">E</T>
       </g>)}
-      <T x={cx} y={y - 46} size="sm">{force > 0 ? 'pushed apart' : 'drawn together'}</T>
+      <Still><T x={cx} y={y - 46} size="sm">{force > 0 ? 'pushed apart' : 'drawn together'}</T></Still>
       <T x={cx} y={272} size="sm">Dashed line: the dipole’s length when it is alone.</T>
     </Stage>}>
     <Choice label="Orientation" value={orientation} onChange={setOrientation} options={[{ value: 'I', label: 'I' }, { value: 'II', label: 'II' }]}/>
     <Slider label="How easily the charges shift" value={alpha} min={0} max={1.5} step={0.05} onChange={setAlpha}/>
-    <Slider label="Distance between dipoles" value={r} min={1.9} max={3.6} step={0.05} onChange={setR} unit="lengths"/>
-    <Readout label="Electric moment" value={`${fmt(p)} × alone`} tone={p < 1 ? 'bad' : 'good'}/>
+    <Slider label="Starting distance" value={r0} min={1.9} max={3.6} step={0.05} onChange={setR0} unit="lengths"/>
+    <PlayBar play={play} label="the dipoles"/>
+    <Readout label="Distance now" value={`${fmt(r)} lengths`}/>
+    <Readout label="Electric moment" value={`${fmt(p)} × alone`} tone={p < 0.999 ? 'bad' : p > 1.001 ? 'good' : undefined}/>
     <Readout label="Force in this orientation" value={`${fmt(Math.abs(force), 3)} ${force > 0 ? 'apart' : 'together'}`}/>
-    <Readout label="Average of I and II" value={Math.abs(mean) < 1e-9 ? 'zero' : `${fmt(Math.abs(mean), 3)} ${mean > 0 ? 'apart' : 'together'}`} tone={mean < -1e-9 ? 'good' : undefined}/>
-    <Remark>{alpha === 0 ? 'With rigid dipoles the two orientations cancel: no net force.' : orientation === 'I' ? 'The moments shrink, so this repulsion is weakened.' : 'The moments grow, so this attraction is strengthened.'}</Remark>
+    <Readout label="Average of I and II once the moments respond, at the starting distance" value={Math.abs(mean) < 1e-9 ? 'zero' : `${fmt(Math.abs(mean), 3)} ${mean > 0 ? 'apart' : 'together'}`} tone={mean < -1e-9 ? 'good' : undefined}/>
+    <Remark>{alpha === 0 ? 'With rigid dipoles the forces in I and II start equal and opposite, and their average is zero.' : orientation === 'I' ? 'The charges draw in, so the moments shrink and the repulsion is weakened.' : 'The charges spread, so the moments grow and the attraction is strengthened.'}</Remark>
   </Diagram>;
 }
 
@@ -80,24 +121,24 @@ function InducedDipole() {
   }), [frame, field, toward]);
   const meanX = trail.reduce((s, p) => s + p.x, 0) / trail.length - cx, moment = Math.abs(meanX) / R;
   return <Diagram stage={
-    <Stage h={340} label={field < 0.05 ? 'A hydrogen atom with no field: the electron is found all round the proton, so the atom appears neutral.' : `A hydrogen atom in an electric field: the electron stays mostly to the ${right ? 'left' : 'right'} of the proton, making an induced dipole.`}>
+    <Stage h={340} label={field === 0 ? 'A hydrogen atom with no field: the electron is found all round the proton, so the atom appears neutral.' : `A hydrogen atom in an electric field: the electron stays mostly to the ${right ? 'left' : 'right'} of the proton, making an induced dipole.`}>
       <circle cx={cx} cy={cy} r={R} className="bk-s-faint" fill="none" strokeDasharray="2 5"/>
       {trail.map(p => <circle key={p.age} cx={p.x} cy={p.y} r={p.age === 0 ? 6 : 3.4} className="bk-f-neg" opacity={p.age === 0 ? 1 : 0.5 * (1 - p.age / 44)}/>)}
       <Charge x={cx} y={cy} sign={1} r={13} label="proton"/>
-      {field > 0.04 && <>
+      {field > 0 && <>
         <Arrow x1={cx - (right ? 1 : -1) * (20 + 60 * field)} y1={52} x2={cx + (right ? 1 : -1) * (20 + 60 * field)} y2={52} tone="e" w={2.5}/>
-        <T x={cx} y={36} tone="e" size="sm">local electric field</T>
+        <T x={cx} y={38} tone="e" size="lg">E</T>
         <line x1={cx} y1={cy + 118} x2={cx + meanX} y2={cy + 118} className="bk-s-mark" strokeWidth="3"/>
         <circle cx={cx + meanX} cy={cy + 118} r={4} className="bk-f-neg"/><circle cx={cx} cy={cy + 118} r={4} className="bk-f-pos"/>
         <T x={cx} y={cy + 142} size="sm" tone="mark">average positions: an electric dipole</T>
       </>}
-      <T x={560} y={150} tone="text" size="lg">{field < 0.05 ? 'A' : field > 0.6 ? 'B' : 'A → B'}</T>
-      <T x={560} y={174} size="sm">{field < 0.05 ? 'appears neutral' : 'induced dipole'}</T>
+      <T x={560} y={150} tone="text" size="lg">{field === 0 ? 'A · no E' : field > 0.6 ? 'B · in E' : 'A → B'}</T>
+      <T x={560} y={174} size="sm">{field === 0 ? 'appears neutral' : 'induced dipole'}</T>
     </Stage>}>
-    <Slider label="Local electric field" value={field} min={0} max={1} step={0.02} onChange={setField} show={v => (v === 0 ? 'none' : `${Math.round(v * 100)} %`)}/>
-    <Toggle label="Field points to the right" checked={right} onChange={setRight}/>
+    <Slider label="Strength of E" value={field} min={0} max={1} step={0.02} onChange={setField} show={v => (v === 0 ? 'none' : `${Math.round(v * 100)} %`)}/>
+    <Toggle label="E points to the right" checked={right} onChange={setRight}/>
     <PlayBar play={play} label="the electron"/>
-    <Readout label="Induced moment" value={`${fmt(field < 0.02 ? 0 : moment)} of the most it could be`}/>
+    <Readout label="Induced moment" value={`${fmt(field === 0 ? 0 : moment)} of the most it could be`}/>
   </Diagram>;
 }
 
@@ -107,6 +148,9 @@ interface Fluctuation { x: number; y: number; len: number; angle: number; phase:
 /** Whether a fluctuation of a wavelength can exist in a gap: Fleming's rule for Figure 3-3. */
 export const fitsBetween = (wavelength: number, gap: number) => wavelength <= gap;
 
+/** Half the horizontal width of an ellipse with semi-axes rx, ry turned by `angle` degrees. */
+export const halfWidth = (rx: number, ry: number, angle: number) => Math.hypot(rx * Math.cos((angle * Math.PI) / 180), ry * Math.sin((angle * Math.PI) / 180));
+
 /** Figure 3-3: fluctuations of every wavelength outside the plates, and only those that fit between them. */
 function PlatesAndFluctuations() {
   const [gap, setGap] = useState(70);
@@ -114,29 +158,44 @@ function PlatesAndFluctuations() {
   const W = 720, H = 430, top = 16, floor = 350, plate = 20, cx = W / 2, shortest = 10, range = 17;
   const population = useMemo(() => {
     const random = rng(33), list: Fluctuation[] = [];
-    // Outside: every size. Wavelengths are spread evenly on a logarithmic scale, as "of any size".
-    for (let i = 0; i < 46; i++) {
-      const len = shortest * (range ** random()), side = i % 2 ? 1 : -1;
-      list.push({ x: cx + side * (150 + random() * 190), y: top + 16 + random() * (floor - top - 32), len, angle: random() * 180, phase: random(), between: false });
+    // Outside: every size, scattered evenly across the whole stage; those that fall outside the plates are drawn, so the
+    // vacuum fills the space beside the plates at the same density whatever the gap. Wavelengths are spread evenly on a
+    // logarithmic scale, as "of any size".
+    for (let i = 0; i < 130; i++) {
+      const len = shortest * (range ** random());
+      list.push({ x: 12 + random() * (W - 24), y: top + 16 + random() * (floor - top - 32), len, angle: random() * 180, phase: random(), between: false });
     }
     // Between: the same spread of sizes is offered; the gap decides which can exist there.
     for (let i = 0; i < 26; i++) list.push({ x: random() - 0.5, y: top + 14 + random() * (floor - top - 28), len: shortest * (range ** random()), angle: 60 + random() * 60, phase: random(), between: true });
     return list;
-  }, [cx]);
+  }, [W]);
   const inside = population.filter(f => f.between), fit = inside.filter(f => fitsBetween(f.len, gap));
+  // The push on each plate grows as 1/d⁴ (Equation 3-1). Its arrow follows the logarithm, so both ends of the slider show.
+  const widest = 170, narrowest = 14, push = (widest / gap) ** 4, pushLen = 18 + 62 * (Math.log(widest / gap) / Math.log(widest / narrowest)), mid = (top + floor) / 2;
   // The strip under the plates: every wavelength offered to the gap, on a logarithmic scale, and where the gap falls.
   const sx = (len: number) => 90 + (Math.log(len / shortest) / Math.log(range)) * 540;
   return <Diagram stage={
     <Stage w={W} h={H} label={`Two plates ${gap} units apart. Fluctuations of every size appear outside; between the plates only those no longer than the gap appear, ${fit.length} of the ${inside.length} sizes offered.`}>
       {population.map((f, i) => {
-        if (f.between && !fitsBetween(f.len, gap)) return null;
+        // Every fluctuation is whole: one that would reach into a plate at its fullest is not there.
+        const rx = f.len / 2, ry = Math.max(3, f.len * 0.19);
+        let x = f.x, angle = f.angle;
+        if (f.between) {
+          if (!fitsBetween(f.len, gap)) return null;
+          // Between the plates a fluctuation leans upright as the gap narrows, and upright if it would otherwise not fit.
+          angle = 90 + (f.angle - 90) * Math.min(1, gap / 120);
+          if (halfWidth(rx, ry, angle) > gap / 2) angle = 90;
+          x = cx + f.x * 2 * Math.max(0, gap / 2 - halfWidth(rx, ry, angle));
+        } else if (Math.abs(f.x - cx) - halfWidth(rx, ry, angle) < gap / 2 + plate + 1) return null;
         // Each fluctuation appears, swells and vanishes; longer wavelengths are shown lasting longer.
         const life = ((play.t * 22) / (f.len + 14) + f.phase) % 1, swell = 0.35 + 0.65 * Math.sin(Math.PI * life);
-        const x = f.between ? cx + f.x * Math.max(0, gap - f.len * 0.5) * 0.7 : f.x, angle = f.between ? 90 + (f.angle - 90) * Math.min(1, gap / 120) : f.angle;
-        return <ellipse key={i} cx={x} cy={f.y} rx={(f.len / 2) * swell} ry={Math.max(3, f.len * 0.19) * swell} transform={`rotate(${-angle} ${x} ${f.y})`} className="bk-zepton-oval" opacity={0.3 + 0.7 * Math.sin(Math.PI * life)}/>;
+        return <ellipse key={i} cx={x} cy={f.y} rx={rx * swell} ry={ry * swell} transform={`rotate(${-angle} ${x} ${f.y})`} className="bk-zepton-oval" opacity={0.3 + 0.7 * Math.sin(Math.PI * life)}/>;
       })}
       <rect x={cx - gap / 2 - plate} y={top} width={plate} height={floor - top} className="bk-plate"/>
       <rect x={cx + gap / 2} y={top} width={plate} height={floor - top} className="bk-plate"/>
+      {/* The net push of the outside vacuum on each plate: an extension of Fleming's figure, sized by Equation 3-1. */}
+      <BlockArrow x1={cx - gap / 2 - plate - 6 - pushLen} y1={mid} x2={cx - gap / 2 - plate - 4} y2={mid} thick={16}/>
+      <BlockArrow x1={cx + gap / 2 + plate + 6 + pushLen} y1={mid} x2={cx + gap / 2 + plate + 4} y2={mid} thick={16}/>
       <Arrow x1={cx - gap / 2} y1={floor + 10} x2={cx + gap / 2} y2={floor + 10} both tone="mark" w={1.4} head={6}/>
       <T x={90} y={floor + 34} anchor="start" size="sm">Wavelengths offered to the gap</T>
       <line x1={90} y1={floor + 54} x2={630} y2={floor + 54} className="bk-s-faint" strokeWidth="1"/>
@@ -148,7 +207,8 @@ function PlatesAndFluctuations() {
     <PlayBar play={play} label="the fluctuations"/>
     <Readout label="Longest wavelength that fits" value={`${gap} units`}/>
     <Readout label="Sizes shut out of the gap" value={`${inside.length - fit.length} of ${inside.length}`} tone={inside.length - fit.length ? 'bad' : undefined}/>
-    <Remark>Outside the plates nothing is excluded, at any gap.</Remark>
+    <Readout label="Push on the plates" value={`${fmt(push)} × at the widest gap`} tone="force"/>
+    <Remark>Outside the plates nothing is excluded, at any gap. The outside presses harder than the inside, and the plates are pushed together.</Remark>
   </Diagram>;
 }
 
@@ -161,9 +221,8 @@ const length = (m: number) => (m < 1e-6 ? `${fmt(m * 1e9)} nm` : `${fmt(m * 1e6)
 /** Figure 3-4: the pressure on each side of the plates, almost in balance, and Equation 3-1 for the difference. */
 function PressureBalance() {
   const [exp, setExp] = useState(-7); // log10 of the gap in metres
-  const [area, setArea] = useState(1); // cm²
   const [magnify, setMagnify] = useState(true);
-  const d = 10 ** exp, P = casimirPressure(d), F = P * area * 1e-4;
+  const d = 10 ** exp, P = casimirPressure(d), F = P * 1e-4; // the force on 1 cm² of plate
   const W = 720, H = 320, cx = W / 2, gap = 150 + (exp + 8) * 30, plate = 22, y = 146, full = 150, thick = 56;
   // The true reduction is far too small to draw, so the deficit shown follows the logarithm of the pressure.
   const deficit = magnify ? Math.max(0.04, Math.min(0.7, (Math.log10(P) + 8) / 19)) : 0;
@@ -176,16 +235,12 @@ function PressureBalance() {
       <BlockArrow x1={cx + gap / 2 + plate + full} y1={y} x2={cx + gap / 2 + plate + 2} y2={y} thick={thick}/>
       <BlockArrow x1={cx} y1={y} x2={cx - inner} y2={y} thick={slim} tone="muted"/>
       <BlockArrow x1={cx} y1={y} x2={cx + inner} y2={y} thick={slim} tone="muted"/>
-      <T x={cx - gap / 2 - plate - full / 2} y={y - 62} size="sm">pressure from outside:</T>
-      <T x={cx - gap / 2 - plate - full / 2} y={y - 46} size="sm">the same at any gap</T>
-      <T x={cx} y={y + 74} size="sm">{magnify ? 'between: slightly less (magnified)' : 'between: less, but too little to see'}</T>
       <Arrow x1={cx - gap / 2} y1={288} x2={cx + gap / 2} y2={288} both tone="mark" w={1.4} head={6}/><T x={cx} y={308} size="sm" tone="mark">d = {length(d)}</T>
     </Stage>}>
-    <Slider label="Distance between the plates, d" value={exp} min={-8} max={-5} step={0.05} onChange={setExp} show={() => length(d)}/>
-    <Slider label="Area of the plates, A" value={area} min={0.1} max={10} step={0.1} onChange={setArea} unit="cm²"/>
+    <Slider label="Gap between the plates, d" value={exp} min={-8} max={-5} step={0.05} onChange={setExp} show={v => length(10 ** v)}/>
     <Toggle label="Magnify the difference" checked={magnify} onChange={setMagnify}/>
     <Readout label="Pressure difference" value={`${fmt(P)} Pa`} tone="force"/>
-    <Readout label="Force pushing them together" value={`${fmt(F)} N`} tone="force"/>
+    <Readout label="Force on 1 cm² of plate" value={`${fmt(F)} N`} tone="force"/>
     <Remark>Halve the distance and the force grows sixteen times: d is to the fourth power.</Remark>
   </Diagram>;
 }
@@ -206,13 +261,17 @@ const chapter: ChapterContent = {
         <p>In I the dipoles repel, and the charges inside each are drawn together, which <Q>reduces the net amount of repulsion</Q>. In II the charges inside each dipole <Q>spread out further, thus increasing their electric moments and increasing the net forces between</Q>. So <Q>In each case the secondary force is an attractive one</Q> (<Pg n={28}/>).</p>
       </>,
       tryThis: [
-        'Set “How easily the charges shift” to 0. The forces in I and II are equal and opposite, and their average is zero: the rigid-dipole gas with no van der Waals force.',
-        'Raise it again and switch between I and II. Watch the small arrows under each dipole, which are Debye’s: inward in I, outward in II.',
-        'Read the average of I and II as you bring the dipoles closer. It is always “together”, and it grows quickly.',
+        'Watch I: as the dipoles are pushed apart, the charges in each draw in, then relax back to the dashed length as the dipoles separate. In II the charges spread, and spread further as the dipoles close.',
+        'Set “How easily the charges shift” to 0. The dipoles stay their own length, the forces in I and II start equal and opposite, and their average is zero: the rigid-dipole gas with no van der Waals force.',
+        'Raise it again and compare: I now separates more slowly and II closes faster. Pause to see Debye’s small arrows, inward in I and outward in II.',
+        'Read the average of I and II as you shorten the starting distance. It is always “together”, and it grows quickly.',
       ],
       notes: <>
         <p>The text calls II <Q>a repulsive configuration</Q>, but the figure draws II with opposite charges facing, which attract, and the conclusion that both secondary effects are attractive needs that. The diagram follows the figure.</p>
+        <p>Debye marks the electric field of each dipole at the other with 𝔈, the old Fraktur letter; the diagram writes it <V>E</V>, as the rest of the companion does. A field here is a map of the force a charge would feel at that place, not a thing in itself: for Fleming what is real is the zeptons, and there <Q>no longer has to be a mythical field in space being used as a placeholder for something real</Q> (<Pg n={52}/>).</p>
         <p>The numbers are a textbook pair of dipoles on a line (field 2<V>p</V>/<V>r</V>³, force 6<V>p</V>²/<V>r</V>⁴) in arbitrary units. Fleming gives no formula here.</p>
+        <p>The motion is ours: Debye’s figure is a still with arrows, and Fleming describes it in motion (<Q>as the dipoles are repelled from one another the charges in each dipole are attracted</Q>). The dipoles’ mass, how quickly the charges respond, and the limit on how far a moment can grow close in are display choices.</p>
+        <p>In II the dipoles stop short of contact. Chapter 3 gives nothing that would stop them, but when Fleming’s zeptons line up end to end they are <Q>virtually in contact</Q> (<Pg n={52}/>), and Debye’s are ion dipoles, which illustrate the idea but are not zeptons. How near they come is a display choice.</p>
       </>,
       labs: [{ lab: 'vdw', scenario: 'correlated', why: 'Two fluctuating dipoles settle into step and attract, with the London energy plotted against their separation.' }],
     },
@@ -221,15 +280,18 @@ const chapter: ChapterContent = {
       caption: 'One hydrogen atom A where the electron randomly propagates a shell around the proton, such that the atom appears electrically neutral. The second hydrogen atom B is an induced dipole with the electron primarily occupying a region off to one side of the proton in response to a local electric field.',
       Diagram: InducedDipole,
       text: <>
-        <p>An induced dipole is one that is normally neutral. In hydrogen <Q>the electron’s position is so random that it can be approximated as a shell</Q>. In an electric field <Q>the two particles will favor an polar alignment with the field such that opposite charges are adjacent to each other</Q>, and the atom becomes a dipole (<Pg n={29}/>).</p>
+        <p>An induced dipole is one that is normally neutral. A and B are one hydrogen atom, without and with an electric field. Without one, <Q>the electron’s position is so random that it can be approximated as a shell, making the hydrogen atom appear electrically neutral</Q>. In a field <Q>the two particles will favor an polar alignment with the field such that opposite charges are adjacent to each other. Under these conditions the hydrogen atom becomes an induced dipole</Q> (<Pg n={29}/>).</p>
         <p>This matters for what follows because Casimir’s forces are those between induced dipoles, <Q>where those induced dipoles are vacuum fluctuations</Q>.</p>
       </>,
       tryThis: [
-        'With no field, watch where the electron has been: all round the proton. Its average position is on the proton, so the atom looks neutral (atom A).',
-        'Raise the field. The electron keeps to one side, and the average positions of the two charges separate (atom B).',
+        'With no field, watch where the electron has been: all round the proton. Its average position is on the proton, so the atom looks neutral (A).',
+        'Raise E. The same atom’s electron keeps to one side, and the average positions of the two charges separate (B).',
         'Reverse the field and the dipole reverses with it.',
       ],
-      notes: <p>How far the electron crowds to one side for a given field is a display choice; the text gives only the two ends, A and B.</p>,
+      notes: <>
+        <p>The caption calls B <Q>The second hydrogen atom</Q>, but the text follows one atom, neutral in the ordinary way and a dipole in a field (<Pg n={29}/>). The diagram follows the text: one atom, with E turned up or down.</p>
+        <p>How far the electron crowds to one side for a given field is a display choice; the text gives only the two ends, A and B.</p>
+      </>,
       labs: [{ lab: 'vdw', scenario: 'induced', why: 'The same step as a laboratory stage, with the induced moment as p = αE.' }],
     },
     {
@@ -239,13 +301,18 @@ const chapter: ChapterContent = {
       text: <>
         <p>The ovals are vacuum fluctuations of various wavelengths. In open space they may be of any size. Between the plates, <Q>vacuum fluctuations with wavelengths that are longer than the distance between the plates will be excluded from that space. These longer wavelengths will however still exist outside the plates</Q> (<Pg n={29}/>).</p>
         <p>As the plates come together, <Q>an increasing number of shorter and shorter wavelength, higher and higher energy, zero-point vacuum fluctuations are excluded from the space between</Q> (<Pg n={30}/>). Most of the energy is in fluctuations smaller than any drawn, so the two pressures stay close to equal.</p>
+        <p>The caption’s “retarded” is Casimir and Polder’s word, from the title of their paper, and Fleming reads it as <Q>retarded, or reduced</Q> (<Pg n={29}/>). What is reduced is a pressure: <Q>The pressure pushing the plates together stays the same, while the pressure pushing the plates apart becomes slightly smaller</Q> (<Pg n={30}/>). The force on the plates is the difference between the two.</p>
       </>,
       tryThis: [
-        'Narrow the gap. Longer fluctuations stop appearing between the plates one size after another, while every size goes on appearing outside.',
+        'Narrow the gap. Longer fluctuations stop appearing between the plates one size after another, while every size goes on appearing outside, filling the space the plates leave.',
+        'Watch the arrows on the plates as you narrow the gap: the push grows as the fourth power of the closeness, as Equation 3-1 says.',
         'Watch the strip under the plates: each mark is a wavelength offered to the gap. Marks to the right of the dashed line are longer than the gap and are shut out.',
         'Open the gap wide. Almost everything fits again, which is why the force is negligible at everyday distances.',
       ],
-      notes: <p>The sizes drawn span a range of 17 to 1 so they can be seen; the real range runs from the Planck length upward. How long each oval lasts is illustrative (longer wavelengths are shown lasting longer).</p>,
+      notes: <>
+        <p>The sizes drawn span a range of 17 to 1 so they can be seen; the real range runs from the Planck length upward. How long each oval lasts is illustrative (longer wavelengths are shown lasting longer).</p>
+        <p>The arrows on the plates are not in Fleming’s figure. They show the net push his text describes (<Pg n={30}/>), growing as 1/<V>d</V>⁴ as in Equation 3-1 (<Pg n={31}/>); their length follows the logarithm of the push, so it is a display scale. Figure 3-4 shows the two pressures that make it.</p>
+      </>,
       labs: [{ lab: 'vdw', scenario: 'pressure', query: 'split=fig-3-3', why: 'Adjustable plates with the pressure, force and energy the gap gives, beside this figure.' }],
     },
     {
@@ -260,9 +327,8 @@ const chapter: ChapterContent = {
       tryThis: [
         'Slide the distance from 10 µm down to 10 nm and watch the pressure difference: twelve powers of ten, from about a ten-millionth of a pascal to more than the pressure of the atmosphere.',
         'Turn off “Magnify the difference”. The inner arrows are now drawn as large as the outer ones: against the whole pressure of the vacuum the reduction cannot be seen, which is the point of the figure.',
-        'Change the area. The force follows it in proportion, as Equation 3-1 says.',
       ],
-      notes: <p>The readouts are Equation 3-1. The length of the inner arrows when magnified is a display choice (it follows the logarithm of the pressure difference); the figure gives no scale.</p>,
+      notes: <p>The readouts are Equation 3-1, with the force given for plates of 1 cm² (it is in proportion to the area). The length of the inner arrows when magnified is a display choice (it follows the logarithm of the pressure difference); the figure gives no scale.</p>,
       labs: [{ lab: 'vdw', scenario: 'pressure', query: 'split=fig-3-4', why: 'The same equation as a plot against the gap, with a sweep you can export.' }],
     },
   ],

@@ -38,6 +38,9 @@ function Torque() {
 /** Common transparent media and the fraction of c at which light travels in them. */
 const MEDIA = [{ name: 'vacuum', n: 1 }, { name: 'water', n: 1.333 }, { name: 'typical glass', n: 1.515 }, { name: 'diamond', n: 2.417 }];
 
+/** The named medium a refractive index stands for, if it is one of them. */
+export const mediumAt = (n: number) => MEDIA.find(m => Math.abs(m.n - n) < 0.012);
+
 /** The angle of the refracted ray from the normal, in degrees, for an angle of incidence and a refractive index (Snell's law). */
 export const refractedAngle = (incidence: number, n: number) => deg(Math.asin(Math.sin(rad(incidence)) / n));
 
@@ -46,7 +49,7 @@ function Refraction() {
   const [n, setN] = useState(1.515);
   const [incidence, setIncidence] = useState(45);
   const play = usePlayback({ speed: 0.45 });
-  const H = 380, bx = 360, by = 190, inside = refractedAngle(incidence, n), speed = 1 / n, named = MEDIA.find(m => Math.abs(m.n - n) < 0.012);
+  const H = 380, bx = 360, by = 190, inside = refractedAngle(incidence, n), speed = 1 / n, named = mediumAt(n);
   const ai = rad(incidence), ar = rad(inside), up = 190 / Math.cos(ai), down = 180 / Math.cos(ar);
   // Marks along the ray one wavelength apart: closer together in the medium, where the same frequency travels more slowly.
   const marks = (len: number, spacing: number, dir: [number, number], from: [number, number], phase: number) => Array.from({ length: Math.ceil(len / spacing) + 1 }, (_, i) => (i + phase) * spacing).filter(s => s < len).map(s => [from[0] + dir[0] * s, from[1] + dir[1] * s] as const);
@@ -62,7 +65,7 @@ function Refraction() {
       <T x={60} y={by - 12} anchor="start" size="sm">vacuum: c₀</T><T x={60} y={by + 24} anchor="start" size="sm">{named ? named.name : 'medium'}: {fmt(speed, 3)} c₀</T>
       <T x={bx + 60} y={H - 34} anchor="start" size="sm" tone="mark">● one wavelength apart</T>
     </Stage>}>
-    <Slider label="Torque in the medium (refractive index)" value={n} min={1} max={2.42} step={0.005} onChange={setN} show={v => `${fmt(v, 4)}${named ? ` (${named.name})` : ''}`}/>
+    <Slider label="Torque in the medium (refractive index)" value={n} min={1} max={2.42} step={0.005} onChange={setN} show={v => { const m = mediumAt(v); return `${fmt(v, 4)}${m ? ` (${m.name})` : ''}`; }}/>
     <Slider label="Angle at which the light arrives" value={incidence} min={0} max={80} step={1} onChange={setIncidence} unit="°"/>
     <PlayBar play={play} label="the light"/>
     <Readout label="Speed in the medium" value={`${fmt(speed * 100, 3)} % of c₀`} tone="good"/>

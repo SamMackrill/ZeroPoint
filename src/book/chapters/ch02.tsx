@@ -33,7 +33,7 @@ function DropInTheOcean() {
       <line x1={x(95)} y1={110} x2={x(95)} y2={130} className="bk-s-danger" strokeWidth="3"/><T x={x(95)} y={102} anchor="end" tone="danger" size="sm">the vacuum: 10⁹⁵ g/cm³, against water’s 1</T>
       <T x={W / 2} y={250} size="sm">a logarithmic scale: each step along it is a factor of ten</T>
     </Stage>}>
-    <Slider label="Size of the ocean" value={i} min={0} max={OCEANS.length - 1} step={1} onChange={setI} show={() => step.name}/>
+    <Slider label="Size of the ocean" value={i} min={0} max={OCEANS.length - 1} step={1} onChange={setI} show={v => OCEANS[v].name}/>
     <Readout label="Drop against ocean" value={`1 : ${ratio}`}/>
     <Remark tone={i === OCEANS.length - 1 ? 'good' : undefined}>{i === OCEANS.length - 1 ? 'There we go: water against the vacuum is five drops in an ocean the size of the visible universe.' : 'Still not anywhere close.'}</Remark>
   </Diagram>;
@@ -62,7 +62,7 @@ function EnergyAndTime() {
       <rect x={580} y={70} width={46} height={170} className="bk-fill-soft"/><rect x={580} y={240 - 85} width={46} height={85} className="bk-f-accent"/><T x={603} y={262} size="sm" tone="accent">energy × time</T>
       <T x={503} y={54} size="sm">each bar on a logarithmic scale</T>
     </Stage>}>
-    <Slider label="Wavelength of the fluctuation" value={exp} min={-15} max={-3} step={0.1} onChange={setExp} show={() => `${fmt(wavelength, 2)} m`}/>
+    <Slider label="Wavelength of the fluctuation" value={exp} min={-15} max={-3} step={0.1} onChange={setExp} show={v => `${fmt(10 ** v, 2)} m`}/>
     <PlayBar play={play} label="the fluctuation"/>
     <Readout label="Energy, hν/2" value={`${fmt(E)} eV`} tone="force"/>
     <Readout label="Time it exists" value={`${fmt(t)} s`} tone="e"/>
@@ -96,7 +96,7 @@ function CutoffDensity() {
       <T x={x0 + w} y={196} anchor="end" size="sm" tone="accent">{fmt(density)} GeV/cm³</T>
       <T x={W / 2} y={250} size="sm">each tenfold shorter cut-off multiplies the energy by ten thousand</T>
     </Stage>}>
-    <Slider label="Cut-off wavelength" value={exp} min={Math.log10(PLANCK_LENGTH)} max={-6} step={0.1} onChange={setExp} show={() => (Math.abs(cutoff - PLANCK_LENGTH) < 1e-37 ? 'the Planck length' : `${fmt(cutoff, 2)} m`)}/>
+    <Slider label="Cut-off wavelength" value={exp} min={Math.log10(PLANCK_LENGTH)} max={-6} step={0.1} onChange={setExp} show={v => (Math.abs(10 ** v - PLANCK_LENGTH) < 1e-37 ? 'the Planck length' : `${fmt(10 ** v, 2)} m`)}/>
     <Readout label="Energy density, ħω⁴/8π²c³" value={`${fmt(density)} GeV/cm³`} tone="good"/>
     <Readout label="As a mass density" value={`${fmt(mass, 2)} g/cm³`}/>
     <Remark>{Math.abs(cutoff - PLANCK_LENGTH) < 1e-37 ? 'At the Planck length: 5.7 × 10¹¹⁸ GeV/cm³, the mass-energy of 10⁹⁵ g/cm³.' : 'Nearly all of it lies in the last decade of wavelength before the cut-off.'}</Remark>

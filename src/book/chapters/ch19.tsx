@@ -40,7 +40,7 @@ function LateGravity() {
       <T x={560} y={104} anchor="start" size="sm">{Math.round(years).toLocaleString('en-GB')} years on</T>
       {!instant && <T x={560} y={128} anchor="start" size="sm">(angle A–B magnified)</T>}
     </Stage>}>
-    <Slider label="Speed of gravity" value={exp} min={-1} max={11} step={0.1} onChange={setExp} show={() => `${fmt(speed, 2)} c`}/>
+    <Slider label="Speed of gravity" value={exp} min={-1} max={11} step={0.1} onChange={setExp} show={v => `${fmt(10 ** v, 2)} c`}/>
     <Toggle label="No delay at all (Newton)" checked={instant} onChange={setInstant}/>
     <PlayBar play={play} label="the years"/>
     <Readout label="Lag of the force" value={instant ? 'none' : `${fmt((lag * 180 * 3600) / Math.PI, 3)}″`}/>
@@ -76,7 +76,7 @@ function PhotonReach() {
       <T x={cx} y={cy + lambda / 2 + 16} size="sm" tone="danger">half a wavelength: the reach at c</T>
       <T x={W - 20} y={24} anchor="end" size="sm" tone="e">dashed: how far the field gets in the zepton’s life</T>
     </Stage>}>
-    <Slider label="Speed at which the fields spread" value={exp} min={0} max={2} step={0.05} onChange={setExp} show={() => `${fmt(speed, 2)} c`}/>
+    <Slider label="Speed at which the fields spread" value={exp} min={0} max={2} step={0.05} onChange={setExp} show={v => `${fmt(10 ** v, 2)} c`}/>
     <PlayBar play={play} label="the central zepton"/>
     <Readout label="Reach of the field" value={`${fmt(fieldReach(speed), 2)} λ`} tone="e"/>
     <Readout label="Zeptons shown responding" value={`${responding} of ${sites.length}`}/>
@@ -146,7 +146,7 @@ function HalfTurn() {
       <T x={633} y={292} size="sm" tone="mark">half-turn</T><T x={633} y={308} size="sm" tone="mark">made</T>
     </Stage>}>
     <Slider label="Frequency of the zepton, ν" value={nu} min={0.7} max={2.4} step={0.1} onChange={setNu} show={v => `${fmt(v, 2)} ×`}/>
-    <Slider label="Share of a half-turn a field needs" value={exp} min={-20} max={0} step={0.5} onChange={setExp} show={() => (exp === 0 ? 'all 180°' : `180° / ${fmt(10 ** -exp, 2)}`)}/>
+    <Slider label="Share of a half-turn a field needs" value={exp} min={-20} max={0} step={0.5} onChange={setExp} show={v => (v === 0 ? 'all 180°' : `180° / ${fmt(10 ** -v, 2)}`)}/>
     <PlayBar play={play} label="the zepton"/>
     <Readout label="Span of the zepton, d = c/ν" value={`${fmt(1 / nu, 3)} × its span at 1 ×`} tone="force"/>
     <Readout label="Speed of what needs a full half-turn" value="c"/>
