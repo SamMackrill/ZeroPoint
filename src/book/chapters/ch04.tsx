@@ -1,5 +1,5 @@
 // Chapter 4: What is a Virtual Photon? (PDF pp. 33–42). Figures 4-1 to 4-9.
-import { Component, Suspense, lazy, useCallback, useMemo, useState, type ReactNode } from 'react';
+import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Arrow, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { PairView } from '../three/PairScene';
@@ -186,10 +186,12 @@ export const pairField = (turned: number) => Math.sin((clamp(turned, 0, 180) * M
 const PairScene = lazy(() => import('../three/PairScene'));
 
 /** Shows `fallback` in place of its children if they fail, such as the 3D scene's code failing to download. */
-class FlatOnError extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+class FlatOnError extends Component<{ fallback: ReactNode; children: ReactNode; onError?(): void }, { failed: boolean }> {
   state = { failed: false };
   /** Switch to the fallback on any error below. */
   static getDerivedStateFromError() { return { failed: true }; }
+  /** Tell the figure, so controls that only the 3D view has can step aside. */
+  componentDidCatch() { this.props.onError?.(); }
   /** The children, or the fallback once they have failed. */
   render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
@@ -197,12 +199,15 @@ class FlatOnError extends Component<{ fallback: ReactNode; children: ReactNode }
 /** One pair's life is the half-turn (p. 39); then it is gone, and after a moment a new pair forms where it began. */
 export const PAIR_CYCLE = 1.15;
 
-/** Where the pair is in its life at time `t` (in turns of the clock): the angle turned, and how fully it is there. */
-export function pairLife(t: number, playing: boolean) {
-  // Paused within the turn (or sought there with the angle slider, up to 180°) the pair is shown in full; paused in the
-  // gap between pairs, there is none. Playing, it fades in as it forms and out as its turn ends.
+/**
+ * Where the pair is in its life at time `t` (in turns of the clock): the angle turned, and how fully it is there.
+ * `fading` is false only when the reader has set the angle with the slider: then the pair is shown in full at any angle
+ * up to 180°. Otherwise, playing or paused, it fades in as it forms and out as its turn ends, and between pairs there is
+ * none, so pausing never changes the frame.
+ */
+export function pairLife(t: number, fading: boolean) {
   const local = t % PAIR_CYCLE, u = Math.min(1, local);
-  const presence = local > 1 ? 0 : !playing ? 1 : clamp(Math.min(u, 1 - u) / 0.06, 0, 1);
+  const presence = local > 1 ? 0 : !fading ? 1 : clamp(Math.min(u, 1 - u) / 0.06, 0, 1);
   return { turned: u * 180, presence };
 }
 
@@ -225,8 +230,11 @@ function RotatingPair() {
   const [view, setView] = useState<PairView>('turned');
   const [flat, setFlat] = useState(false);
   const fail = useCallback(() => setFlat(true), []);
+  const [sought, setSought] = useState(false);
   const play = usePlayback({ speed: 0.25 });
-  const { turned, presence } = pairLife(play.t, play.playing), cw = sense === 'cw';
+  useEffect(() => { if (play.playing) setSought(false); }, [play.playing]);
+  // Setting the angle by hand shows the pair in full; playing again lets it fade at the ends of its turn as before.
+  const { turned, presence } = pairLife(play.t, play.playing || !sought), cw = sense === 'cw';
   const field = pairField(turned), up = cw ? 1 : -1;
   const px = 70, pw = 580, py = 70;
   const trace = pathThrough(Array.from({ length: 61 }, (_, i) => [px + (pw * i) / 60, py - up * 50 * pairField(i * 3)] as const));
@@ -234,7 +242,7 @@ function RotatingPair() {
   return <Diagram stage={<>
     {flat
       ? <FlatPair turned={turned} cw={cw} presence={presence} label={label}/>
-      : <FlatOnError fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
+      : <FlatOnError onError={fail} fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
           <Suspense fallback={<FlatPair turned={turned} cw={cw} presence={presence} label={label}/>}>
             <PairScene state={{ turned, cw, field, presence, showSpin: !play.playing, view }} onFail={fail} description={`${label} Drag to turn the view.`}/>
           </Suspense>
@@ -250,7 +258,7 @@ function RotatingPair() {
     {!flat && <Choice label="View" value={view} onChange={setView} options={[{ value: 'turned', label: 'Turned' }, { value: 'page', label: 'As printed' }, { value: 'path', label: 'Along path' }]}/>}
     <Choice label="Rotation" value={sense} onChange={setSense} options={[{ value: 'cw', label: 'Clockwise' }, { value: 'ccw', label: 'Counter' }]}/>
     <PlayBar play={play} label="the rotation"/>
-    <Slider label="Angle turned" value={Math.round(turned)} min={0} max={180} step={1} onChange={v => play.seek(v / 180)} unit="°"/>
+    <Slider label="Angle turned" value={Math.round(turned)} min={0} max={180} step={1} onChange={v => { setSought(true); play.seek(v / 180); }} unit="°"/>
     <Readout label={`E, in the plane of rotation, ${up > 0 ? 'up' : 'down'} the page`} value={percentOfPeak(field)} tone="e"/>
     <Readout label={`B, along the axis, ${cw ? 'into' : 'out of'} the page`} value={percentOfPeak(field)} tone="b"/>
   </Diagram>;

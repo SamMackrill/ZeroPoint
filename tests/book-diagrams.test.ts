@@ -18,8 +18,10 @@ describe('book companion: diagrams', () => {
     expect(pairLife(PAIR_CYCLE - 1e-9, true).presence).toBe(0);
     expect(pairLife(0.5, true).presence).toBe(1);
     expect(pairLife(1, false)).toEqual({ turned: 180, presence: 1 }); // paused at the end of the turn
-    expect(pairLife(1.07, false).presence).toBe(0); // paused between pairs, the gap stays empty
+    expect(pairLife(1.07, false).presence).toBe(0); // between pairs, the gap stays empty
     expect(pairLife(0.5, false).presence).toBe(1);
+    expect(pairLife(0.03, true).presence).toBeCloseTo(0.5, 9); // paused mid-fade, the fade is kept
+    expect(pairLife(0, false).presence).toBe(1); // set to 0° by hand, the pair is shown
   });
 
   it('Figure 4-9: the field readouts keep one width as the value changes', () => {
