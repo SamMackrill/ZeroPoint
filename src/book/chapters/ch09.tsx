@@ -1,6 +1,6 @@
 // Chapter 9: Tops, Flywheels, and Gyroscopes (PDF pp. 81–85). Figures 9-1 and 9-2.
-import { useRef, useState } from 'react';
-import { Action, Arrow, BlockArrow, Choice, Diagram, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, polar, rad, usePlayback } from '../kit';
+import { Suspense, lazy, useCallback, useRef, useState } from 'react';
+import { Action, Arrow, BlockArrow, Choice, Diagram, FallbackOnError, canDraw3D, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, polar, rad, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -26,10 +26,16 @@ export function inducedSpeed(passive: number, driven: number, drivenChange: numb
   return passive + (target - passive) * Math.min(1, dt * 2.2) - kick * drivenChange;
 }
 
-/** Figure 9-1: Morgan's two flywheels a small gap apart. The driven one turns the passive one the other way. */
+/** Morgan's apparatus drawn in three dimensions: loaded on demand, since three.js is large. */
+const FlywheelScene = lazy(() => import('../three/FlywheelScene'));
+
+/** Figure 9-1: Morgan's two flywheels on one axis, a small gap apart. The driven one turns the passive one the other way. */
 function MorganFlywheels() {
   const [speed, setSpeed] = useState(0.8);
   const [running, setRunning] = useState(true);
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const [reset, setReset] = useState(0);
+  const fail = useCallback(() => setFlat(true), []);
   const play = usePlayback();
   const state = useRef({ t: 0, driven: 0, passive: 0, a1: 0, a2: 0 });
   // Restart (or a step back) begins again from the starting state.
@@ -43,8 +49,9 @@ function MorganFlywheels() {
   state.current.a2 += state.current.passive * 520 * dt;
   const { driven, passive, a1, a2 } = state.current, H = 360, y = 170;
   const way = (v: number) => (Math.abs(v) < 0.02 ? 'at rest' : v > 0 ? 'counter-clockwise' : 'clockwise');
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`Two flywheels facing each other across a small air gap, shown face on. The driven flywheel is ${way(driven)}; the passive one is ${way(passive)}.`}>
+  const label = `Two flywheels on one axis, facing each other across a small air gap. Seen from the passive flywheel's end, the driven flywheel is ${way(driven)}; the passive one is ${way(passive)}.`;
+  /** The flat drawing, both discs face on side by side: the fallback where 3D cannot be drawn (called, not mounted). */
+  const flatWheels = () => <Stage w={W} h={H} label={label}>
       <Wheel x={230} y={y} r={92} angle={a1} label="driven flywheel (motor)" tone="matter"/>
       <Wheel x={490} y={y} r={110} angle={a2} label="passive flywheel (free to turn)"/>
       {Math.abs(driven) > 0.03 && <Spin x={230} y={y} r={106} ccw={driven > 0} sweep={60 + 160 * Math.abs(driven)}/>}
@@ -52,12 +59,18 @@ function MorganFlywheels() {
       {[-60, -20, 20, 60].map((dy, i) => <Zepton key={dy} x={354} y={y + dy} angle={a1 * 0.7 * (i % 2 ? -1 : 1) + i * 40} len={18} oval={false} signs={false} polarity="matter" opacity={0.35 + 0.6 * Math.min(1, Math.abs(driven) + Math.abs(passive))}/>)}
       <T x={354} y={y - 96} size="sm">air gap only</T>
       <T x={W / 2} y={H - 12} size="sm">The two discs face each other on one axis; they are drawn side by side so both rotations can be seen.</T>
-    </Stage>}>
+    </Stage>;
+  return <Diagram stage={flat ? flatWheels() : <FallbackOnError onError={fail} fallback={flatWheels()}>
+      <Suspense fallback={flatWheels()}>
+        <FlywheelScene state={{ drivenAngle: a1, passiveAngle: a2, driven, passive, reset }} onFail={fail} description={`${label} Drag to turn the view.`}/>
+      </Suspense>
+    </FallbackOnError>}>
+    {!flat && <Action onClick={() => setReset(n => n + 1)}>Back to this view</Action>}
     <Slider label="Speed of the driven flywheel" value={speed} min={0.2} max={1} step={0.05} onChange={setSpeed} show={v => `${Math.round(v * 26500).toLocaleString('en-GB')} rpm`}/>
     <Action onClick={() => setRunning(r => !r)}>{running ? 'Stop the first flywheel suddenly' : 'Start the motor again'}</Action>
     <PlayBar play={play} label="the flywheels"/>
-    <Readout label="Driven flywheel" value={way(driven)}/>
-    <Readout label="Passive flywheel" value={way(passive)} tone={Math.sign(passive) === Math.sign(driven) && Math.abs(passive) > 0.02 ? 'bad' : undefined}/>
+    <Readout label="Driven flywheel, seen from the far end" value={way(driven)}/>
+    <Readout label="Passive flywheel, seen from the far end" value={way(passive)} tone={Math.sign(passive) === Math.sign(driven) && Math.abs(passive) > 0.02 ? 'bad' : undefined}/>
     <Remark>{running ? 'The second flywheel rotates briskly in the opposite direction.' : 'When the first is stopped suddenly, the second stops and reverses direction: a back EMF of the matter-motion kind.'}</Remark>
   </Diagram>;
 }
@@ -165,8 +178,8 @@ const chapter: ChapterContent = {
         <p>When two flywheels are placed close together, <Q>the rotation of the first flywheel induces a rotation in the second passive flywheel when there is only an air gap and no electromagnetic or mechanical means of energy transfer other than perhaps vibration</Q>. The effect is <Q>extremely small relative to electromagnetic induction, as the velocities are slow compared to the speed of light</Q> (<Pg n={83}/>).</p>
         <p>Morgan’s discs were a sixteenth of an inch apart, the smaller driven by a motor rated at 26,500 rpm. <Q>When the first flywheel rotated at high speed, the second flywheel rotated briskly in the opposite direction.</Q> <Q>When the first flywheel was stopped suddenly, the second flywheel stopped and reversed direction.</Q> Fleming reads the reversal as the back EMF of a coil, <Q>of the matter motion variety</Q>.</p>
       </>,
-      tryThis: ['Let the motor run: the passive flywheel turns the opposite way to the driven one.', 'Press “Stop the first flywheel suddenly” and watch the passive one: it stops, then turns the other way for a moment, as Morgan reported.', 'Start the motor again and it is kicked the opposite way before settling.'],
-      notes: <p>The size of the induced rotation is greatly magnified, and how long the reversal lasts is a display choice; Morgan’s report gives directions, not rates. The zeptons in the gap stand for the field Fleming says carries the effect.</p>,
+      tryThis: ['Let the motor run: the passive flywheel turns the opposite way to the driven one. Drag the picture to look along the axis from either end.', 'Press “Stop the first flywheel suddenly” and watch the passive one: it stops, then turns the other way for a moment, as Morgan reported.', 'Start the motor again and it is kicked the opposite way before settling.'],
+      notes: <p>The apparatus follows the photograph: the motor on a base drives the smaller disc, and the larger, passive disc faces it on the same axis, carried on an upright at the far end. Both discs stand upright, as Fleming describes them on p. 84: Morgan <Q>simply rotated his flywheels about their axle with the discs oriented perpendicular to the Earth</Q>. The gap is drawn wider than a sixteenth of an inch so it can be seen. The size of the induced rotation is greatly magnified, and how long the reversal lasts is a display choice; Morgan’s report gives directions, not rates. Where 3D cannot be drawn, a flat drawing shows the two discs face on, side by side, with zeptons in the gap for the field Fleming says carries the effect.</p>,
     },
     {
       kind: 'figure', id: '9-2', page: 84, title: 'Wallace’s gyroscopes: the plane turned over',
