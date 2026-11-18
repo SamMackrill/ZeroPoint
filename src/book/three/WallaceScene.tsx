@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette, scene as sceneColours } from '../../ui/palette';
 import { FigureRunning } from '../kit/clock';
-import { disposeAll, label } from './common';
+import { disposeAll, label, turnWithKeys } from './common';
 
 /** What the scene shows at a moment. Angles in degrees. */
 export interface WallaceState {
@@ -70,9 +70,13 @@ export default function WallaceScene({ state, onFail, description }: { state: Wa
     // If the browser takes the drawing context away (a GPU reset, too many contexts), fall back to the flat view.
     const lost = (e: Event) => { e.preventDefault(); onFail(); };
     renderer.domElement.addEventListener('webglcontextlost', lost);
+    // Everything set up is undone in reverse, the same way on unmount and when setup fails part way.
+    const undo: (() => void)[] = [() => renderer.domElement.remove(), () => renderer.dispose(), () => renderer.domElement.removeEventListener('webglcontextlost', lost)];
+    const teardown = () => { api.current = null; while (undo.length) { try { undo.pop()!(); } catch { /* keep releasing the rest */ } } };
     // Build the scene; if anything fails part way, undo what was set up and show the flat view instead.
     try {
       const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(30, 720 / 360, 0.1, 100);
+      undo.push(() => disposeAll(scene));
       scene.add(new THREE.AmbientLight(0xffffff, 1.2));
       const key = new THREE.DirectionalLight(0xffffff, 2.4);
       key.position.set(2, 5, 5);
@@ -156,6 +160,9 @@ export default function WallaceScene({ state, onFail, description }: { state: Wa
       scene.add(turnArrow);
 
       const controls = new OrbitControls(camera, renderer.domElement);
+
+      undo.push(() => controls.dispose());
+      undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page
       // A vertical swipe scrolls the page, as the wheel does; a sideways one turns the view.
@@ -174,6 +181,7 @@ export default function WallaceScene({ state, onFail, description }: { state: Wa
         draw();
       });
       resize.observe(el);
+      undo.push(() => resize.disconnect());
 
       // The mirror's normal at rest sends the beam from the lamp to the middle of the scale; the detector's tilt turns
       // it, and the reflected beam twice as far.
@@ -223,20 +231,11 @@ export default function WallaceScene({ state, onFail, description }: { state: Wa
       showArrow();
       view();
       api.current.update(state);
-      return () => {
-        cancelAnimationFrame(frame);
-        api.current = null;
-        resize.disconnect();
-        renderer.domElement.removeEventListener('webglcontextlost', lost);
-        controls.dispose();
-        renderer.dispose();
-        disposeAll(scene);
-        renderer.domElement.remove();
-      };
-    } catch {
-      renderer.domElement.removeEventListener('webglcontextlost', lost);
-      renderer.dispose();
-      renderer.domElement.remove();
+      undo.push(() => cancelAnimationFrame(frame));
+      return teardown;
+    } catch (error) {
+      console.error('A 3D figure failed to set up; showing its flat drawing instead.', error);
+      teardown();
       onFail();
       return undefined;
     }
@@ -247,5 +246,5 @@ export default function WallaceScene({ state, onFail, description }: { state: Wa
   useEffect(() => { api.current?.view(); }, [state.reset]);
   useEffect(() => { api.current?.quiet(running); }, [running]);
 
-  return <div ref={host} className="bk-stage-3d" style={{ aspectRatio: '720 / 360' }} role="img" aria-label={description}/>;
+  return <div ref={host} className="bk-stage-3d" style={{ aspectRatio: '720 / 360' }} role="img" aria-label={`${description} With the figure focused, the arrow keys turn it too.`}/>;
 }
