@@ -4,7 +4,7 @@ import { Action, Arrow, BlockArrow, Body, Charge, Choice, Diagram, FallbackOnErr
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { TOP_LAID } from '../three/top-math';
-import { HandRule } from './shared';
+import { FlemingHandStage } from './shared';
 
 const W = 720;
 
@@ -335,12 +335,16 @@ const chapter: ChapterContent = {
     {
       kind: 'figure', id: '8-4', page: 74, title: 'The right hand rule again: torque and angular momentum',
       caption: 'Placement of fingers for right hand rule memory device.',
-      Diagram: () => <HandRule first={{ name: 'distance r', tone: 'mark', start: '+x' }} second={{ name: 'force F', tone: 'force', start: '-y' }} thumb={{ name: 'torque Γ', tone: 'accent' }} remark="Torque is r × F (Equation 8-2). Put momentum mυ on the second finger in place of force and the thumb is the angular momentum L = r × mυ (Equation 8-3)."/>,
+      Diagram: TorqueHand,
       text: <>
         <p>Torque is a cross product, Γ = <V>r</V> × <V>F</V> (Equation 8-2): <Q>the force F, points in the direction of the second finger, the first term of the cross product r points in the direction of the first finger, and the thumb points in the direction of the resultant torque</Q> (<Pg n={73}/>).</p>
         <p>Angular momentum has the same form, <V>L</V> = <V>r</V> × <V>mυ</V> (Equation 8-3). <Q>For a top spinning clockwise the angular momentum vector L points downward, while if a top is spinning counter-clockwise the angular momentum vector L is pointing up</Q> (<Pg n={74}/>).</p>
       </>,
-      tryThis: ['As it starts, r points right and the force (gravity) points down: the torque points away from you, into the page.', 'Swap the two fingers’ directions and the torque reverses.', 'Point both along one line: no torque.'],
+      tryThis: [
+        'Hold your own right hand the same way: thumb up, first finger pointing away from you, second finger to the left. With r along the first finger and the force along the second, the thumb gives the torque.',
+        'For the angular momentum of a spinning top Fleming uses the grip rule instead: curl the fingers of your right hand the way the top spins, and your thumb points along L.',
+      ],
+      notes: <p>The book prints the same drawing as Figure 7-4, so this is that figure again, with a switch between its two uses. Fleming introduces it here with <Q>As before with a vector cross product, we can use the same memory device</Q> (<Pg n={73}/>), so it starts on torque. For torque the fingers carry the terms of Equation 8-2: the distance r on the first finger (drawn up and to the left; in perspective it points into the page), the force F on the second, and the torque Γ on the thumb.</p>,
     },
     {
       kind: 'figure', id: '8-5', page: 75, title: 'The torque of gravity on a leaning top',
@@ -371,4 +375,32 @@ const chapter: ChapterContent = {
     },
   ],
 };
+
+/**
+ * Figure 8-4: the hand of Figure 7-4 again, which is what the book prints. Fleming uses the same memory device for the
+ * torque, Γ = r × F (Equation 8-2), so that is how it starts; the switch puts back Figure 7-4's labels.
+ */
+function TorqueHand() {
+  const [torque, setTorque] = useState(true);
+  return <Diagram stage={torque
+    ? <FlemingHandStage
+      first={{ name: 'distance r', hint: 'first finger, into the page', tone: 'mark' }}
+      second={{ name: 'force F', hint: 'second finger', tone: 'force' }}
+      thumb={{ name: 'torque Γ', hint: 'thumb', tone: 'accent' }}
+      label="The right hand rule for torque, with Fleming's drawing of the hand. The first finger points along the distance r, into the page; the second finger points along the force F, to the left; the thumb points up, along the torque."
+      footnote="right hand: Γ = r × F"/>
+    : <FlemingHandStage
+      first={{ name: 'motion', hint: 'first finger, into the page', tone: 'motion' }}
+      second={{ name: 'field B', hint: 'second finger', tone: 'b' }}
+      thumb={{ name: 'force', hint: 'thumb', tone: 'force' }}
+      label="The right hand rule for the magnetic force, as in Figure 7-4. The first finger points along the motion, into the page; the second finger points along the magnetic field, to the left; the thumb points up, along the force on a positive charge."
+      footnote="right hand: the magnetic force, as in Figure 7-4"/>}>
+    <Choice label="The same hand, used for" value={torque ? 'torque' : 'magnetic'} onChange={v => setTorque(v === 'torque')} options={[{ value: 'torque', label: 'Torque (p. 73)' }, { value: 'magnetic', label: 'Magnetic force (Fig. 7-4)' }]}/>
+    <Readout label={torque ? 'Torque' : 'Force'} value="up: the right thumb" tone="good"/>
+    <Remark>{torque
+      ? 'The torque is at right angles to both the distance and the force. Angular momentum, L = r × mυ (Equation 8-3), is the same kind of cross product.'
+      : 'Figure 7-4 used the hand for the magnetic force on a moving charge. Fleming reuses the same memory device for torque: any cross product works the same way.'}</Remark>
+  </Diagram>;
+}
+
 export default chapter;

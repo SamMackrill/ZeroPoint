@@ -48,8 +48,8 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 7-5 | A spinning dipole field sweeps the charge aside | animated | changed | 3D plane of motion; zeptons spin in it, in layers; B upright through them |
 | 8-1 | Vortices: Descartes’s, and much smaller ones | animated | changed | Rebuilt from the engraving; four numbered notes explain Descartes’s idea |
 | 8-2 | A top that is not spinning falls | still | changed | 3D wooden top; grab to tilt; release to topple; dotted path to the floor |
-| 8-3 | A spinning top precesses the way it spins | animated | to review | |
-| 8-4 | The right hand rule again: torque and angular momentum | still | to review | |
+| 8-3 | A spinning top precesses the way it spins | animated | changed | 3D wooden top precessing; Fleming's force on the spinning top, F<sub>m</sub> = m(υ × B<sub>m</sub>) |
+| 8-4 | The right hand rule again: torque and angular momentum | still | changed | Figure 7-4 again, with a switch: torque (r, F, Γ; p. 73) or the magnetic force (7-4's labels) |
 | 8-5 | The torque of gravity on a leaning top | still | to review | |
 | 8-6 | The field of a moving charge, and of moving matter | still | to review | |
 | 9-1 | Morgan’s flywheels: induction across an air gap | animated | to review | |
@@ -268,7 +268,12 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** make the top look more like it is made of wood. **Done:** the body has a wood-grain texture drawn on a canvas: a warm base with soft lengthwise grain and a few broader streaks, in a matt finish (`woodTexture` in `three/common.ts`). The colours are scene constants `wood` and `woodGrain`, and the palette was regenerated. The outline is smoothed with a spline and turned with 96 segments. The band and marks stay painted on, and the marks now sit on the smoothed surface.
 - **Owner:** it looks great; the following figures need to match it. **Plan:** 8-3 and 8-5 use the same wooden top scene.
 
-### Fig. 8-3
+### Fig. 8-3 (changed, agreed 2026-11-18)
 
 - **From the 8-2 decision (match the figures):** 8-3 now uses the same 3D wooden top. It spins (the band and marks show it) and precesses round its tip the same way, clockwise from above as the caption says, with its centre of mass circling on a dotted path. The view is higher and centred on the tip. With the mattermagnetic account, three labelled arrows show B<sub>m</sub> along the axis (drawn above the head: toward the tip for a clockwise top, away from it for a counter-clockwise one), v (gravity’s arrow) and F<sub>m</sub> round the circle. The flat view from above is the fallback.
 - **Your comment (the force "applied to the top"):** agreed, on p. 72 Fleming means the spinning top as a body, and there he leaves the force unnamed; he names it on p. 80 as F<sub>m</sub> = m(υ × B<sub>m</sub>). His six papers here say nothing about tops. The checkbox "Show the mattermagnetic account" read as jargon, so it is now "Show Fleming’s explanation: the force on the spinning top". The notes now say that F<sub>m</sub> is drawn from the centre of mass because it acts on the whole top, and that B<sub>m</sub> is a field along the axis, not a force applied at the head.
+
+### Fig. 8-4 (changed, agreed 2026-11-18)
+
+- **From the 7-4 decision (one fixed hand, Fleming's own):** 8-4 prints the same drawing as 7-4, so it now uses the same traced hand, through a shared `FlemingHandStage`. The first finger carries the distance r (into the page), the second the force F, and the thumb the torque Γ, as Fleming describes on p. 73. The arrow-picking `HandRule` that only 8-4 still used is gone. For a top's angular momentum Fleming uses the grip rule (p. 74), which the try-this list says.
+- **Owner:** 8-4 seems a repetition; can we copy the earlier figure? **Agreed in part:** the book prints the same drawing, so 8-4 is now Figure 7-4 again. But Fleming uses it here for torque (p. 73: r on the first finger, F on the second, torque on the thumb), so it starts with those labels, and a switch puts back 7-4's motion, field and force. That keeps the point he makes, that it is the same memory device for any cross product.
