@@ -1,11 +1,28 @@
 // Chapter 6: Zeptons and Faraday Field Lines (PDF pp. 48–61). Figures 6-1 to 6-18.
 import { useMemo, useRef, useState, type ComponentType } from 'react';
-import { Action, Arrow, BlockArrow, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fmt, lerpAngle, pathThrough, polar, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
+import { Action, Arrow, BlockArrow, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fmt, lerpAngle, pathThrough, polar, rad, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
 import { Pg, Q } from '../prose';
 import type { BookItem, ChapterContent } from '../types';
 import { TwoSources } from './shared';
 
 const W = 720;
+
+/**
+ * Where an atom's electron is on its circle, in degrees from the far side, at phase `psi` of a smooth orbit that dwells
+ * on the far side: `share` 0 is an even circle; toward 1 it lingers far from the free electron and hurries past the
+ * near side (the eccentric-anomaly map, continuous and always moving forward).
+ */
+export function dwellAngle(psi: number, share: number) {
+  const wrapped = Math.atan2(Math.sin(psi), Math.cos(psi)), squeeze = Math.sqrt((1 - share) / (1 + share));
+  return (Math.floor((psi + Math.PI) / (2 * Math.PI)) * 360) + (2 * Math.atan(squeeze * Math.tan(wrapped / 2)) * 180) / Math.PI;
+}
+
+/** How far out, as a share of the circle's radius, the electron is on average for a `share` of dwell. */
+export function meanOffset(share: number) {
+  let sum = 0;
+  for (let i = 0; i < 72; i++) sum += Math.cos(rad(dwellAngle(((i + 0.5) / 72) * 2 * Math.PI - Math.PI, share)));
+  return sum / 72;
+}
 
 /** Figure 6-1: hydrogen atoms round a free electron, each polarized with its proton toward the electron. */
 function HydrogenGas() {
@@ -13,19 +30,23 @@ function HydrogenGas() {
   const [pos, setPos] = useState({ x: 360, y: 180 });
   const play = usePlayback();
   const H = 360;
-  const atoms = useMemo(() => { const random = rng(61); return Array.from({ length: 10 }, (_, i) => ({ x: 70 + (i % 5) * 145 + (random() - 0.5) * 60, y: 80 + Math.floor(i / 5) * 200 + (random() - 0.5) * 70, seed: i })); }, []);
-  const frame = Math.floor(play.t * 14);
+  const atoms = useMemo(() => { const random = rng(61); return Array.from({ length: 10 }, (_, i) => ({ x: 70 + (i % 5) * 145 + (random() - 0.5) * 60, y: 80 + Math.floor(i / 5) * 200 + (random() - 0.5) * 70, seed: i, speed: 1.6 + random() * 1.2, phase: random() * 2 * Math.PI })); }, []);
   return <Diagram stage={
     <Stage w={W} h={H} label={present ? 'A free electron among hydrogen atoms. In each atom the electron is pushed to the far side, so the proton faces the free electron.' : 'Hydrogen atoms with no free charge near them: each electron is found all round its proton.'}>
       {atoms.map(a => {
         const d = Math.hypot(a.x - pos.x, a.y - pos.y), away = bearing(pos.x, pos.y, a.x, a.y);
         // The nearer the free electron, the further the atom's electron keeps to the far side.
-        const share = present ? clamp(9000 / (d * d + 3000), 0, 0.9) : 0, random = rng(a.seed * 53 + frame);
-        const angle = away + (random() - 0.5) * 360 * (1 - share), [ex, ey] = polar(a.x, a.y, 22, angle), [cx, cy] = polar(a.x, a.y, 22 * share, away);
+        const share = present ? clamp(40000 / (d * d + 12000), 0, 0.92) : 0;
+        // The electron goes smoothly round its proton, slowest on the far side from the free electron and quickest on
+        // the near side, so it spends most of its time away from it; with no free charge it circles evenly.
+        const R = 34, angle = away + dwellAngle(a.speed * play.t + a.phase, share), mean = R * meanOffset(share);
+        const [ex, ey] = polar(a.x, a.y, R, angle), [mx, my] = polar(a.x, a.y, mean, away);
         return <g key={a.seed}>
-          <circle cx={cx} cy={cy} r={24} className="bk-s-faint" fill="none" strokeDasharray="2 4"/>
-          <circle cx={ex} cy={ey} r={4.5} className="bk-f-neg"/>
-          <Charge x={a.x} y={a.y} sign={1} r={8}/>
+          <circle cx={a.x} cy={a.y} r={R} className="bk-s-faint" fill="none" strokeDasharray="2 4"/>
+          {/* The dipole: from the proton to where its electron is on average. */}
+          {mean > 2 && <><line x1={a.x} y1={a.y} x2={mx} y2={my} className="bk-s-mark" strokeWidth="3"/><circle cx={mx} cy={my} r={4} className="bk-f-mark"/></>}
+          <circle cx={ex} cy={ey} r={6} className="bk-f-neg"/>
+          <Charge x={a.x} y={a.y} sign={1} r={10}/>
         </g>;
       })}
       {present && <Drag x={pos.x} y={pos.y} onMove={(x, y) => setPos({ x, y })} bounds={{ x0: 30, y0: 30, x1: W - 30, y1: H - 30 }} label="Free electron"><Charge x={pos.x} y={pos.y} sign={-1} r={15} label="free electron"/></Drag>}

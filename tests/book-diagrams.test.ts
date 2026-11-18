@@ -3,11 +3,27 @@ import { describe, expect, it } from 'vitest';
 import { DEBYE_FAR, DEBYE_NEAREST, debyeMotion } from '../src/book/chapters/ch03';
 import { PAIR_CYCLE, pairLife, sightedBySeek } from '../src/book/chapters/ch04';
 import { percentOfPeak } from '../src/book/kit';
+import { dwellAngle, meanOffset } from '../src/book/chapters/ch06';
 import { deflectionPath } from '../src/book/chapters/ch07';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
+  it('Figure 6-1: an atom’s electron moves smoothly and always forward, lingering on the far side as the free electron nears', () => {
+    for (const share of [0, 0.4, 0.92]) {
+      let last = dwellAngle(-10, share);
+      for (let psi = -10; psi < 10; psi += 0.01) {
+        const angle = dwellAngle(psi, share);
+        expect(angle - last, `share ${share}, psi ${psi}`).toBeGreaterThanOrEqual(0); // forward only
+        expect(angle - last, `share ${share}, psi ${psi}`).toBeLessThan(25); // no jumps
+        last = angle;
+      }
+    }
+    expect(meanOffset(0)).toBeCloseTo(0, 6); // with no free charge the atom is neutral on average
+    expect(meanOffset(0.4)).toBeGreaterThan(0.2);
+    expect(meanOffset(0.92)).toBeGreaterThan(meanOffset(0.4));
+  });
+
   it('Figure 4-9: each pair turns its half-turn and is gone before the next forms, so the charges never jump', () => {
     let last = -1;
     for (let t = 0; t < PAIR_CYCLE; t += 0.001) {
