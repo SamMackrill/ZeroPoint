@@ -3,7 +3,8 @@ import { useMemo, useRef, useState } from 'react';
 import { Action, Dial, Arrow, BlockArrow, Charge, Choice, Diagram, FieldPicture, FieldZeptons, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
-import { HandRule, type FieldMode } from './shared';
+import { HAND_DIGITS, HAND_PATH, HAND_SIZE } from '../art/fleming-hand';
+import type { FieldMode } from './shared';
 
 const W = 720;
 
@@ -342,13 +343,19 @@ const chapter: ChapterContent = {
     {
       kind: 'figure', id: '7-4', page: 65, title: 'The right hand rule for the magnetic force',
       caption: 'Placement of fingers for the right hand rule memory device.',
-      Diagram: () => <HandRule first={{ name: 'motion', tone: 'motion', start: '+y' }} second={{ name: 'field B', tone: 'b', start: '-z' }} thumb={{ name: 'force', tone: 'force' }} signed="Charge" remark="The force is at right angles to both the motion and the field, which is why the magnetic interaction is harder to picture than the electric one."/>,
+      Diagram: FlemingHand,
       text: <>
         <p><Q>The second finger points in the direction of the magnetic field, the first finger points in the direction of motion of the particle, and the thumb points in the direction of the force on the particle.</Q> Fleming calls it <Q>not the most intuitive scheme</Q>: one expects the particle to be pushed along the field, not at 90 degrees to it (<Pg n={65}/>).</p>
         <p>This rule is John Ambrose Fleming’s, and is different from the grip rule of Figure 6-16.</p>
       </>,
-      tryThis: ['Leave it as it starts: motion up the page, field away from you. The force is to the left, which is Figure 7-5.', 'Point the two fingers along the same line: no force.', 'Change the charge to negative: the force reverses. In the book’s words the first finger must then point opposite to the motion.'],
-      notes: <p>The printed figure is a drawing of a hand. The arrows here give the same rule as a cross product (motion × field), which is how Equation 8-7 writes it.</p>,
+      tryThis: [
+        'Hold your own right hand the same way: thumb up, first finger pointing away from you, second finger to the left.',
+        'Change the charge to negative: the force reverses, and the drawing becomes a left hand with its thumb down. Reversing the charge is the same as changing hands.',
+      ],
+      notes: <>
+        <p>The hand is Fleming’s own drawing, traced from the book. The first finger is drawn up and to the left; in perspective it points into the page, at right angles to the other two. The rule is the cross product motion × field, which is how Equation 8-7 writes it. For a negative charge the drawing is mirrored into a left hand, which gives the reversed force.</p>
+        <p>The book credits the rule to John Ambrose Fleming. His rule for the force on a current (motors) is left-handed, with the first finger along the field and the second along the current; this right-handed version swaps the two fingers, and swapping two fingers is the same as changing hands, so both give the same force.</p>
+      </>,
     },
     {
       kind: 'figure', id: '7-5', page: 66, title: 'A spinning dipole field sweeps the charge aside',
@@ -381,4 +388,38 @@ const chapter: ChapterContent = {
   ],
   labs: [{ lab: 'electron', scenario: 'moving', why: 'A moving electron and the rotation it induces: the zepton form of this chapter’s magnetic field.' }],
 };
+/**
+ * Figure 7-4: Fleming's own drawing of the hand, traced from the book, with the three directions laid along it. The
+ * first finger is drawn up and to the left: in perspective it points into the page. For a negative charge the force
+ * reverses, which is the same rule with the left hand: the drawing is mirrored top to bottom, thumb down.
+ */
+function FlemingHand() {
+  const [negative, setNegative] = useState(false);
+  const W = 720, H = 360, scale = 2.1, ox = 250, oy = 30, flip = negative ? -1 : 1;
+  // The left hand is the right hand mirrored top to bottom, in the same box.
+  const at = ([x, y]: readonly [number, number]): [number, number] => [ox + x * scale, oy + (negative ? HAND_SIZE.h - y : y) * scale];
+  // An arrow carrying on from a fingertip the way the finger points.
+  const along = (digit: { base: readonly [number, number]; tip: readonly [number, number] }, from: number, to: number) => {
+    const [bx, by] = at(digit.base), [tx, ty] = at(digit.tip), d = Math.hypot(tx - bx, ty - by), ux = (tx - bx) / d, uy = (ty - by) / d;
+    return { x1: tx + ux * from, y1: ty + uy * from, x2: tx + ux * to, y2: ty + uy * to };
+  };
+  const motion = along(HAND_DIGITS.index, 14, 104), field = along(HAND_DIGITS.middle, 14, 112), force = along(HAND_DIGITS.thumb, 10, negative ? 68 : 82);
+  const hand = negative ? 'left' : 'right';
+  return <Diagram stage={
+    <Stage w={W} h={H} label={`Fleming's rule with the ${hand} hand, drawn as in the book${negative ? ' but mirrored' : ''}. The second finger points along the magnetic field, to the left; the first finger points along the motion, into the page; the thumb points ${negative ? 'down' : 'up'}, the direction of the force on a ${negative ? 'negative' : 'positive'} charge.`}>
+      <g transform={`translate(${ox} ${negative ? oy + HAND_SIZE.h * scale : oy}) scale(${scale} ${flip * scale})`}><path d={HAND_PATH} fillRule="evenodd" className="bk-f-text" opacity={0.85}/></g>
+      <Arrow x1={motion.x1} y1={motion.y1} x2={motion.x2} y2={motion.y2} tone="motion" w={3.5} head={13}/>
+      <T x={motion.x2 - 8} y={motion.y2 - 12 * flip} tone="motion" anchor="end">motion</T><T x={motion.x2 - 8} y={motion.y2 + (negative ? 30 : 6)} size="sm" tone="motion" anchor="end">first finger, into the page</T>
+      <Arrow x1={field.x1} y1={field.y1} x2={field.x2} y2={field.y2} tone="b" w={3.5} head={13}/>
+      <T x={field.x2 - 8} y={field.y2 - 4} tone="b" anchor="end">field B</T><T x={field.x2 - 8} y={field.y2 + 14} size="sm" tone="b" anchor="end">second finger</T>
+      <Arrow x1={force.x1} y1={force.y1} x2={force.x2} y2={force.y2} tone="force" w={5} head={15}/>
+      <T x={force.x2 + 14} y={force.y2 + (negative ? -6 : 10)} tone="force" anchor="start">force</T><T x={force.x2 + 14} y={force.y2 + (negative ? 12 : 28)} size="sm" tone="force" anchor="start">thumb</T>
+      <T x={20} y={H - 14} size="sm" anchor="start">{negative ? 'left hand: for a negative charge' : 'right hand: for a positive charge'}</T>
+    </Stage>}>
+    <Choice label="Charge" value={negative ? 'neg' : 'pos'} onChange={v => setNegative(v === 'neg')} options={[{ value: 'pos', label: 'Positive' }, { value: 'neg', label: 'Negative' }]}/>
+    <Readout label="Force" value={negative ? 'down: the left thumb' : 'up: the right thumb'} tone="good"/>
+    <Remark>{negative ? 'A negative charge feels the opposite force: the same rule with the left hand, its thumb pointing down.' : 'The force is at right angles to both the motion and the field, which is why the magnetic interaction is harder to picture than the electric one.'}</Remark>
+  </Diagram>;
+}
+
 export default chapter;
