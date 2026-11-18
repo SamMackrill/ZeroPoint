@@ -1,6 +1,6 @@
 // Chapter 4: What is a Virtual Photon? (PDF pp. 33–42). Figures 4-1 to 4-9.
 import { Suspense, lazy, useCallback, useMemo, useState } from 'react';
-import { Arrow, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, polar, rng, usePlayback } from '../kit';
+import { Arrow, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { PairView } from '../three/PairScene';
 import type { ChapterContent } from '../types';
@@ -195,9 +195,6 @@ export function pairLife(t: number, playing: boolean) {
   const presence = !playing ? 1 : local > 1 ? 0 : clamp(Math.min(u, 1 - u) / 0.06, 0, 1);
   return { turned: u * 180, presence };
 }
-
-/** A share of a field's peak as a whole percentage, padded so the readout keeps its width as the number changes. */
-export const percentOfPeak = (share: number) => `${String(Math.round(share * 100)).padStart(3, ' ')} % of its peak`;
 
 /** The printed page's view of Figure 4-9, drawn flat: the fallback where the browser cannot draw in three dimensions. */
 function FlatPair({ turned, cw, presence, label }: { turned: number; cw: boolean; presence: number; label: string }) {

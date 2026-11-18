@@ -138,3 +138,6 @@ export function wireField(wires: readonly Wire[], x: number, y: number): [number
   }
   return [bx, by];
 }
+
+/** A share of a field's peak as a whole percentage, padded so a live readout keeps its width as the number changes. */
+export const percentOfPeak = (share: number) => `${String(Math.round(share * 100)).padStart(3, ' ')} % of its peak`;

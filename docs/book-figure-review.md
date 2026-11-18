@@ -21,7 +21,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 4-7 | One photon, half a wavelength | animated | agreed | No change |
 | 4-8 | The pair inside the photon | animated | agreed | No change |
 | 4-9 | A rotating pair makes E and B | animated | changed | 3D (three.js) with views; pair fades at the end of its half-turn; steady readouts |
-| 5-1 | A photon, pair by pair | animated | to review | |
+| 5-1 | A photon, pair by pair | animated | changed | Spacing slider removed; slow-fading labels, “annihilate & reverse”; steady readouts |
 | 5-2 | The pairs round the photon are its wave | animated | to review | |
 | 6-1 | A free electron polarizes hydrogen | animated | to review | |
 | 6-2 | The vacuum polarizes in the same way | animated | to review | |
@@ -175,3 +175,8 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 - **Cause of the charge “swap”:** the half-turn looped straight back to 0°, so the + end jumped from right to left. Fleming’s pair lives only for its half-turn (p. 39).
 - **Done:** the figure is now drawn in three dimensions with three.js, loaded only when needed. The reader can drag to turn the view and choose Turned, As printed or Along path. The pair turns in its plane, E is beside it in that plane, B runs along the axis, and a dashed line marks the photon’s path. Each pair fades out at the end of its half-turn, and after a moment a new pair fades in at 0°, so nothing jumps. The rotation arrow shows only when the motion is paused (the #73 rule). The E trace through the half-turn sits underneath. The readouts are whole percentages padded to a fixed width, and their direction moved into the label. Where WebGL is not available, the flat page view is drawn instead. The notes say that the 3D view and the fading are ours. Two new tests cover this.
 - **Owner:** what is the cut-off “path” label? **Answer:** it labelled the dashed line, the photon’s path, and its box was too narrow. **Done:** it now reads “photon’s path” in full, and an arrowhead on the line shows the photon moving along x (Fig. 5-2, p. 44).
+
+### Fig. 5-1 (changed, agreed 2026-11-18)
+
+- **Owner:** the pair-spacing slider adds little to the illustration. **Done:** the slider is gone, the spacing is fixed at 68 units, and its Try step is removed. The E and B readouts take the 4-9 treatment: whole percentages at a fixed width, with the direction in the label. The shared formatter (`percentOfPeak`) now lives in the kit.
+- **Owner:** the text by each pair is hard to read; it should fade in and out more slowly. The annihilation text is too long (“annihilate & reverse”?) and hard to see. **Done:** “pair N” fades in as the pair forms and out as its turn ends. “annihilate & reverse”, the owner’s wording and Fleming’s sequence on p. 44, fades in as the pair ends and lingers about a second into the next pair. Each label has its own line and is a size larger, so the two never overlap. The stage is 22 units taller to make room.

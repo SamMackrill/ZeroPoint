@@ -1,7 +1,8 @@
 // Behaviour of individual companion diagrams that a reader relies on, beyond the book's numbers.
 import { describe, expect, it } from 'vitest';
 import { DEBYE_FAR, DEBYE_NEAREST, debyeMotion } from '../src/book/chapters/ch03';
-import { PAIR_CYCLE, pairLife, percentOfPeak } from '../src/book/chapters/ch04';
+import { PAIR_CYCLE, pairLife } from '../src/book/chapters/ch04';
+import { percentOfPeak } from '../src/book/kit';
 import { deflectionPath } from '../src/book/chapters/ch07';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';

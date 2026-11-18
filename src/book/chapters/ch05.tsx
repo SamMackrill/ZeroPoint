@@ -1,15 +1,18 @@
 // Chapter 5: The Zero-Point Photon (PDF pp. 43–47). Figures 5-1 and 5-2.
 import { useMemo, useState } from 'react';
-import { Action, Arrow, Charge, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, fmt, pathThrough, rad, rng, usePlayback } from '../kit';
+import { Action, Arrow, Charge, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, fmt, pathThrough, percentOfPeak, rad, rng, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 
 /** The pair of a photon's series at index n: even pairs turn clockwise (E up, B into the page), odd ones the other way. */
 export const seriesPair = (n: number) => ({ clockwise: n % 2 === 0, up: n % 2 === 0 ? 1 : -1 });
 
+/** 0 before `from`, 1 after `to`, easing smoothly between: for fading a label in or out. */
+const ramp = (v: number, from: number, to: number) => { const k = Math.min(1, Math.max(0, (v - from) / (to - from))); return k * k * (3 - 2 * k); };
+
 /** Figure 5-1: a photon as a series of pairs, each a half-turn, alternating in rotation and so in E and B. */
 function PairSeries() {
-  const [spacing, setSpacing] = useState(68);
+  const spacing = 68;
   const [record, setRecord] = useState(true);
   const count = 9, play = usePlayback({ speed: 0.55 });
   const cycle = play.t % (count + 0.6), active = Math.min(count - 1, Math.floor(cycle)), u = Math.min(1, cycle - active);
@@ -17,11 +20,11 @@ function PairSeries() {
   const wave = pathThrough(Array.from({ length: 181 }, (_, i) => { const s = (i / 180) * count; return [x0 - spacing / 2 + s * spacing, 62 - 24 * Math.sin(Math.PI * s)] as const; }));
   const now = seriesPair(active), strength = Math.sin(Math.PI * u);
   return <Diagram stage={
-    <Stage w={W} h={300} label={`A photon as a row of ${count} virtual electron-positron pairs. Pair ${active + 1} is turning ${now.clockwise ? 'clockwise' : 'counter-clockwise'}: its electric field points ${now.up > 0 ? 'up' : 'down'} and its magnetic field ${now.clockwise ? 'into' : 'out of'} the page.`}>
-      <T x={24} y={66} anchor="start" tone="e" size="lg">E</T><T x={24} y={y + 6} anchor="start" size="sm">pairs</T><T x={24} y={242} anchor="start" tone="b" size="lg">B</T>
+    <Stage w={W} h={322} label={`A photon as a row of ${count} virtual electron-positron pairs. Pair ${active + 1} is turning ${now.clockwise ? 'clockwise' : 'counter-clockwise'}: its electric field points ${now.up > 0 ? 'up' : 'down'} and its magnetic field ${now.clockwise ? 'into' : 'out of'} the page.`}>
+      <T x={24} y={66} anchor="start" tone="e" size="lg">E</T><T x={24} y={y + 6} anchor="start" size="sm">pairs</T><T x={24} y={264} anchor="start" tone="b" size="lg">B</T>
       {record && <Line d={wave} tone="e" w={1.4} opacity={0.5}/>}
       <line x1={x0 - spacing / 2} y1={62} x2={x0 + spacing * (count - 0.5)} y2={62} className="bk-s-faint" strokeWidth="1"/>
-      <Arrow x1={x0 - spacing / 2} y1={282} x2={x0 + spacing * (count - 0.5)} y2={282} tone="muted" w={1.2} head={7}/><T x={W / 2} y={276} size="sm">direction of the photon</T>
+      <Arrow x1={x0 - spacing / 2} y1={306} x2={x0 + spacing * (count - 0.5)} y2={306} tone="muted" w={1.2} head={7}/><T x={W / 2} y={300} size="sm">direction of the photon</T>
       {Array.from({ length: count }, (_, n) => {
         const x = x0 + n * spacing, pair = seriesPair(n), live = n === active, age = live ? u : n < active ? 1 : 0;
         const angle = pair.clockwise ? 180 - 180 * age : 180 + 180 * age, field = live ? strength : 0;
@@ -30,24 +33,32 @@ function PairSeries() {
           {record && !live && <g opacity={0.4}>
             <Zepton x={x} y={y} angle={90 * pair.up} len={spacing * 0.5} oval={false} signs={false}/>
             <Vector x={x} y={62} angle={90 * pair.up} len={30} centred tone="e" w={1.6} head={7}/>
-            <InOut x={x} y={238} out={!pair.clockwise} r={7}/>
+            <InOut x={x} y={260} out={!pair.clockwise} r={7}/>
           </g>}
           {live && <>
             <Zepton x={x} y={y} angle={angle} len={spacing * 0.86} open={Math.max(0.18, strength)} emphasis="key" signs={spacing > 60}/>
             <Spin x={x} y={y} r={spacing * 0.5} ccw={!pair.clockwise} from={pair.clockwise ? 150 : 210} sweep={90}/>
             <Vector x={x} y={62} angle={90 * pair.up} len={6 + amp * field} centred tone="e" w={3}/>
-            <InOut x={x} y={238} out={!pair.clockwise} r={5 + 8 * field} opacity={0.35 + 0.65 * field}/>
+            <InOut x={x} y={260} out={!pair.clockwise} r={5 + 8 * field} opacity={0.35 + 0.65 * field}/>
           </>}
         </g>;
       })}
-      <T x={x0 + active * spacing} y={y + spacing * 0.5 + 26} size="sm" tone="mark">{u > 0.9 ? 'annihilates: the field reverses and induces the next' : `pair ${active + 1}`}</T>
+      {/* Each pair's name fades in as it forms and out near the end of its turn; then, over the same place, its
+          annihilation fades in and lingers into the next pair's start, slowly enough to read. */}
+      {[active - 1, active].filter(n => n >= 0).map(n => {
+        const tau = cycle - n, x = x0 + n * spacing, ly = y + spacing * 0.5 + 24;
+        const name = Math.min(ramp(tau, 0, 0.18), 1 - ramp(tau, 0.5, 0.68)), gone = Math.min(ramp(tau, 0.62, 0.8), 1 - ramp(tau, 1.2, 1.4));
+        return <g key={n}>
+          {name > 0 && <T x={x} y={ly} tone="mark" opacity={name}>pair {n + 1}</T>}
+          {gone > 0 && <T x={x} y={ly + 20} tone="mark" opacity={gone}>annihilate &amp; reverse</T>}
+        </g>;
+      })}
     </Stage>}>
     <PlayBar play={play} label="the photon"/>
     <Action onClick={() => play.seek((active + 1) % count)}>Next pair</Action>
-    <Slider label="Half a wavelength (pair spacing)" value={spacing} min={50} max={74} step={2} onChange={setSpacing} unit="units"/>
     <Toggle label="Show the whole series, as printed" checked={record} onChange={setRecord}/>
-    <Readout label="E of this pair" value={`${fmt(strength, 2)}, ${now.up > 0 ? 'up' : 'down'}`} tone="e"/>
-    <Readout label="B of this pair" value={`${fmt(strength, 2)}, ${now.clockwise ? 'in' : 'out'}`} tone="b"/>
+    <Readout label={`E of this pair, ${now.up > 0 ? 'up' : 'down'} the page`} value={percentOfPeak(strength)} tone="e"/>
+    <Readout label={`B of this pair, ${now.clockwise ? 'into' : 'out of'} the page`} value={percentOfPeak(strength)} tone="b"/>
   </Diagram>;
 }
 
@@ -164,7 +175,6 @@ const chapter: ChapterContent = {
         'Watch one pair: it forms, turns half a turn while its E and B rise and fall, and is gone. The next forms half a wavelength on, turning the other way, so E and B point the other way.',
         'Press “Next pair” with the animation paused to step through the series one hand-off at a time.',
         'Turn off “Show the whole series”. What is left is what exists at one moment: a single pair. The printed figure shows all nine at once, as a record of the photon’s passage.',
-        'Change the spacing: the pair always spans half the photon’s wavelength (chapter 4), so a longer wavelength means larger pairs further apart.',
       ],
       notes: <p>The figure prints every pair at once. That only one pair of the series exists at a time follows the text (<Q>When that pair is annihilated … induce a new central particle pair</Q>). Each pair is shown turning where it forms; Fleming does not say outright whether a pair turns in place or travels with the photon (see Figure 4-8). The pair’s opening and closing as it turns follows <Pg n={55}/>.</p>,
       labs: [
