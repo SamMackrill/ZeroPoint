@@ -1,6 +1,6 @@
 // Chapter 4: What is a Virtual Photon? (PDF pp. 33–42). Figures 4-1 to 4-9.
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
-import { Arrow, Choice, Diagram, FallbackOnError, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback } from '../kit';
+import { Arrow, Choice, Diagram, FallbackOnError, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { PairView } from '../three/PairScene';
 import type { ChapterContent } from '../types';
@@ -220,7 +220,7 @@ function FlatPair({ turned, cw, presence, label }: { turned: number; cw: boolean
 function RotatingPair() {
   const [sense, setSense] = useState<'cw' | 'ccw'>('cw');
   const [view, setView] = useState<PairView>('turned');
-  const [flat, setFlat] = useState(false);
+  const [flat, setFlat] = useState(() => !canDraw3D());
   const fail = useCallback(() => setFlat(true), []);
   const [sought, setSought] = useState(false);
   const play = usePlayback({ speed: 0.25 });

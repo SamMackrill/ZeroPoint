@@ -5,11 +5,33 @@ import { PAIR_CYCLE, pairLife, sightedBySeek } from '../src/book/chapters/ch04';
 import { percentOfPeak } from '../src/book/kit';
 import { dwellAngle, meanOffset } from '../src/book/chapters/ch06';
 import { deflectionPath } from '../src/book/chapters/ch07';
+import { COIL_LENGTH, COIL_RADIUS, COIL_ZEPTONS, SEEDS, ZEPTON_COUNTS, coilField, coilFieldLine, linesForCurrent } from '../src/book/three/coil-math';
 import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/book/three/sphere-math';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
+  it('Figure 6-18: the coil’s field runs to the north pole on the right inside, and back the other way outside', () => {
+    expect(coilField(0, 0)[0]).toBeGreaterThan(0); // inside, along +x: north to the right, as the caption says
+    expect(coilField(0, COIL_RADIUS * 1.75)[0]).toBeLessThan(0); // outside, the opposite way (p. 59)
+    expect(Math.abs(coilField(0, 0)[1])).toBeLessThan(1e-6); // on the axis, straight along it
+    // A line from inside the coil leaves the right-hand end and comes back on the outside.
+    const line = coilFieldLine(0, 0.35), xs = line.map(([x]) => x);
+    expect(Math.max(...xs)).toBeGreaterThan(COIL_LENGTH / 2);
+    expect(Math.max(...line.map(([, rho]) => rho))).toBeGreaterThan(COIL_RADIUS);
+    // The field lines drawn follow the current: none when off, more as it rises, all of them at full current either way.
+    expect(linesForCurrent(0)).toBe(0);
+    expect(linesForCurrent(0.1)).toBe(1);
+    expect(linesForCurrent(0.5)).toBe(SEEDS.length / 2);
+    expect(linesForCurrent(-1)).toBe(SEEDS.length);
+    // Every zepton the control can show has a place; those inside the coil spin about a field along +x.
+    expect(COIL_ZEPTONS).toHaveLength(ZEPTON_COUNTS.many);
+    for (const [x, rho] of COIL_ZEPTONS) {
+      if (rho < COIL_RADIUS * 0.7) expect(coilField(x, rho)[0], `inside at ${x}, ${rho}`).toBeGreaterThan(0);
+      else expect(rho, `outside at ${x}`).toBeGreaterThan(COIL_RADIUS * 1.3); // clear of the wire
+    }
+  });
+
   it('Figure 6-4: the lines come from every direction evenly, and the patch keeps one area as the sphere grows', () => {
     const dirs = evenDirections(SPHERE_LINES);
     for (const [x, y, z] of dirs) expect(Math.hypot(x, y, z)).toBeCloseTo(1, 9);

@@ -11,3 +11,20 @@ export class FallbackOnError extends Component<{ fallback: ReactNode; children: 
   /** The children, or the fallback once they have failed. */
   render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
+
+let webgl: boolean | undefined;
+
+/**
+ * Whether this browser can draw in three dimensions (WebGL), checked once. Where it cannot, a figure shows its flat
+ * view straight away, without downloading three.js at all.
+ */
+export function canDraw3D() {
+  if (webgl === undefined) {
+    try {
+      webgl = typeof document !== 'undefined' && typeof WebGLRenderingContext !== 'undefined' && !!(document.createElement('canvas').getContext('webgl2') ?? document.createElement('canvas').getContext('webgl'));
+    } catch {
+      webgl = false;
+    }
+  }
+  return webgl;
+}

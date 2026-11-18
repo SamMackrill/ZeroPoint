@@ -1,7 +1,8 @@
 // Chapter 6: Zeptons and Faraday Field Lines (PDF pp. 48–61). Figures 6-1 to 6-18.
 import { Suspense, lazy, useCallback, useMemo, useRef, useState, type ComponentType } from 'react';
-import { Action, Arrow, BlockArrow, Charge, Choice, Diagram, Drag, FallbackOnError, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fmt, lerpAngle, pathThrough, polar, rad, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
+import { Action, Arrow, BlockArrow, Charge, Choice, Dial, Diagram, Drag, FallbackOnError, FieldPicture, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fmt, lerpAngle, pathThrough, polar, rad, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
 import { Pg, Q } from '../prose';
+import { ZEPTON_COUNTS } from '../three/coil-math';
 import { SPHERE_LINES, SPHERE_R_MIN } from '../three/sphere-math';
 import type { BookItem, ChapterContent } from '../types';
 import { TwoSources } from './shared';
@@ -134,7 +135,7 @@ function FlatSpheres({ r, label }: { r: number; label: string }) {
 /** Figure 6-4: every sphere round the charge is crossed by the same lines, spread over more area. */
 function EqualLinesSpheres() {
   const [r, setR] = useState(90);
-  const [flat, setFlat] = useState(false);
+  const [flat, setFlat] = useState(() => !canDraw3D());
   const fail = useCallback(() => setFlat(true), []);
   const ref = 45, lines = flat ? 8 : SPHERE_LINES, density = polarizationDensity(r, ref), px = 90, pw = 540, ph = 110, py = 30;
   const curve = pathThrough(Array.from({ length: 61 }, (_, i) => { const rr = ref + (i / 60) * 115; return [px + ((rr - ref) / 115) * pw, py + ph - polarizationDensity(rr, ref) * ph] as const; }));
@@ -435,10 +436,11 @@ function BarMagnet() {
   </Diagram>;
 }
 
-/** Figure 6-18: a coil in cross section, the field it makes, and the zeptons spinning inside and outside it. */
-function Coil() {
-  const [current, setCurrent] = useState(1);
-  const play = usePlayback();
+/** Figure 6-18 drawn in three dimensions: loaded on demand, since three.js is large. */
+const CoilScene = lazy(() => import('../three/CoilScene'));
+
+/** Figure 6-18 as printed: the coil in cross section, flat. The fallback where 3D cannot be drawn. */
+function FlatCoil({ current, t }: { current: number; t: number }) {
   const H = 380, cy = 190, turns = 6, x0 = 270, pitch = 36, half = 62;
   const wires = useMemo<Wire[]>(() => Array.from({ length: turns }, (_, i) => [{ x: x0 + i * pitch, y: cy - half, i: current }, { x: x0 + i * pitch, y: cy + half, i: -current }]).flat(), [current]);
   const lines = useMemo(() => {
@@ -452,15 +454,35 @@ function Coil() {
   }, [wires, current]);
   const spots = [[-150, 0], [-60, 0], [0, 0], [60, 0], [150, 0], [-40, -112], [50, -112], [-40, 112], [50, 112]].map(([dx, dy]) => ({ x: x0 + ((turns - 1) * pitch) / 2 + dx, y: cy + dy, inside: dy === 0 }));
   const north = current > 0 ? 'right' : 'left';
-  return <Diagram stage={
-    <Stage w={W} h={H} label={Math.abs(current) < 0.05 ? 'A coil in cross section with no current: no magnetic field.' : `A coil in cross section. The current comes out of the page in the ${current > 0 ? 'top' : 'bottom'} windings and goes in at the ${current > 0 ? 'bottom' : 'top'}, producing a magnetic field through the coil with its north pole to the ${north}.`}>
+  return <Stage w={W} h={H} label={Math.abs(current) < 0.05 ? 'A coil in cross section with no current: no magnetic field.' : `A coil in cross section. The current comes out of the page in the ${current > 0 ? 'top' : 'bottom'} windings and goes in at the ${current > 0 ? 'bottom' : 'top'}, producing a magnetic field through the coil with its north pole to the ${north}.`}>
       {lines.map((points, i) => <g key={i} className="bk-s-b bk-f-b"><path d={pathThrough(points)} fill="none" strokeWidth="1.4"/>{alongLine(points, 170, 60).map((m, k) => <polygon key={k} points="6,0 -5,4.5 -5,-4.5" transform={`translate(${m.x} ${m.y}) rotate(${-m.angle})`} stroke="none"/>)}</g>)}
-      {Math.abs(current) > 0.05 && spots.map((p, i) => { const [bx, by] = wireField(wires, p.x, p.y); return <SpinLoop key={i} x={p.x} y={p.y} angle={deg(Math.atan2(-by, bx))} r={11} turn={play.t * 280 * Math.abs(current) + i * 50} tone="motion"/>; })}
+      {Math.abs(current) > 0.05 && spots.map((p, i) => { const [bx, by] = wireField(wires, p.x, p.y); return <SpinLoop key={i} x={p.x} y={p.y} angle={deg(Math.atan2(-by, bx))} r={11} turn={t * 280 * Math.abs(current) + i * 50} tone="motion"/>; })}
       {wires.map((w, i) => <g key={i}><circle cx={w.x} cy={w.y} r={15} className="bk-plate"/>{Math.abs(current) > 0.05 && <InOut x={w.x} y={w.y} out={w.i > 0} r={8} tone="text"/>}</g>)}
       {Math.abs(current) > 0.05 && <><T x={current > 0 ? 668 : 52} y={cy + 6} tone="text" size="lg">N</T><T x={current > 0 ? 52 : 668} y={cy + 6} tone="text" size="lg">S</T></>}
       <T x={W / 2} y={H - 12} size="sm">dot: current toward you · cross: current away · loops: spinning zeptons</T>
-    </Stage>}>
-    <Slider label="Current in the coil" value={current} min={-1} max={1} step={0.1} onChange={setCurrent} show={v => (Math.abs(v) < 0.05 ? 'off' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? '(as drawn)' : '(reversed)'}`)}/>
+    </Stage>;
+}
+
+/** Figure 6-18: a coil, the field it makes, and the zeptons spinning inside and outside it, in three dimensions. */
+function Coil() {
+  const [current, setCurrent] = useState(1);
+  const [cutaway, setCutaway] = useState(true);
+  const [many, setMany] = useState<keyof typeof ZEPTON_COUNTS>('few');
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const fail = useCallback(() => setFlat(true), []);
+  const play = usePlayback();
+  const north = current > 0 ? 'right' : 'left', on = Math.abs(current) >= 0.05;
+  const description = on ? `A coil wound from left to right, ${cutaway ? 'with its front half cut away, ' : ''}carrying a current that comes out at the top of each turn${current < 0 ? ' (reversed: in at the top)' : ''}. Its field runs through the coil to the north pole on the ${north} and back round the outside. Zeptons inside the coil spin one way about the field, those outside the other way. Drag to turn the view.` : 'A coil with no current: no magnetic field. Drag to turn the view.';
+  return <Diagram stage={flat
+    ? <FlatCoil current={current} t={play.t}/>
+    : <FallbackOnError onError={fail} fallback={<FlatCoil current={current} t={play.t}/>}>
+        <Suspense fallback={<FlatCoil current={current} t={play.t}/>}>
+          <CoilScene state={{ current, t: play.t, cutaway, zeptons: ZEPTON_COUNTS[many] }} onFail={fail} description={description}/>
+        </Suspense>
+      </FallbackOnError>}>
+    <Dial label="Current in the coil" value={current} min={-1} max={1} step={0.1} onChange={setCurrent} marks={['rev', 'off', 'fwd']} show={v => (Math.abs(v) < 0.05 ? 'off' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'forward' : 'reversed'}`)}/>
+    {!flat && <Toggle label="Cut away the front of the coil" checked={cutaway} onChange={setCutaway}/>}
+    {!flat && <Choice label="Spinning zeptons" value={many} onChange={setMany} options={[{ value: 'few', label: 'Few' }, { value: 'more', label: 'More' }, { value: 'many', label: 'Many' }]}/>}
     <PlayBar play={play} label="the spinning zeptons"/>
     <Readout label="North pole" value={Math.abs(current) < 0.05 ? 'none' : `to the ${north}`} tone="b"/>
     <Remark>The zeptons inside the coil spin one way and those outside the opposite way; the field lines outside point the opposite way too.</Remark>
@@ -666,8 +688,16 @@ const items: BookItem[] = [
       <p>Curl the fingers of the right hand the way the current flows through the coil, and <Q>your thumb will point in the direction of the magnetic field, the north pole of the electromagnet</Q> (<Pg n={59}/>).</p>
       <p><Q>The current in the coil is making the zepton dipoles of the vacuum that are inside the coil spin in the same circular direction.</Q> And <Q>while the zeptons inside the coil spin one way, the zeptons outside the coil spin the opposite direction, and we can see the magnetic field lines outside the coil also point in the opposite direction.</Q></p>
     </>,
-    tryThis: ['Follow a line through the coil from S to N and back round the outside: it points the opposite way out there.', 'Compare a loop inside the coil with one above or below it: they spin opposite ways.', 'Reverse the current. The poles change ends and every loop reverses. Set it to zero and the field is gone.'],
-    notes: <p>The lines are computed for twelve straight wires seen end on, which is the printed cross section taken literally. Loop size and speed are display choices.</p>,
+    tryThis: [
+      'Drag to turn the coil. With the front cut away you can see inside: the field runs along the axis, out at N and back round the outside to S.',
+      'Compare a zepton inside the coil with one outside it: each spins about the field where it is, so they spin opposite ways.',
+      'Watch the markers on the wire: the current comes out of the page at the top of each turn and goes in at the bottom, as the caption says, and the right hand grip gives N on the right.',
+      'Reverse the current. The poles change ends and every zepton reverses. Set it to zero and the field is gone.',
+    ],
+    notes: <>
+      <p>The printed figure is a cross section: the grey circles are the tops of the turns, the white circles the bottoms. The diagram draws the whole coil in three dimensions, with the front half cut away to show the inside.</p>
+      <p>The field lines are computed for the six turns, each taken as a circular loop, and drawn in four planes through the axis. The zeptons are drawn as small dipoles spinning about the field where they stand; their size and speed are display choices. Where the browser cannot draw in 3D, the printed cross section is shown, computed for twelve straight wires seen end on.</p>
+    </>,
   },
 ];
 
