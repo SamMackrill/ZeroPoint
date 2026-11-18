@@ -5,12 +5,20 @@ import { PAIR_CYCLE, pairLife, sightedBySeek } from '../src/book/chapters/ch04';
 import { percentOfPeak } from '../src/book/kit';
 import { dwellAngle, meanOffset } from '../src/book/chapters/ch06';
 import { channelFlow, circleRadii, deflectionPath, fieldLineXs } from '../src/book/chapters/ch07';
+import { vortexCells } from '../src/book/chapters/ch08';
 import { COIL_LENGTH, COIL_RADIUS, COIL_ZEPTONS, SEEDS, ZEPTON_COUNTS, coilField, coilFieldLine, linesForCurrent } from '../src/book/three/coil-math';
 import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/book/three/sphere-math';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
+  it('Figure 8-1: Descartes’s vortex cells tile the engraving’s frame without gaps or overlaps', () => {
+    const area = (p: [number, number][]) => Math.abs(p.reduce((a, [x, y], i) => { const [u, v] = p[(i + 1) % p.length]; return a + x * v - u * y; }, 0)) / 2;
+    const cells = vortexCells();
+    expect(cells.reduce((a, c) => a + area(c), 0)).toBeCloseTo(900 * 1360, -2);
+    for (const c of cells) expect(c.length).toBeGreaterThanOrEqual(3);
+  });
+
   it('Figure 7-2: idle wheels between vortices turning together only turn; between rows that differ they travel', () => {
     expect(channelFlow(0.6, 0.6)).toBe(0);
     expect(channelFlow(0.8, -0.8)).toBeCloseTo(0.8, 9); // along A–B: the current

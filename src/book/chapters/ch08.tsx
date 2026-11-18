@@ -1,5 +1,5 @@
 // Chapter 8: The Mattermagnetic Field (PDF pp. 70–80). Figures 8-1 to 8-6.
-import { useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { Action, Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
@@ -7,26 +7,108 @@ import { HandRule } from './shared';
 
 const W = 720;
 
-/** Figure 8-1: Descartes's vortices, from a few great ones that carry planets down to innumerable small ones. */
+/**
+ * The vortices of Descartes's engraving (Principia Philosophiae, 1644), in its own frame of 900 by 1360: each star's
+ * place, its letter, how strongly its vortex presses on its neighbours (`weight`), and the shape of its circling lines
+ * (`ratio` of the narrow axis to the wide one, turned by `tilt` degrees; a narrow vortex is one seen edge on).
+ */
+const DESCARTES: { x: number; y: number; name?: string; weight: number; ratio: number; tilt: number }[] = [
+  { x: 185, y: 135, weight: 26000, ratio: 0.85, tilt: 0 },
+  { x: 625, y: 225, name: 'Y', weight: 14000, ratio: 0.38, tilt: -32 },
+  { x: 900, y: 520, weight: 0, ratio: 0.3, tilt: 88 },
+  { x: 245, y: 545, name: 'f', weight: 18000, ratio: 0.32, tilt: -38 },
+  { x: 590, y: 645, name: 'F', weight: 4000, ratio: 0.9, tilt: 0 },
+  { x: 0, y: 820, weight: -8000, ratio: 0.4, tilt: 85 },
+  { x: 355, y: 995, name: 'S', weight: 30000, ratio: 0.78, tilt: 0 },
+  { x: 795, y: 900, name: 'L', weight: 8000, ratio: 0.3, tilt: 88 },
+  { x: 715, y: 1290, name: 'D', weight: 6000, ratio: 0.88, tilt: 0 },
+  { x: 120, y: 1300, weight: -4000, ratio: 0.5, tilt: 60 },
+  { x: 455, y: 1330, weight: -14000, ratio: 0.6, tilt: 0 },
+];
+
+/** The comet's band through the engraving, top right to the bottom, in the engraving's frame. */
+const COMET: [number, number][] = [[780, 50], [700, 250], [600, 390], [515, 475], [455, 610], [440, 700], [490, 800], [530, 900], [540, 1000], [520, 1110], [465, 1215], [440, 1300]];
+
+/** Clip a convex polygon to the half-plane a·p ≤ b (one step of Sutherland–Hodgman). */
+function clipHalf(poly: [number, number][], ax: number, ay: number, b: number): [number, number][] {
+  const out: [number, number][] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const p = poly[i], q = poly[(i + 1) % poly.length], fp = ax * p[0] + ay * p[1] - b, fq = ax * q[0] + ay * q[1] - b;
+    if (fp <= 0) out.push(p);
+    if (fp * fq < 0) { const k = fp / (fp - fq); out.push([p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k]); }
+  }
+  return out;
+}
+
+/**
+ * Each vortex's cell: the part of the frame nearer its star than any other, with a stronger vortex pressing its
+ * boundary outward (a power diagram: |p − c|² − weight is least). Descartes's cells meet in curves; straight edges are
+ * this diagram's simplification.
+ */
+export function vortexCells(w = 900, h = 1360) {
+  return DESCARTES.map((s, i) => DESCARTES.reduce<[number, number][]>((poly, t, j) => {
+    if (i === j) return poly;
+    // |p−s|² − ws ≤ |p−t|² − wt  ⇔  2p·(t − s) ≤ |t|² − |s|² − wt + ws
+    return clipHalf(poly, 2 * (t.x - s.x), 2 * (t.y - s.y), t.x * t.x + t.y * t.y - s.x * s.x - s.y * s.y - t.weight + s.weight);
+  }, [[0, 0], [w, 0], [w, h], [0, h]]));
+}
+
+/** Figure 8-1: Descartes's vortices as he engraved them, with numbered notes on what the picture says. */
 function Vortices() {
-  const [count, setCount] = useState(3);
   const play = usePlayback();
-  const H = 380, cols = count, rows = Math.max(2, Math.round(count * 0.55)), cw = (W - 40) / cols, ch = (H - 40) / rows, r = Math.min(cw, ch) / 2 - 3, small = count >= 9;
+  const H = 560, scale = H / 1360, fx = (W - 900 * scale) / 2, clipBase = `bk-vortex-${useId().replace(/:/g, '')}`;
+  const cells = useMemo(() => vortexCells(), []);
+  const map = (x: number, y: number): [number, number] => [fx + x * scale, y * scale];
+  const comet = pathThrough(COMET.map(([x, y]) => map(x, y)));
+  // The comet's place on its band, moving from the top right toward the bottom.
+  const along = (k: number): [number, number] => {
+    const u = Math.min(COMET.length - 1.001, k * (COMET.length - 1)), n = Math.floor(u), f = u - n;
+    return map(COMET[n][0] + (COMET[n + 1][0] - COMET[n][0]) * f, COMET[n][1] + (COMET[n + 1][1] - COMET[n][1]) * f);
+  };
+  const [cx, cy] = along((play.t * 0.06) % 1);
+  // The circling lines are drawn once; their flow is a CSS animation, paused with the figure, so a frame redraws
+  // only the comet. Lines run out until even the narrow axis of an edge-on vortex fills its cell.
+  const rings = useMemo(() => DESCARTES.map((s, n) => {
+    const x = fx + s.x * scale, y = s.y * scale, reach = Math.max(...cells[n].map(([px, py]) => Math.hypot(px - s.x, py - s.y))) * scale;
+    return <g key={n} clipPath={`url(#${clipBase}-${n})`}>
+      {Array.from({ length: Math.min(120, Math.ceil(reach / s.ratio / 7)) }, (_, k) => {
+        const r = 6 + k * 7;
+        return <ellipse key={k} cx={x} cy={y} rx={r} ry={r * s.ratio} transform={`rotate(${s.tilt} ${x} ${y})`} className="bk-s-muted bk-vortex-flow" fill="none" strokeWidth="1.3" strokeDasharray="1.6 3.2" style={{ animationDuration: `${(1.2 + r / 40).toFixed(2)}s` }}/>;
+      })}
+    </g>;
+  }), [cells, clipBase, fx, scale]);
+  // Numbered notes: a marker on the drawing, and its text beside it.
+  const marker = (n: number, x: number, y: number) => {
+    const [mx, my] = map(x, y);
+    return <g key={n}><circle cx={mx} cy={my} r={11} className="bk-f-accent"/><T x={mx} y={my + 5} tone="text" size="sm">{n}</T></g>;
+  };
+  const note = (n: number, x: number, y: number, lines: string[], anchor: 'start' | 'end') => {
+    const bx = anchor === 'end' ? x + 4 : x - 4, tx = anchor === 'end' ? x - 12 : x + 12;
+    return <g key={`n${n}`}>
+      <circle cx={bx} cy={y - 5} r={9} className="bk-f-accent"/><T x={bx} y={y} tone="text" size="sm">{n}</T>
+      {lines.map((line, k) => <T key={k} x={tx} y={y + k * 18} anchor={anchor} size="sm">{line}</T>)}
+    </g>;
+  };
   return <Diagram stage={
-    <Stage w={W} h={H} label={small ? `Space filled with ${cols * rows} small vortices, each drawn as a rotating zepton dipole.` : `Space filled with ${cols * rows} large interlocking vortices, each a circling band of particles carrying bodies round its centre.`}>
-      {Array.from({ length: rows }, (_, j) => Array.from({ length: cols }, (_, i) => {
-        const x = 20 + cw * (i + 0.5), y = 20 + ch * (j + 0.5), sense = (i + j) % 2 ? 1 : -1, turn = sense * play.t * (small ? 220 : 40);
-        if (small) return <Zepton key={`${i}-${j}`} x={x} y={y} angle={turn + (i * 7 + j * 13) * 20} len={r * 1.5} oval={false} signs={false}/>;
-        return <g key={`${i}-${j}`}>
-          {[0.35, 0.65, 0.95].map(k => <circle key={k} cx={x} cy={y} r={r * k} className="bk-s-muted" fill="none" strokeWidth="1" strokeDasharray="1.5 5" strokeDashoffset={-turn * k * 0.6}/>)}
-          <circle cx={x} cy={y} r={Math.max(3, r * 0.09)} className="bk-f-mark"/>
-          {count <= 5 && [0.5, 0.82].map((k, n) => { const [px, py] = polar(x, y, r * k, turn / k + n * 140); return <circle key={k} cx={px} cy={py} r={Math.max(2.5, r * 0.05)} className="bk-f-text"/>; })}
-        </g>;
-      }))}
+    <Stage w={W} h={H} label="Descartes’s vortices as he engraved them, with notes. 1: S, the Sun, at the centre of a great vortex of circling matter that carries the planets round it. 2: every star has its own vortex, packed edge to edge, so that space is full, with nothing empty. 3: some vortices are seen edge on, their circling drawn as long ellipses. 4: a comet’s path, passing from one vortex into the next.">
+      <defs>{cells.map((poly, n) => <clipPath key={n} id={`${clipBase}-${n}`}><polygon points={poly.map(([x, y]) => map(x, y).join(',')).join(' ')}/></clipPath>)}</defs>
+      <rect x={fx} y={0} width={900 * scale} height={H} className="bk-fill-panel"/>
+      <g className={play.playing ? 'is-flowing' : undefined}>{rings}</g>
+      {cells.map((poly, n) => <polygon key={n} points={poly.map(([x, y]) => map(x, y).join(',')).join(' ')} className="bk-s-faint" fill="none" strokeWidth="1"/>)}
+      <path d={comet} className="bk-s-text" fill="none" strokeWidth="7" strokeDasharray="1.5 2.5" opacity={0.55}/>
+      <circle cx={cx} cy={cy} r={4.5} className="bk-f-mark"/>
+      {DESCARTES.filter(s => s.name).map(s => {
+        const [x, y] = map(s.x, s.y);
+        return <g key={s.name}><circle cx={x} cy={y} r={s.name === 'S' ? 7 : 4.5} className="bk-f-mark"/><T x={x + (s.name === 'S' ? 16 : 12)} y={y + 5} tone="text" size={s.name === 'S' ? 'lg' : 'md'}>{s.name}</T></g>;
+      })}
+      {marker(1, 300, 1090)}{marker(2, 600, 760)}{marker(3, 175, 470)}{marker(4, 700, 140)}
+      {note(1, fx - 14, 60, ['S, the Sun, at the centre', 'of a great vortex of', 'circling matter that', 'carries the planets round'], 'end')}
+      {note(2, fx - 14, 190, ['every star is a sun with', 'its own vortex; packed', 'edge to edge, they fill', 'space: nothing is empty'], 'end')}
+      {note(3, W - fx + 14, 60, ['some vortices are seen', 'edge on: their circling', 'looks like long ellipses'], 'start')}
+      {note(4, W - fx + 14, 170, ['a comet’s path, passing', 'from one vortex', 'into the next'], 'start')}
     </Stage>}>
-    <Slider label="How many vortices fill the space" value={count} min={2} max={14} step={1} onChange={setCount} show={v => `${v * Math.max(2, Math.round(v * 0.55))}`}/>
     <PlayBar play={play} label="the vortices"/>
-    <Remark>{small ? 'Innumerable and small: Maxwell’s molecular vortices, or rotating zepton dipoles.' : 'Descartes’s own picture: very large vortices, with the planets riding in their circling bands.'}</Remark>
+    <Remark>Descartes’s answer to why the planets go round: they are carried, like boats in a whirlpool, by a great vortex of matter round the Sun.</Remark>
   </Diagram>;
 }
 
@@ -191,9 +273,15 @@ const chapter: ChapterContent = {
       kind: 'figure', id: '8-1', page: 70, section: 'Descartes’s Vortices', title: 'Vortices: Descartes’s, and much smaller ones',
       caption: 'An illustration of vortices by Descartes from his Principia Philosophiae written in1644.',
       Diagram: Vortices,
-      text: <p>Descartes concluded that orbital motion had to be due to vortices, very large ones with the planets riding along their edges. Newton debunked them. But after seeing how magnetism works in Maxwell’s terms, the theory <Q>does not seem quite so laughable, at least not when one presumes they are innumerable and small molecular vortices, or as we have now come to know them as rotating zepton dipoles</Q> (<Pg n={71}/>).</p>,
-      tryThis: ['Start with a few great vortices, each carrying bodies round its centre, as Descartes drew them.', 'Raise the number until they become too small to carry anything: each is now drawn as a rotating zepton.'],
-      notes: <p>Descartes’s engraving has vortices of irregular shape; a regular grid is drawn here, with neighbours turning opposite ways so they mesh. That is a display choice.</p>,
+      text: <>
+        <p>Fleming opens the chapter with the Stanford Encyclopedia’s summary: <Q>A vortex, for Descartes, is a large circling band of material particles</Q>, and the planets and comets are carried <Q>(usually at rest) in these large circling bands. The entire Cartesian plenum, consequently, is comprised of a network or series of separate, interlocking vortices</Q> (<Pg n={70}/>). In the engraving each star is a sun at the centre of its own vortex, and the vortices fill space completely, packed against one another.</p>
+        <p>Descartes concluded that orbital motion had to be due to vortices, very large ones with the planets riding along their edges. Newton debunked them. But after seeing how magnetism works in Maxwell’s terms, the theory <Q>does not seem quite so laughable, at least not when one presumes they are innumerable and small molecular vortices, or as we have now come to know them as rotating zepton dipoles</Q> (<Pg n={71}/>).</p>
+      </>,
+      tryThis: [
+        'Read the four notes in turn: the Sun’s vortex, the vortices filling space, the ones seen edge on, and the comet’s path.',
+        'Watch the matter circling each star: that circling, not a pull across empty space, is what carries a planet round in Descartes’s picture.',
+      ],
+      notes: <p>The layout follows Descartes’s engraving: the stars at its places and with its letters, cells sized as its vortices press on one another, and the edge-on vortices drawn as long ellipses. Its cells meet in curves; straight edges are this diagram’s simplification. The flow of the circling lines, the comet’s pace and the four notes are this diagram’s; the notes paraphrase the quotation above.</p>,
     },
     {
       kind: 'figure', id: '8-2', page: 71, section: 'Tops and Torques', title: 'A top that is not spinning falls',

@@ -1636,3 +1636,18 @@ input {
   fill: var(--text-3);
   font-family: var(--mono);
 }
+
+/* The circling lines of Descartes's vortices (Figure 8-1) flow while the figure plays: the dots move along each line. */
+@keyframes bk-vortex-flow {
+  to { stroke-dashoffset: -4.8; }
+}
+
+.is-flowing .bk-vortex-flow {
+  animation: bk-vortex-flow linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .is-flowing .bk-vortex-flow {
+    animation: none;
+  }
+}
