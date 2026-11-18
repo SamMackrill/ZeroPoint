@@ -23,24 +23,24 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 4-9 | A rotating pair makes E and B | animated | changed | 3D (three.js) with views; pair fades at the end of its half-turn; steady readouts |
 | 5-1 | A photon, pair by pair | animated | changed | Spacing slider removed; slow-fading labels, “annihilate & reverse”; steady readouts |
 | 5-2 | The pairs round the photon are its wave | animated | agreed | No change; the Light lab illustrates it better |
-| 6-1 | A free electron polarizes hydrogen | animated | to review | |
-| 6-2 | The vacuum polarizes in the same way | animated | to review | |
-| 6-3 | Faraday’s lines are the zeptons | still | to review | |
-| 6-4 | The same lines through every sphere | still | to review | |
-| 6-5 | Opposite charges: lines from one to the other | still | to review | |
-| 6-6 | Like charges: lines that turn aside | still | to review | |
-| 6-7 | Which way E points | still | to review | |
-| 6-8 | A bridge of zeptons between opposite charges | animated | to review | |
-| 6-9 | Between like charges, like ends meet | animated | to review | |
-| 6-10 | Repulsion: a hole filled, and pressure | animated | to review | |
-| 6-11 | Repulsion drawn in zeptons | animated | to review | |
-| 6-12 | Attraction: the chain shortens | animated | to review | |
-| 6-13 | Attraction drawn in zeptons | animated | to review | |
-| 6-14 | A moving charge turns the zeptons | still | to review | |
-| 6-15 | A current keeps the zeptons spinning | animated | to review | |
-| 6-16 | From rotation to B: the right hand grip | animated | to review | |
-| 6-17 | A magnet’s lines, threaded with spinning zeptons | animated | to review | |
-| 6-18 | A coil: spin inside, opposite spin outside | animated | to review | |
+| 6-1 | A free electron polarizes hydrogen | animated | changed | Smooth orbits dwelling on the far side; dipole markers; larger atoms |
+| 6-2 | The vacuum polarizes in the same way | animated | changed | Line-count slider removed; eight lines as printed |
+| 6-3 | Faraday’s lines are the zeptons | still | agreed | No change |
+| 6-4 | The same lines through every sphere | still | changed | 3D sphere with 26 lines and a fixed-area patch; flat view as fallback |
+| 6-5 | Opposite charges: lines from one to the other | still | agreed | No change |
+| 6-6 | Like charges: lines that turn aside | still | agreed | No change |
+| 6-7 | Which way E points | still | agreed | No change |
+| 6-8 | A bridge of zeptons between opposite charges | animated | agreed | No change |
+| 6-9 | Between like charges, like ends meet | animated | agreed | No change |
+| 6-10 | Repulsion: a hole filled, and pressure | animated | agreed | No change |
+| 6-11 | Repulsion drawn in zeptons | animated | agreed | No change |
+| 6-12 | Attraction: the chain shortens | animated | changed | Agreed; later the chain spacing went from 62 to 54 so the arrow and label fit (clipping sweep) |
+| 6-13 | Attraction drawn in zeptons | animated | agreed | No change |
+| 6-14 | A moving charge turns the zeptons | still | agreed | No change |
+| 6-15 | A current keeps the zeptons spinning | animated | agreed | No change |
+| 6-16 | From rotation to B: the right hand grip | animated | changed | Taller stage so B (clockwise) is not clipped |
+| 6-17 | A magnet’s lines, threaded with spinning zeptons | animated | agreed | No change |
+| 6-18 | A coil: spin inside, opposite spin outside | animated | changed | 3D copper coil, cut away; current dial; line density follows the current; Few/More/Many zeptons |
 | 7-1 | Maxwell’s current in a field of vortices | still | to review | |
 | 7-2 | Vortices set spinning by a current | animated | to review | |
 | 7-3 | An electric field deflects by pressure | animated | to review | |
@@ -184,3 +184,35 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 ### Fig. 5-2 (agreed 2026-11-18, no change)
 
 - **Owner:** accurate to the original, but hard to understand. After the explanation (the central pair is the particle; the pairs turning in sympathy round it are the wave, p. 44; in reality only slightly biased, p. 45), the owner judged the card fine as it is: the Light laboratory, which the card links to, illustrates this better.
+
+### Fig. 6-1 (changed, agreed 2026-11-18)
+
+- **Owner:** this is a bit flickery; make it smoother. **Cause:** each atom’s electron jumped to a fresh random place 14 times a second. **Done:** each electron now moves smoothly round its proton. It is slowest on the far side from the free electron and quickest on the near side, so it spends most of its time away and the proton faces the free electron (p. 49). With no free electron it circles evenly. The dashed shell is centred on the electron’s average place.
+- **Owner:** better, but the polarization of the hydrogen is still hard to see. **Done:** the electron now dwells much more strongly on the far side (an eccentric-anomaly orbit, smooth and always moving forward), and the polarization reaches further. A mark-coloured line runs from each proton to its electron’s average place, showing each atom’s dipole. The atoms are drawn half as large again. A test checks that the motion is smooth and forward-only, and that a lone atom is neutral on average.
+
+### Fig. 6-2 (changed, agreed 2026-11-18)
+
+- **Owner:** the slider (the number of lines of zeptons) adds nothing and makes the figure more confusing. **Done:** the slider is gone. The figure draws eight lines, as printed, and the Try step no longer mentions it.
+
+### Fig. 6-4 (changed, agreed 2026-11-18)
+
+- **Owner:** would this be clearer in 3D, since it is a sphere? **My view:** yes, and the flat drawing also misleads. On a page, the lines cross circles, whose length grows as r, so the picture alone suggests 1/r. The inverse square comes from the sphere’s area, 4πr², as Fleming says. **Chosen:** build it in 3D.
+- **Done:** the 3D view (three.js, loaded on demand) has 26 lines coming in evenly from every direction, a translucent sphere with three faint great circles, a dot where each line crosses it, and a highlighted patch of fixed area. As the sphere grows, the patch holds fewer crossings. The reader can drag to orbit, and the wheel scrolls the page. The density curve sits underneath. The flat page view, with eight lines, is the fallback. The shared 3D helpers moved to `three/common.ts` and the error boundary to the kit (`FallbackOnError`). The notes give the reason for 3D and say that the line count and the patch are display choices.
+
+### Fig. 6-16 (changed, agreed 2026-11-18)
+
+- **Owner:** the clockwise case clips the B arrow. **Done:** the stage is 40 units taller, and a check of both senses at leans of 0°, 35° and 70° finds nothing outside it.
+
+### Clipping sweep (after 6-16)
+
+A sweep of all 101 stages at their starting settings found drawing past the edge in 15. Most is deliberate: field lines and background zeptons or fluctuations that continue beyond the frame (3-3, 4-2, 6-5, 6-6, 6-13, 6-17, 6-18, x14-2, 16-1), and fields drawn larger than the stage (19-2, x23-1). A real fault turned up in the already-agreed 6-12: at the longest chain, the left arrow and “pressure outside” label ran off the stage. The chain spacing is now 54 instead of 62, so it fits (x 13 to 707 of 720). To check when we reach them: 7-3, 17-1 and x20-2.
+
+### Fig. 6-18 (changed, agreed 2026-11-18)
+
+- **Owner:** this would probably be better in 3D. The grey and white circles represent a coil, which can be drawn more clearly, perhaps as a cut-away to show the field inside.
+- **Done:** the coil is now drawn in 3D (three.js, loaded on demand). It is a six-turn helix wound left to right, with the front half cut away by default; a switch shows the whole coil. Markers travel along the wire the way the current flows: out of the page at the top of each turn, in at the bottom, as the caption says. The field lines are computed for the six turns, each taken as a circular loop, and drawn in four planes through the axis. They run along the axis to N on the right and back round the outside. Small zepton dipoles spin about the local field: three inside on the axis, four outside. Because each spins about the field where it is, those inside and those outside spin opposite ways (p. 59). Reversing the current flips everything. The flat cross section is the fallback. The notes explain the cut-away, the loop approximation and the display choices. A test checks the field’s direction inside and outside, and that a line closes round the outside.
+- **Also:** the 3D figures now check for WebGL before downloading three.js (`canDraw3D`). Without it they show the flat view at once. This also keeps three.js out of the test environment, where loading it occasionally stalled the chapter render test.
+- **Owner:** the current would look better as a dial, like one on a real current controller, rather than a slider. **Done:** a new kit control, `Dial`, works like a reversing controller: off at the top, forward to the right, reverse to the left, 270° of travel, with ticks and a pointer. It turns by dragging round it or with the arrow keys, Page Up and Page Down, Home and End, and it reports itself as a slider to assistive technology. Figure 6-18 uses it for the current. A kit test covers the keys and the ends.
+- **Owner:** make the coil look like copper. **Done:** the wire is now copper: a metallic material with a faint warm glow so it reads as copper in shadow. The colours are named scene constants (`copper`, `copperGlow`) in `scripts/sync-palette.mjs`, and the palette was regenerated, so no colour literal sits in the figure.
+- **Owner:** add a few more rotating zeptons, perhaps with a control. **Done:** a “Spinning zeptons” control offers Few (7), More (20) and Many (40). The extra zeptons are scattered, the same every time, about two in five inside the coil and the rest round the outside and out past the ends. Each spins about the field where it is, so they tilt to follow the field as it turns back. A test checks that every zepton has a place, that those inside sit in a field along +x, and that those outside stay clear of the wire.
+- **Owner:** the current should affect the density of the magnetic field lines. **Agreed:** line density is how the companion shows field strength (6-4). **Done:** the number of field lines now follows the current: one seed (four lines) per sixth of full current, at least one, up to 24 lines plus the axis. The seeds come in an order that keeps them spread through the coil at every setting. The old brightness scaling is gone, and each line carries two arrowheads instead of four. A test covers the count.

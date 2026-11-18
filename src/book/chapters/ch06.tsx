@@ -1,11 +1,30 @@
 // Chapter 6: Zeptons and Faraday Field Lines (PDF pp. 48–61). Figures 6-1 to 6-18.
-import { useMemo, useRef, useState, type ComponentType } from 'react';
-import { Action, Arrow, BlockArrow, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fmt, lerpAngle, pathThrough, polar, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
+import { Suspense, lazy, useCallback, useMemo, useRef, useState, type ComponentType } from 'react';
+import { Action, Arrow, BlockArrow, Charge, Choice, Dial, Diagram, Drag, FallbackOnError, FieldPicture, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fmt, lerpAngle, pathThrough, polar, rad, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
 import { Pg, Q } from '../prose';
+import { ZEPTON_COUNTS } from '../three/coil-math';
+import { SPHERE_LINES, SPHERE_R_MIN } from '../three/sphere-math';
 import type { BookItem, ChapterContent } from '../types';
 import { TwoSources } from './shared';
 
 const W = 720;
+
+/**
+ * Where an atom's electron is on its circle, in degrees from the far side, at phase `psi` of a smooth orbit that dwells
+ * on the far side: `share` 0 is an even circle; toward 1 it lingers far from the free electron and hurries past the
+ * near side (the eccentric-anomaly map, continuous and always moving forward).
+ */
+export function dwellAngle(psi: number, share: number) {
+  const wrapped = Math.atan2(Math.sin(psi), Math.cos(psi)), squeeze = Math.sqrt((1 - share) / (1 + share));
+  return (Math.floor((psi + Math.PI) / (2 * Math.PI)) * 360) + (2 * Math.atan(squeeze * Math.tan(wrapped / 2)) * 180) / Math.PI;
+}
+
+/** How far out, as a share of the circle's radius, the electron is on average for a `share` of dwell. */
+export function meanOffset(share: number) {
+  let sum = 0;
+  for (let i = 0; i < 72; i++) sum += Math.cos(rad(dwellAngle(((i + 0.5) / 72) * 2 * Math.PI - Math.PI, share)));
+  return sum / 72;
+}
 
 /** Figure 6-1: hydrogen atoms round a free electron, each polarized with its proton toward the electron. */
 function HydrogenGas() {
@@ -13,19 +32,23 @@ function HydrogenGas() {
   const [pos, setPos] = useState({ x: 360, y: 180 });
   const play = usePlayback();
   const H = 360;
-  const atoms = useMemo(() => { const random = rng(61); return Array.from({ length: 10 }, (_, i) => ({ x: 70 + (i % 5) * 145 + (random() - 0.5) * 60, y: 80 + Math.floor(i / 5) * 200 + (random() - 0.5) * 70, seed: i })); }, []);
-  const frame = Math.floor(play.t * 14);
+  const atoms = useMemo(() => { const random = rng(61); return Array.from({ length: 10 }, (_, i) => ({ x: 70 + (i % 5) * 145 + (random() - 0.5) * 60, y: 80 + Math.floor(i / 5) * 200 + (random() - 0.5) * 70, seed: i, speed: 1.6 + random() * 1.2, phase: random() * 2 * Math.PI })); }, []);
   return <Diagram stage={
     <Stage w={W} h={H} label={present ? 'A free electron among hydrogen atoms. In each atom the electron is pushed to the far side, so the proton faces the free electron.' : 'Hydrogen atoms with no free charge near them: each electron is found all round its proton.'}>
       {atoms.map(a => {
         const d = Math.hypot(a.x - pos.x, a.y - pos.y), away = bearing(pos.x, pos.y, a.x, a.y);
         // The nearer the free electron, the further the atom's electron keeps to the far side.
-        const share = present ? clamp(9000 / (d * d + 3000), 0, 0.9) : 0, random = rng(a.seed * 53 + frame);
-        const angle = away + (random() - 0.5) * 360 * (1 - share), [ex, ey] = polar(a.x, a.y, 22, angle), [cx, cy] = polar(a.x, a.y, 22 * share, away);
+        const share = present ? clamp(40000 / (d * d + 12000), 0, 0.92) : 0;
+        // The electron goes smoothly round its proton, slowest on the far side from the free electron and quickest on
+        // the near side, so it spends most of its time away from it; with no free charge it circles evenly.
+        const R = 34, angle = away + dwellAngle(a.speed * play.t + a.phase, share), mean = R * meanOffset(share);
+        const [ex, ey] = polar(a.x, a.y, R, angle), [mx, my] = polar(a.x, a.y, mean, away);
         return <g key={a.seed}>
-          <circle cx={cx} cy={cy} r={24} className="bk-s-faint" fill="none" strokeDasharray="2 4"/>
-          <circle cx={ex} cy={ey} r={4.5} className="bk-f-neg"/>
-          <Charge x={a.x} y={a.y} sign={1} r={8}/>
+          <circle cx={a.x} cy={a.y} r={R} className="bk-s-faint" fill="none" strokeDasharray="2 4"/>
+          {/* The dipole: from the proton to where its electron is on average. */}
+          {mean > 2 && <><line x1={a.x} y1={a.y} x2={mx} y2={my} className="bk-s-mark" strokeWidth="3"/><circle cx={mx} cy={my} r={4} className="bk-f-mark"/></>}
+          <circle cx={ex} cy={ey} r={6} className="bk-f-neg"/>
+          <Charge x={a.x} y={a.y} sign={1} r={10}/>
         </g>;
       })}
       {present && <Drag x={pos.x} y={pos.y} onMove={(x, y) => setPos({ x, y })} bounds={{ x0: 30, y0: 30, x1: W - 30, y1: H - 30 }} label="Free electron"><Charge x={pos.x} y={pos.y} sign={-1} r={15} label="free electron"/></Drag>}
@@ -47,7 +70,7 @@ function useBackground(seed: number, cols: number, rows: number, h: number) {
 
 /** Figure 6-2: zeptons polarized round a free charge, with the many that barely turn shown on request. */
 function ZeptonsRoundCharge() {
-  const [count, setCount] = useState(8);
+  const count = 8; // as printed
   const [sign, setSign] = useState<'neg' | 'pos'>('neg');
   const [rest, setRest] = useState(false);
   const play = usePlayback();
@@ -65,7 +88,6 @@ function ZeptonsRoundCharge() {
       <Charge x={W / 2} y={H / 2} sign={q as 1 | -1} r={15}/>
     </Stage>}>
     <Choice label="Free charge" value={sign} onChange={setSign} options={[{ value: 'neg', label: 'Electron' }, { value: 'pos', label: 'Positive' }]}/>
-    <Slider label="Lines of zeptons drawn" value={count} min={8} max={24} step={4} onChange={setCount}/>
     <Toggle label="Show the zeptons that barely turn" checked={rest} onChange={setRest}/>
     <PlayBar play={play} label="the zeptons"/>
     <Remark>{rest ? 'Most zeptons are oriented only to a slight degree; the lines pick out the few that align.' : 'The figure shows a few lines. There are polarized zeptons all the way round, at every distance.'}</Remark>
@@ -96,26 +118,46 @@ function LinesFromZeptons() {
 /** The share of a charge's polarization crossing unit area at a distance, relative to a reference distance. */
 export const polarizationDensity = (r: number, reference: number) => (reference / r) ** 2;
 
+/** Figure 6-4 drawn in three dimensions: loaded on demand, since three.js is large. */
+const SphereScene = lazy(() => import('../three/SphereScene'));
+
+/** Figure 6-4 as the printed page has it, flat: eight lines and circles. The fallback where 3D cannot be drawn. */
+function FlatSpheres({ r, label }: { r: number; label: string }) {
+  const H = 360, cx = W / 2, cy = 180, n = 8, ref = 45;
+  return <Stage w={W} h={H} label={label}>
+    {[ref, 160].map(rr => <circle key={rr} cx={cx} cy={cy} r={rr} className="bk-s-faint" fill="none" strokeDasharray="2 4"/>)}
+    {Array.from({ length: n }, (_, i) => { const a = (i / n) * 360, [x1, y1] = polar(cx, cy, 172, a), [x2, y2] = polar(cx, cy, 20, a), [mx, my] = polar(cx, cy, r, a); return <g key={i}><Arrow x1={x1} y1={y1} x2={x2} y2={y2} tone="e" w={1.6}/><circle cx={mx} cy={my} r={4.5} className="bk-f-mark"/></g>; })}
+    <circle cx={cx} cy={cy} r={r} className="bk-s-mark" fill="none" strokeWidth="2" strokeDasharray="5 4"/>
+    <Charge x={cx} y={cy} sign={-1} r={12}/>
+  </Stage>;
+}
+
 /** Figure 6-4: every sphere round the charge is crossed by the same lines, spread over more area. */
 function EqualLinesSpheres() {
   const [r, setR] = useState(90);
-  const H = 360, cx = 200, cy = 180, n = 8, ref = 45;
-  const density = polarizationDensity(r, ref), px = 420, pw = 250, ph = 200, py = 60;
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const fail = useCallback(() => setFlat(true), []);
+  const ref = 45, lines = flat ? 8 : SPHERE_LINES, density = polarizationDensity(r, ref), px = 90, pw = 540, ph = 110, py = 30;
   const curve = pathThrough(Array.from({ length: 61 }, (_, i) => { const rr = ref + (i / 60) * 115; return [px + ((rr - ref) / 115) * pw, py + ph - polarizationDensity(rr, ref) * ph] as const; }));
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`A free electron with ${n} field lines and a sphere of radius ${r} round it. The sphere is crossed by all ${n} lines; its area is ${fmt((r / ref) ** 2)} times that of the smallest sphere, so the density of polarization is ${fmt(density)} of the density there.`}>
-      {[ref, 160].map(rr => <circle key={rr} cx={cx} cy={cy} r={rr} className="bk-s-faint" fill="none" strokeDasharray="2 4"/>)}
-      {Array.from({ length: n }, (_, i) => { const a = (i / n) * 360, [x1, y1] = polar(cx, cy, 172, a), [x2, y2] = polar(cx, cy, 20, a), [mx, my] = polar(cx, cy, r, a); return <g key={i}><Arrow x1={x1} y1={y1} x2={x2} y2={y2} tone="e" w={1.6}/><circle cx={mx} cy={my} r={4.5} className="bk-f-mark"/></g>; })}
-      <circle cx={cx} cy={cy} r={r} className="bk-s-mark" fill="none" strokeWidth="2" strokeDasharray="5 4"/>
-      <Charge x={cx} y={cy} sign={-1} r={12}/>
+  const label = `A free electron with ${lines} field lines coming in to it ${flat ? 'in the plane of the page' : 'from every direction'}, and a sphere of radius ${fmt(r / ref, 3)} times the smallest round it. The sphere is crossed by all ${lines} lines; its area is ${fmt((r / ref) ** 2)} times that of the smallest sphere, so the density of polarization is ${fmt(density)} of the density there.`;
+  return <Diagram stage={<>
+    {flat
+      ? <FlatSpheres r={r} label={label}/>
+      : <FallbackOnError onError={fail} fallback={<FlatSpheres r={r} label={label}/>}>
+          <Suspense fallback={<FlatSpheres r={r} label={label}/>}>
+            <SphereScene radius={(r / ref) * SPHERE_R_MIN} onFail={fail} description={`${label} The highlighted patch on the sphere has a fixed area. Drag to turn the view.`}/>
+          </Suspense>
+        </FallbackOnError>}
+    <Stage w={W} h={190} label={`The density of polarization against distance from the charge: it falls as the inverse square. Now at ${fmt(density)} of its value at the smallest sphere.`}>
       <line x1={px} y1={py + ph} x2={px + pw} y2={py + ph} className="bk-s-muted"/><line x1={px} y1={py} x2={px} y2={py + ph} className="bk-s-muted"/>
       <Line d={curve} tone="e" w={2}/>
       <circle cx={px + ((r - ref) / 115) * pw} cy={py + ph - density * ph} r={6} className="bk-f-mark"/>
-      <T x={px + pw / 2} y={py + ph + 22} size="sm">distance from the charge</T>
+      <T x={px + pw / 2} y={py + ph + 24} size="sm">distance from the charge</T>
       <T x={px + pw / 2} y={py - 12} size="sm" tone="e">density of polarization (lines through each unit of area)</T>
-    </Stage>}>
+    </Stage>
+  </>}>
     <Slider label="Radius of the sphere" value={r} min={ref} max={160} step={1} onChange={setR} show={v => `${fmt(v / ref, 3)} ×`}/>
-    <Readout label="Lines crossing it" value={`${n}, at any radius`} tone="good"/>
+    <Readout label="Lines crossing it" value={`${lines}, at any radius`} tone="good"/>
     <Readout label="Its area (4πr²)" value={`${fmt((r / ref) ** 2)} ×`}/>
     <Readout label="Density of polarization" value={`${fmt(density)} ×`} tone="e"/>
     <Remark>Twice the distance, four times the area, a quarter of the density: the inverse square.</Remark>
@@ -236,7 +278,7 @@ function AttractionChain() {
   const play = usePlayback({ speed: 0.6 });
   const H = 290, y = 120, start = 8, end = 2, steps = start - end, phase = play.t % (steps + 1.5), k = Math.min(steps, Math.floor(phase)), u = k < steps ? phase - k : 0;
   // In each step one zepton collapses to a point and is not replaced at full size; the chain closes over the space.
-  const count = start - k, pitch = 62, length = (count - ease(u)) * pitch, xa = W / 2 - length / 2 - 24, xb = W / 2 + length / 2 + 24, gone = Math.floor(count / 2);
+  const count = start - k, pitch = 54, length = (count - ease(u)) * pitch, xa = W / 2 - length / 2 - 24, xb = W / 2 + length / 2 + 24, gone = Math.floor(count / 2);
   let x = xa + 24;
   return <Diagram stage={
     <Stage w={W} h={H} label={`An electron and a proton with a chain of ${count} zeptons between them. As zeptons annihilate the space available for the next is smaller, the chain shortens, and the pressure from outside pushes the particles together.`}>
@@ -327,7 +369,8 @@ function GripRule() {
   const [tilt, setTilt] = useState(0);
   const [left, setLeft] = useState(false);
   const play = usePlayback({ speed: 0.35 });
-  const H = 360, ox = 270, oy = 210, R = 96;
+  // Tall enough for B pointing straight down (clockwise), 160 below the origin, with its arrowhead and label.
+  const H = 400, ox = 270, oy = 210, R = 96;
   // Oblique view: x right, y up, z toward the lower left. The axis of rotation leans from y toward x by `tilt`.
   const project = (x: number, y: number, z: number): [number, number] => [ox + x - 0.6 * z, oy - y + 0.48 * z];
   const c = Math.cos((tilt * Math.PI) / 180), s = Math.sin((tilt * Math.PI) / 180);
@@ -393,10 +436,11 @@ function BarMagnet() {
   </Diagram>;
 }
 
-/** Figure 6-18: a coil in cross section, the field it makes, and the zeptons spinning inside and outside it. */
-function Coil() {
-  const [current, setCurrent] = useState(1);
-  const play = usePlayback();
+/** Figure 6-18 drawn in three dimensions: loaded on demand, since three.js is large. */
+const CoilScene = lazy(() => import('../three/CoilScene'));
+
+/** Figure 6-18 as printed: the coil in cross section, flat. The fallback where 3D cannot be drawn. */
+function FlatCoil({ current, t }: { current: number; t: number }) {
   const H = 380, cy = 190, turns = 6, x0 = 270, pitch = 36, half = 62;
   const wires = useMemo<Wire[]>(() => Array.from({ length: turns }, (_, i) => [{ x: x0 + i * pitch, y: cy - half, i: current }, { x: x0 + i * pitch, y: cy + half, i: -current }]).flat(), [current]);
   const lines = useMemo(() => {
@@ -410,15 +454,35 @@ function Coil() {
   }, [wires, current]);
   const spots = [[-150, 0], [-60, 0], [0, 0], [60, 0], [150, 0], [-40, -112], [50, -112], [-40, 112], [50, 112]].map(([dx, dy]) => ({ x: x0 + ((turns - 1) * pitch) / 2 + dx, y: cy + dy, inside: dy === 0 }));
   const north = current > 0 ? 'right' : 'left';
-  return <Diagram stage={
-    <Stage w={W} h={H} label={Math.abs(current) < 0.05 ? 'A coil in cross section with no current: no magnetic field.' : `A coil in cross section. The current comes out of the page in the ${current > 0 ? 'top' : 'bottom'} windings and goes in at the ${current > 0 ? 'bottom' : 'top'}, producing a magnetic field through the coil with its north pole to the ${north}.`}>
+  return <Stage w={W} h={H} label={Math.abs(current) < 0.05 ? 'A coil in cross section with no current: no magnetic field.' : `A coil in cross section. The current comes out of the page in the ${current > 0 ? 'top' : 'bottom'} windings and goes in at the ${current > 0 ? 'bottom' : 'top'}, producing a magnetic field through the coil with its north pole to the ${north}.`}>
       {lines.map((points, i) => <g key={i} className="bk-s-b bk-f-b"><path d={pathThrough(points)} fill="none" strokeWidth="1.4"/>{alongLine(points, 170, 60).map((m, k) => <polygon key={k} points="6,0 -5,4.5 -5,-4.5" transform={`translate(${m.x} ${m.y}) rotate(${-m.angle})`} stroke="none"/>)}</g>)}
-      {Math.abs(current) > 0.05 && spots.map((p, i) => { const [bx, by] = wireField(wires, p.x, p.y); return <SpinLoop key={i} x={p.x} y={p.y} angle={deg(Math.atan2(-by, bx))} r={11} turn={play.t * 280 * Math.abs(current) + i * 50} tone="motion"/>; })}
+      {Math.abs(current) > 0.05 && spots.map((p, i) => { const [bx, by] = wireField(wires, p.x, p.y); return <SpinLoop key={i} x={p.x} y={p.y} angle={deg(Math.atan2(-by, bx))} r={11} turn={t * 280 * Math.abs(current) + i * 50} tone="motion"/>; })}
       {wires.map((w, i) => <g key={i}><circle cx={w.x} cy={w.y} r={15} className="bk-plate"/>{Math.abs(current) > 0.05 && <InOut x={w.x} y={w.y} out={w.i > 0} r={8} tone="text"/>}</g>)}
       {Math.abs(current) > 0.05 && <><T x={current > 0 ? 668 : 52} y={cy + 6} tone="text" size="lg">N</T><T x={current > 0 ? 52 : 668} y={cy + 6} tone="text" size="lg">S</T></>}
       <T x={W / 2} y={H - 12} size="sm">dot: current toward you · cross: current away · loops: spinning zeptons</T>
-    </Stage>}>
-    <Slider label="Current in the coil" value={current} min={-1} max={1} step={0.1} onChange={setCurrent} show={v => (Math.abs(v) < 0.05 ? 'off' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? '(as drawn)' : '(reversed)'}`)}/>
+    </Stage>;
+}
+
+/** Figure 6-18: a coil, the field it makes, and the zeptons spinning inside and outside it, in three dimensions. */
+function Coil() {
+  const [current, setCurrent] = useState(1);
+  const [cutaway, setCutaway] = useState(true);
+  const [many, setMany] = useState<keyof typeof ZEPTON_COUNTS>('few');
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const fail = useCallback(() => setFlat(true), []);
+  const play = usePlayback();
+  const north = current > 0 ? 'right' : 'left', on = Math.abs(current) >= 0.05;
+  const description = on ? `A coil wound from left to right, ${cutaway ? 'with its front half cut away, ' : ''}carrying a current that comes out at the top of each turn${current < 0 ? ' (reversed: in at the top)' : ''}. Its field runs through the coil to the north pole on the ${north} and back round the outside. Zeptons inside the coil spin one way about the field, those outside the other way. Drag to turn the view.` : 'A coil with no current: no magnetic field. Drag to turn the view.';
+  return <Diagram stage={flat
+    ? <FlatCoil current={current} t={play.t}/>
+    : <FallbackOnError onError={fail} fallback={<FlatCoil current={current} t={play.t}/>}>
+        <Suspense fallback={<FlatCoil current={current} t={play.t}/>}>
+          <CoilScene state={{ current, t: play.t, cutaway, zeptons: ZEPTON_COUNTS[many] }} onFail={fail} description={description}/>
+        </Suspense>
+      </FallbackOnError>}>
+    <Dial label="Current in the coil" value={current} min={-1} max={1} step={0.1} onChange={setCurrent} marks={['rev', 'off', 'fwd']} show={v => (Math.abs(v) < 0.05 ? 'off' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'forward' : 'reversed'}`)}/>
+    {!flat && <Toggle label="Cut away the front of the coil" checked={cutaway} onChange={setCutaway}/>}
+    {!flat && <Choice label="Spinning zeptons" value={many} onChange={setMany} options={[{ value: 'few', label: 'Few' }, { value: 'more', label: 'More' }, { value: 'many', label: 'Many' }]}/>}
     <PlayBar play={play} label="the spinning zeptons"/>
     <Readout label="North pole" value={Math.abs(current) < 0.05 ? 'none' : `to the ${north}`} tone="b"/>
     <Remark>The zeptons inside the coil spin one way and those outside the opposite way; the field lines outside point the opposite way too.</Remark>
@@ -449,7 +513,7 @@ const items: BookItem[] = [
       <p><Q>Zepton dipoles align with their positive charge, such as a virtual positron, facing toward the free electron</Q>. <Q>While Figure 6-2 only shows a few lines, there are polarized zeptons all the way around the charge at every distance, extending toward infinity</Q> (<Pg n={50}/>).</p>
       <p>The polarization is partial: a single charge <Q>only causes a small percentage of zeptons to orient their dipoles in the charge’s direction, and most are only oriented to a slight degree</Q> (<Pg n={53}/>).</p>
     </>,
-    tryThis: ['Look at any zepton on a line: its warm (positive) end is the one nearer the electron.', 'Change the free charge to positive. Every zepton turns round.', 'Draw more lines, then turn on “the zeptons that barely turn” to see how the few that align sit among the many that do not.'],
+    tryThis: ['Look at any zepton on a line: its warm (positive) end is the one nearer the electron.', 'Change the free charge to positive. Every zepton turns round.', 'Turn on “the zeptons that barely turn” to see how the few that align sit among the many that do not.'],
     notes: <p>The share of the background zeptons’ turn, and its thinning with distance, are display choices: Fleming says only that most are oriented to a slight degree.</p>,
     labs: [
       { lab: 'electron', scenario: 'stationary', why: 'The polarization round an electron building up from pairs born at random, in three dimensions.' },
@@ -474,7 +538,16 @@ const items: BookItem[] = [
       <p>Round a point charge the field has the same strength everywhere at a given distance, and falls with the square of the distance. <Q>The easiest way to see how this occurs is to recognize that the same total amount of polarization occurs at each distance away from the charge; it is just spread out over increasingly larger volumes of space</Q> (<Pg n={51}/>).</p>
       <p>The area of a sphere is 4π<i>r</i>², so <Q>the electric field density, decreases with the square of the distance</Q>. In principle it continues to infinity.</p>
     </>,
-    tryThis: ['Change the radius. The marked sphere is always crossed by all eight lines.', 'Watch the area and the density: at twice the radius, four times the area and a quarter of the density.', 'Follow the marker down the curve at the right: it never reaches zero.'],
+    tryThis: [
+      'Drag the picture to turn it. The lines come in from every direction, and the sphere is crossed by every one of them.',
+      'Grow the sphere. Its crossings spread apart over its area, and the highlighted patch, which keeps one fixed area, holds fewer and fewer of them.',
+      'Watch the area and the density: at twice the radius, four times the area and a quarter of the density.',
+      'Follow the marker down the curve: it never reaches zero.',
+    ],
+    notes: <>
+      <p>The printed figure is flat: eight lines and circles on the page. On a flat page the lines cross circles, whose length grows only as <i>r</i>, so the drawing alone would suggest a fall with distance, not with its square. The square comes from the sphere’s area, 4π<i>r</i>², as the text says, so the diagram is drawn in three dimensions.</p>
+      <p>The 26 lines, spread evenly over every direction, and the patch of fixed area are display choices; Fleming says only that each surface is crossed by the same number of lines. Where the browser cannot draw in 3D, the flat page view with its eight lines is shown.</p>
+    </>,
     labs: [{ lab: 'electron', scenario: 'charge-flux', why: 'A Gauss sphere of variable radius round the electron, with the flux through it.' }],
   },
   {
@@ -615,8 +688,16 @@ const items: BookItem[] = [
       <p>Curl the fingers of the right hand the way the current flows through the coil, and <Q>your thumb will point in the direction of the magnetic field, the north pole of the electromagnet</Q> (<Pg n={59}/>).</p>
       <p><Q>The current in the coil is making the zepton dipoles of the vacuum that are inside the coil spin in the same circular direction.</Q> And <Q>while the zeptons inside the coil spin one way, the zeptons outside the coil spin the opposite direction, and we can see the magnetic field lines outside the coil also point in the opposite direction.</Q></p>
     </>,
-    tryThis: ['Follow a line through the coil from S to N and back round the outside: it points the opposite way out there.', 'Compare a loop inside the coil with one above or below it: they spin opposite ways.', 'Reverse the current. The poles change ends and every loop reverses. Set it to zero and the field is gone.'],
-    notes: <p>The lines are computed for twelve straight wires seen end on, which is the printed cross section taken literally. Loop size and speed are display choices.</p>,
+    tryThis: [
+      'Drag to turn the coil. With the front cut away you can see inside: the field runs along the axis, out at N and back round the outside to S.',
+      'Compare a zepton inside the coil with one outside it: each spins about the field where it is, so they spin opposite ways.',
+      'Watch the markers on the wire: the current comes out of the page at the top of each turn and goes in at the bottom, as the caption says, and the right hand grip gives N on the right.',
+      'Reverse the current. The poles change ends and every zepton reverses. Set it to zero and the field is gone.',
+    ],
+    notes: <>
+      <p>The printed figure is a cross section: the grey circles are the tops of the turns, the white circles the bottoms. The diagram draws the whole coil in three dimensions, with the front half cut away to show the inside.</p>
+      <p>The field lines are computed for the six turns, each taken as a circular loop, and drawn in four planes through the axis. The zeptons are drawn as small dipoles spinning about the field where they stand; their size and speed are display choices. Where the browser cannot draw in 3D, the printed cross section is shown, computed for twelve straight wires seen end on.</p>
+    </>,
   },
 ];
 

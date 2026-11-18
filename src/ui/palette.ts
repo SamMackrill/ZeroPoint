@@ -66,4 +66,6 @@ export const scene = {
   posGlowElectron: '#672e17',
   negGlowElectron: '#1c4c6c',
   coreGlowElectron: '#7e42ce',
+  copper: '#c8783f',
+  copperGlow: '#3a1a08',
 } as const;

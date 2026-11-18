@@ -17,6 +17,8 @@ export const SCENE = {
   posGlowMedium: '#ad431e', negGlowMedium: '#23638b',
   posGlowLight: '#8c391a', negGlowLight: '#205773',
   posGlowElectron: '#672e17', negGlowElectron: '#1c4c6c', coreGlowElectron: '#7e42ce',
+  // Copper wire (the coil of Figure 6-18): its colour, and a faint glow so it reads as copper in shadow.
+  copper: '#c8783f', copperGlow: '#3a1a08',
 };
 
 /** Convert a token name (--data-pos-hi) to its palette key (dataPosHi). */

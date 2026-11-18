@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
 // The book companion's diagram kit and shell: field lines that should close do close, and every companion page can be
 // reached from the narrow-screen drawer as well as from the header.
-import { render, within } from '@testing-library/react';
+import { fireEvent, render, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BookApp } from '../src/book/BookApp';
 import { readdirSync, readFileSync } from 'node:fs';
 import { mediumAt } from '../src/book/chapters/ch20';
-import { FigureRunning, RunningReport, Slider, Spin, Still, traceField, usePlayback, wireField } from '../src/book/kit';
+import { Dial, FigureRunning, RunningReport, Slider, Spin, Still, traceField, usePlayback, wireField } from '../src/book/kit';
 
 describe('book companion: kit', () => {
   it('traces the circular field line round a single wire back to its start', () => {
@@ -75,5 +75,16 @@ describe('book companion: rotation arrows step aside while a figure plays', () =
     const dir = 'src/book/chapters';
     const stale = readdirSync(dir).filter(f => /show=\{\(\) =>/.test(readFileSync(`${dir}/${f}`, 'utf8')));
     expect(stale).toEqual([]);
+  });
+
+  it('turns a dial with the keys, in whole steps, and never past its ends', () => {
+    let value = 0;
+    const { getByRole, rerender } = render(<Dial label="Current" value={value} min={-1} max={1} step={0.1} onChange={v => { value = v; }} show={v => `${v}`}/>);
+    const press = (key: string) => { fireEvent.keyDown(getByRole('slider'), { key }); rerender(<Dial label="Current" value={value} min={-1} max={1} step={0.1} onChange={v => { value = v; }} show={v => `${v}`}/>); };
+    press('ArrowRight'); expect(value).toBe(0.1);
+    press('PageDown'); expect(value).toBe(-0.9);
+    press('PageDown'); expect(value).toBe(-1); // held at the end
+    press('End'); expect(value).toBe(1);
+    expect(getByRole('slider').getAttribute('aria-valuetext')).toBe('1');
   });
 });
