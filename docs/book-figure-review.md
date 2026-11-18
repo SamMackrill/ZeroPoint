@@ -9,7 +9,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | Item | Card title | Motion before review | Status | Decision |
 |---|---|---|---|---|
 | 3-1 | Debye’s dipoles: why the average is attraction | still | changed | Animated: dipoles move under the force, moments respond; motion arrows fade while playing, 𝔈 stays |
-| 3-2 | A neutral atom becomes a dipole | animated | to review | |
+| 3-2 | A neutral atom becomes a dipole | animated | changed | E label; A and B are one atom, as in the text |
 | 3-3 | What the plates shut out | animated | to review | |
 | 3-4 | Two great pressures, almost in balance | still | to review | |
 | 4-1 | Pairs either side of zero energy | animated | to review | |
@@ -132,3 +132,10 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 - **Owner:** the label “Green: the field of the other dipole, at each dipole” was clumsy. Debye simply letters the arrow.
 - **Done:** each field arrow is now labelled *E*, as elsewhere in the companion. The notes say that Debye’s 𝔈 is the old Fraktur letter for the electric field. (It is a Fraktur letter, not a Greek one.)
 - **Owner:** more strictly, a field is just a mapping, an indicator of force. **Agreed:** this is Fleming’s view (p. 52). The comment and the notes no longer call E the cause of the motion. The notes now say that E maps the force a charge would feel, and quote p. 52.
+
+### Fig. 3-2 (changed, agreed 2026-11-18)
+
+- **Owner:** for consistency, use E instead of “local electric field”.
+- **Done:** the label above the arrow is now *E*. The controls read “Strength of E” and “E points to the right”. Fleming’s caption keeps his own wording.
+- **Owner:** A and B are the same hydrogen atom, without and with an electric field; the text should say so. **Agreed:** Fleming’s text on p. 29 follows one atom, although his caption calls B “the second hydrogen atom”.
+- **Done:** the card’s text says that A and B are one atom and quotes the fuller p. 29 passage. The stage labels read “A · no E” and “B · in E”, and the Try steps refer to A and B as one atom. A note records that the caption speaks of a second atom while the text and the diagram follow one.

@@ -127,16 +127,16 @@ function InducedDipole() {
       <Charge x={cx} y={cy} sign={1} r={13} label="proton"/>
       {field > 0.04 && <>
         <Arrow x1={cx - (right ? 1 : -1) * (20 + 60 * field)} y1={52} x2={cx + (right ? 1 : -1) * (20 + 60 * field)} y2={52} tone="e" w={2.5}/>
-        <T x={cx} y={36} tone="e" size="sm">local electric field</T>
+        <T x={cx} y={38} tone="e" size="lg">E</T>
         <line x1={cx} y1={cy + 118} x2={cx + meanX} y2={cy + 118} className="bk-s-mark" strokeWidth="3"/>
         <circle cx={cx + meanX} cy={cy + 118} r={4} className="bk-f-neg"/><circle cx={cx} cy={cy + 118} r={4} className="bk-f-pos"/>
         <T x={cx} y={cy + 142} size="sm" tone="mark">average positions: an electric dipole</T>
       </>}
-      <T x={560} y={150} tone="text" size="lg">{field < 0.05 ? 'A' : field > 0.6 ? 'B' : 'A → B'}</T>
+      <T x={560} y={150} tone="text" size="lg">{field < 0.05 ? 'A · no E' : field > 0.6 ? 'B · in E' : 'A → B'}</T>
       <T x={560} y={174} size="sm">{field < 0.05 ? 'appears neutral' : 'induced dipole'}</T>
     </Stage>}>
-    <Slider label="Local electric field" value={field} min={0} max={1} step={0.02} onChange={setField} show={v => (v === 0 ? 'none' : `${Math.round(v * 100)} %`)}/>
-    <Toggle label="Field points to the right" checked={right} onChange={setRight}/>
+    <Slider label="Strength of E" value={field} min={0} max={1} step={0.02} onChange={setField} show={v => (v === 0 ? 'none' : `${Math.round(v * 100)} %`)}/>
+    <Toggle label="E points to the right" checked={right} onChange={setRight}/>
     <PlayBar play={play} label="the electron"/>
     <Readout label="Induced moment" value={`${fmt(field < 0.02 ? 0 : moment)} of the most it could be`}/>
   </Diagram>;
@@ -266,15 +266,18 @@ const chapter: ChapterContent = {
       caption: 'One hydrogen atom A where the electron randomly propagates a shell around the proton, such that the atom appears electrically neutral. The second hydrogen atom B is an induced dipole with the electron primarily occupying a region off to one side of the proton in response to a local electric field.',
       Diagram: InducedDipole,
       text: <>
-        <p>An induced dipole is one that is normally neutral. In hydrogen <Q>the electron’s position is so random that it can be approximated as a shell</Q>. In an electric field <Q>the two particles will favor an polar alignment with the field such that opposite charges are adjacent to each other</Q>, and the atom becomes a dipole (<Pg n={29}/>).</p>
+        <p>An induced dipole is one that is normally neutral. A and B are one hydrogen atom, without and with an electric field. Without one, <Q>the electron’s position is so random that it can be approximated as a shell, making the hydrogen atom appear electrically neutral</Q>. In a field <Q>the two particles will favor an polar alignment with the field such that opposite charges are adjacent to each other. Under these conditions the hydrogen atom becomes an induced dipole</Q> (<Pg n={29}/>).</p>
         <p>This matters for what follows because Casimir’s forces are those between induced dipoles, <Q>where those induced dipoles are vacuum fluctuations</Q>.</p>
       </>,
       tryThis: [
-        'With no field, watch where the electron has been: all round the proton. Its average position is on the proton, so the atom looks neutral (atom A).',
-        'Raise the field. The electron keeps to one side, and the average positions of the two charges separate (atom B).',
+        'With no field, watch where the electron has been: all round the proton. Its average position is on the proton, so the atom looks neutral (A).',
+        'Raise E. The same atom’s electron keeps to one side, and the average positions of the two charges separate (B).',
         'Reverse the field and the dipole reverses with it.',
       ],
-      notes: <p>How far the electron crowds to one side for a given field is a display choice; the text gives only the two ends, A and B.</p>,
+      notes: <>
+        <p>The caption calls B <Q>The second hydrogen atom</Q>, but the text follows one atom, neutral in the ordinary way and a dipole in a field (<Pg n={29}/>). The diagram follows the text: one atom, with E turned up or down.</p>
+        <p>How far the electron crowds to one side for a given field is a display choice; the text gives only the two ends, A and B.</p>
+      </>,
       labs: [{ lab: 'vdw', scenario: 'induced', why: 'The same step as a laboratory stage, with the induced moment as p = αE.' }],
     },
     {
