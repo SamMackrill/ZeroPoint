@@ -11,7 +11,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 3-1 | Debye’s dipoles: why the average is attraction | still | changed | Animated: dipoles move under the force, moments respond; motion arrows fade while playing, 𝔈 stays |
 | 3-2 | A neutral atom becomes a dipole | animated | changed | E label; A and B are one atom, as in the text |
 | 3-3 | What the plates shut out | animated | changed | Outside vacuum fills to the plates, whole ovals only; push arrows (Eq. 3-1); “retarded” explained |
-| 3-4 | Two great pressures, almost in balance | still | to review | |
+| 3-4 | Two great pressures, almost in balance | still | changed | Area slider and stage labels removed; force per 1 cm²; slider and readout layout fixed companion-wide |
 | 4-1 | Pairs either side of zero energy | animated | to review | |
 | 4-2 | A sea of dipoles that answers to charge | animated | to review | |
 | 4-3 | A photon pair, out a wavelength and back | animated | to review | |
@@ -147,3 +147,12 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 - **Owner:** the fluctuations should not clip into the plates.
 - **Done:** no clipping now. Every fluctuation is drawn whole, and one that would reach into a plate at its fullest is not drawn. Outside the plates, a fluctuation is drawn only if all of it clears the outer faces. Between them, each one leans upright as the gap narrows, stands upright if it would not otherwise fit, and is placed so that it clears both plates.
 - **Owner:** “The force between the two plates is retarded” does not seem right; would pressure be better? **Discussed:** that sentence is Fleming’s caption, which stays as printed. “Retarded” is Casimir and Polder’s word for the force, and Fleming reads it as “retarded, or reduced” (p. 29). **Done:** a paragraph in the card’s text explains this, quotes p. 30 to show that what drops is the pressure between the plates, and says that the force is the difference.
+
+### Fig. 3-4 (changed, agreed 2026-11-18)
+
+- **Owner:** the area slider adds nothing here.
+- **Done:** the slider is gone. The force readout is now “Force on 1 cm² of plate”, and the notes say that the force is in proportion to the area. The Try step about the area is gone.
+- **Owner:** the text on the diagram clips, and it adds little. **Done:** the three labels are gone, as in Fleming’s figure, which has none. The caption and the magnify toggle carry the meaning. Only the *d =* dimension remains.
+- **Owner:** the slider’s label jumps between one line and two as the value’s text changes length. **Done, for the whole companion:** a slider’s value now stays on the label’s row, right-aligned in room reserved for its longest reading, and only the label wraps. Ten sliders printed the current reading instead of the value they were given; they now use that value, so the longest reading can be measured. An automated sweep of all 91 sliders finds none that moves, and two kit tests guard against both faults.
+- **Owner:** the single “d” wrapping onto a line of its own is unnecessary. **Done:** the label is now “Gap between the plates, d”, which fits on one line. For the whole companion: a reading longer than 9 characters always sits on its own line under the label, and a short one sits beside it. A label that must wrap does so evenly (`text-wrap: balance`). Every label now takes one or two lines (before this, the room reserved for long readings squeezed some to five), and a sweep of all 91 sliders still finds none that jumps.
+- **Owner:** the readouts’ numbers wrap in the same way (“1.3 × 10⁻⁴ / Pa”), and the label rewraps as the value changes. **Done, for the whole companion:** a readout’s label now sits above its value, so the value has the full width and can never rewrap the label. Labels that wrap do so evenly. A sweep of all 195 readouts at their starting settings finds no numeric value that wraps. Two values that are phrases do wrap, in 4-9 (“0 of its peak, into the page”) and 26-1. To raise when we reach them: 4-9’s phrase changes as the animation runs.

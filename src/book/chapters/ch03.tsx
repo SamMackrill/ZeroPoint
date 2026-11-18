@@ -221,9 +221,8 @@ const length = (m: number) => (m < 1e-6 ? `${fmt(m * 1e9)} nm` : `${fmt(m * 1e6)
 /** Figure 3-4: the pressure on each side of the plates, almost in balance, and Equation 3-1 for the difference. */
 function PressureBalance() {
   const [exp, setExp] = useState(-7); // log10 of the gap in metres
-  const [area, setArea] = useState(1); // cm²
   const [magnify, setMagnify] = useState(true);
-  const d = 10 ** exp, P = casimirPressure(d), F = P * area * 1e-4;
+  const d = 10 ** exp, P = casimirPressure(d), F = P * 1e-4; // the force on 1 cm² of plate
   const W = 720, H = 320, cx = W / 2, gap = 150 + (exp + 8) * 30, plate = 22, y = 146, full = 150, thick = 56;
   // The true reduction is far too small to draw, so the deficit shown follows the logarithm of the pressure.
   const deficit = magnify ? Math.max(0.04, Math.min(0.7, (Math.log10(P) + 8) / 19)) : 0;
@@ -236,16 +235,12 @@ function PressureBalance() {
       <BlockArrow x1={cx + gap / 2 + plate + full} y1={y} x2={cx + gap / 2 + plate + 2} y2={y} thick={thick}/>
       <BlockArrow x1={cx} y1={y} x2={cx - inner} y2={y} thick={slim} tone="muted"/>
       <BlockArrow x1={cx} y1={y} x2={cx + inner} y2={y} thick={slim} tone="muted"/>
-      <T x={cx - gap / 2 - plate - full / 2} y={y - 62} size="sm">pressure from outside:</T>
-      <T x={cx - gap / 2 - plate - full / 2} y={y - 46} size="sm">the same at any gap</T>
-      <T x={cx} y={y + 74} size="sm">{magnify ? 'between: slightly less (magnified)' : 'between: less, but too little to see'}</T>
       <Arrow x1={cx - gap / 2} y1={288} x2={cx + gap / 2} y2={288} both tone="mark" w={1.4} head={6}/><T x={cx} y={308} size="sm" tone="mark">d = {length(d)}</T>
     </Stage>}>
-    <Slider label="Distance between the plates, d" value={exp} min={-8} max={-5} step={0.05} onChange={setExp} show={() => length(d)}/>
-    <Slider label="Area of the plates, A" value={area} min={0.1} max={10} step={0.1} onChange={setArea} unit="cm²"/>
+    <Slider label="Gap between the plates, d" value={exp} min={-8} max={-5} step={0.05} onChange={setExp} show={v => length(10 ** v)}/>
     <Toggle label="Magnify the difference" checked={magnify} onChange={setMagnify}/>
     <Readout label="Pressure difference" value={`${fmt(P)} Pa`} tone="force"/>
-    <Readout label="Force pushing them together" value={`${fmt(F)} N`} tone="force"/>
+    <Readout label="Force on 1 cm² of plate" value={`${fmt(F)} N`} tone="force"/>
     <Remark>Halve the distance and the force grows sixteen times: d is to the fourth power.</Remark>
   </Diagram>;
 }
@@ -332,9 +327,8 @@ const chapter: ChapterContent = {
       tryThis: [
         'Slide the distance from 10 µm down to 10 nm and watch the pressure difference: twelve powers of ten, from about a ten-millionth of a pascal to more than the pressure of the atmosphere.',
         'Turn off “Magnify the difference”. The inner arrows are now drawn as large as the outer ones: against the whole pressure of the vacuum the reduction cannot be seen, which is the point of the figure.',
-        'Change the area. The force follows it in proportion, as Equation 3-1 says.',
       ],
-      notes: <p>The readouts are Equation 3-1. The length of the inner arrows when magnified is a display choice (it follows the logarithm of the pressure difference); the figure gives no scale.</p>,
+      notes: <p>The readouts are Equation 3-1, with the force given for plates of 1 cm² (it is in proportion to the area). The length of the inner arrows when magnified is a display choice (it follows the logarithm of the pressure difference); the figure gives no scale.</p>,
       labs: [{ lab: 'vdw', scenario: 'pressure', query: 'split=fig-3-4', why: 'The same equation as a plot against the gap, with a sweep you can export.' }],
     },
   ],

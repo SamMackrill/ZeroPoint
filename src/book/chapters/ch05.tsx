@@ -126,7 +126,7 @@ function PairProduction() {
   const play = usePlayback({ speed: 0.5 });
   const mev = 10 ** exp, made = canProduce(mev, nearMatter), u = play.t % 1;
   const x = (e: number) => 60 + ((e + 3) / 7) * 600, cx = 360, cy = 110, apart = made === 'none' ? 0 : 40 + 150 * u;
-  const energy = mev >= 1000 ? `${fmt(mev / 1000)} GeV` : mev >= 1 ? `${fmt(mev)} MeV` : mev >= 1e-3 ? `${fmt(mev * 1000)} keV` : `${fmt(mev * 1e6)} eV`;
+  const energyOf = (m: number) => (m >= 1000 ? `${fmt(m / 1000)} GeV` : m >= 1 ? `${fmt(m)} MeV` : m >= 1e-3 ? `${fmt(m * 1000)} keV` : `${fmt(m * 1e6)} eV`), energy = energyOf(mev);
   return <Diagram stage={
     <Stage h={270} label={`A photon of ${energy}. ${made === 'none' ? 'Its pair stays virtual.' : `It has enough energy for a stable ${made === 'proton' ? 'proton and antiproton' : 'electron and positron'}.`}`}>
       {made === 'none'
@@ -138,7 +138,7 @@ function PairProduction() {
       {([['1.022 MeV', Math.log10(THRESHOLDS.electron)], ['1877 MeV', Math.log10(THRESHOLDS.proton)]] as [string, number][]).map(([name, e]) => <g key={name}><line x1={x(e)} y1={202} x2={x(e)} y2={230} className="bk-s-mark" strokeWidth="2"/><T x={x(e)} y={250} size="sm" tone="mark">{name}</T></g>)}
       <T x={60} y={196} size="sm" anchor="start">1 keV</T><T x={660} y={196} size="sm" anchor="end">10 GeV</T>
     </Stage>}>
-    <Slider label="Energy of the photon" value={exp} min={-3} max={4} step={0.02} onChange={setExp} show={() => energy}/>
+    <Slider label="Energy of the photon" value={exp} min={-3} max={4} step={0.02} onChange={setExp} show={v => energyOf(10 ** v)}/>
     <Toggle label="The photon meets other matter" checked={nearMatter} onChange={setNearMatter}/>
     <PlayBar play={play} label="the pair"/>
     <Remark tone={made === 'none' ? undefined : 'good'}>{!nearMatter ? 'In free space there is no pair production at any energy: momentum could not be conserved.' : made === 'none' ? 'Below 1.022 MeV the pair cannot become a stable electron and positron (0.511 MeV each).' : made === 'electron' ? 'At 1.022 MeV or more: a stable electron and a stable positron.' : 'At 1877 MeV or more a photon made of a proton-antiproton pair can free those too.'}</Remark>

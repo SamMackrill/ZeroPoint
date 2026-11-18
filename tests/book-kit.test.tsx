@@ -4,7 +4,8 @@
 import { render, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { BookApp } from '../src/book/BookApp';
-import { FigureRunning, RunningReport, Spin, Still, traceField, usePlayback, wireField } from '../src/book/kit';
+import { readdirSync, readFileSync } from 'node:fs';
+import { FigureRunning, RunningReport, Slider, Spin, Still, traceField, usePlayback, wireField } from '../src/book/kit';
 
 describe('book companion: kit', () => {
   it('traces the circular field line round a single wire back to its start', () => {
@@ -47,5 +48,16 @@ describe('book companion: rotation arrows step aside while a figure plays', () =
     expect(calls.at(-1)).toBe(true);
     unmount();
     expect(calls.at(-1)).toBe(false);
+  });
+
+  it('keeps room for a slider’s longest reading, so its label does not rewrap as it moves', () => {
+    const { container } = render(<Slider label="Distance" value={0} min={0} max={2} step={1} onChange={() => {}} show={v => ['1 µm', '1.78 µm', '10 µm'][v]}/>);
+    expect(container.querySelector('output')!.style.minWidth).toBe('7ch');
+  });
+
+  it('every slider reads its value from the value it is given, which the room for its longest reading relies on', () => {
+    const dir = 'src/book/chapters';
+    const stale = readdirSync(dir).filter(f => /show=\{\(\) =>/.test(readFileSync(`${dir}/${f}`, 'utf8')));
+    expect(stale).toEqual([]);
   });
 });

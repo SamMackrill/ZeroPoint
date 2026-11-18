@@ -52,7 +52,7 @@ function GravityPath() {
       <line x1={sx(d)} y1={268} x2={sx(d)} y2={308} className="bk-s-mark" strokeWidth="3"/><T x={sx(d)} y={260} tone="mark">width of the path</T>
       <T x={W / 2} y={H - 22} size="sm" tone={d < 7e-7 ? 'danger' : 'muted'}>{d < 7e-7 ? 'narrower than one wavelength of red light: a single such zepton can interrupt it' : 'wider than a wavelength of red light, but long-wavelength zeptons still cross it'}</T>
     </Stage>}>
-    <Slider label="Distance between the stars" value={exp} min={11} max={26} step={0.05} onChange={setExp} show={() => `${fmt(distance, 2)} m`}/>
+    <Slider label="Distance between the stars" value={exp} min={11} max={26} step={0.05} onChange={setExp} show={v => `${fmt(10 ** v, 2)} m`}/>
     <Readout label="Path diameter at the star" value={length(d)} tone="force"/>
     <Readout label="In hydrogen atoms" value={fmt(atoms)}/>
     <Readout label="In red light wavelengths" value={fmt(red)} tone={red < 1 ? 'bad' : undefined}/>

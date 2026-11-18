@@ -24,7 +24,7 @@ function Vortices() {
         </g>;
       }))}
     </Stage>}>
-    <Slider label="How many vortices fill the space" value={count} min={2} max={14} step={1} onChange={setCount} show={() => `${cols * rows}`}/>
+    <Slider label="How many vortices fill the space" value={count} min={2} max={14} step={1} onChange={setCount} show={v => `${v * Math.max(2, Math.round(v * 0.55))}`}/>
     <PlayBar play={play} label="the vortices"/>
     <Remark>{small ? 'Innumerable and small: Maxwell’s molecular vortices, or rotating zepton dipoles.' : 'Descartes’s own picture: very large vortices, with the planets riding in their circling bands.'}</Remark>
   </Diagram>;
