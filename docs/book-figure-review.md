@@ -85,7 +85,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 19-2 | How far a photon’s field gets | animated | changed | 3D, a much simplified form of the light lab: central zeptons along x, E and B trailing, a sphere for the field’s reach against half a wavelength; flat view as fallback |
 | 19-3 | One photon, two slits, the same time | animated | changed | The double-slit lab’s own drawing (`SlitDiagram`), with a quarter of its zeptons |
 | 19-4 | A half-turn is the speed of light; a field needs far less | animated | changed | The half-turn (speed c) beside a row of zeptons passing a field on with a fraction of a turn, its front running ahead; share from 180° to 180°/32; frequency slider removed |
-| 21-1 | Swimming across the æther | animated | to review | |
+| 21-1 | Swimming across the æther | animated | changed | Stream arrows turned to run against the heading a, on the right; α marked with an arc; a arrowed |
 | 22-1 | Light from a moving frame | animated | to review | |
 | 22-2 | A shorter wavelength, not a shorter space | animated | to review | |
 | 22-3 | Round a rotating body, both ways | animated | to review | |
@@ -446,3 +446,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** at 180° the front resets too soon, and the zeptons do not make the 180° turn. **Fixed:** the front runs on and starts again only once the row has turned; each zepton turns through the share it needs as the front moves a wavelength on (14° shown when too small to see).
 - **Owner:** below 180°/32 is too fast to see. **Done:** the share in halvings, 180° to 180°/32. **Owner:** the frequency slider adds nothing. **Removed.**
 - **Owner:** good now.
+
+### Fig. 21-1
+
+- **Owner:** the æther direction arrows are the wrong way. They ran with the heading a, so the swimmer swam with the current. **Fixed:** the stream runs against a, as the swimmer heads into the current to cross straight.
+- **Owner:** as the diagram is turned, the arrows are better on the right; the angle text is obscured, and there is no angle segment. **Done:** arrows on the right, an arc marking α between b and a, its value moved clear. Then: an arrow on a, the direction of travel. **Done.**
+- **Owner:** good.
