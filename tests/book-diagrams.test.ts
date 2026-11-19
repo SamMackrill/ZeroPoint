@@ -12,6 +12,7 @@ import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/boo
 import { bodyVelocity, pushOfDrag, speedOfLight } from '../src/book/chapters/ch10';
 import { spinRate } from '../src/book/chapters/ch11';
 import { orbitCycle, precessingRadius, starZeptonAngle, turnOrbitPoint } from '../src/book/chapters/ch12';
+import { snapSpeed, speedName } from '../src/book/chapters/ch19';
 
 describe('book companion: diagrams', () => {
   it('Figure 8-1: Descartes’s vortex cells tile the engraving’s frame without gaps or overlaps', () => {
@@ -188,6 +189,14 @@ describe('book companion: diagrams', () => {
     expect(spinRate(1)).toBe(0);
     expect(spinRate(40)).toBeCloseTo(0.5);
     expect(spinRate(-1000)).toBe(-1);
+  });
+
+  it('Figure 19-1: the speed slider settles on, and names, the speeds the chapter gives', () => {
+    expect(speedName(snapSpeed(0.05))).toBe('1 c (Einstein: relativity)');
+    expect(speedName(snapSpeed(6.8))).toMatch(/^7 × 10.* c \(Laplace\)$/);
+    expect(speedName(snapSpeed(10.3))).toMatch(/\(Van Flandern\)$/);
+    expect(speedName(snapSpeed(3))).not.toMatch(/\(/);
+    expect(speedName(11.5)).toBe('∞ (no delay: Newton)');
   });
 
   it('Figure 12-8: a zepton turns its antimatter end toward a star near it, and keeps its own direction far from both', () => {

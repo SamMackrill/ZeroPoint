@@ -556,6 +556,9 @@ input {
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
+  /* Nothing in a figure may be the browser's scroll anchor: with a figure half off the top of the window, Chrome anchored
+     to a moving part of the drawing (19-1's orbiting planet) and scrolled the whole page to follow it. */
+  overflow-anchor: none;
 }
 
 .bk-stage {
@@ -1697,4 +1700,35 @@ input {
   stroke: var(--accent);
   stroke-width: 2;
   stroke-dasharray: 4 3;
+}
+
+/* Figure 19-3 uses the laboratory's double-slit drawing; these match its look (double-slit-workbench.css). */
+.bk-slit {
+  background: radial-gradient(ellipse at center, var(--bg-3), var(--bg-1));
+}
+
+.bk-slit > svg {
+  display: block;
+  width: 100%;
+  fill: var(--text-2);
+}
+
+.bk-slit text {
+  font: 17px 'Superscripts', 'DM Sans', sans-serif;
+}
+
+.bk-slit .slit-svg-muted {
+  font-size: var(--fs-body);
+}
+
+.bk-slit .slit-svg-muted:not([fill]) {
+  fill: var(--text-3);
+}
+
+.bk-slit-state {
+  margin: 0;
+  padding: 6px 12px 10px;
+  text-align: center;
+  font: var(--fs-ui) var(--mono);
+  color: var(--text-2);
 }

@@ -349,7 +349,8 @@ function ParallelStars() {
   const y1 = cy - s.gap / 2, y2 = cy + s.gap / 2, stars = [{ x, y: y1, weight: onStage(x) }, { x: x2, y: y2, weight: onStage(x2) }];
   // While paused, curled arrows show which way the zeptons between the stars are being turned: found by how each would
   // turn if the stars moved on a little.
-  const ahead = [{ ...stars[0], x: x - 4 }, { ...stars[1], x: x2 + (same ? -4 : 4) }];
+  // Each predicted position carries its own fade, as a star leaving the stage pulls less a little further on.
+  const ahead = [{ x: x - 4, y: y1, weight: onStage(x - 4) }, { x: x2 + (same ? -4 : 4), y: y2, weight: onStage(x2 + (same ? -4 : 4)) }];
   // As printed, one beside each force arrow: the zepton nearest a point just inside each star, off to the side of its arrow.
   const nearest = (px: number, py: number) => STAR_ZEPTONS.reduce((best, z) => (Math.hypot(z.x - px, z.y - py) < Math.hypot(best.x - px, best.y - py) ? z : best));
   const between = [nearest(x + 52, y1 + 44), nearest(x2 + 52, y2 - 44)];

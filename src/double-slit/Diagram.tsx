@@ -36,10 +36,11 @@ const ZEPTONS: readonly Zepton[] = Array.from({ length: 18 * 31 }, (_, i) => {
  */
 export const shownResponse = (envelope: number) => Math.min(1, Math.max(0, envelope) ** 0.25);
 
-/** The surrounding zeptons, each turned toward the central pair's orientation by the field that reaches it. */
-function Zeptons({ params, tick }: { params: SlitParameters; tick: number }) {
+/** The surrounding zeptons, each turned toward the central pair's orientation by the field that reaches it. `sparse` draws one in four. */
+function Zeptons({ params, tick, sparse }: { params: SlitParameters; tick: number; sparse?: boolean }) {
   const pair = centralPair(params, tick), half = 0.15 * SCALE;
   return <g data-testid="slit-zeptons">{ZEPTONS.map((z, i) => {
+    if (sparse && (i % 2 || Math.floor(i / 31) % 2)) return null;
     const w = shownResponse(fieldAt(params, tick, z.at).envelope);
     const dx = (1 - w) * z.rest[0] + w * pair.direction[0], dy = (1 - w) * z.rest[1] + w * pair.direction[1], n = Math.hypot(dx, dy) || 1;
     const x = sx(z.at[0]), y = sy(z.at[1]), ux = dx / n * half, uy = -dy / n * half;
@@ -153,12 +154,13 @@ function describe(params: SlitParameters, tick: number): string {
 
 /**
  * The double-slit scene at one tick: the apparatus, the surrounding zeptons turned by the field that reaches them,
- * the active central pair with its E and B, and the photon's outcome.
+ * the active central pair with its E and B, and the photon's outcome. `sparse` draws one zepton in four, for the
+ * simpler version in the book companion (Figure 19-3).
  */
-export function SlitDiagram({ params, tick, layers }: { params: SlitParameters; tick: number; layers: SlitLayers }) {
+export function SlitDiagram({ params, tick, layers, sparse }: { params: SlitParameters; tick: number; layers: SlitLayers; sparse?: boolean }) {
   return <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label={describe(params, tick)} data-testid="slit-diagram">
     {layers.reach && <Reach params={params}/>}
-    {layers.zeptons && <Zeptons params={params} tick={tick}/>}
+    {layers.zeptons && <Zeptons params={params} tick={tick} sparse={sparse}/>}
     {layers.path && <Path params={params}/>}
     {layers.routes && params.wall === 'slits' && params.fields === 'fast' && <Routes params={params} tick={tick}/>}
     <Apparatus params={params}/>
