@@ -111,7 +111,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | x9-1 | Laithwaite’s flywheel: held up by the vacuum | animated | changed | In 3D: stand, pivoted shaft and spinning flywheel precessing, rising when pushed, falling when still or locked |
 | x14-1 | The same laws, with matter for charge | still | changed | Equations never wrap (book-wide): the number goes below when short of room |
 | x14-2 | Matter attracts antimatter | animated | fine | No change |
-| x14-3 | Why only one kind is left | animated | to review | |
+| x14-3 | Why only one kind is left | animated | fine | No change |
 | x15-1 | Two charges, two fields, one force | still | to review | |
 | x20-1 | What holds a zepton’s rotation back | animated | to review | |
 | x20-2 | Slower in glass, and turned | animated | to review | |
