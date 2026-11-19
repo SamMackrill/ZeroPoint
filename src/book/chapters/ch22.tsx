@@ -49,7 +49,9 @@ function WavelengthContraction() {
   const play = usePlayback({ speed: 0.35 });
   const H = 340, x0 = 70, L = 560, y1 = 110, y2 = 240, ratio = emittedWavelength(V), xEnd = x0 + L * V;
   // One period, then a moment's hold showing the finished picture, then the next period from the left wall.
-  const cycle = 1.4, u = Math.min(1, (play.t % cycle) / 1), front = x0 + L * u, xa = x0 + L * V * u;
+  // Before it has ever played (as with reduced motion, which starts paused) the figure shows the finished construction;
+  // paused partway through a period, it shows that moment.
+  const cycle = 1.4, u = !play.playing && play.t === 0 ? 1 : Math.min(1, (play.t % cycle) / 1), front = x0 + L * u, xa = x0 + L * V * u;
   /** A wave of spatial period `period` from `from` to the light's front, its crest pinned to the front so it is emitted, not slid. */
   const wave = (from: number, period: number, y: number) => from >= front - 1 ? '' : pathThrough(Array.from({ length: 81 }, (_, i) => { const x = from + ((front - from) * i) / 80; return [x, y - 22 * Math.sin((2 * Math.PI * (front - x)) / period)] as const; }));
   return <Diagram stage={
