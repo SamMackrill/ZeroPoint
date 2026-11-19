@@ -73,7 +73,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 12-8 | Stars moving together are drawn together | animated | changed | Rebuilt: a fixed lattice of small zeptons that the moving stars turn (antimatter end toward them, as 11-4); arrows only when paused; force arrows on the stars; speed slider removed |
 | 13-1 | Eddies where the two halves of the mass meet | animated | changed | Eddies drawn as turning loops of matter, inner against the body and outer with it; curled arrows only when paused |
 | 16-1 | A shell that shuts out a band of the vacuum | animated | changed | Fluctuations kept clear of the shell by their reach at full size and angle; the inner ones spread evenly |
-| 16-2 | A shape whose charges almost hold themselves | animated | to review | |
+| 16-2 | A shape whose charges almost hold themselves | animated | fine | No change |
 | 17-1 | Push gravity: bodies that shade each other | animated | to review | |
 | 17-2 | The shadow, and the inverse square | still | to review | |
 | 17-3 | Electric dipoles side by side cancel | still | to review | |
