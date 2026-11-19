@@ -102,7 +102,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | x0-1 | The route of the book | still | fine | No change |
 | x1-1 | Twelve principles, and where they are used | still | fine | No change |
 | x1-2 | Everything moves because it is pushed | animated | fine | No change |
-| x2-1 | A drop in the ocean | still | to review | |
+| x2-1 | A drop in the ocean | still | changed | Long slider readings keep their longest height (kit-wide), so nothing jumps; the scale's powers of ten on one line |
 | x2-2 | More energy, less time | animated | to review | |
 | x2-3 | Where the energy is | still | to review | |
 | x4-1 | A pair carries the photon’s energy | still | to review | |
@@ -483,3 +483,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** why does the electron seem to stop, then continue away? Its outward motion was two separately eased steps with a pause between. **Fixed:** one continuous motion, gathering speed as the pair parts and carrying on steadily to the end of the cycle.
 - **Owner:** good.
+
+### Explorer x2-1
+
+- **Owner:** the green text is jumpy as the slider moves. The slider's reading, the ocean's name, wrapped onto a second line only at its longest, so the controls below jumped. **Fixed** in the kit's `Slider`: a long reading shares a grid cell with an unseen copy of the longest, so its line is always that tall (measured: 91 px at every value). Applies to every slider with a long reading.
+- **Owner:** the scale's numbers should line up. **Done:** the powers of ten on one line.
+- **Owner:** very good.

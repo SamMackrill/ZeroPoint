@@ -29,7 +29,7 @@ function DropInTheOcean() {
       <T x={W / 2} y={74}>1 part in {ratio}</T>
       <line x1={x0} y1={150} x2={x0 + w} y2={150} className="bk-s-faint" strokeWidth="12" strokeLinecap="round"/>
       <line x1={x0} y1={150} x2={x(step.exp)} y2={150} className="bk-s-accent" strokeWidth="12" strokeLinecap="round"/>
-      {OCEANS.map((o, k) => <g key={o.name}><line x1={x(o.exp)} y1={134} x2={x(o.exp)} y2={166} className={k === i ? 'bk-s-mark' : 'bk-s-muted'} strokeWidth={k === i ? 3 : 1.5}/><T x={x(o.exp)} y={k % 2 ? 198 : 184} size="sm" tone={k === i ? 'mark' : 'muted'}>10{superscript(Math.floor(o.exp))}</T></g>)}
+      {OCEANS.map((o, k) => <g key={o.name}><line x1={x(o.exp)} y1={134} x2={x(o.exp)} y2={166} className={k === i ? 'bk-s-mark' : 'bk-s-muted'} strokeWidth={k === i ? 3 : 1.5}/><T x={x(o.exp)} y={188} size="sm" tone={k === i ? 'mark' : 'muted'}>10{superscript(Math.floor(o.exp))}</T></g>)}
       <line x1={x(95)} y1={110} x2={x(95)} y2={130} className="bk-s-danger" strokeWidth="3"/><T x={x(95)} y={102} anchor="end" tone="danger" size="sm">the vacuum: 10⁹⁵ g/cm³, against water’s 1</T>
       <T x={W / 2} y={250} size="sm">a logarithmic scale: each step along it is a factor of ten</T>
     </Stage>}>

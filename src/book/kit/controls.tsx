@@ -24,17 +24,21 @@ export function Slider({ label, value, min, max, step = 1, onChange, unit, show 
   const widest = useMemo(() => {
     // Every value the slider can take, from min in whole steps, never past max (and max itself).
     const steps = Math.max(0, Math.floor((max - min) / step + 1e-9));
-    let n = say(max).length;
-    for (let i = 0; i <= steps; i++) n = Math.max(n, say(Math.min(max, min + i * step)).length);
-    return n;
+    let longest = say(max);
+    for (let i = 0; i <= steps; i++) { const t = say(Math.min(max, min + i * step)); if (t.length > longest.length) longest = t; }
+    return longest;
     // `show` is usually an inline function, remade each render, so it is not a dependency itself. A few sample readings
     // stand in for it: if the formatter's rules change (a new mode, a new suffix), they change, and the scan runs again.
   }, [min, max, step, unit, say(min), say(min + Math.round((max - min) / step / 2) * step), say(max)]); // the middle sample is a real step
   // A short reading sits beside the label in room reserved for the longest; a long one always has a line of its own,
   // where it needs no reserved room and may wrap if the column is narrow.
-  const stacked = widest > LONG_READING;
+  // On its own line a long reading may wrap; an unseen copy of the longest reading shares its place, so the line is
+  // always as tall as the longest needs and the controls below do not jump as the reading changes.
+  const stacked = widest.length > LONG_READING;
   return <div className={`bk-control${stacked ? ' is-stacked' : ''}`}>
-    <label htmlFor={id}><span>{label}</span><output htmlFor={id} style={stacked ? undefined : { minWidth: `${widest}ch` }}>{text}</output></label>
+    <label htmlFor={id}><span>{label}</span>{stacked
+      ? <output htmlFor={id} className="bk-reading-stacked"><span>{text}</span><span className="bk-reading-room" aria-hidden="true">{widest}</span></output>
+      : <output htmlFor={id} style={{ minWidth: `${widest.length}ch` }}>{text}</output>}</label>
     <input id={id} type="range" min={min} max={max} step={step} value={value} aria-valuetext={text} onChange={e => onChange(Number(e.target.value))}/>
   </div>;
 }

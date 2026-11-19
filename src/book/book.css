@@ -631,6 +631,19 @@ input {
   align-items: stretch;
 }
 
+/* A long reading and an unseen copy of the longest share one grid cell, so the box keeps the longest one's height. */
+.bk-reading-stacked {
+  display: grid;
+}
+
+.bk-reading-stacked > span {
+  grid-area: 1 / 1;
+}
+
+.bk-reading-room {
+  visibility: hidden;
+}
+
 .bk-control.is-stacked label > output {
   text-align: left;
   white-space: normal;
