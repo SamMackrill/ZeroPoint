@@ -67,13 +67,14 @@ export default function ShadowScene({ distance, size, onFail, onReady, descripti
       renderer.domElement.style.touchAction = 'pan-y pinch-zoom';
       const draw = () => renderer.render(scene, camera);
       controls.addEventListener('change', draw);
-      // From over Star 2's shoulder, looking back at Star 1, so the shadow on Star 1 faces the reader. The view moves with
-      // Star 2 as it is moved, keeping the same angle on it.
+      // From over Star 2's shoulder, looking back at Star 1, so the shadow on Star 1 faces the reader. When Star 2 is moved
+      // the view keeps whatever angle the reader has turned it to, and stands back far enough to frame both stars: the
+      // framing distance grows with theirs, so the camera never ends up inside either star.
+      const frame = (d: number) => new THREE.Vector3(0.6 * d + 4.2, 2.4, 5.2);
       controls.target.set(distance * 0.4, 0, 0);
-      camera.position.set(distance + 4.2, 2.4, 5.2);
+      camera.position.copy(controls.target).add(frame(distance));
       camera.lookAt(controls.target);
       controls.update();
-      let shownAt = distance;
       const resize = new ResizeObserver(() => {
         const w = el.clientWidth, h = el.clientHeight;
         if (!w || !h) return;
@@ -86,9 +87,9 @@ export default function ShadowScene({ distance, size, onFail, onReady, descripti
       undo.push(() => resize.disconnect());
 
       api.current = (d, s) => {
-        camera.position.x += d - shownAt;
-        controls.target.x += (d - shownAt) * 0.4;
-        shownAt = d;
+        const direction = camera.position.clone().sub(controls.target).normalize();
+        controls.target.set(d * 0.4, 0, 0);
+        camera.position.copy(controls.target).add(direction.multiplyScalar(frame(d).length()));
         camera.lookAt(controls.target);
         controls.update();
         star2.position.set(d, 0, 0);
