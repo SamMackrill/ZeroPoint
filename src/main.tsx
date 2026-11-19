@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { App } from './app/App';
 import { DevProfiler } from './app/DevProfiler';
 import '@fontsource/dm-sans/latin-400.css';
+import './ui/superscripts.css';
 import '@fontsource/dm-sans/latin-500.css';
 import '@fontsource/dm-sans/latin-600.css';
 import '@fontsource/dm-sans/latin-700.css';

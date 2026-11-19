@@ -24,7 +24,7 @@
   align-items: center;
   gap: 9px;
   letter-spacing: 0;
-  font: var(--fs-ui) 'DM Sans',sans-serif;
+  font: var(--fs-ui) 'Superscripts', 'DM Sans',sans-serif;
 }
 
 .casimir-heading {

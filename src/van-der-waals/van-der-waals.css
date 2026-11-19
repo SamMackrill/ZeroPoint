@@ -137,7 +137,7 @@
 }
 
 .vdw-card-heading a {
-  font: var(--fs-micro) 'DM Sans',sans-serif;
+  font: var(--fs-micro) 'Superscripts', 'DM Sans',sans-serif;
   color: var(--text-2);
   letter-spacing: 0;
 }
@@ -146,7 +146,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font: var(--fs-micro) 'DM Sans',sans-serif;
+  font: var(--fs-micro) 'Superscripts', 'DM Sans',sans-serif;
   letter-spacing: 0;
   padding: 4px;
 }
@@ -164,7 +164,7 @@
 }
 
 .vdw-diagram text {
-  font: 17px 'DM Sans',sans-serif;
+  font: 17px 'Superscripts', 'DM Sans',sans-serif;
 }
 
 .vdw-diagram .vdw-svg-muted {

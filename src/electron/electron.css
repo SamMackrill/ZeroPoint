@@ -269,7 +269,7 @@
 }
 
 .electron-rate-profile strong {
-  font: var(--fs-micro) 'IBM Plex Mono',monospace;
+  font: var(--fs-micro) 'Superscripts', 'IBM Plex Mono',monospace;
 }
 
 .electron-rate-profile span {

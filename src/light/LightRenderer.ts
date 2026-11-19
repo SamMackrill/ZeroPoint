@@ -267,7 +267,7 @@ export class LightRenderer {
     this.renderer.render(this.scene, this.camera);
     const source = this.renderer.domElement, c = document.createElement('canvas'); c.width = source.width; c.height = source.height + 64;
     const ctx = c.getContext('2d')!; ctx.fillStyle = palette.bg1; ctx.fillRect(0, 0, c.width, c.height); ctx.drawImage(source, 0, 0);
-    ctx.fillStyle = palette.dataEHi; ctx.font = '13px sans-serif';
+    ctx.fillStyle = palette.dataEHi; ctx.font = '13px Superscripts, "DM Sans", sans-serif';
     ctx.fillText(`ZEROPOINT / Light induction · illustrative sequence · tick ${this.data?.tick ?? 0}`, 16, source.height + 24);
     ctx.fillText(`Wavelength ${(this.data?.parameters.wavelength ?? 2) * 250} nm · 1 L = 250 nm · prescribed speed c`, 16, source.height + 46);
     c.toBlob(blob => { if (!blob) return; const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = 'zeropoint-light.png'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); });

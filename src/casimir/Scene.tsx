@@ -93,8 +93,8 @@ export function Scene({ model, revision, layers, selected, onSelect }: {
         ctx.shadowBlur = 20; ctx.shadowColor = positive ? `${palette.dataPos}55` : `${palette.dataNeg}55`;
         ctx.fillStyle = positive ? palette.warnLine : palette.line2; ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
         ctx.shadowBlur = 0; ctx.strokeStyle = positive ? palette.dataPosHi : palette.dataNeg; ctx.lineWidth = 1.4; ctx.stroke();
-        ctx.font = '20px "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = palette.text; ctx.fillText(positive ? '+' : '−', cx, cy + 6);
-        ctx.font = '11px "DM Sans", sans-serif'; ctx.fillStyle = palette.text; ctx.fillText(label, cx, cy + r + 22);
+        ctx.font = '20px Superscripts, "DM Sans", sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = palette.text; ctx.fillText(positive ? '+' : '−', cx, cy + 6);
+        ctx.font = '11px Superscripts, "DM Sans", sans-serif'; ctx.fillStyle = palette.text; ctx.fillText(label, cx, cy + r + 22);
       }
       const direction = Math.sign(model.delta), length = Math.min(.95, Math.abs(model.delta) * 7);
       if (length > .015) {
@@ -102,7 +102,7 @@ export function Scene({ model, revision, layers, selected, onSelect }: {
         arrow(right, -.8, direction * length, 0, palette.dataMarkHi, 2.5);
       }
       // Explicit inner and outer sampling sites make the pressure comparison readable.
-      ctx.font = '10px "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
+      ctx.font = '10px Superscripts, "IBM Plex Mono", monospace'; ctx.textAlign = 'center';
       for (const [x, label] of [[left - 1, 'OUTER'], [model.midpoint, 'GAP'], [right + 1, 'OUTER']] as const) {
         const [cx, cy] = xy(x, 1.85); ctx.fillStyle = palette.text2; ctx.fillText(label, cx, cy);
         ctx.fillText(model.pressureAt(x, 0).toFixed(2), cx, cy + 16);
