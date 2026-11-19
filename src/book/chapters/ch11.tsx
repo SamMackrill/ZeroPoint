@@ -1,6 +1,6 @@
 // Chapter 11: The Matter Dipole (PDF pp. 91–97). Figures 11-1 to 11-6.
-import { useMemo, useState, type ReactNode } from 'react';
-import { Action, Arrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, bearing, polar, rad, turn, usePlayback, type Source } from '../kit';
+import { useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
+import { Action, Arrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, bearing, clamp, polar, rad, turn, usePlayback, type Source } from '../kit';
 import { Paper, Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 import { TwoSources } from './shared';
@@ -127,24 +127,76 @@ function MovingBody() {
   </Diagram>;
 }
 
-/** Figure 11-5: a rotating body makes the zeptons round its circumference rotate the opposite way. */
+/** How fast the body of Figure 11-5 turns at full rotation, in degrees a second. */
+const FULL_TURN = 80;
+
+/** The rotation a hand-turned body keeps when let go, from its turning speed in degrees a second: as a fraction of full, counter-clockwise positive, to the slider's step. */
+export const spinRate = (degreesPerSecond: number) => clamp(Math.round(degreesPerSecond / FULL_TURN / 0.05) * 0.05, -1, 1) || 0;
+
+/** Figure 11-5: a rotating body makes the zeptons round its circumference rotate the opposite way. The reader can turn the body by hand. */
 function RotatingBody() {
-  const [rate, setRate] = useState(0.6);
+  const [rate, setRateNow] = useState(0.6);
   const play = usePlayback();
-  const H = 380, cx = 300, cy = 190, R = 92, n = 12, turned = play.t * rate * 80;
+  // The body's angle is carried from a base, so a change of rate or a turn by hand never makes it jump.
+  const [base, setBase] = useState({ t: 0, angle: 0 });
+  const [held, setHeld] = useState<number | null>(null);
+  const grip = useRef<{ offset: number; pointer: number; angle: number; time: number; speed: number } | null>(null);
+  const H = 380, cx = 300, cy = 190, R = 92, n = 12;
+  const spun = base.angle + (play.t - base.t) * rate * FULL_TURN, turned = held ?? spun;
+  const setRate = (v: number) => { setBase({ t: play.t, angle: spun }); setRateNow(v); };
+  /** The pointer's direction from the middle of the body, in degrees. */
+  const pointerAt = (e: PointerEvent<SVGCircleElement>) => {
+    const matrix = e.currentTarget.ownerSVGElement?.getScreenCTM?.();
+    if (!matrix) return null;
+    const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
+    return bearing(cx, cy, p.x, p.y);
+  };
+  const letGo = () => {
+    const g = grip.current;
+    if (!g) return;
+    grip.current = null;
+    // A body held still before it is let go stops; one flicked keeps turning at the speed it was given.
+    const next = performance.now() - g.time > 120 ? 0 : spinRate(g.speed);
+    setBase({ t: play.t, angle: g.angle }); setRateNow(next); setHeld(null);
+    if (next && !play.playing) play.toggle();
+  };
+  const moving = held === null && Math.abs(rate) >= 0.05;
   return <Diagram stage={
-    <Stage w={W} h={H} label={Math.abs(rate) < 0.05 ? 'A body of matter that is not rotating, with zeptons round it: nothing turns.' : `A body of matter rotating ${rate > 0 ? 'counter-clockwise' : 'clockwise'}. The zeptons round its circumference rotate ${rate > 0 ? 'clockwise' : 'counter-clockwise'}, the opposite way.`}>
+    <Stage w={W} h={H} label={Math.abs(rate) < 0.05 ? 'A body of matter that is not rotating, with zeptons round it: the body does not turn them.' : `A body of matter rotating ${rate > 0 ? 'counter-clockwise' : 'clockwise'}. The zeptons round its circumference rotate ${rate > 0 ? 'clockwise' : 'counter-clockwise'}, the opposite way.`}>
       <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-matter"/>
-      {[0, 90].map(a => <line key={a} x1={polar(cx, cy, R - 6, turned + a)[0]} y1={polar(cx, cy, R - 6, turned + a)[1]} x2={polar(cx, cy, R - 6, turned + a + 180)[0]} y2={polar(cx, cy, R - 6, turned + a + 180)[1]} className="bk-s-muted" strokeWidth="1.5" strokeDasharray="4 6"/>)}
+      {/* A dark cross on the body, so its turning can be seen. */}
+      {[0, 90, 180, 270].map(a => { const [x1, y1] = polar(cx, cy, 24, turned + a), [x2, y2] = polar(cx, cy, R - 8, turned + a); return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2} className="bk-body-ink" strokeWidth="3.5" strokeLinecap="round"/>; })}
       <T x={cx} y={cy + 7} tone="text" size="lg">M</T>
-      {Math.abs(rate) > 0.05 && <Spin x={cx} y={cy} r={34} ccw={rate > 0} sweep={280} tone="text" w={3}/>}
+      {moving && <Spin x={cx} y={cy} r={34} ccw={rate > 0} sweep={280} tone="text" w={3}/>}
       {Array.from({ length: n }, (_, i) => {
         const a = (i / n) * 360, [x, y] = polar(cx, cy, R + 46, a);
         // A zepton beside a moving surface turns like one gear against another: the opposite way to the body.
-        return <g key={i}><Zepton x={x} y={y} angle={a + 180 - turned * 2.2} len={34} polarity="matter" signs={false}/>{Math.abs(rate) > 0.05 && i % 3 === 0 && <Spin x={x} y={y} r={24} ccw={rate < 0} sweep={220} opacity={0.85}/>}</g>;
+        return <g key={i}><Zepton x={x} y={y} angle={a + 180 - turned * 2.2} len={34} polarity="matter" signs={false}/>{moving && i % 3 === 0 && <Spin x={x} y={y} r={24} ccw={rate < 0} sweep={220} opacity={0.85}/>}</g>;
       })}
-      <T x={560} y={150} size="sm">body: {Math.abs(rate) < 0.05 ? 'at rest' : rate > 0 ? 'counter-clockwise' : 'clockwise'}</T>
-      <T x={560} y={174} size="sm" tone="motion">zeptons: {Math.abs(rate) < 0.05 ? 'at rest' : rate > 0 ? 'clockwise' : 'counter-clockwise'}</T>
+      {/* The body is what the reader turns: by dragging round it, or with the arrow keys once it has the focus. */}
+      <circle cx={cx} cy={cy} r={R} fill="transparent" className="bk-turn" tabIndex={0} role="application"
+        aria-label="The body of matter. Drag round it to turn it by hand, and flick it to set it spinning; or press the left or right arrow key to turn it a step counter-clockwise or clockwise."
+        onPointerDown={e => {
+          const at = pointerAt(e); if (at === null) return;
+          e.preventDefault(); e.currentTarget.focus({ preventScroll: true });
+          grip.current = { offset: turned - at, pointer: at, angle: turned, time: performance.now(), speed: 0 };
+          setHeld(turned); setRateNow(0); e.currentTarget.setPointerCapture?.(e.pointerId);
+        }}
+        onPointerMove={e => {
+          const g = grip.current, at = g && pointerAt(e); if (!g || at === null || at === undefined) return;
+          const now = performance.now(), dt = Math.max(0.001, (now - g.time) / 1000);
+          // Follow the pointer round without a jump where its direction wraps past ±180°.
+          const pointer = g.pointer + turn(g.pointer, at), angle = pointer + g.offset;
+          g.speed += (1 - Math.exp(-dt / 0.08)) * ((angle - g.angle) / dt - g.speed);
+          Object.assign(g, { pointer, angle, time: now });
+          setHeld(angle); setRateNow(spinRate(g.speed));
+        }}
+        onPointerUp={e => { e.currentTarget.releasePointerCapture?.(e.pointerId); letGo(); }}
+        onPointerCancel={letGo}
+        onKeyDown={e => {
+          const step = e.key === 'ArrowLeft' ? 15 : e.key === 'ArrowRight' ? -15 : 0; if (!step) return;
+          e.preventDefault(); setBase({ t: play.t, angle: spun + step });
+        }}/>
     </Stage>}>
     <Slider label="Rotation of the body" value={rate} min={-1} max={1} step={0.05} onChange={setRate} show={v => (Math.abs(v) < 0.05 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'counter-clockwise' : 'clockwise'}`)}/>
     <PlayBar play={play} label="the rotation"/>
@@ -203,7 +255,7 @@ const chapter: ChapterContent = {
       caption: 'A body of matter rotating in space causes nearby zeptons outside its circumference to rotate in the opposite direction.',
       Diagram: RotatingBody,
       text: <p><Q>One aspect of the Matter Force model that achieves greater importance when discussing large bodies of matter, is the force generated when bodies are rotating. A large rotating body produces a counter-rotating mattermagnetic field around its circumference</Q> (<Pg n={96}/>). Chapter 12 uses this field for the planets and the Sun.</p>,
-      tryThis: ['Reverse the body’s rotation: the zeptons reverse too, always opposite to it.', 'Stop the body: the zeptons stop turning, and there is no mattermagnetic field.'],
+      tryThis: ['Grab the body and turn it by hand: the zeptons turn the other way. Flick it and let go, and it keeps spinning.', 'Reverse the body’s rotation: the zeptons reverse too, always opposite to it.', 'Stop the body: it no longer turns the zeptons, and there is no mattermagnetic field.'],
       notes: <p>The rate at which the zeptons turn for a given rotation of the body is a display choice.</p>,
     },
     {

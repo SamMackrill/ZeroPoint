@@ -10,6 +10,7 @@ import { wallaceShift } from '../src/book/chapters/ch09';
 import { COIL_LENGTH, COIL_RADIUS, COIL_ZEPTONS, SEEDS, ZEPTON_COUNTS, coilField, coilFieldLine, linesForCurrent } from '../src/book/three/coil-math';
 import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/book/three/sphere-math';
 import { bodyVelocity, pushOfDrag, speedOfLight } from '../src/book/chapters/ch10';
+import { spinRate } from '../src/book/chapters/ch11';
 import { precessingRadius } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
@@ -180,5 +181,12 @@ describe('book companion: diagrams', () => {
     expect(pushOfDrag(0)).toBe(0);
     expect(pushOfDrag(45)).toBeCloseTo(0.5);
     expect(pushOfDrag(-300)).toBe(-1);
+  });
+
+  it('Figure 11-5: a body flicked by hand keeps the speed it was given, to the slider’s step, up to full either way', () => {
+    expect(spinRate(0)).toBe(0);
+    expect(spinRate(1)).toBe(0);
+    expect(spinRate(40)).toBeCloseTo(0.5);
+    expect(spinRate(-1000)).toBe(-1);
   });
 });
