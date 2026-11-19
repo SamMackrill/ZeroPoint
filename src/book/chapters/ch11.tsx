@@ -10,18 +10,16 @@ const W = 720;
 /** Figure 11-1: the matter field of a body of matter, with the antimatter ends of the zeptons toward it. */
 function MatterField() {
   const [mode, setMode] = useState<'lines' | 'zeptons' | 'both'>('zeptons');
-  const [amount, setAmount] = useState(1);
   const play = usePlayback();
-  const H = 380;
-  const sources = useMemo<Source[]>(() => [{ x: W / 2, y: H / 2, q: -amount }], [amount]);
+  const H = 380, R = 26;
+  const sources = useMemo<Source[]>(() => [{ x: W / 2, y: H / 2, q: -1 }], []);
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A body of matter surrounded by ${10 * amount} lines of zeptons polarized by matter charge. Each zepton has its antimatter end toward the body and its matter end away.`}>
-      <FieldPicture sources={sources} w={W} h={H} perUnit={10} lines={mode === 'zeptons' ? 0 : mode === 'both' ? 0.45 : 1} zeptons={mode === 'lines' ? 0 : 1} t={play.t} polarity="matter" tone="accent" zeptonLen={24}/>
-      <Body x={W / 2} y={H / 2} r={18 + 8 * amount}/><T x={W / 2} y={H / 2 + 6} tone="text" size="lg">M</T>
+    <Stage w={W} h={H} label={`A body of matter surrounded by 10 lines of zeptons polarized by matter charge. Each zepton has its antimatter end toward the body and its matter end away.`}>
+      <FieldPicture sources={sources} w={W} h={H} perUnit={10} lines={mode === 'zeptons' ? 0 : mode === 'both' ? 0.45 : 1} zeptons={mode === 'lines' ? 0 : 1} t={play.t} polarity="matter" tone="accent" zeptonLen={24} radii={[R]}/>
+      <Body x={W / 2} y={H / 2} r={R}/><T x={W / 2} y={H / 2 + 6} tone="text" size="lg">M</T>
       <Zepton x={90} y={H - 40} angle={180} len={46} polarity="matter" signs/><T x={126} y={H - 35} anchor="start" size="sm">a: antimatter end · m: matter end</T>
     </Stage>}>
     <Choice label="Draw the field as" value={mode} onChange={setMode} options={[{ value: 'lines', label: 'Lines' }, { value: 'zeptons', label: 'Zeptons' }, { value: 'both', label: 'Both' }]}/>
-    <Slider label="Amount of matter" value={amount} min={1} max={3} step={1} onChange={setAmount} show={v => `${v} ×`}/>
     <PlayBar play={play} label="the zeptons"/>
     <Remark>The zeptons become polarized, and the lines of polarization extend toward infinity.</Remark>
   </Diagram>;
@@ -139,7 +137,7 @@ const chapter: ChapterContent = {
       caption: 'A body of matter surrounded by matter-oriented zeptons.',
       Diagram: MatterField,
       text: <p><Q>As we have for electricity and magnetism, we can have Faraday Field lines for matter forces and mattermagnetism. And, just as with electricity and magnetism, those force lines are more accurately represented as zepton dipoles.</Q> The figure shows <Q>the basic matter field around a body of matter with the antimatter side of the dipoles oriented toward the matter. The zeptons become polarized, and the lines of polarization extend toward infinity</Q> (<Pg n={93}/>, <Pg n={94}/>).</p>,
-      tryThis: ['Look at any zepton: its antimatter end (a) is the one toward M, its matter end (m) the one away, as in the printed “a-m” labels.', 'Switch to Lines: the arrows point toward the body, as in Figure 10-3.', 'Add matter: more lines of polarization, as a larger charge has more field lines.'],
+      tryThis: ['Look at any zepton: its antimatter end (a) is the one toward M, its matter end (m) the one away, as in the printed “a-m” labels.', 'Switch to Lines: the arrows point toward the body, as in Figure 10-3.'],
       notes: <p>The printed figure shows one ring of zeptons; rows reaching outward are drawn here, following <Q>the lines of polarization extend toward infinity</Q>.</p>,
     },
     {
