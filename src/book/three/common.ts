@@ -10,7 +10,7 @@ export function label(text: string, color: string, size = 0.5) {
   const g = canvas.getContext('2d');
   // A browser that cannot give a 2D context draws the label blank rather than failing the whole scene.
   if (g) {
-    g.font = '600 84px "DM Sans", system-ui, sans-serif';
+    g.font = '600 84px Superscripts, "DM Sans", system-ui, sans-serif';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     g.fillStyle = color;

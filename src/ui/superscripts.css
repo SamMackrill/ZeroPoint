@@ -1,0 +1,8 @@
+/* Superscript digits, as in 10²⁶. DM Sans and IBM Plex Mono have ¹ ² ³ but not ⁰ or ⁴ to ⁹, so the browser took those
+   from another font, at another size and height. Every superscript digit is taken from one system font instead: each font
+   stack in the laboratory and the book starts with this face, which covers only those characters. */
+@font-face {
+  font-family: 'Superscripts';
+  src: local('Segoe UI'), local('SegoeUI'), local('Helvetica Neue'), local('Roboto'), local('Noto Sans'), local('DejaVu Sans');
+  unicode-range: U+00B2-00B3, U+00B9, U+2070-207F;
+}

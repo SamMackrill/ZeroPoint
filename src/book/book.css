@@ -1,13 +1,21 @@
 /* The book companion (book/index.html). A reading page, so it scrolls, unlike the laboratory's fixed workbench.
    Colours are the design tokens of src/ui/tokens.css; diagram colours keep the laboratory's meanings. */
+/* Exponents written with <sup>, sized and raised to match the superscript digits (src/ui/superscripts.css), without
+   opening the line. */
+sup {
+  font-size: 0.66em;
+  line-height: 0;
+  vertical-align: 0.55em;
+}
+
 :root {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: 'Superscripts', 'DM Sans', system-ui, sans-serif;
   color: var(--text);
   background: var(--bg-0);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --mono: 'Superscripts', 'IBM Plex Mono', ui-monospace, monospace;
   scroll-padding-top: 72px;
 }
 
@@ -284,7 +292,7 @@ input {
 }
 
 .bk-var {
-  font-family: 'Times New Roman', Georgia, serif;
+  font-family: 'Superscripts', 'Times New Roman', Georgia, serif;
   font-size: 1.08em;
   font-style: italic;
 }
@@ -295,7 +303,7 @@ input {
   justify-content: space-between;
   gap: 16px;
   padding: 10px 16px;
-  font-family: 'Times New Roman', Georgia, serif;
+  font-family: 'Superscripts', 'Times New Roman', Georgia, serif;
   font-size: 19px;
   color: var(--text);
   background: var(--bg-2);
@@ -765,7 +773,7 @@ input {
 .bk-f-danger { fill: var(--danger); }
 
 .bk-t {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: 'Superscripts', 'DM Sans', system-ui, sans-serif;
   stroke: none;
 }
 

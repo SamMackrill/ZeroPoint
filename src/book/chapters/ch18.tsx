@@ -1,6 +1,7 @@
 // Chapter 18: The Distance Limitation of Gravity (PDF pp. 137–141). Figures 18-1 and 18-2.
-import { useState } from 'react';
-import { Arrow, Body, Diagram, Line, Readout, Remark, Slider, Stage, T, clamp, fmt } from '../kit';
+import { Suspense, lazy, useCallback, useState } from 'react';
+import { Body, Diagram, FallbackOnError, Line, Readout, Remark, Slider, Stage, T, canDraw3D, clamp, fmt } from '../kit';
+import { STAR1_R as STAR1_SCENE_R } from '../three/shadow-math';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 import { TwoSources } from './shared';
@@ -32,26 +33,48 @@ function length(m: number) {
   return `${fmt(m * 1e12)} pm`;
 }
 
+/** Figure 18-2 drawn in three dimensions, with the scene of Figure 17-2: loaded on demand, since three.js is large. */
+const ShadowScene = lazy(() => import('../three/ShadowScene'));
+
+/** Where Figure 18-2 draws Star 2, in the scene's units: further out the greater the distance, logarithmically, and not to scale. */
+export const pathSceneDistance = (exp: number) => 3 + (7 * (exp - 11)) / 15;
+
+/** Figure 18-2 as the printed page has it, flat: the two lines from Star 2's edges to Star 1's centre. The fallback where 3D cannot be drawn. */
+function FlatPath({ d, label }: { d: number; label: string }) {
+  const H = 220, y = 110, x1 = 110, x2 = 610, r = 46, spot = clamp((Math.log10(d) + 9) / 18) * 40 + 2;
+  return <Stage w={W} h={H} label={label}>
+    <Line d={`M${x2} ${y - r} L${x1} ${y} L${x2} ${y + r}`} tone="mark" w={1.4}/>
+    <Body x={x1} y={y} r={r} tone="plain" label="Star 1"/><Body x={x2} y={y} r={r} tone="plain" label="Star 2"/>
+    <ellipse cx={x1 + r} cy={y} rx={2.5} ry={spot / 2 + 1.5} className="bk-f-mark"/>
+  </Stage>;
+}
+
 /** Figure 18-2: the narrow path gravity must travel from one star to another, against the size of what lies along it. */
 function GravityPath() {
   const [exp, setExp] = useState(Math.log10(4e20));
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const fail = useCallback(() => setFlat(true), []);
   const distance = 10 ** exp, d = pathDiameter(distance), atoms = d / 1e-10, red = d / 7e-7, pairs = d / 6.066e-13;
-  const H = 400, y = 120, x1 = 110, x2 = 610, r = 46, spot = clamp((Math.log10(d) + 9) / 18) * 40 + 2;
   // A logarithmic ruler from a picometre to the size of the star, with the width of the path marked on it.
   const sx = (m: number) => 80 + ((Math.log10(m) + 13) / 23) * 560;
   const medium = distance * 100;
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`Two stars the size of the Sun, ${fmt(distance)} metres apart. The path of the gravitational force between them is ${length(d)} across where it meets the first star: ${fmt(atoms)} hydrogen atoms, or ${fmt(red)} wavelengths of red light.`}>
-      <Line d={`M${x2} ${y - r} L${x1} ${y} L${x2} ${y + r}`} tone="mark" w={1.4}/>
-      <Body x={x1} y={y} r={r} tone="plain" label="Star 1"/><Body x={x2} y={y} r={r} tone="plain" label="Star 2"/>
-      <ellipse cx={x1 + r} cy={y} rx={2.5} ry={spot / 2 + 1.5} className="bk-f-mark"/>
-      <Arrow x1={x1 + r + 70} y1={y - 62} x2={x1 + r + 6} y2={y - 6} tone="muted" w={1.2} head={7}/><T x={x1 + r + 74} y={y - 66} anchor="start" size="sm">path diameter on the star’s surface: {length(d)}</T>
-      <T x={W / 2} y={y + r + 38} size="sm">not to scale: the stars are {fmt(distance / (2 * STAR_RADIUS))} of their own diameters apart</T>
-      <line x1={80} y1={300} x2={640} y2={300} className="bk-s-faint" strokeWidth="2"/>
-      {SCALES.map((s, i) => <g key={s.name}><line x1={sx(s.length)} y1={292} x2={sx(s.length)} y2={308} className="bk-s-muted" strokeWidth="1.5"/><T x={sx(s.length)} y={i % 2 ? 336 : 322} size="sm">{s.name}</T></g>)}
-      <line x1={sx(d)} y1={268} x2={sx(d)} y2={308} className="bk-s-mark" strokeWidth="3"/><T x={sx(d)} y={260} tone="mark">width of the path</T>
-      <T x={W / 2} y={H - 22} size="sm" tone={d < 7e-7 ? 'danger' : 'muted'}>{d < 7e-7 ? 'narrower than one wavelength of red light: a single such zepton can interrupt it' : 'wider than a wavelength of red light, but long-wavelength zeptons still cross it'}</T>
-    </Stage>}>
+  const label = `Two stars the size of the Sun, ${fmt(distance)} metres apart. The path of the gravitational force between them is ${length(d)} across where it meets the first star: ${fmt(atoms)} hydrogen atoms, or ${fmt(red)} wavelengths of red light.`;
+  return <Diagram stage={<>
+    {flat
+      ? <FlatPath d={d} label={label}/>
+      : <FallbackOnError onError={fail} fallback={<FlatPath d={d} label={label}/>}>
+          <Suspense fallback={<FlatPath d={d} label={label}/>}>
+            <ShadowScene distance={pathSceneDistance(exp)} size={STAR1_SCENE_R} onFail={fail} description={`${label} The cone from Star 1's centre to Star 2's edges meets Star 1's surface in a small cap: the width of the path. The drawing is not to scale. Drag to turn the view.`}/>
+          </Suspense>
+        </FallbackOnError>}
+    <Stage w={W} h={200} label={`A ruler from a picometre to the size of the star, logarithmic: the path is ${length(d)} across.`}>
+      <T x={W / 2} y={24} size="sm">path diameter on the star’s surface: {length(d)} · not to scale: the stars are {fmt(distance / (2 * STAR_RADIUS))} of their own diameters apart</T>
+      <line x1={80} y1={100} x2={640} y2={100} className="bk-s-faint" strokeWidth="2"/>
+      {SCALES.map((s, i) => <g key={s.name}><line x1={sx(s.length)} y1={92} x2={sx(s.length)} y2={108} className="bk-s-muted" strokeWidth="1.5"/><T x={sx(s.length)} y={i % 2 ? 136 : 122} size="sm">{s.name}</T></g>)}
+      <line x1={sx(d)} y1={68} x2={sx(d)} y2={108} className="bk-s-mark" strokeWidth="3"/><T x={sx(d)} y={60} tone="mark">width of the path</T>
+      <T x={W / 2} y={180} size="sm" tone={d < 7e-7 ? 'danger' : 'muted'}>{d < 7e-7 ? 'narrower than one wavelength of red light: a single such zepton can interrupt it' : 'wider than a wavelength of red light, but long-wavelength zeptons still cross it'}</T>
+    </Stage>
+  </>}>
     <Slider label="Distance between the stars" value={exp} min={11} max={26} step={0.05} onChange={setExp} show={v => `${fmt(10 ** v, 2)} m`}/>
     <Readout label="Path diameter at the star" value={length(d)} tone="force"/>
     <Readout label="In hydrogen atoms" value={fmt(atoms)}/>
@@ -91,7 +114,7 @@ const chapter: ChapterContent = {
       tryThis: ['Leave the distance at 4 × 10²⁰ m and check the readouts against the text: 2.5 mm, 25 million atoms, 3500 red wavelengths, 4 × 10⁹ pairs.', 'Slide out to 10²⁶ m. The path falls below one wavelength of red light and is about a hundred atoms across.', 'Slide in to the distance of the nearest stars (about 4 × 10¹⁶ m) and see how wide the path is there.'],
       notes: <>
         <p>The readouts are the geometry of the figure: a cone from the edges of Star 2 to the centre of Star 1, cut at Star 1’s surface. They reproduce the lengths the text gives. The text also gives the area as <Q>about 20 square millimeters</Q>, 3.3 × 10⁻²⁴ of the star’s surface; a circle 2.5 mm in diameter has an area of 4.9 mm², and 20 mm² is the area of a circle of 2.5 mm radius. The diagram reports the diameter only.</p>
-        <p>The drawing of the two stars is a schematic; the ruler beneath it is to scale, logarithmically.</p>
+        <p>The two stars are drawn in three dimensions, as in Figure 17-2, and are a schematic: Star 2 moves out logarithmically with the distance, nowhere near to scale. The ruler beneath is to scale, logarithmically.</p>
       </>,
     },
   ],

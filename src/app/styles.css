@@ -1,11 +1,11 @@
 :root {
-  font-family: 'DM Sans',system-ui,sans-serif;
+  font-family: 'Superscripts', 'DM Sans',system-ui,sans-serif;
   color: var(--text);
   background: var(--bg-0);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --mono: 'IBM Plex Mono',ui-monospace,monospace;
+  --mono: 'Superscripts', 'IBM Plex Mono',ui-monospace,monospace;
 }
 
 * {
@@ -928,7 +928,7 @@ p {
 }
 
 .metric-strip strong small {
-  font: var(--fs-micro) 'DM Sans',sans-serif;
+  font: var(--fs-micro) 'Superscripts', 'DM Sans',sans-serif;
   letter-spacing: 0;
   color: var(--text-3);
   margin-left: 6px;

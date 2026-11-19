@@ -23,7 +23,7 @@
 .slit-heading b {
   margin-left: 10px;
   color: var(--text-2);
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: 'Superscripts', 'DM Sans', system-ui, sans-serif;
   font-weight: 400;
   letter-spacing: 0;
 }
@@ -31,7 +31,7 @@
 .slit-heading a {
   flex: none;
   color: var(--text-2);
-  font: var(--fs-micro) 'DM Sans', sans-serif;
+  font: var(--fs-micro) 'Superscripts', 'DM Sans', sans-serif;
   letter-spacing: 0;
 }
 
@@ -51,7 +51,7 @@
 }
 
 .slit-diagram text {
-  font: 17px 'DM Sans', sans-serif;
+  font: 17px 'Superscripts', 'DM Sans', sans-serif;
 }
 
 .slit-diagram .slit-svg-muted {

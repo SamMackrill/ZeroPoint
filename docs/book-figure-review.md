@@ -79,8 +79,8 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 17-3 | Electric dipoles side by side cancel | still | changed | In 11-3’s style: each dipole an hourglass dumbbell, named, with a gap between; shared with 17-4 and 17-5 |
 | 17-4 | Two zeptons of one kind cancel in both charges | still | fine | 17-3’s dumbbell drawing (shared) |
 | 17-5 | One of each kind cannot cancel both | still | fine | 17-3’s dumbbell drawing (shared) |
-| 18-1 | Matter repulsion spreads through a wide region | animated | to review | |
-| 18-2 | Gravity’s path: a very long, very narrow cone | still | to review | |
+| 18-1 | Matter repulsion spreads through a wide region | animated | fine | No change |
+| 18-2 | Gravity’s path: a very long, very narrow cone | still | changed | 17-2’s 3D scene, not to scale (Star 2 moves out logarithmically); the ruler in a panel beneath. Exponents fixed book- and lab-wide |
 | 19-1 | A force that arrives late | animated | to review | |
 | 19-2 | How far a photon’s field gets | animated | to review | |
 | 19-3 | One photon, two slits, the same time | animated | to review | |
@@ -414,3 +414,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** should be closer in style to 11-3. **Done:** `DipolePair` (17-3 to 17-5) draws each dipole as 11-3's hourglass dumbbell, named above, with a gap between the two, each letter kept with its sign; the dumbbell drawing (`dumbbell`, `ZEPTON_PAIR`) moved to `shared.tsx` for both chapters.
 - **Owner:** fine.
+
+### Fig. 18-2
+
+- **Owner:** should match 17-2. **Done:** `ShadowScene` with two Sun-sized stars; Star 2 moves out logarithmically with the distance (`pathSceneDistance`), nowhere near to scale, so the cone and the cap narrow as it goes. The path width, the not-to-scale note and the logarithmic ruler are a panel beneath. The scene's geometry moved to `three/shadow-math.ts`, so the chapter does not load three.js up front.
+- **Owner:** some exponents display wrongly (10²⁶, 10²⁰). DM Sans and IBM Plex Mono have ¹ ² ³ but not ⁰ or ⁴ to ⁹, so those came from another font. **Fixed**, then **everywhere** at the owner's request: a face covering only the superscript digits, from one system font (`src/ui/superscripts.css`), leads every font stack in the lab and the book, CSS and canvas; `<sup>` exponents in the book are sized to match. Measured: all ten digits at one height and position on both pages.
+- **Owner:** good.

@@ -203,7 +203,7 @@ export class ElectronRenderer {
   private animate = () => { if (this.disposed) return; this.frame = requestAnimationFrame(this.animate); this.controls.update(); if (this.needsRender) { this.renderer.render(this.scene, this.camera); this.needsRender = false; } };
   exportPNG() {
     this.renderer.render(this.scene, this.camera); const source = this.renderer.domElement, canvas = document.createElement('canvas'); canvas.width = source.width; canvas.height = source.height + 60;
-    const c = canvas.getContext('2d')!; c.fillStyle = palette.bg1; c.fillRect(0, 0, canvas.width, canvas.height); c.drawImage(source, 0, 0); c.fillStyle = palette.text; c.font = '12px sans-serif'; const particle = this.data?.parameters.particle ?? 'electron';
+    const c = canvas.getContext('2d')!; c.fillStyle = palette.bg1; c.fillRect(0, 0, canvas.width, canvas.height); c.drawImage(source, 0, 0); c.fillStyle = palette.text; c.font = '12px Superscripts, "DM Sans", sans-serif'; const particle = this.data?.parameters.particle ?? 'electron';
     c.fillText(`ZEROPOINT / ${POLARIZERS[particle].label} polarization · ${this.data?.parameters.mode} · tick ${this.data?.tick}`, 15, source.height + 24); c.fillText(`Fixed zepton centres | R = ${POLARIZERS[particle].radiusName} | local turns illustrative; field arrows analytic reference`, 15, source.height + 44);
     canvas.toBlob(blob => { if (!blob) return; const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = 'zeropoint-electron.png'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); });
   }

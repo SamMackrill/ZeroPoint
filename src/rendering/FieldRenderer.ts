@@ -141,7 +141,7 @@ export class FieldRenderer {
   exportPNG(caption: string) {
     this.renderer.render(this.scene, this.camera);
     const source = this.renderer.domElement, canvas = document.createElement('canvas'); canvas.width = source.width; canvas.height = source.height + 80;
-    const c = canvas.getContext('2d')!; c.fillStyle = palette.bg1; c.fillRect(0, 0, canvas.width, canvas.height); c.drawImage(source, 0, 0); c.fillStyle = palette.text; c.font = '14px sans-serif'; c.fillText('ZEROPOINT / Reduced medium lifecycle model', 20, source.height + 30); c.font = '12px sans-serif'; c.fillText(caption, 20, source.height + 55);
+    const c = canvas.getContext('2d')!; c.fillStyle = palette.bg1; c.fillRect(0, 0, canvas.width, canvas.height); c.drawImage(source, 0, 0); c.fillStyle = palette.text; c.font = '14px Superscripts, "DM Sans", sans-serif'; c.fillText('ZEROPOINT / Reduced medium lifecycle model', 20, source.height + 30); c.font = '12px Superscripts, "DM Sans", sans-serif'; c.fillText(caption, 20, source.height + 55);
     canvas.toBlob(blob => { if (!blob) return; const url = URL.createObjectURL(blob), a = document.createElement('a'); a.href = url; a.download = 'zeropoint-field.png'; a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); });
   }
   dispose() {
