@@ -78,7 +78,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 17-2 | The shadow, and the inverse square | still | changed | 3D: the cone from Star 1’s centre to Star 2’s edges meets Star 1 in the shadow, a cap; the view looks back over Star 2; the share-of-sky graph below |
 | 17-3 | Electric dipoles side by side cancel | still | changed | In 11-3’s style: each dipole an hourglass dumbbell, named, with a gap between; shared with 17-4 and 17-5 |
 | 17-4 | Two zeptons of one kind cancel in both charges | still | fine | 17-3’s dumbbell drawing (shared) |
-| 17-5 | One of each kind cannot cancel both | still | to review | |
+| 17-5 | One of each kind cannot cancel both | still | fine | 17-3’s dumbbell drawing (shared) |
 | 18-1 | Matter repulsion spreads through a wide region | animated | to review | |
 | 18-2 | Gravity’s path: a very long, very narrow cone | still | to review | |
 | 19-1 | A force that arrives late | animated | to review | |
