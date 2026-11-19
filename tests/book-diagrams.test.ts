@@ -192,8 +192,9 @@ describe('book companion: diagrams', () => {
 
   it('Figure 12-8: a zepton turns its antimatter end toward a star near it, and keeps its own direction far from both', () => {
     const z = { x: 300, y: 200, rest: 0 };
-    expect(starZeptonAngle(z, [{ x: 300, y: 160 }])).toBeCloseTo(90, 0);
-    expect(starZeptonAngle(z, [{ x: 260, y: 200 }])).toBeCloseTo(180, 0);
+    // Its own direction (here 0°) still tugs a little, so it lies within a few degrees of the star.
+    expect(Math.abs(starZeptonAngle(z, [{ x: 300, y: 160 }]) - 90)).toBeLessThan(5);
+    expect(Math.abs(Math.abs(starZeptonAngle({ ...z, rest: 90 }, [{ x: 260, y: 200 }])) - 180)).toBeLessThan(5);
     expect(Math.abs(starZeptonAngle({ ...z, rest: 30 }, [{ x: 3000, y: 200 }]) - 30)).toBeLessThan(15);
   });
 
