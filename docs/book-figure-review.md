@@ -87,7 +87,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 19-4 | A half-turn is the speed of light; a field needs far less | animated | changed | The half-turn (speed c) beside a row of zeptons passing a field on with a fraction of a turn, its front running ahead; share from 180° to 180°/32; frequency slider removed |
 | 21-1 | Swimming across the æther | animated | changed | Stream arrows turned to run against the heading a, on the right; α marked with an arc; a arrowed |
 | 22-1 | Light from a moving frame | animated | fine | No change |
-| 22-2 | A shorter wavelength, not a shorter space | animated | to review | |
+| 22-2 | A shorter wavelength, not a shorter space | animated | changed | A moves through each period while both lights are emitted, ending one λ′ and one λ₀; a draggable marker for where A is after a period |
 | 22-3 | Round a rotating body, both ways | animated | to review | |
 | 23-1 | A signal that comes back late | animated | to review | |
 | 23-2 | Starlight turned by the Sun | still | to review | |
@@ -452,3 +452,8 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** the æther direction arrows are the wrong way. They ran with the heading a, so the swimmer swam with the current. **Fixed:** the stream runs against a, as the swimmer heads into the current to cross straight.
 - **Owner:** as the diagram is turned, the arrows are better on the right; the angle text is obscured, and there is no angle segment. **Done:** arrows on the right, an arc marking α between b and a, its value moved clear. Then: an arrow on a, the direction of travel. **Done.**
 - **Owner:** good.
+
+### Fig. 22-2
+
+- **Owner:** A should be movable by dragging, not just the slider. **Done.** Then: A is supposed to be moving, so the slider, which only placed it, was misdescribed. **Done:** each period A moves from the left wall λ₀V/c₀ while both lights are emitted, their fronts going at c₀; at the end the light from A holds one λ′ between A and the far wall, the light at rest one λ₀, and the measurement arrows appear. The slider stays as V; a dashed marker for where A is after a period can be dragged to set it.
+- **Owner:** fine.
