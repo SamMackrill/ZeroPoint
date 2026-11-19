@@ -46,12 +46,12 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 7-3 | An electric field deflects by pressure | animated | changed | Field of both charges; zeptons turn in place (FieldZeptons); wider start; no pressure label |
 | 7-4 | The right hand rule for the magnetic force | still | changed | Fleming’s traced hand, fixed pose; left hand (mirrored) for a negative charge; note on J. A. Fleming |
 | 7-5 | A spinning dipole field sweeps the charge aside | animated | changed | 3D plane of motion; zeptons spin in it, in layers; B upright through them |
-| 8-1 | Vortices: Descartes’s, and much smaller ones | animated | to review | |
-| 8-2 | A top that is not spinning falls | still | to review | |
-| 8-3 | A spinning top precesses the way it spins | animated | to review | |
-| 8-4 | The right hand rule again: torque and angular momentum | still | to review | |
-| 8-5 | The torque of gravity on a leaning top | still | to review | |
-| 8-6 | The field of a moving charge, and of moving matter | still | to review | |
+| 8-1 | Vortices: Descartes’s, and much smaller ones | animated | changed | Rebuilt from the engraving; four numbered notes explain Descartes’s idea |
+| 8-2 | A top that is not spinning falls | still | changed | 3D wooden top; grab to tilt; release to topple; dotted path to the floor |
+| 8-3 | A spinning top precesses the way it spins | animated | changed | 3D wooden top precessing; Fleming's force on the spinning top, F<sub>m</sub> = m(υ × B<sub>m</sub>) |
+| 8-4 | The right hand rule again: torque and angular momentum | still | changed | Figure 7-4 again, with a switch: torque (r, F, Γ; p. 73) or the magnetic force (7-4's labels) |
+| 8-5 | The torque of gravity on a leaning top | still | changed | 3D wooden top, side view as printed; r, α, mg, and the lever r sin α on the floor |
+| 8-6 | The field of a moving charge, and of moving matter | still | changed | Velocity slider removed: one speed, as printed; drag the point to see where the field is and which way |
 | 9-1 | Morgan’s flywheels: induction across an air gap | animated | to review | |
 | 9-2 | Wallace’s gyroscopes: the plane turned over | animated | to review | |
 | 10-1 | The inertia of a current | animated | to review | |
@@ -251,3 +251,38 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** easier to see in 3D, because the zeptons spin in the same plane as the motion. **Done:** the figure is a 3D scene (three.js, on demand). A plane of motion carries a field region of zeptons spinning flat in it. Upright B arrows stand through the plane, down for a clockwise spin (“a downward directed magnetic field”, p. 65). The charge moves across the plane and is swept aside in it. Views: Turned, From above (the page’s view), and “Back to this view”. The other controls are unchanged, and the flat page view is the fallback. The Try steps and notes say this.
 - **Owner:** only one layer of spinning zeptons; would more layers be clearer? Certainly more accurate. **My view:** yes for accuracy, since the field fills the space round the path; the risk is clutter. **Done:** two layers above and two below the plane of motion, fainter with distance (42 % and 20 %). The nearer layers are shifted half a cell so they do not stack in the view from above. The B arrows lengthen to run through every layer. A switch, “Layers above and below” (on by default), hides them for comparison. The plane of motion stays the brightest.
+
+### Fig. 8-1 (changed, agreed 2026-11-18)
+
+- **Owner:** this does not match the original at all; a clearer copy of Descartes’s engraving is on Wikimedia Commons (Wellcome M0006150).
+- **Done:** the figure is rebuilt from the engraving, in its upright frame. The stars sit at its places with its letters (S the Sun; F, f, Y, L, D), and each vortex’s cell is fitted round its star, larger where the vortex presses harder (a power diagram; the engraving’s curved boundaries become straight edges). Each cell is filled with dotted lines circling its star, round for S, F and D and long and narrow for the edge-on f, Y and L, and the dots flow along them (a CSS animation, paused with the figure). The comet’s band winds through them with a comet travelling along it. The old count slider is now a choice between Descartes’s vortices and Fleming’s innumerable small ones (zeptons). A test checks that the cells tile the frame.
+- **Owner:** perhaps nothing too fancy is needed; just explain what Descartes was trying to convey. **Done:** the vortices choice is gone. The drawing now carries four numbered notes, explained beside it: (1) S, the Sun, at the centre of a great vortex of circling matter that carries the planets round; (2) every star is a sun with its own vortex, packed edge to edge, so space is full; (3) some vortices are seen edge on; (4) a comet’s path passes from one vortex to the next. The card’s text quotes the Stanford Encyclopedia summary Fleming opens with (p. 70). The gentle flow and the comet stay, since circling matter is the idea. Fleming’s small-vortex reading remains in the text.
+
+### Fig. 8-2 (changed, agreed 2026-11-18)
+
+- **Owner:** a spinning top is best shown in motion and in 3D. 8-2 is the stationary case, but all the top figures should use similar 3D representations. **Done:** a shared 3D top, `three/TopScene.tsx` with its shape in `three/top-math.ts`, is turned on a lathe from the printed outline, with a coloured band and marks so that spinning will show in 8-3 and 8-5. In 8-2 it stands on its tip on a floor, leaning. “Release the top” makes it topple, with the fall model unchanged, until its side meets the floor (63°). The centre of mass, gravity straight down from it and the dashed path it follows are drawn over the body. The reader can drag to orbit or go back to the view, and the flat drawing is the fallback. 8-3 and 8-5 will use the same scene when we reach them.
+- **Owner:** the gravity label is not needed. **Done:** removed. The arrow straight down from the centre of mass speaks for itself, and the caption names it.
+- **Owner:** the reader should be able to change the lean by grabbing the top. **Done:** pressing on the top shows a grab cursor, and dragging tilts it. The pointer’s ray meets the upright plane the top leans in, and the lean is the angle there, measured at the tip. A drag stops any fall, holds the top, and sets the slider (4° to 50°), which stays for keyboard use. A press anywhere else still turns the view. A browser test found the grab point and dragged the lean from 22° to 50°.
+- **Owner:** the dotted line, the path of the centre of mass, does not seem to line up. **Found:** it was in the right place, starting at the dot and curving to where the dot ends when the top lies down. But the faint dashed line was hidden at its start by the dot and the arrow, and was foreshortened, so it read as a stray dash. **Done:** the path is now a row of evenly spaced, brighter dots along the arc, drawn over the body, ending in an arrowhead the way the top falls, like the dashed arrow of the printed figure. Mid-fall, the centre of mass sits on it.
+- **Owner:** it starts at the centre now, but does not extend to the plane. **Explained:** the centre of mass comes to rest about 0.4 of the top’s height above the floor, because the top lies on its side. **Chosen:** down to the floor, as printed. **Done:** the dotted path now runs on to the floor (to 90°), with its arrowhead on the floor. The top still stops where its side meets the floor, and a note on the card says so.
+- **Owner:** make the top look more like it is made of wood. **Done:** the body has a wood-grain texture drawn on a canvas: a warm base with soft lengthwise grain and a few broader streaks, in a matt finish (`woodTexture` in `three/common.ts`). The colours are scene constants `wood` and `woodGrain`, and the palette was regenerated. The outline is smoothed with a spline and turned with 96 segments. The band and marks stay painted on, and the marks now sit on the smoothed surface.
+- **Owner:** it looks great; the following figures need to match it. **Plan:** 8-3 and 8-5 use the same wooden top scene.
+
+### Fig. 8-3 (changed, agreed 2026-11-18)
+
+- **From the 8-2 decision (match the figures):** 8-3 now uses the same 3D wooden top. It spins (the band and marks show it) and precesses round its tip the same way, clockwise from above as the caption says, with its centre of mass circling on a dotted path. The view is higher and centred on the tip. With the mattermagnetic account, three labelled arrows show B<sub>m</sub> along the axis (drawn above the head: toward the tip for a clockwise top, away from it for a counter-clockwise one), v (gravity’s arrow) and F<sub>m</sub> round the circle. The flat view from above is the fallback.
+- **Your comment (the force "applied to the top"):** agreed, on p. 72 Fleming means the spinning top as a body, and there he leaves the force unnamed; he names it on p. 80 as F<sub>m</sub> = m(υ × B<sub>m</sub>). His six papers here say nothing about tops. The checkbox "Show the mattermagnetic account" read as jargon, so it is now "Show Fleming’s explanation: the force on the spinning top". The notes now say that F<sub>m</sub> is drawn from the centre of mass because it acts on the whole top, and that B<sub>m</sub> is a field along the axis, not a force applied at the head.
+
+### Fig. 8-4 (changed, agreed 2026-11-18)
+
+- **From the 7-4 decision (one fixed hand, Fleming's own):** 8-4 prints the same drawing as 7-4, so it now uses the same traced hand, through a shared `FlemingHandStage`. The first finger carries the distance r (into the page), the second the force F, and the thumb the torque Γ, as Fleming describes on p. 73. The arrow-picking `HandRule` that only 8-4 still used is gone. For a top's angular momentum Fleming uses the grip rule (p. 74), which the try-this list says.
+- **Owner:** 8-4 seems a repetition; can we copy the earlier figure? **Agreed in part:** the book prints the same drawing, so 8-4 is now Figure 7-4 again. But Fleming uses it here for torque (p. 73: r on the first finger, F on the second, torque on the thumb), so it starts with those labels, and a switch puts back 7-4's motion, field and force. That keeps the point he makes, that it is the same memory device for any cross product.
+
+### Fig. 8-5
+
+- **From the 8-2 decision (match the figures):** 8-5 now uses the same 3D wooden top, spinning clockwise from above as in 8-3, seen square on to the plane it leans in, like the printed side view. Over it, as Fleming labels them: the upright through the tip (dashed), r from the tip to the centre of mass, the angle α, and mg on gravity's arrow. Added: the lever r sin α on the floor, a little in front of the top, which is the distance he describes on p. 74. Grab the top or use the slider to change α. "Let it precess" sets it circling at the rate from Equation 8-5; off by default, so the figure's angle stays put. The r slider is gone because the 3D top has a fixed shape: its r is taken as 4 cm (a top about 7.4 cm tall), which the notes say. The flat drawing is the fallback.
+- **Owner:** fine as it is.
+
+### Fig. 8-6
+
+- **Owner:** the velocity slider gives nothing meaningful here. **Agreed:** the strength is relative, so the slider only scaled it; Fleming shows one speed and makes his point with where the field is and which way it points. Removed; the arrow is a fixed length.

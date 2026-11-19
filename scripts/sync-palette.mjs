@@ -19,6 +19,8 @@ export const SCENE = {
   posGlowElectron: '#672e17', negGlowElectron: '#1c4c6c', coreGlowElectron: '#7e42ce',
   // Copper wire (the coil of Figure 6-18): its colour, and a faint glow so it reads as copper in shadow.
   copper: '#c8783f', copperGlow: '#3a1a08',
+  // Turned wood (the tops of chapter 8): the base colour and the darker grain drawn on it.
+  wood: '#c08a55', woodGrain: '#7d5230',
 };
 
 /** Convert a token name (--data-pos-hi) to its palette key (dataPosHi). */

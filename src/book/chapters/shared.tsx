@@ -1,73 +1,38 @@
-// Diagrams that more than one chapter uses: the right hand rule for a cross product (Figures 7-4 and 8-4), and the
-// rotation that moving bodies leave in the zeptons beside them (chapters 6, 10, 11 and 12).
+// Diagrams that more than one chapter uses: Fleming's drawn hand for the right hand rule (Figures 7-4 and 8-4), and
+// the rotation that moving bodies leave in the zeptons beside them (chapters 6, 10, 11 and 12).
 import { useMemo, useState } from 'react';
 import { BOOK_PDF } from '../labs';
+import { HAND_DIGITS, HAND_PATH, HAND_SIZE } from '../art/fleming-hand';
 import { Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, PlayBar, Readout, Remark, Spin, Stage, Still, T, Toggle, Zepton, usePlayback, type Source, type Tone } from '../kit';
 
-/** A direction along an axis: +x, −x and so on. */
-export type Axis = '+x' | '-x' | '+y' | '-y' | '+z' | '-z';
-
-type Vec = [number, number, number];
-
-const AXES: Record<Axis, Vec> = { '+x': [1, 0, 0], '-x': [-1, 0, 0], '+y': [0, 1, 0], '-y': [0, -1, 0], '+z': [0, 0, 1], '-z': [0, 0, -1] };
-const NAMES: Record<Axis, string> = { '+x': 'right', '-x': 'left', '+y': 'up', '-y': 'down', '+z': 'toward you', '-z': 'away from you' };
-const OPTIONS: { value: Axis; label: string }[] = [{ value: '+x', label: '→' }, { value: '-x', label: '←' }, { value: '+y', label: '↑' }, { value: '-y', label: '↓' }, { value: '+z', label: '⊙' }, { value: '-z', label: '⊗' }];
-
-/** The cross product of two vectors. */
-export const cross = (a: Vec, b: Vec): Vec => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-
-/** The direction of first × second as an axis name, or null when the two are parallel. */
-export function crossAxis(first: Axis, second: Axis, sign: 1 | -1 = 1): Axis | null {
-  const c = cross(AXES[first], AXES[second]).map(v => v * sign) as Vec;
-  return (Object.keys(AXES) as Axis[]).find(k => AXES[k].every((v, i) => v === c[i])) ?? null;
-}
-
-/** An oblique view of three dimensions: x to the right, y up the page, z toward the reader at the lower left. */
-export const oblique = (ox: number, oy: number) => ([x, y, z]: Vec): [number, number] => [ox + x - 0.6 * z, oy - y + 0.48 * z];
-
-/** What the three fingers of the right hand rule stand for in one use of it. */
-export interface HandRuleProps {
-  /** First finger: the first term of the cross product. */
-  first: { name: string; tone: Tone; start: Axis };
-  /** Second finger: the second term. */
-  second: { name: string; tone: Tone; start: Axis };
-  /** Thumb: the result. */
-  thumb: { name: string; tone: Tone };
-  /** Offer a choice of sign for the thing acted on (a positive or negative charge), which reverses the result. */
-  signed?: string;
-  remark: string;
-}
+/** What one digit of the drawn hand stands for: a name, a small hint under it, and its colour. */
+export interface HandDigit { name: string; hint: string; tone: Tone }
 
 /**
- * The right hand rule as three arrows: first finger and second finger are set by the reader, and the thumb follows
- * as their cross product. With parallel fingers there is no result.
+ * Fleming's own drawing of the right hand, traced from the book, with an arrow carrying on from each digit the way it
+ * points (Figures 7-4 and 8-4). The first finger is drawn up and to the left: in perspective it points into the page.
+ * `mirrored` flips the drawing top to bottom into a left hand, thumb down.
  */
-export function HandRule({ first, second, thumb, signed, remark }: HandRuleProps) {
-  const [a, setA] = useState<Axis>(first.start);
-  const [b, setB] = useState<Axis>(second.start);
-  const [negative, setNegative] = useState(false);
-  const result = crossAxis(a, b, negative ? -1 : 1), project = oblique(300, 190), L = 130;
-  const arrow = (axis: Axis, tone: Tone, label: string, w: number) => {
-    const v = AXES[axis], [x, y] = project([v[0] * L, v[1] * L, v[2] * L]), [lx, ly] = project([v[0] * (L + 26), v[1] * (L + 26), v[2] * (L + 26)]);
-    return <g key={label}><Arrow x1={300} y1={190} x2={x} y2={y} tone={tone} w={w} head={13}/><T x={lx} y={ly + 5} tone={tone}>{label}</T></g>;
+export function FlemingHandStage({ first, second, thumb, mirrored = false, label, footnote }: { first: HandDigit; second: HandDigit; thumb: HandDigit; mirrored?: boolean; label: string; footnote: string }) {
+  const W = 720, H = 360, scale = 2.1, ox = 250, oy = 30, flip = mirrored ? -1 : 1;
+  // The left hand is the right hand mirrored top to bottom, in the same box.
+  const at = ([x, y]: readonly [number, number]): [number, number] => [ox + x * scale, oy + (mirrored ? HAND_SIZE.h - y : y) * scale];
+  // An arrow carrying on from a fingertip the way the finger points.
+  const along = (digit: { base: readonly [number, number]; tip: readonly [number, number] }, from: number, to: number) => {
+    const [bx, by] = at(digit.base), [tx, ty] = at(digit.tip), d = Math.hypot(tx - bx, ty - by), ux = (tx - bx) / d, uy = (ty - by) / d;
+    return { x1: tx + ux * from, y1: ty + uy * from, x2: tx + ux * to, y2: ty + uy * to };
   };
-  return <Diagram stage={
-    <Stage h={380} label={`Right hand rule. First finger, ${first.name}: ${NAMES[a]}. Second finger, ${second.name}: ${NAMES[b]}. Thumb, ${thumb.name}: ${result ? NAMES[result] : 'none, because the two fingers are parallel'}.`}>
-      {(['+x', '+y', '+z'] as Axis[]).map(axis => { const v = AXES[axis], [x1, y1] = project([-v[0] * 160, -v[1] * 160, -v[2] * 160]), [x2, y2] = project([v[0] * 160, v[1] * 160, v[2] * 160]); return <line key={axis} x1={x1} y1={y1} x2={x2} y2={y2} className="bk-s-faint" strokeDasharray="2 5"/>; })}
-      {arrow(a, first.tone, first.name, 3)}
-      {a !== b && arrow(b, second.tone, second.name, 3)}
-      {result && arrow(result, thumb.tone, thumb.name, 5)}
-      <T x={560} y={150} anchor="start" size="sm" tone={first.tone}>first finger: {first.name}</T>
-      <T x={560} y={174} anchor="start" size="sm" tone={second.tone}>second finger: {second.name}</T>
-      <T x={560} y={198} anchor="start" size="sm" tone={thumb.tone}>thumb: {thumb.name}</T>
-      <T x={30} y={372} anchor="start" size="sm">⊙ is toward you, drawn to the lower left; ⊗ is away from you.</T>
-    </Stage>}>
-    <Choice label={`First finger: ${first.name}`} value={a} onChange={setA} options={OPTIONS}/>
-    <Choice label={`Second finger: ${second.name}`} value={b} onChange={setB} options={OPTIONS}/>
-    {signed && <Choice label={signed} value={negative ? 'neg' : 'pos'} onChange={v => setNegative(v === 'neg')} options={[{ value: 'pos', label: 'Positive' }, { value: 'neg', label: 'Negative' }]}/>}
-    <Readout label={`Thumb: ${thumb.name}`} value={result ? NAMES[result] : 'none'} tone={result ? 'good' : 'bad'}/>
-    <Remark>{!result ? 'With the two fingers along the same line there is nothing for the thumb to show: only the perpendicular part counts.' : negative ? `For a negative ${signed?.toLowerCase() ?? 'charge'} the ${thumb.name} is opposite to where the right thumb points.` : remark}</Remark>
-  </Diagram>;
+  const a = along(HAND_DIGITS.index, 14, 104), b = along(HAND_DIGITS.middle, 14, 112), c = along(HAND_DIGITS.thumb, 10, mirrored ? 68 : 82);
+  return <Stage w={W} h={H} label={label}>
+    <g transform={`translate(${ox} ${mirrored ? oy + HAND_SIZE.h * scale : oy}) scale(${scale} ${flip * scale})`}><path d={HAND_PATH} fillRule="evenodd" className="bk-f-text" opacity={0.85}/></g>
+    <Arrow x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2} tone={first.tone} w={3.5} head={13}/>
+    <T x={a.x2 - 8} y={a.y2 - 12 * flip} tone={first.tone} anchor="end">{first.name}</T><T x={a.x2 - 8} y={a.y2 + (mirrored ? 30 : 6)} size="sm" tone={first.tone} anchor="end">{first.hint}</T>
+    <Arrow x1={b.x1} y1={b.y1} x2={b.x2} y2={b.y2} tone={second.tone} w={3.5} head={13}/>
+    <T x={b.x2 - 8} y={b.y2 - 4} tone={second.tone} anchor="end">{second.name}</T><T x={b.x2 - 8} y={b.y2 + 14} size="sm" tone={second.tone} anchor="end">{second.hint}</T>
+    <Arrow x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2} tone={thumb.tone} w={5} head={15}/>
+    <T x={c.x2 + 14} y={c.y2 + (mirrored ? -6 : 10)} tone={thumb.tone} anchor="start">{thumb.name}</T><T x={c.x2 + 14} y={c.y2 + (mirrored ? 12 : 28)} size="sm" tone={thumb.tone} anchor="start">{thumb.hint}</T>
+    <T x={20} y={H - 14} size="sm" anchor="start">{footnote}</T>
+  </Stage>;
 }
 
 /** How a two-source diagram draws the field. */

@@ -3,9 +3,8 @@ import { Suspense, lazy, useCallback, useMemo, useRef, useState } from 'react';
 import { Action, Dial, Arrow, BlockArrow, Charge, Choice, Diagram, FallbackOnError, FieldPicture, FieldZeptons, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
-import { HAND_DIGITS, HAND_PATH, HAND_SIZE } from '../art/fleming-hand';
 import type { SweepView } from '../three/SweepScene';
-import type { FieldMode } from './shared';
+import { FlemingHandStage, type FieldMode } from './shared';
 
 const W = 720;
 
@@ -423,27 +422,14 @@ const chapter: ChapterContent = {
  */
 function FlemingHand() {
   const [negative, setNegative] = useState(false);
-  const W = 720, H = 360, scale = 2.1, ox = 250, oy = 30, flip = negative ? -1 : 1;
-  // The left hand is the right hand mirrored top to bottom, in the same box.
-  const at = ([x, y]: readonly [number, number]): [number, number] => [ox + x * scale, oy + (negative ? HAND_SIZE.h - y : y) * scale];
-  // An arrow carrying on from a fingertip the way the finger points.
-  const along = (digit: { base: readonly [number, number]; tip: readonly [number, number] }, from: number, to: number) => {
-    const [bx, by] = at(digit.base), [tx, ty] = at(digit.tip), d = Math.hypot(tx - bx, ty - by), ux = (tx - bx) / d, uy = (ty - by) / d;
-    return { x1: tx + ux * from, y1: ty + uy * from, x2: tx + ux * to, y2: ty + uy * to };
-  };
-  const motion = along(HAND_DIGITS.index, 14, 104), field = along(HAND_DIGITS.middle, 14, 112), force = along(HAND_DIGITS.thumb, 10, negative ? 68 : 82);
   const hand = negative ? 'left' : 'right';
   return <Diagram stage={
-    <Stage w={W} h={H} label={`Fleming's rule with the ${hand} hand, drawn as in the book${negative ? ' but mirrored' : ''}. The second finger points along the magnetic field, to the left; the first finger points along the motion, into the page; the thumb points ${negative ? 'down' : 'up'}, the direction of the force on a ${negative ? 'negative' : 'positive'} charge.`}>
-      <g transform={`translate(${ox} ${negative ? oy + HAND_SIZE.h * scale : oy}) scale(${scale} ${flip * scale})`}><path d={HAND_PATH} fillRule="evenodd" className="bk-f-text" opacity={0.85}/></g>
-      <Arrow x1={motion.x1} y1={motion.y1} x2={motion.x2} y2={motion.y2} tone="motion" w={3.5} head={13}/>
-      <T x={motion.x2 - 8} y={motion.y2 - 12 * flip} tone="motion" anchor="end">motion</T><T x={motion.x2 - 8} y={motion.y2 + (negative ? 30 : 6)} size="sm" tone="motion" anchor="end">first finger, into the page</T>
-      <Arrow x1={field.x1} y1={field.y1} x2={field.x2} y2={field.y2} tone="b" w={3.5} head={13}/>
-      <T x={field.x2 - 8} y={field.y2 - 4} tone="b" anchor="end">field B</T><T x={field.x2 - 8} y={field.y2 + 14} size="sm" tone="b" anchor="end">second finger</T>
-      <Arrow x1={force.x1} y1={force.y1} x2={force.x2} y2={force.y2} tone="force" w={5} head={15}/>
-      <T x={force.x2 + 14} y={force.y2 + (negative ? -6 : 10)} tone="force" anchor="start">force</T><T x={force.x2 + 14} y={force.y2 + (negative ? 12 : 28)} size="sm" tone="force" anchor="start">thumb</T>
-      <T x={20} y={H - 14} size="sm" anchor="start">{negative ? 'left hand: for a negative charge' : 'right hand: for a positive charge'}</T>
-    </Stage>}>
+    <FlemingHandStage mirrored={negative}
+      first={{ name: 'motion', hint: 'first finger, into the page', tone: 'motion' }}
+      second={{ name: 'field B', hint: 'second finger', tone: 'b' }}
+      thumb={{ name: 'force', hint: 'thumb', tone: 'force' }}
+      label={`Fleming's rule with the ${hand} hand, drawn as in the book${negative ? ' but mirrored' : ''}. The second finger points along the magnetic field, to the left; the first finger points along the motion, into the page; the thumb points ${negative ? 'down' : 'up'}, the direction of the force on a ${negative ? 'negative' : 'positive'} charge.`}
+      footnote={negative ? 'left hand: for a negative charge' : 'right hand: for a positive charge'}/>}>
     <Choice label="Charge" value={negative ? 'neg' : 'pos'} onChange={v => setNegative(v === 'neg')} options={[{ value: 'pos', label: 'Positive' }, { value: 'neg', label: 'Negative' }]}/>
     <Readout label="Force" value={negative ? 'down: the left thumb' : 'up: the right thumb'} tone="good"/>
     <Remark>{negative ? 'A negative charge feels the opposite force: the same rule with the left hand, its thumb pointing down.' : 'The force is at right angles to both the motion and the field, which is why the magnetic interaction is harder to picture than the electric one.'}</Remark>
