@@ -60,7 +60,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 11-1 | The matter field of a body | animated | changed | Amount slider removed; zeptons kept a small, even gap from the body, pulsing in rings so the picture stays balanced |
 | 11-2 | Matter repels matter | animated | changed | Bodies marked M with the zepton key, as in 11-1; zeptons keep the same small gap |
 | 11-3 | Two kinds of zepton, and how they cancel | still | changed | Each zepton drawn as an hourglass dumbbell with a gap between the two, named, with Fleming’s particle-pair gloss; same drawing in 11-6 |
-| 11-4 | Moving matter makes a mattermagnetic field | still | to review | |
+| 11-4 | Moving matter makes a mattermagnetic field | still | fine | No change |
 | 11-5 | A rotating body and its counter-rotating field | animated | to review | |
 | 11-6 | A rotating pair with no electromagnetic field | animated | to review | |
 | 12-1 | Newtonian gravity as a difference | still | to review | |
