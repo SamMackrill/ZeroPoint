@@ -1,7 +1,7 @@
 // Chapter 11: The Matter Dipole (PDF pp. 91–97). Figures 11-1 to 11-6.
-import { useMemo, useState } from 'react';
-import { Action, Arrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, bearing, polar, turn, usePlayback, type Source } from '../kit';
-import { Pg, Q } from '../prose';
+import { useMemo, useState, type ReactNode } from 'react';
+import { Action, Arrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, bearing, polar, rad, turn, usePlayback, type Source } from '../kit';
+import { Paper, Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 import { TwoSources } from './shared';
 
@@ -27,6 +27,24 @@ function MatterField() {
 
 type Facing = 'up' | 'down';
 
+/** A raised sign after a particle's letter in SVG text, with the baseline restored after it. */
+const sup = (sign: string) => <><tspan dy={-6} fontSize="0.8em">{sign}</tspan><tspan dy={6}>{'​'}</tspan></>;
+
+/** Each zepton in Figures 11-3 and 11-6 is a dumbbell: two round ends of radius ZR, ZD above and below its middle,
+ *  joined by an hourglass neck ZN wide at its waist. ZH is its overall height; ZX is how far each zepton sits from the middle of the pair. */
+const ZR = 42, ZD = 60, ZN = 18, ZH = 2 * (ZD + ZR), ZX = 62;
+
+/** The outline of a dumbbell zepton centred on (x, y): two circles joined by a smooth hourglass neck, each curve leaving a circle along its tangent. */
+function dumbbell(x: number, y: number) {
+  const shoulder = rad(45), k = 14, sx = ZR * Math.sin(shoulder), sy = ZD - ZR * Math.cos(shoulder), w = ZN / 2;
+  // From the shoulder on the circle, along its tangent toward the waist, which is reached heading straight along the zepton.
+  const cx1 = sx - k * Math.cos(shoulder), cy1 = sy - k * Math.sin(shoulder), cy2 = 12;
+  const neck = (side: 1 | -1) => side > 0
+    ? `C${x + cx1} ${y - cy1} ${x + w} ${y - cy2} ${x + w} ${y} C${x + w} ${y + cy2} ${x + cx1} ${y + cy1} ${x + sx} ${y + sy}`
+    : `C${x - cx1} ${y + cy1} ${x - w} ${y + cy2} ${x - w} ${y} C${x - w} ${y - cy2} ${x - cx1} ${y - cy1} ${x - sx} ${y - sy}`;
+  return `M${x - sx} ${y - sy} A${ZR} ${ZR} 0 1 1 ${x + sx} ${y - sy} ${neck(1)} A${ZR} ${ZR} 0 1 1 ${x - sx} ${y + sy} ${neck(-1)} Z`;
+}
+
 /** The net dipoles of an electron-like zepton and a proton-like zepton set side by side, by which end of each is up. */
 export function pairDipoles(electronLike: Facing, protonLike: Facing) {
   // Electron-like: matter with negative charge at one end. Proton-like: matter with positive charge at one end.
@@ -40,21 +58,31 @@ function ZeptonPair({ rotating }: { rotating: boolean }) {
   const [protonLike, setP] = useState<Facing>('up');
   const play = usePlayback({ speed: 0.5 });
   const { matter, electric } = pairDipoles(electronLike, protonLike), H = 360, cx = 300, cy = 180, spin = rotating ? play.t * 90 : 0;
-  const lobe = (dx: number, top: boolean, isMatter: boolean, sign: 1 | -1) => {
-    const y = cy + (top ? -52 : 52);
-    return <g><ellipse cx={cx + dx} cy={y} rx={44} ry={50} className="bk-zepton-oval" strokeWidth="2.5"/>
-      <text x={cx + dx - 12} y={y + 6} textAnchor="middle" className={`bk-t bk-t-lg ${isMatter ? 'bk-f-matter' : 'bk-f-anti'}`} transform={`rotate(${spin} ${cx + dx - 12} ${y})`}>{isMatter ? 'm' : 'a'}</text>
-      <text x={cx + dx + 16} y={y + 6} textAnchor="middle" className={`bk-t bk-t-lg ${sign > 0 ? 'bk-f-pos' : 'bk-f-neg'}`} transform={`rotate(${spin} ${cx + dx + 16} ${y})`}>{sign > 0 ? '+' : '−'}</text></g>;
+  // Each zepton is drawn as one dipole, a dumbbell whose two ends are Fleming's ovals (m or a, with its electric sign),
+  // a particle and its antiparticle joined, with a gap between the two zeptons so the pair reads as two. Text is turned back so it stays upright.
+  const upright = (x: number, y: number) => `rotate(${spin} ${x} ${y})`;
+  const end = (dx: number, top: boolean, isMatter: boolean, sign: 1 | -1) => {
+    const y = cy + (top ? -ZD : ZD);
+    return <g>
+      <text x={cx + dx - 14} y={y + 7} textAnchor="middle" className={`bk-t bk-t-lg ${isMatter ? 'bk-f-matter' : 'bk-f-anti'}`} transform={upright(cx + dx - 14, y)}>{isMatter ? 'm' : 'a'}</text>
+      <text x={cx + dx + 16} y={y + 7} textAnchor="middle" className={`bk-t bk-t-lg ${sign > 0 ? 'bk-f-pos' : 'bk-f-neg'}`} transform={upright(cx + dx + 16, y)}>{sign > 0 ? '+' : '−'}</text></g>;
   };
+  // Rotating, the names sit further out so they clear the zeptons as the pair turns.
+  const nameAt = rotating ? ZH / 2 + 34 : ZH / 2 + 14;
+  const zepton = (dx: number, up: boolean, matterSign: 1 | -1, name: string, like: ReactNode) => <g>
+    <path d={dumbbell(cx + dx, cy)} className="bk-zepton-oval" strokeWidth="2.5"/>
+    {end(dx, true, up, (up ? matterSign : -matterSign) as 1 | -1)}{end(dx, false, !up, (up ? -matterSign : matterSign) as 1 | -1)}
+    <T x={cx + dx} y={cy - nameAt} size="sm" tone="text" transform={upright(cx + dx, cy - nameAt)}>{name}</T>
+    {!rotating && <T x={cx + dx} y={cy + ZH / 2 + 26} size="sm" transform={upright(cx + dx, cy + ZH / 2 + 26)}>{like}</T>}
+  </g>;
   const eUp = electronLike === 'up', pUp = protonLike === 'up';
   return <Diagram stage={
     <Stage w={W} h={H} label={`An electron-like zepton and a proton-like zepton side by side${rotating ? ', rotating together' : ''}. Together they are ${matter ? 'polarized' : 'neutral'} with respect to matter charge and ${electric ? 'polarized' : 'neutral'} with respect to electric charge.`}>
       <g transform={`rotate(${-spin} ${cx} ${cy})`}>
-        {lobe(-46, true, eUp, eUp ? -1 : 1)}{lobe(-46, false, !eUp, eUp ? 1 : -1)}
-        {lobe(46, true, pUp, pUp ? 1 : -1)}{lobe(46, false, !pUp, pUp ? -1 : 1)}
+        {zepton(-ZX, eUp, -1, 'electron-like', <>like e{sup('−')} with e{sup('+')}</>)}
+        {zepton(ZX, pUp, 1, 'proton-like', <>like p with <tspan textDecoration="overline">p</tspan></>)}
       </g>
-      {rotating && <Spin x={cx} y={cy} r={150} ccw sweep={300} tone="muted"/>}
-      {!rotating && <><T x={cx - 46} y={H - 26} size="sm">electron-like</T><T x={cx + 46} y={H - 26} size="sm">proton-like</T></>}
+      {rotating && <Spin x={cx} y={cy} r={172} ccw sweep={300} tone="muted"/>}
       <T x={600} y={84} size="sm">net dipole</T><T x={560} y={110} tone="matter">matter</T>
       {matter !== 0 ? <Arrow x1={560} y1={cy + matter * 22} x2={560} y2={cy - matter * 22} tone="matter" w={4} head={13}/> : <T x={560} y={cy + 5} tone="muted">none</T>}
       <T x={650} y={110} tone="e">electric</T>
@@ -160,6 +188,7 @@ const chapter: ChapterContent = {
         <p><Q>If an electron-like and a proton-like zepton are side by side, they cancel with respect to one type of charge and are polarized with respect to the other.</Q> They can equally be polarized electrically while matter neutral. <Q>However, in local space dominated by matter, there will always be some matter charge polarization.</Q></p>
       </>,
       tryThis: ['As it starts, both matter ends are up: a matter dipole, and the − and + beside each other cancel.', 'Turn the proton-like zepton over. Now the two + ends are together: an electric dipole, and matter cancels.', 'Try all four arrangements. The pair is never polarized in both kinds, and never neutral in both.'],
+      notes: <p>The printed figure is four touching ovals, two to a zepton. Here each zepton is drawn as one dipole, a dumbbell of two particles joined, with a gap between the two zeptons so the pair reads as two. The same drawing, unlabelled, is Fig. 5 of <Paper id="motion" page={4}/>, whose text gives the glosses under each zepton: the electron-like kind is <Q>like a quantum electron-positron pair</Q>, and the proton-like kind <Q>can be thought of as a proton-antiproton pair</Q>.</p>,
     },
     {
       kind: 'figure', id: '11-4', page: 96, section: 'Matter Magnetism', title: 'Moving matter makes a mattermagnetic field',

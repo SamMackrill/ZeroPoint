@@ -59,7 +59,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 10-3 | Why a body at rest stays at rest | animated | fine | No change |
 | 11-1 | The matter field of a body | animated | changed | Amount slider removed; zeptons kept a small, even gap from the body, pulsing in rings so the picture stays balanced |
 | 11-2 | Matter repels matter | animated | changed | Bodies marked M with the zepton key, as in 11-1; zeptons keep the same small gap |
-| 11-3 | Two kinds of zepton, and how they cancel | still | to review | |
+| 11-3 | Two kinds of zepton, and how they cancel | still | changed | Each zepton drawn as an hourglass dumbbell with a gap between the two, named, with Fleming’s particle-pair gloss; same drawing in 11-6 |
 | 11-4 | Moving matter makes a mattermagnetic field | still | to review | |
 | 11-5 | A rotating body and its counter-rotating field | animated | to review | |
 | 11-6 | A rotating pair with no electromagnetic field | animated | to review | |
@@ -323,3 +323,11 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** add the M and the key so it matches 11-1. **Done** in `TwoSources` for matter: bodies marked M (M̄ for antimatter), a little larger to hold the letter; the zepton key; and the zeptons keep 11-1's small, even gap. Shared with the matter figures of chapters 14 and 18.
 - **Owner:** great now.
+
+### Fig. 11-3
+
+- **Owner:** stylised and unclear; it represents the original, but is one of Fleming's weaker drawings. Is there a better one in his papers? It is two zeptons, electron-like left and proton-like right, but the print does not make that obvious. **Found:** none clearer. Fig. 5 of *Electromagnetic Motion as an Extended Casimir Effect* is the same four ovals, unlabelled. Its text does call the kinds "like a quantum electron-positron pair" and "a proton-antiproton pair".
+- **Decision (asked):** two clear dipoles. Each zepton is one outline holding Fleming's two ends (m or a with its sign), with a gap between the zeptons, its name above, and the paper's gloss below ("like e⁻ with e⁺", "like p with p̄"). The note cites the paper's Fig. 5.
+- **Owner:** better; make them dumbbells to show they are particle pairs. **Done.** Then: a smoother, hourglass neck. **Done:** each curve leaves its round end along the tangent and narrows to a slim waist.
+- The same drawing serves Fig. 11-6, where the names turn with the pair and stay upright, and the circular arrow is drawn wider to clear them.
+- **Owner:** perfect.
