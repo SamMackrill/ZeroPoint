@@ -67,7 +67,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 12-2 | A rotating sun pushes its planet inward | animated | changed | Real rotation: the Sun turns with a dark cross and its zeptons turn against it, curled arrows only when paused; the printed, balanced case only |
 | 12-3 | A planet’s own rotational field | animated | fine | 12-2’s turning body and zeptons (shared); B_m subscripted |
 | 12-4 | Why orbiting bodies stop turning | animated | changed | Orbital-field zeptons turn either side, arrows only when paused; the planet turns with a dark cross; the Sun drawn symbolically at the left, named within it |
-| 12-5 | An ellipse that will not stay put | animated | to review | |
+| 12-5 | An ellipse that will not stay put | animated | fine | No change |
 | 12-6 | The force that turns the ellipse | animated | to review | |
 | 12-7 | The largest flywheel | animated | to review | |
 | 12-8 | Stars moving together are drawn together | animated | to review | |
