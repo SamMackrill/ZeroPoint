@@ -63,9 +63,10 @@ function ZeptonPair({ rotating }: { rotating: boolean }) {
   const upright = (x: number, y: number) => `rotate(${spin} ${x} ${y})`;
   const end = (dx: number, top: boolean, isMatter: boolean, sign: 1 | -1) => {
     const y = cy + (top ? -ZD : ZD);
-    return <g>
-      <text x={cx + dx - 14} y={y + 7} textAnchor="middle" className={`bk-t bk-t-lg ${isMatter ? 'bk-f-matter' : 'bk-f-anti'}`} transform={upright(cx + dx - 14, y)}>{isMatter ? 'm' : 'a'}</text>
-      <text x={cx + dx + 16} y={y + 7} textAnchor="middle" className={`bk-t bk-t-lg ${sign > 0 ? 'bk-f-pos' : 'bk-f-neg'}`} transform={upright(cx + dx + 16, y)}>{sign > 0 ? '+' : '−'}</text></g>;
+    // The letter and its sign are one label, as Fleming writes "m−" or "a+": they turn upright together about the end's centre.
+    return <g transform={upright(cx + dx, y)}>
+      <text x={cx + dx - 12} y={y + 7} textAnchor="middle" className={`bk-t bk-t-lg ${isMatter ? 'bk-f-matter' : 'bk-f-anti'}`}>{isMatter ? 'm' : 'a'}</text>
+      <text x={cx + dx + 12} y={y + 7} textAnchor="middle" className={`bk-t bk-t-lg ${sign > 0 ? 'bk-f-pos' : 'bk-f-neg'}`}>{sign > 0 ? '+' : '−'}</text></g>;
   };
   // Rotating, the names sit further out so they clear the zeptons as the pair turns.
   const nameAt = rotating ? ZH / 2 + 34 : ZH / 2 + 14;

@@ -62,7 +62,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 11-3 | Two kinds of zepton, and how they cancel | still | changed | Each zepton drawn as an hourglass dumbbell with a gap between the two, named, with Fleming’s particle-pair gloss; same drawing in 11-6 |
 | 11-4 | Moving matter makes a mattermagnetic field | still | fine | No change |
 | 11-5 | A rotating body and its counter-rotating field | animated | changed | Solid dark cross on the body so its turning shows; the reader turns the body by hand (drag, flick, or arrow keys); direction labels removed; zepton key added, as in 11-1 |
-| 11-6 | A rotating pair with no electromagnetic field | animated | to review | |
+| 11-6 | A rotating pair with no electromagnetic field | animated | changed | 11-3’s hourglass zeptons; each letter and its sign (m−, a+) stay together, upright, as the pair turns |
 | 12-1 | Newtonian gravity as a difference | still | to review | |
 | 12-2 | A rotating sun pushes its planet inward | animated | to review | |
 | 12-3 | A planet’s own rotational field | animated | to review | |
@@ -340,3 +340,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** good now.
 - **Owner:** it should have a key like the other diagrams, showing the matter and antimatter colours. **Done:** 11-1's zepton key, in the bottom-left corner clear of the ring.
 - **Owner:** done now.
+
+### Fig. 11-6
+
+- Takes 11-3's drawing: the two hourglass zeptons, named, turning together.
+- **Owner:** Fleming's m− and m+ mean matter that is electrically negative or positive, and a+ and a− the same for antimatter, so the letter and sign must stay together as the pair turns; apart, they look strange. **Done:** each end's letter and sign are one label, kept upright about the end's centre.
+- **Owner:** good.
