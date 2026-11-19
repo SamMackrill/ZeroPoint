@@ -88,7 +88,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 21-1 | Swimming across the æther | animated | changed | Stream arrows turned to run against the heading a, on the right; α marked with an arc; a arrowed |
 | 22-1 | Light from a moving frame | animated | fine | No change |
 | 22-2 | A shorter wavelength, not a shorter space | animated | changed | A moves through each period while both lights are emitted, ending one λ′ and one λ₀; a draggable marker for where A is after a period |
-| 22-3 | Round a rotating body, both ways | animated | to review | |
+| 22-3 | Round a rotating body, both ways | animated | fine | No change |
 | 23-1 | A signal that comes back late | animated | to review | |
 | 23-2 | Starlight turned by the Sun | still | to review | |
 | 25-1 | Two shells, a diameter apart | still | to review | |
