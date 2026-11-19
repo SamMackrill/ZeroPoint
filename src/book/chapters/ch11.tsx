@@ -173,6 +173,7 @@ function RotatingBody() {
         // A zepton beside a moving surface turns like one gear against another: the opposite way to the body.
         return <g key={i}><Zepton x={x} y={y} angle={a + 180 - turned * 2.2} len={34} polarity="matter" signs={false}/>{moving && i % 3 === 0 && <Spin x={x} y={y} r={24} ccw={rate < 0} sweep={220} opacity={0.85}/>}</g>;
       })}
+      <Zepton x={60} y={H - 16} angle={180} len={46} polarity="matter" signs/><T x={96} y={H - 11} anchor="start" size="sm">a: antimatter end · m: matter end</T>
       {/* The body is what the reader turns: by dragging round it, or with the arrow keys once it has the focus. */}
       <circle cx={cx} cy={cy} r={R} fill="transparent" className="bk-turn" tabIndex={0} role="application"
         aria-label="The body of matter. Drag round it to turn it by hand, and flick it to set it spinning; or press the left or right arrow key to turn it a step counter-clockwise or clockwise."

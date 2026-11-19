@@ -61,7 +61,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 11-2 | Matter repels matter | animated | changed | Bodies marked M with the zepton key, as in 11-1; zeptons keep the same small gap |
 | 11-3 | Two kinds of zepton, and how they cancel | still | changed | Each zepton drawn as an hourglass dumbbell with a gap between the two, named, with Fleming’s particle-pair gloss; same drawing in 11-6 |
 | 11-4 | Moving matter makes a mattermagnetic field | still | fine | No change |
-| 11-5 | A rotating body and its counter-rotating field | animated | changed | Solid dark cross on the body so its turning shows; the reader turns the body by hand (drag, flick, or arrow keys); direction labels removed |
+| 11-5 | A rotating body and its counter-rotating field | animated | changed | Solid dark cross on the body so its turning shows; the reader turns the body by hand (drag, flick, or arrow keys); direction labels removed; zepton key added, as in 11-1 |
 | 11-6 | A rotating pair with no electromagnetic field | animated | to review | |
 | 12-1 | Newtonian gravity as a difference | still | to review | |
 | 12-2 | A rotating sun pushes its planet inward | animated | to review | |
@@ -338,3 +338,5 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** we should be able to grab the body and turn it with the mouse. **Done:** drag round it and it follows from where it was grabbed, the zeptons turning the other way; flick it and it keeps the speed it was given (starting the figure if paused); hold it still before letting go and it stops. Focused, ← and → turn it 15°. The body's angle is now carried from a base, so changing the rate no longer makes it jump.
 - **Owner:** the text on the figure jumps about as the direction changes, and the zeptons are never "at rest": they are just not turned by the body; the animation is clear without the text. **Done:** the two direction labels are removed, and the description and Try line say the stopped body no longer turns the zeptons.
 - **Owner:** good now.
+- **Owner:** it should have a key like the other diagrams, showing the matter and antimatter colours. **Done:** 11-1's zepton key, in the bottom-left corner clear of the ring.
+- **Owner:** done now.
