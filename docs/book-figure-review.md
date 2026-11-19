@@ -66,7 +66,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 12-1 | Newtonian gravity as a difference | still | changed | Three double-headed arrowed bars on one scale in the printed order, named on the bars; Newtonian Gravity thickest; bodies m₁, m₂ and r marked; sliders removed |
 | 12-2 | A rotating sun pushes its planet inward | animated | changed | Real rotation: the Sun turns with a dark cross and its zeptons turn against it, curled arrows only when paused; the printed, balanced case only |
 | 12-3 | A planet’s own rotational field | animated | fine | 12-2’s turning body and zeptons (shared); B_m subscripted |
-| 12-4 | Why orbiting bodies stop turning | animated | to review | |
+| 12-4 | Why orbiting bodies stop turning | animated | changed | Orbital-field zeptons turn either side, arrows only when paused; the planet turns with a dark cross; the Sun drawn symbolically at the left, named within it |
 | 12-5 | An ellipse that will not stay put | animated | to review | |
 | 12-6 | The force that turns the ellipse | animated | to review | |
 | 12-7 | The largest flywheel | animated | to review | |
@@ -362,3 +362,10 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** once again arrows where we should have clear rotation. **Done:** the Sun is a matter body with 11-5's dark cross, turning; the curled-arrow field is rings of zeptons, fading with distance, turning against it. Curled arrows show only while paused. `CounterField` and `BodyCross` are shared with 12-3.
 - **Owner:** the small body orbits only because the forces balance; changing the Sun's rotation would unbalance them and it would leave the orbit, yet its velocity never changes, so the slider is not modelled accurately; modelling it would distract from Fleming's point. **Decision (asked):** as printed only. The rotation slider, orbit-direction choice and readouts are removed; the note says why the reversed and stopped cases are not animated. B_m and F_m are written with proper subscripts.
 - **Owner:** good now.
+
+### Fig. 12-4
+
+- **Owner:** once again arrows where we should have clear rotation. **Done:** the two columns of curled arrows are zeptons turning opposite ways, counter-clockwise on the Sun's side and clockwise beyond, with curled arrows only when paused; the planet is a matter body with the dark cross, visibly slowing.
+- **Owner:** add the Sun symbolically, not to scale, as sketched. **Done:** the edge of a great gold disc down the left, with flares off its limb.
+- **Owner:** name it vertically within the Sun; "not to scale" is obvious. Then: the "to the Sun" arrow and label are unnecessary. **Done** both.
+- **Owner:** great now.

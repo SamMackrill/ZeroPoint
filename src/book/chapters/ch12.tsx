@@ -115,6 +115,9 @@ export function sunFieldAt(sides: 'inner' | 'outer', strength: number) {
   return strength * (sides === 'inner' ? 1 / 0.9 ** 2 : 1 / 1.1 ** 2);
 }
 
+/** Where Figure 12-4 draws the edge of the Sun: the centre of a great disc far off the left of the stage, and its radius. */
+const SUN = { x: -1000, r: 1046 };
+
 /** Figure 12-4: the two fields either side of an orbiting planet, and how the Sun's field unbalances them. */
 function SynchronousRotation() {
   const [sun, setSun] = useState(true);
@@ -131,17 +134,23 @@ function SynchronousRotation() {
   const H = 380, cx = 410, cy = 200, R = 60, grid = [-70, -25, 20, 65];
   return <Diagram stage={
     <Stage w={W} h={H} label={`A planet moving up the page in its orbit, with the Sun to the left. Its orbital motion makes a field out of the page on the Sun's side and into the page on the far side. ${sun ? 'The Sun’s own rotational field, into the page, is stronger on the near side, so the planet’s rotation slows.' : 'Without the Sun’s field the two sides are equal and the rotation does not change.'}`}>
-      <Arrow x1={110} y1={cy} x2={50} y2={cy} tone="muted" w={1.6}/><T x={120} y={cy - 12} anchor="start" size="sm">to the Sun</T>
-      {grid.map(dy => <g key={dy}>
-        <Spin x={cx - 128} y={cy + dy} r={13} ccw sweep={220} w={1.6} steady/>
-        <Spin x={cx + 128} y={cy + dy} r={13} ccw={false} sweep={220} w={1.6} steady/>
+      {/* The Sun, symbolically and not to scale: the edge of a great disc at the left, with a few flares off its limb. */}
+      <circle cx={SUN.x} cy={cy} r={SUN.r} className="bk-body bk-body-matter"/>
+      {[-150, -80, -10, 60, 140].map(dy => { const x = SUN.x + Math.sqrt(SUN.r * SUN.r - dy * dy) + 4, y = cy + dy; return <path key={dy} d={`M${x} ${y} q 6 -9 12 0 t 12 0 t 12 0`} className="bk-s-matter" fill="none" strokeWidth="3" strokeLinecap="round"/>; })}
+      <text x={24} y={cy} textAnchor="middle" className="bk-t bk-t-md bk-f-ink" transform={`rotate(-90 24 ${cy})`}>the Sun</text>
+      {/* The orbital field: zeptons either side of the moving planet, turning opposite ways (out of the page on the Sun's side,
+          into it beyond); curled arrows show the sense only while paused. */}
+      {grid.map((dy, i) => <g key={dy}>
+        <Zepton x={cx - 128} y={cy + dy} angle={i * 50 + play.t * 120} len={26} polarity="matter" signs={false}/>
+        <Zepton x={cx + 128} y={cy + dy} angle={i * 50 + 90 - play.t * 120} len={26} polarity="matter" signs={false}/>
+        <Spin x={cx - 128} y={cy + dy} r={18} ccw sweep={220} w={1.6}/>
+        <Spin x={cx + 128} y={cy + dy} r={18} ccw={false} sweep={220} w={1.6}/>
         {sun && <><InOut x={cx - 176} y={cy + dy} out={false} r={5 + 9 * inner} tone="b" opacity={0.9}/><InOut x={cx + 176} y={cy + dy} out={false} r={5 + 9 * outer} tone="b" opacity={0.9}/></>}
       </g>)}
       <T x={cx - 128} y={cy - 104} size="sm" tone="motion">orbital field: out of the page</T><T x={cx + 128} y={cy - 104} size="sm" tone="motion">orbital field: into the page</T>
       {sun && <T x={cx} y={H - 16} size="sm" tone="b">⊗ the Sun’s rotational field: into the page on both sides, stronger nearer the Sun</T>}
       <Arrow x1={cx} y1={cy - R - 8} x2={cx} y2={cy - R - 70} tone="motion" w={3}/><T x={cx + 14} y={cy - R - 44} tone="motion" italic>υ</T>
-      <Body x={cx} y={cy} r={R} tone="plain"/>
-      <line x1={polar(cx, cy, R - 6, s.angle)[0]} y1={polar(cx, cy, R - 6, s.angle)[1]} x2={polar(cx, cy, R - 6, s.angle + 180)[0]} y2={polar(cx, cy, R - 6, s.angle + 180)[1]} className="bk-s-muted" strokeWidth="2" strokeDasharray="5 6"/>
+      <Body x={cx} y={cy} r={R} tone="matter"/><BodyCross x={cx} y={cy} r={R} turned={s.angle}/>
       <Still><Spin x={cx} y={cy} r={22} ccw sweep={60 + 210 * s.spin} tone="text" w={3}/><T x={cx + 34} y={cy - 22} tone="text" italic>ω</T></Still>
     </Stage>}>
     <Toggle label="Include the Sun’s rotational field" checked={sun} onChange={setSun}/>
