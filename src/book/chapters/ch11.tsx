@@ -161,8 +161,9 @@ function RotatingBody() {
     setBase({ t: play.t, angle: g.angle }); setRateNow(next); setHeld(null);
     if (next && !play.playing) play.toggle();
   };
-  // Restart begins the rotation again from the body's first angle, not from wherever a rate change or a hand left it.
-  const restart = () => { setBase({ t: 0, angle: 0 }); play.restart(); };
+  // Restart begins the rotation again from the body's first angle, not from wherever a rate change or a hand left it,
+  // and lets go of the body if it is being held.
+  const restart = () => { grip.current = null; setHeld(null); setBase({ t: 0, angle: 0 }); play.restart(); };
   const moving = held === null && Math.abs(rate) >= 0.05;
   return <Diagram stage={
     <Stage w={W} h={H} role="group" label={Math.abs(rate) < 0.05 ? 'A body of matter that is not rotating, with zeptons round it: the body does not turn them.' : `A body of matter rotating ${rate > 0 ? 'counter-clockwise' : 'clockwise'}. The zeptons round its circumference rotate ${rate > 0 ? 'clockwise' : 'counter-clockwise'}, the opposite way.`}>

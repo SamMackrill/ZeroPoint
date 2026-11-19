@@ -72,8 +72,8 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 12-7 | The largest flywheel | animated | changed | Sliders, readouts and the field bar removed; Fleming’s relation B_m ∝ L = ½mr²ω written beside the disc |
 | 12-8 | Stars moving together are drawn together | animated | changed | Rebuilt: a fixed lattice of small zeptons that the moving stars turn (antimatter end toward them, as 11-4); arrows only when paused; force arrows on the stars; speed slider removed |
 | 13-1 | Eddies where the two halves of the mass meet | animated | changed | Eddies drawn as turning loops of matter, inner against the body and outer with it; curled arrows only when paused |
-| 16-1 | A shell that shuts out a band of the vacuum | animated | to review | |
-| 16-2 | A shape whose charges almost hold themselves | animated | to review | |
+| 16-1 | A shell that shuts out a band of the vacuum | animated | changed | Fluctuations kept clear of the shell by their reach at full size and angle; the inner ones spread evenly |
+| 16-2 | A shape whose charges almost hold themselves | animated | fine | No change |
 | 17-1 | Push gravity: bodies that shade each other | animated | to review | |
 | 17-2 | The shadow, and the inverse square | still | to review | |
 | 17-3 | Electric dipoles side by side cancel | still | to review | |
@@ -391,4 +391,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 ### Fig. 13-1
 
 - Checked before showing, under the standing rule: the eddies were always-on curled arrows. **Done:** each eddy is a small loop with three specks of matter carried round it, the inner ring turning against the body and the outer ring with it; the curled arrows show only when paused. The body's rotation lines are a little stronger.
+- **Owner:** good.
+
+### Fig. 16-1
+
+- **Owner:** the fluctuations should not clip into the shell. **Done:** each ellipse is placed by how far it reaches toward or away from the centre at its fullest, given the angle it lies at, so it stays a small gap clear of the shell, inside or out (the large outer ones could reach across it). The inner ones are a little shorter and spread evenly over the inner disc.
 - **Owner:** good.

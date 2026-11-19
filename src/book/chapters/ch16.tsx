@@ -55,7 +55,10 @@ function ParticleShell() {
       {blobs.map((b, i) => {
         const insideShell = i % 2 === 0, life = (play.t * 0.7 + b.phase) % 1, swell = Math.sin(Math.PI * life);
         // Inside: only fluctuations shorter than the inner diameter. Outside: only those longer than the outer one.
-        const len = insideShell ? ri * 2 * (0.12 + 0.5 * b.len) * 0.5 : ro * 2 * (0.55 + 0.6 * b.len) * 0.5, dist = insideShell ? b.r * Math.max(0, ri - len / 2 - 4) : ro + 26 + b.r * 70;
+        const len = insideShell ? ri * 2 * (0.12 + 0.36 * b.len) * 0.5 : ro * 2 * (0.55 + 0.6 * b.len) * 0.5;
+        // How far the ellipse reaches toward or away from the centre at its fullest, given how it lies: it must stay clear of the shell.
+        const across = ((b.tilt - b.a) * Math.PI) / 180, reach = Math.hypot((len / 2) * Math.cos(across), Math.max(2.5, len * 0.2) * Math.sin(across)) + 6;
+        const dist = insideShell ? Math.sqrt(b.r) * Math.max(0, ri - reach) : ro + reach + b.r * 70;
         const x = cx + dist * Math.cos((b.a * Math.PI) / 180), y = cy + dist * Math.sin((b.a * Math.PI) / 180);
         if (x < 12 || x > 440 || y < 12 || y > H - 12) return null;
         return <ellipse key={i} cx={x} cy={y} rx={(len / 2) * (0.4 + 0.6 * swell)} ry={Math.max(2.5, len * 0.2) * (0.4 + 0.6 * swell)} transform={`rotate(${b.tilt} ${x} ${y})`} className="bk-zepton-oval" opacity={0.25 + 0.7 * swell}/>;
