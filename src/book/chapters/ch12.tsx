@@ -313,12 +313,13 @@ const STAR_ZEPTONS = Array.from({ length: 17 }, (_, row) => Array.from({ length:
 
 /**
  * The direction a zepton of Figure 12-8 lies, with its antimatter end toward the stars near it: each star pulls it round
- * the more strongly the nearer it is, and far from both it keeps its resting direction.
+ * the more strongly the nearer it is, and far from both it keeps its resting direction. A star's `weight` (1 if not given)
+ * scales its pull.
  */
-export function starZeptonAngle(z: { x: number; y: number; rest: number }, stars: readonly { x: number; y: number }[]) {
+export function starZeptonAngle(z: { x: number; y: number; rest: number }, stars: readonly { x: number; y: number; weight?: number }[]) {
   let vx = 0.06 * Math.cos(rad(z.rest)), vy = 0.06 * Math.sin(rad(z.rest));
   for (const s of stars) {
-    const dx = s.x - z.x, dy = -(s.y - z.y), d = Math.hypot(dx, dy) || 1, w = 1 / (1 + (d / STAR_REACH) ** 2);
+    const dx = s.x - z.x, dy = -(s.y - z.y), d = Math.hypot(dx, dy) || 1, w = (s.weight ?? 1) / (1 + (d / STAR_REACH) ** 2);
     vx += (w * dx) / d; vy += (w * dy) / d;
   }
   return deg(Math.atan2(vy, vx));
@@ -337,15 +338,18 @@ function ParallelStars() {
   // stage edges, so the picture never jumps while they are in view.
   const before = s.travel; s.travel += speed * dt;
   const x = W + 60 - (s.travel % span), x2 = same ? x : -60 + (s.travel % span);
-  // Moving the same way they draw together as they go; once both have left the stage, the next pass starts afresh.
-  if (same && Math.floor(before / span) !== Math.floor(s.travel / span)) s.gap = 160;
-  if (same) s.gap = Math.max(90, s.gap - 4 * dt);
-  const y1 = cy - s.gap / 2, y2 = cy + s.gap / 2, stars = [{ x, y: y1 }, { x: x2, y: y2 }];
   // Moving opposite ways they pass only once each time round: the push apart is strongest as they pass.
   const near = same ? 1 : 1 / (1 + ((x - x2) / 140) ** 2);
+  // Moving the same way they draw together as they go; moving opposite ways they are pushed apart as they pass. Either
+  // way, both stars are off the stage when they go round, and the next pass starts afresh.
+  if (Math.floor(before / span) !== Math.floor(s.travel / span)) s.gap = 160;
+  s.gap = same ? Math.max(90, s.gap - 4 * dt) : Math.min(250, s.gap + 12 * near * dt);
+  // A star's pull on the zeptons fades out as it leaves the stage, so nothing in view changes when it goes round.
+  const onStage = (sx: number) => clamp((sx + 60) / 80) * clamp((W + 60 - sx) / 80);
+  const y1 = cy - s.gap / 2, y2 = cy + s.gap / 2, stars = [{ x, y: y1, weight: onStage(x) }, { x: x2, y: y2, weight: onStage(x2) }];
   // While paused, curled arrows show which way the zeptons between the stars are being turned: found by how each would
   // turn if the stars moved on a little.
-  const ahead = [{ x: x - 4, y: y1 }, { x: x2 + (same ? -4 : 4), y: y2 }];
+  const ahead = [{ ...stars[0], x: x - 4 }, { ...stars[1], x: x2 + (same ? -4 : 4) }];
   // As printed, one beside each force arrow: the zepton nearest a point just inside each star, off to the side of its arrow.
   const nearest = (px: number, py: number) => STAR_ZEPTONS.reduce((best, z) => (Math.hypot(z.x - px, z.y - py) < Math.hypot(best.x - px, best.y - py) ? z : best));
   const between = [nearest(x + 52, y1 + 44), nearest(x2 + 52, y2 - 44)];
@@ -353,7 +357,7 @@ function ParallelStars() {
     <Stage w={W} h={H} label={`Two stars moving ${same ? 'in the same direction' : 'in opposite directions'} side by side through a field of zeptons. Each zepton keeps its antimatter end toward the stars near it, so the moving stars turn the zeptons they pass, those between the stars turning opposite ways. The stars are ${same ? 'drawn together' : 'pushed apart'}.`}>
       {STAR_ZEPTONS.map((z, n) => {
         // The zeptons a star is turning stand out; those far from both are dimmed. Those under a star fade out.
-        const d = Math.min(...stars.map(st => Math.hypot(st.x - z.x, st.y - z.y))), pull = 1 / (1 + (d / STAR_REACH) ** 2);
+        const d = Math.min(...stars.map(st => Math.hypot(st.x - z.x, st.y - z.y))), pull = Math.max(...stars.map(st => st.weight / (1 + (Math.hypot(st.x - z.x, st.y - z.y) / STAR_REACH) ** 2)));
         return <Zepton key={n} x={z.x} y={z.y} angle={starZeptonAngle(z, stars)} len={11} polarity="matter" signs={false} opacity={clamp((d - 24) / 8) * (0.25 + 0.75 * pull)}/>;
       })}
       {between.map((z, n) => { const turn = starZeptonAngle(z, ahead) - starZeptonAngle(z, stars), sense = ((turn + 540) % 360) - 180; return Math.abs(sense) > 0.05 && <Spin key={n} x={z.x} y={z.y} r={12} ccw={sense > 0} sweep={220} w={1.6}/>; })}
