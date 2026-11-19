@@ -84,7 +84,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 19-1 | A force that arrives late | animated | changed | Half speed; orbit at a fixed size, no growth or inner circle; A’s line to near the star; the speed slider from 1 c to ∞, naming Einstein, Laplace, Van Flandern and Newton; page no longer follows the figure |
 | 19-2 | How far a photon’s field gets | animated | changed | 3D, a much simplified form of the light lab: central zeptons along x, E and B trailing, a sphere for the field’s reach against half a wavelength; flat view as fallback |
 | 19-3 | One photon, two slits, the same time | animated | changed | The double-slit lab’s own drawing (`SlitDiagram`), with a quarter of its zeptons |
-| 19-4 | A half-turn is the speed of light; a field needs far less | animated | fine | No change |
+| 19-4 | A half-turn is the speed of light; a field needs far less | animated | changed | The half-turn (speed c) beside a row of zeptons passing a field on with a fraction of a turn, its front running ahead; share from 180° to 180°/32; frequency slider removed |
 | 21-1 | Swimming across the æther | animated | to review | |
 | 22-1 | Light from a moving frame | animated | to review | |
 | 22-2 | A shorter wavelength, not a shorter space | animated | to review | |
@@ -439,3 +439,10 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** should match the two-slit lab in appearance, a simpler version. **Done:** the figure draws the laboratory's own `SlitDiagram` (wall, A and B, the path, the central pair with E and B, the routes through the slits, the light-speed band, and the status line beneath), with a new `sparse` option showing a quarter of the surrounding zeptons. Book styles match the lab's (`.bk-slit`).
 - **Owner:** fine.
+
+### Fig. 19-4
+
+- First logged as fine; then **owner:** it does not convey Fleming's full message. It shows the full rotation, limited by the speed of light, but field changes need a much smaller rotation and so are faster; depict that alongside. **Done:** above, the printed zepton making its whole half-turn across d = λ (speed c); below, a row of zeptons each needing only a share of a turn, with the field's front running along the row 1/share wavelengths per half-turn. The two bars are gone.
+- **Owner:** at 180° the front resets too soon, and the zeptons do not make the 180° turn. **Fixed:** the front runs on and starts again only once the row has turned; each zepton turns through the share it needs as the front moves a wavelength on (14° shown when too small to see).
+- **Owner:** below 180°/32 is too fast to see. **Done:** the share in halvings, 180° to 180°/32. **Owner:** the frequency slider adds nothing. **Removed.**
+- **Owner:** good now.

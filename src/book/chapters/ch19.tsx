@@ -143,31 +143,47 @@ function TwoSlits() {
 /** The speed at which a field is passed on, in units of c, when each zepton need turn only `degrees` of its half-turn. */
 export const fieldSpeed = (degrees: number) => 180 / degrees;
 
-/** Figure 19-4: a zepton's half-turn spans its wavelength, which is the speed of light; a field needs far less than a half-turn. */
+/**
+ * Figure 19-4: a zepton's half-turn spans its wavelength, which is the speed of light; a field needs far less. The two are
+ * drawn side by side over the same lifetime: above, the zepton making its whole half-turn; below, a row of zeptons that
+ * each need only a tiny turn to pass the field on, so the field's front runs along the row far faster.
+ */
 function HalfTurn() {
-  const [exp, setExp] = useState(0); // log10 of the fraction of the half-turn a zepton must make
-  const [nu, setNu] = useState(1);
-  const play = usePlayback({ speed: 0.35 });
-  const H = 360, cx = 330, cy = 170, d = 240 / nu, u = play.t % 1, needed = 180 * 10 ** exp, shown = Math.min(1, u / Math.max(10 ** exp, 0.02));
+  // How many times smaller than a half-turn the turn a field needs is, as a power of two: from all 180° to 180°/32, below
+  // which the field crosses the row too fast to see.
+  const [halvings, setHalvings] = useState(3);
+  const play = usePlayback({ speed: 0.3 });
+  const H = 460, x0 = 70, yTop = 170, yRow = 380, lambda = 120, u = play.t % 1, share = 2 ** -halvings, needed = 180 * share;
+  // The field's front: in the time a zepton makes a whole half-turn it covers 1/share wavelengths. It runs on along the
+  // row, and starts again once the row has turned, holding a moment first; never more often than once a half-turn.
+  const rowEnd = W - 40, spacing = 34, count = Math.floor((rowEnd - x0) / spacing) + 1, crossing = ((rowEnd - x0 + lambda) * share) / lambda;
+  const cycle = Math.max(1, crossing + 0.6), front = x0 + (lambda / share) * (play.t % cycle), frontShown = Math.min(rowEnd, front);
+  // Each zepton turns through the share it needs, taking share of a lifetime, while the front moves one wavelength on.
+  // A share too small to see is drawn as 14 degrees.
+  const turnShown = Math.max(needed, 14);
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A zepton of relative frequency ${fmt(nu, 2)} turning through 180 degrees. Over its life it spans a distance equal to its wavelength, which is the speed of light divided by its frequency. Passing on a field needs only ${fmt(needed, 2)} degrees of that turn, so the field moves at ${fmt(fieldSpeed(needed), 2)} times the speed of light.`}>
-      <Zepton x={cx} y={cy} angle={180 - 180 * u} len={d} open={Math.max(0.12, Math.sin(Math.PI * u))} polarity="matter" signs emphasis="key"/>
-      <Spin x={cx} y={cy - 12} r={d * 0.3 + 26} ccw={false} from={160} sweep={140}/>
-      <Arrow x1={cx - d / 2} y1={cy + 96} x2={cx + d / 2} y2={cy + 96} both tone="mark" w={1.6} head={7}/>
-      <T x={cx} y={cy + 122} tone="mark" size="lg">d = λ = c/ν</T>
-      <T x={cx} y={34} size="sm">turned {Math.round(u * 180)}° of 180°</T>
-      <rect x={560} y={70} width={26} height={200} className="bk-fill-soft"/><rect x={560} y={270 - 200 * shown} width={26} height={200 * shown} className="bk-f-e"/>
-      <T x={573} y={292} size="sm" tone="e">field</T><T x={573} y={308} size="sm" tone="e">passed on</T>
-      <rect x={620} y={70} width={26} height={200} className="bk-fill-soft"/><rect x={620} y={270 - 200 * u} width={26} height={200 * u} className="bk-f-mark"/>
-      <T x={633} y={292} size="sm" tone="mark">half-turn</T><T x={633} y={308} size="sm" tone="mark">made</T>
+    <Stage w={W} h={H} label={`Above, a zepton turning through its whole half-turn, which spans its wavelength: the speed of light. Below, a row of zeptons each of which need turn only ${fmt(needed, 2)} degrees to pass a field on, so the field travels ${fmt(fieldSpeed(needed), 2)} times as fast.`}>
+      <T x={x0 - 30} y={34} anchor="start" size="sm" tone="mark">matter or light: each zepton makes its whole half-turn, so it goes at c</T>
+      <Zepton x={x0 + lambda / 2} y={yTop} angle={180 - 180 * u} len={lambda} open={Math.max(0.12, Math.sin(Math.PI * u))} polarity="matter" signs emphasis="key"/>
+      <Spin x={x0 + lambda / 2} y={yTop - 12} r={lambda * 0.3 + 26} ccw={false} from={160} sweep={140}/>
+      <Arrow x1={x0} y1={yTop + lambda / 2 + 18} x2={x0 + lambda} y2={yTop + lambda / 2 + 18} both tone="mark" w={1.6} head={7}/>
+      <T x={x0 + lambda / 2} y={yTop + lambda / 2 + 42} tone="mark">d = λ = c/ν</T>
+      <T x={x0 + lambda + 30} y={yTop + 5} anchor="start" size="sm">turned {Math.round(u * 180)}° of 180°</T>
+      <line x1={x0 - 30} y1={yRow - 70} x2={W - 20} y2={yRow - 70} className="bk-s-faint"/>
+      <T x={x0 - 30} y={yRow - 46} anchor="start" size="sm" tone="e">a field: each zepton need turn only {halvings === 0 ? '180°' : `180°/${2 ** halvings}`}, so the field goes {fmt(fieldSpeed(needed), 2)} times as fast</T>
+      {Array.from({ length: count }, (_, i) => {
+        const x = x0 + i * spacing, reached = x <= front, done = clamp((front - x) / lambda);
+        return <Zepton key={i} x={x} y={yRow} angle={turnShown * done} len={24} polarity="matter" signs={false} opacity={reached ? 1 : 0.4}/>;
+      })}
+      {front < rowEnd + spacing && <line x1={frontShown} y1={yRow - 26} x2={frontShown} y2={yRow + 26} className="bk-s-e" strokeWidth="2.5" strokeDasharray="5 4"/>}
+      <Arrow x1={x0} y1={yRow + 40} x2={x0 + lambda} y2={yRow + 40} both tone="mark" w={1.2} head={6}/><T x={x0 + lambda / 2} y={yRow + 60} size="sm" tone="mark">one wavelength, for scale</T>
+      {needed < 14 && <T x={W - 30} y={yRow + 60} anchor="end" size="sm" tone="muted">(each zepton’s turn drawn magnified)</T>}
     </Stage>}>
-    <Slider label="Frequency of the zepton, ν" value={nu} min={0.7} max={2.4} step={0.1} onChange={setNu} show={v => `${fmt(v, 2)} ×`}/>
-    <Slider label="Share of a half-turn a field needs" value={exp} min={-20} max={0} step={0.5} onChange={setExp} show={v => (v === 0 ? 'all 180°' : `180° / ${fmt(10 ** -v, 2)}`)}/>
-    <PlayBar play={play} label="the zepton"/>
-    <Readout label="Span of the zepton, d = c/ν" value={`${fmt(1 / nu, 3)} × its span at 1 ×`} tone="force"/>
-    <Readout label="Speed of what needs a full half-turn" value="c"/>
+    <Slider label="Share of a half-turn a field needs" value={-halvings} min={-5} max={0} step={1} onChange={v => setHalvings(-v)} show={v => (v === 0 ? 'all 180°' : `180° / ${2 ** -v}`)}/>
+    <PlayBar play={play} label="the zeptons"/>
+    <Readout label="Speed of what needs a whole half-turn" value="c"/>
     <Readout label="Speed of the field" value={`${fmt(fieldSpeed(needed), 2)} c`} tone="e"/>
-    <Remark>{exp === 0 ? 'Matter and photons need the whole half-turn, and are held to the speed of light.' : 'If the polarization needs only a small fraction of the turn, it is passed on that many times faster. The real figure has not been determined.'}</Remark>
+    <Remark>{halvings === 0 ? 'Needing the whole half-turn, the field would go no faster than light.' : 'If the polarization needs only a small fraction of the turn, it is passed on that many times faster. The real figure has not been determined.'}</Remark>
   </Diagram>;
 }
 
@@ -224,8 +240,8 @@ const chapter: ChapterContent = {
         <p><Q>If a zepton has to rotate 180 degrees during its life, then the velocity of propagation in the direction of rotation is the speed of light.</Q> <Q>The maximum distance d a zepton can occupy in space during the time it exists is equal to its wavelength λ, which is equal to the speed of light c divided by the zepton frequency ν</Q> (<Pg n={147}/>).</p>
         <p>A field is different. <Q>Zeptons only have to rotate a fraction of a degree during a fraction of the time they exist in order to produce the field.</Q> <Q>For example, if the average polarization only requires 180/10<sup>20</sup> degrees of rotation then the polarization can propagate at 10<sup>20</sup> times the speed of light</Q>, which would need the vacuum to hold at least 10²⁰ times the charge of the permanent charges involved. The example <Q>may be nowhere close to the real propagation speed, which has not been determined</Q> (<Pg n={148}/>).</p>
       </>,
-      tryThis: ['Raise the frequency: the zepton’s span shortens in proportion, d = c/ν.', 'Lower the share of a half-turn a field needs and watch the two bars: the field has been passed on long before the half-turn is complete.', 'Take it down to 180°/10²⁰, the text’s example.'],
-      notes: <p>The printed zepton is labelled m− and a+, an electron-like pair, and is drawn here by its matter ends. The two bars are an illustration of the argument; the text gives it in words.</p>,
+      tryThis: ['Watch the two together: at 180°/8 the field’s front runs eight wavelengths down the row in the time the zepton above makes its half-turn.', 'Lower the share to 180°/32: the front crosses the whole row while the half-turn above has barely begun. Fleming’s example, 180°/10²⁰, would be far too fast to see.', 'Set it to all 180°: each zepton in the row makes a whole half-turn, and the field is held to the speed of light, a wavelength per half-turn, keeping pace with the zepton above.'],
+      notes: <p>The printed zepton is labelled m− and a+, an electron-like pair, and is drawn here by its matter ends. The row of zeptons below is an illustration of the argument, which the text gives in words; each zepton turns through the share it needs, completing it as the front moves a wavelength on, and a share too small to see is drawn as 14°.</p>,
       labs: [{ lab: 'medium', scenario: 'slow', why: 'Zeptons of low frequency followed through a half-turn, opening to their wavelength.' }],
     },
   ],
