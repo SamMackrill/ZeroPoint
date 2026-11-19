@@ -1,6 +1,6 @@
 // Chapter 23: Gravity, Energy, and Light (PDF pp. 176–184). Figures 23-1 and 23-2.
-import { useRef, useState } from 'react';
-import { Arrow, Body, Choice, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, fmt, pathThrough, usePlayback } from '../kit';
+import { useMemo, useRef, useState } from 'react';
+import { Arrow, Body, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, fmt, pathThrough, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -23,11 +23,23 @@ export function shapiroDelay(b: number, target: number, earth = AU) {
 
 /** Figure 23-1: a radar signal to a planet behind the Sun and back, slowed where it passes the Sun. */
 function ShapiroDelay() {
-  const [target, setTarget] = useState<keyof typeof TARGETS>('mercury');
+  // The signal is bounced off Mercury, as in the printed figure.
+  const target = 'mercury' as const;
   const [radii, setRadii] = useState(1);
   const play = usePlayback({ speed: 0.3 });
   const b = radii * R_SUN, delay = shapiroDelay(b, TARGETS[target].r), slow = lightSlowing(GM_SUN, b);
-  const H = 360, y = 190, xe = 70, xs = 380, xt = 660, off = 14 + radii * 2.2, u = play.t % 1, k = u < 0.5 ? u * 2 : 2 - u * 2, px = xe + (xt - xe) * k;
+  // Mercury is drawn at its distance from the Sun in proportion to the Earth's, about 0.39 of it.
+  const H = 360, y = 190, xe = 70, xs = 380, xt = xs + 0.39 * (xs - xe), off = 14 + radii * 2.2, u = play.t % 1;
+  // The signal slows near the Sun, greatly exaggerated: its speed follows the same 1/r shape as the band above, so it is
+  // slowest where it passes closest. Its place at each moment comes from the time it has taken to cover the path so far.
+  const timeline = useMemo(() => {
+    const n = 240, depth = 2.6, xs_ = Array.from({ length: n + 1 }, (_, i) => xe + ((xt - xe) * i) / n), t = [0];
+    for (let i = 1; i <= n; i++) { const xm = (xs_[i] + xs_[i - 1]) / 2, speed = 1 / (1 + depth * off / Math.hypot(xm - xs, off)); t.push(t[i - 1] + (xs_[i] - xs_[i - 1]) / speed); }
+    return { xs: xs_, t: t.map(v => v / t[n]) };
+  }, [off]);
+  /** Where the signal is when a fraction `f` of the one-way time has passed. */
+  const at = (f: number) => { const { xs: X, t } = timeline; let i = 1; while (i < t.length - 1 && t[i] < f) i++; return X[i - 1] + ((X[i] - X[i - 1]) * (f - t[i - 1])) / (t[i] - t[i - 1] || 1); };
+  const px = at(u < 0.5 ? u * 2 : 2 - u * 2);
   // The slowing along the path, drawn as a band whose depth follows 1/r.
   const band = pathThrough(Array.from({ length: 80 }, (_, i) => { const x = xe + ((xt - xe) * i) / 79, d = Math.hypot(x - xs, off) / off; return [x, y - off - 46 / d] as const; }));
   return <Diagram stage={
@@ -39,7 +51,6 @@ function ShapiroDelay() {
       <Arrow x1={xs} y1={y - 2} x2={xs} y2={y - off + 2} both tone="muted" w={1} head={5}/>
       <T x={W / 2} y={H - 16} size="sm">not to scale · the bending of the signal is not shown, as in the printed figure</T>
     </Stage>}>
-    <Choice label="Signal bounced off" value={target} onChange={setTarget} options={[{ value: 'mercury', label: 'Mercury' }, { value: 'mars', label: 'Mars' }]}/>
     <Slider label="Closest the signal passes to the Sun" value={radii} min={1} max={30} step={0.5} onChange={setRadii} show={v => `${fmt(v, 3)} solar radii`}/>
     <PlayBar play={play} label="the signal"/>
     <Readout label="Slowing at closest approach" value={`${fmt(slow * 1e6, 3)} parts per million`}/>
@@ -58,13 +69,27 @@ function LightBending() {
   const [both, setBoth] = useState(true);
   const H = 400, cx = 330, cy = 210, full = bendingAngle(GM_SUN, radii * R_SUN), angle = both ? full : full / 2;
   // The bend is far too small to draw: it is magnified so that 1.75 arcseconds shows as about 16 degrees.
-  const shown = (angle / 1.75) * 16, off = 26 + radii * 9, x = cx + off, t = Math.tan((shown * Math.PI) / 180);
+  const shown = (angle / 1.75) * 16, off = 26 + radii * 9, x = cx + off, top = 30, yEarth = H - 34;
+  // The ray turns gradually as it passes: the share of the bend made by the time it is level with a point s along its
+  // path is (1 + s/√(s² + b²))/2, so it turns most beside the Sun and runs nearly straight far from it. Traced back
+  // from Earth, where it arrives heading straight down, to the star.
+  const ray = useMemo(() => {
+    const pts: [number, number][] = [[x, yEarth]], n = 200, dy = (yEarth - top) / n;
+    let px = x;
+    for (let i = 1; i <= n; i++) {
+      const yy = yEarth - i * dy, s = yy + dy / 2 - cy, made = (1 + s / Math.hypot(s, off)) / 2, phi = ((shown * (1 - made)) * Math.PI) / 180;
+      px -= Math.tan(phi) * dy;
+      pts.push([px, yy]);
+    }
+    return pts.reverse();
+  }, [x, yEarth, cy, off, shown]);
+  const [sx] = ray[0];
   return <Diagram stage={
     <Stage w={W} h={H} label={`A ray of light from a distant star passing the Sun at ${fmt(radii, 2)} solar radii and reaching Earth. It is bent by ${fmt(angle, 3)} arcseconds, so the star appears displaced from where it is.`}>
-      <Line d={`M${x - t * 170} 30 L${x} ${cy} L${x} ${H - 40}`} tone="e" w={2}/>
-      <line x1={x} y1={cy} x2={x} y2={30} className="bk-s-mark" strokeDasharray="4 4"/>
+      <Line d={pathThrough(ray)} tone="e" w={2}/>
+      <line x1={x} y1={cy} x2={x} y2={top} className="bk-s-mark" strokeDasharray="4 4"/>
       <Body x={cx} y={cy} r={22} tone="matter" label="Sun"/><Body x={x} y={H - 34} r={8} tone="plain"/><T x={x + 16} y={H - 30} anchor="start" size="sm">Earth</T>
-      <circle cx={x - t * 170} cy={26} r={5} className="bk-f-e"/><T x={x - t * 170 - 10} y={24} anchor="end" size="sm" tone="e">the star</T>
+      <circle cx={sx} cy={26} r={5} className="bk-f-e"/><T x={sx - 10} y={24} anchor="end" size="sm" tone="e">the star</T>
       <circle cx={x} cy={26} r={5} className="bk-s-mark" fill="none" strokeWidth="1.5"/><T x={x + 10} y={24} anchor="start" size="sm" tone="mark">where it appears</T>
       <T x={560} y={170} size="sm">bend, magnified</T><T x={560} y={196} tone="text" size="lg">{fmt(angle, 3)}″</T>
     </Stage>}>
@@ -146,8 +171,8 @@ const chapter: ChapterContent = {
         <Eq n="23-6"><V>c</V>′ = <V>c</V>(1 − <Frac top={<>2<V>GM</V></>} bottom={<><V>r</V><V>c</V>²</>}/>)</Eq>
         <p><Q>Half of the speed of light change is due to the identical mechanism used to explain the gravitational redshift</Q>; <Q>The other half is due to the increase in the torque of the vacuum in the vicinity of nearby matter</Q>.</p>
       </>,
-      tryThis: ['With the signal grazing the Sun, compare the delay for Mercury and for Mars with the figures in the text: about 200 and about 240 microseconds.', 'Move the path away from the Sun: the delay falls slowly, because the slowing reaches far out, as 1/r.', 'Read the delay as a distance: the tens of kilometres the text mentions.'],
-      notes: <p>The delay is Equation 23-6 added up along a straight path between the planets’ mean distances from the Sun; the text gives the equation and the measured values, not this sum. The solar corona and the small extra path from bending are left out, as the text says they must be corrected for.</p>,
+      tryThis: ['With the signal grazing the Sun, compare the delay with the figure in the text for Mercury: about 200 microseconds.', 'Watch the signal: it slows as it nears the Sun and picks up again beyond, both ways (much exaggerated).', 'Move the path away from the Sun: the delay falls slowly, because the slowing reaches far out, as 1/r.', 'Read the delay as a distance: the tens of kilometres the text mentions.'],
+      notes: <p>The signal is drawn slowing as it passes the Sun, by far more than the parts per million of the true slowing, so that it can be seen; its speed follows the shape of the band above it. The delay is Equation 23-6 added up along a straight path between the planets’ mean distances from the Sun; the text gives the equation and the measured values, not this sum. The solar corona and the small extra path from bending are left out, as the text says they must be corrected for.</p>,
     },
     {
       kind: 'figure', id: '23-2', page: 182, section: 'The Bending of Light Around the Sun', title: 'Starlight turned by the Sun',
