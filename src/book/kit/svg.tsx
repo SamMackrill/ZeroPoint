@@ -19,7 +19,8 @@ export function T({ x, y, children, anchor = 'middle', tone = 'muted', size = 'm
 
 /** A subscript inside SVG text, as in λ<Sb>ph</Sb> or B<Sb>m</Sb>: lowered and smaller, with the baseline restored after it. */
 export function Sb({ children }: { children: ReactNode }) {
-  return <><tspan dy="0.32em" fontSize="0.72em">{children}</tspan><tspan dy="-0.32em">{'​'}</tspan></>;
+  // Both offsets are in the subscript's own size, so they cancel exactly and the text after it keeps its baseline.
+  return <><tspan dy="0.32em" fontSize="0.72em">{children}</tspan><tspan dy="-0.32em" fontSize="0.72em">{'​'}</tspan></>;
 }
 
 /** A straight arrow from (x1, y1) to (x2, y2), with a head at the end (and at the start when `both`). */

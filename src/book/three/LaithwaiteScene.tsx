@@ -12,7 +12,7 @@ import { disposeAll, label, releaseControls, solidArrow, turnWithKeys } from './
 export interface LaithwaiteState { lift: number; turn: number; spin: number; rising: boolean }
 
 /** The stand's height to the pivot, the shaft's length and the flywheel's radius, in scene units. */
-const PIVOT_Y = 2.2, SHAFT = 2.4, WHEEL_R = 0.8;
+const PIVOT_Y = 3.4, SHAFT = 2.4, WHEEL_R = 0.8;
 
 /** The figure's scene. Calls `onFail` when the browser cannot draw WebGL, so the card can show the flat drawing instead. */
 export default function LaithwaiteScene({ state, onFail, description }: { state: LaithwaiteState; onFail(): void; description: string }) {
@@ -101,8 +101,8 @@ export default function LaithwaiteScene({ state, onFail, description }: { state:
       renderer.domElement.style.touchAction = 'pan-y pinch-zoom';
       const draw = () => renderer.render(scene, camera);
       controls.addEventListener('change', draw);
-      controls.target.set(0, 1.5, 0);
-      camera.position.set(5.6, 4.4, 7.4);
+      controls.target.set(0, 2.1, 0);
+      camera.position.set(6.4, 5.4, 8.6);
       camera.lookAt(controls.target);
       controls.update();
       const resize = new ResizeObserver(() => {
@@ -125,10 +125,12 @@ export default function LaithwaiteScene({ state, onFail, description }: { state:
         // Where the flywheel's centre is, for its arrows and the circle it goes round.
         const reach = SHAFT * Math.cos(lift), height = PIVOT_Y + SHAFT * Math.sin(lift);
         const centre = new THREE.Vector3(reach * Math.cos(turn), height, -reach * Math.sin(turn));
-        weight.set(centre.clone().add(new THREE.Vector3(0, -WHEEL_R - 0.1, 0)), new THREE.Vector3(0, -1, 0), 0.8);
-        weightLabel.position.copy(centre).add(new THREE.Vector3(0.45, -WHEEL_R - 0.6, 0));
+        // The weight hangs from just below the wheel's lowest point, and stops short of the floor however far it has fallen.
+        const rimBelow = WHEEL_R * Math.cos(lift), from = centre.clone().add(new THREE.Vector3(0, -rimBelow - 0.1, 0)), drop = Math.max(0.3, Math.min(0.8, from.y - 0.08));
+        weight.set(from, new THREE.Vector3(0, -1, 0), drop);
+        weightLabel.position.copy(from).add(new THREE.Vector3(0.45, -drop / 2, 0));
         rise.group.visible = s.rising;
-        if (s.rising) rise.set(centre.clone().add(new THREE.Vector3(0, WHEEL_R + 0.1, 0)), new THREE.Vector3(0, 1, 0), 0.7);
+        if (s.rising) rise.set(centre.clone().add(new THREE.Vector3(0, WHEEL_R * Math.cos(lift) + 0.1, 0)), new THREE.Vector3(0, 1, 0), 0.7);
         const key = `${reach.toFixed(3)}|${height.toFixed(3)}`;
         if (key !== ringAt) {
           ringAt = key;

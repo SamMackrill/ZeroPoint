@@ -1500,10 +1500,14 @@ input {
 /* A pair of equations set side by side, as a diagram's stage */
 .bk-eq-pair {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); /* columns may shrink, so a long equation scrolls rather than widening its column */
   gap: 14px 18px;
   padding: 20px;
   color: var(--text-2);
+}
+
+.bk-eq-pair > * {
+  min-width: 0;
 }
 
 .bk-eq-pair > p {
