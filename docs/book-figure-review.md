@@ -86,7 +86,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 19-3 | One photon, two slits, the same time | animated | changed | The double-slit lab’s own drawing (`SlitDiagram`), with a quarter of its zeptons |
 | 19-4 | A half-turn is the speed of light; a field needs far less | animated | changed | The half-turn (speed c) beside a row of zeptons passing a field on with a fraction of a turn, its front running ahead; share from 180° to 180°/32; frequency slider removed |
 | 21-1 | Swimming across the æther | animated | changed | Stream arrows turned to run against the heading a, on the right; α marked with an arc; a arrowed |
-| 22-1 | Light from a moving frame | animated | to review | |
+| 22-1 | Light from a moving frame | animated | fine | No change |
 | 22-2 | A shorter wavelength, not a shorter space | animated | to review | |
 | 22-3 | Round a rotating body, both ways | animated | to review | |
 | 23-1 | A signal that comes back late | animated | to review | |
