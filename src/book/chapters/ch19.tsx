@@ -1,9 +1,11 @@
 // Chapter 19: The Speed of the Zero-Point Universe (PDF pp. 142–150). Figures 19-1 to 19-4.
-import { Suspense, lazy, useCallback, useMemo, useRef, useState } from 'react';
-import { Arrow, BlockArrow, Body, Choice, Diagram, FallbackOnError, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, canDraw3D, clamp, fmt, lerpAngle, polar, rad, rng, usePlayback } from '../kit';
+import { Suspense, lazy, useCallback, useMemo, useState } from 'react';
+import { Arrow, BlockArrow, Body, Choice, Diagram, FallbackOnError, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, canDraw3D, clamp, fmt, lerpAngle, polar, rad, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { PATH_SITES, PATH_START, centralX } from '../three/photon-math';
+import { SlitDiagram, stateLine } from '../../double-slit/Diagram';
+import { DEFAULT_SLITS, PATH_LENGTH, SLIT_END_TICK, SLIT_OFFSET_RANGE, SLIT_TICKS_PER_TAU, routeViaSlit, slitReadout, type SlitParameters } from '../../double-slit/model';
 
 const W = 720;
 /** The Earth's orbital speed as a fraction of the speed of light: the lag angle, in radians, if gravity travelled at c. */
@@ -113,43 +115,28 @@ function PhotonReach() {
   </Diagram>;
 }
 
-/** Figure 19-3: a single photon from A to B past a wall with two slits, with fields at light speed or far faster. */
+/** Figure 19-3: a single photon from A to B past a wall with two slits, drawn as the laboratory draws it, more simply. */
 function TwoSlits() {
   const [fast, setFast] = useState(true);
   const [wall, setWall] = useState(true);
-  const [offset, setOffset] = useState(3);
-  const play = usePlayback({ speed: 0.5 });
-  const H = 440, cx = 360, yA = 400, yB = 40, lambda = 45, pairs = 16, wallY = (yA + yB) / 2, slit = offset * lambda, half = lambda * 0.6;
-  // Sixteen central pairs carry the photon up the straight line, half a wavelength each. If the fields cannot reach
-  // a slit, the pair at the wall induces no successor.
-  const stopped = wall && !fast, last = stopped ? pairs / 2 : pairs, cycle = play.t % (last + 1.2), k = Math.min(last - 1, Math.floor(cycle)), u = Math.min(1, cycle - k), done = cycle >= last;
-  const y = yA - (k + 0.5) * (lambda / 2), clockwise = k % 2 === 0, angle = clockwise ? 90 - 180 * u : 90 + 180 * u, strength = Math.sin(Math.PI * u);
-  const through = wall && fast && y > wallY, direct = Math.hypot(yA - yB), detour = 2 * Math.hypot(slit, (yA - yB) / 2);
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`A single photon travelling from A to B${wall ? ' with a wall and two slits in the way' : ' with nothing in the way'}. ${fast ? 'Its fields spread much faster than light' : 'Its fields are held to the speed of light and reach only half a wavelength from the path'}. ${stopped ? 'They never reach the slits, and nothing arrives at B.' : wall ? 'They pass the slits, and the photon arrives in the time a straight line takes.' : 'With nothing in the way, the photon travels straight to B.'}`}>
-      {wall && <>{[[40, cx - slit - half], [cx - slit + half, cx + slit - half], [cx + slit + half, W - 40]].map(([x1, x2]) => <line key={x1} x1={x1} y1={wallY} x2={x2} y2={wallY} className="bk-s-text" strokeWidth="4"/>)}</>}
-      <line x1={cx} y1={yA} x2={cx} y2={yB} className="bk-s-faint" strokeDasharray="2 5"/>
-      {!fast && <rect x={cx - lambda / 2} y={yB} width={lambda} height={yA - yB} className="bk-f-danger" opacity={0.12}/>}
-      {through && [-1, 1].map(s => <Line key={s} d={`M${cx} ${y} L${cx + s * slit} ${wallY} L${cx} ${yB}`} tone="e" w={1.4} dash="5 4" opacity={0.4 + 0.5 * strength}/>)}
-      {!done && <>
-        <Zepton x={cx} y={y} angle={angle} len={lambda * 0.46} open={Math.max(0.25, strength)} emphasis="key" signs={false}/>
-        <Vector x={cx + 86} y={y} angle={clockwise ? 0 : 180} len={8 + 44 * strength} centred tone="e" w={2.6}/><T x={cx + 132} y={y + 5} tone="e" anchor="start">E</T>
-        <InOut x={cx - 78} y={y} out={!clockwise} r={5 + 6 * strength} opacity={0.4 + 0.6 * strength}/><T x={cx - 100} y={y + 5} tone="b" anchor="end">B</T>
-      </>}
-      <circle cx={cx} cy={yA} r={8} className="bk-f-text"/><T x={cx - 20} y={yA + 5} tone="text" size="lg" anchor="end">A</T>
-      <circle cx={cx} cy={yB} r={8} className={done && !stopped ? 'bk-f-accent' : 'bk-f-text'}/><T x={cx - 20} y={yB + 5} tone="text" size="lg" anchor="end">B</T>
-      <Spin x={90} y={H - 60} r={13} ccw sweep={250} steady/><T x={90} y={H - 26} size="sm">plane of zepton rotation</T>
-      {stopped && k >= last - 1 && <T x={cx + 20} y={wallY + 24} anchor="start" tone="danger" size="sm">no field reaches a slit: no next pair</T>}
-      {done && !stopped && <T x={cx + 20} y={yB + 5} anchor="start" tone="accent" size="sm">absorbed at B, all at once</T>}
-    </Stage>}>
+  const [offset, setOffset] = useState(DEFAULT_SLITS.slitOffset);
+  const play = usePlayback({ speed: 0.6 });
+  const params: SlitParameters = { ...DEFAULT_SLITS, wall: wall ? 'slits' : 'open', fields: fast ? 'fast' : 'light', slitOffset: offset };
+  // The run goes from A to B in the laboratory's ticks, holds a moment at the end, and then a new photon starts at A.
+  const tick = Math.floor(play.t * SLIT_TICKS_PER_TAU) % (SLIT_END_TICK + SLIT_TICKS_PER_TAU);
+  const r = slitReadout(params, Math.min(tick, SLIT_END_TICK)), halted = r.status === 'halted';
+  return <Diagram stage={<div className="bk-slit">
+    <SlitDiagram params={params} tick={Math.min(tick, SLIT_END_TICK)} layers={{ zeptons: true, fields: true, routes: true, reach: !fast, path: true }} sparse/>
+    <p className="bk-slit-state">{stateLine(params, Math.min(tick, SLIT_END_TICK))}</p>
+  </div>}>
     <Choice label="The photon’s fields spread" value={fast ? 'fast' : 'c'} onChange={v => setFast(v === 'fast')} options={[{ value: 'fast', label: 'Much faster than c' }, { value: 'c', label: 'At c' }]}/>
     <Toggle label="Wall with two slits" checked={wall} onChange={setWall}/>
-    <Slider label="Each slit’s distance from the path" value={offset} min={1.5} max={5} step={0.25} onChange={setOffset} unit="λ"/>
+    <Slider label="Each slit’s distance from the path" value={offset} min={SLIT_OFFSET_RANGE[0]} max={SLIT_OFFSET_RANGE[1]} step={0.25} onChange={setOffset} unit="λ"/>
     <PlayBar play={play} label="the photon"/>
-    <Readout label="Straight path, A to B" value={`${fmt(direct / lambda, 3)} λ`}/>
-    {wall && <Readout label="By way of a slit" value={`${fmt(detour / lambda, 3)} λ`}/>}
-    <Readout label="Arrives at B after" value={stopped ? 'never' : `${fmt(direct / lambda, 3)} periods`} tone={stopped ? 'bad' : 'good'}/>
-    <Remark>{stopped ? 'At the speed of light the fields would only go out half a wavelength to either side of the path.' : wall ? 'It still takes the same time t, even though the way through the slits is longer.' : 'With nothing in the way it reaches B in a time exactly in keeping with the speed of light.'}</Remark>
+    <Readout label="Straight path, A to B" value={`${fmt(PATH_LENGTH, 3)} λ`}/>
+    {wall && <Readout label="By way of a slit" value={`${fmt(routeViaSlit(params), 3)} λ`}/>}
+    <Readout label="Arrives at B after" value={halted ? 'never' : `${fmt(PATH_LENGTH, 3)} periods`} tone={halted ? 'bad' : 'good'}/>
+    <Remark>{!fast && wall ? 'At the speed of light the fields would only go out half a wavelength to either side of the path.' : wall ? 'It still takes the same time t, even though the way through the slits is longer.' : 'With nothing in the way it reaches B in a time exactly in keeping with the speed of light.'}</Remark>
   </Diagram>;
 }
 
@@ -222,8 +209,8 @@ const chapter: ChapterContent = {
         <p>With nothing in the way a photon reaches B in a time <i>t</i> set by the speed of light. Put a wall between, with two slits equidistant from the straight path, and <Q>it will still take the same time t even though the photon has to travel through slits offset from the direct path</Q> (<Pg n={146}/>).</p>
         <p><Q>The information of the photon, the magnetic and electric fields, travels through the slits, but the propagation of those fields in a direction perpendicular to the direction of the photon happens at a rate much faster than the speed of light.</Q> If it did not, <Q>the fields would only go out a half wavelength to either side of the photon’s path</Q>, and <Q>The fields, and thus the photon, could never make it through the slits</Q> (<Pg n={147}/>).</p>
       </>,
-      tryThis: ['Run it with the wall and fast fields: the dashed routes from the active pair through each slit to B are the way the fields go, and the photon arrives on time.', 'Compare the two readouts of distance: the way by a slit is longer, yet the time is the straight-line time.', 'Switch the fields to “At c”. The shaded band is all they can cover; it misses the slits, and the photon stops at the wall.', 'Remove the wall: A to B in the same time.'],
-      notes: <p>That the central pairs keep to the straight line while the field passes the slits is the laboratory’s reading (docs/double-slit-model.md): Fleming says the photon takes the same time <i>t</i> and that its fields travel through the slits, and does not say where the central zeptons go at the wall. No interference pattern is drawn, because the chapter does not derive one. What becomes of the energy when the fields are held to c he does not say either.</p>,
+      tryThis: ['Run it with the wall and fast fields: the zeptons the field reaches brighten and turn with the central pair, the dotted routes through each slit are the way the fields go, and the photon arrives on time.', 'Compare the two readouts of distance: the way by a slit is longer, yet the time is the straight-line time.', 'Switch the fields to “At c”. The shaded band is all they can cover; it misses the slits, and the photon halts at the wall.', 'Remove the wall: A to B in the same time.'],
+      notes: <p>This is the laboratory’s double-slit drawing, with a quarter of its surrounding zeptons. That the central pairs keep to the straight line while the field passes the slits is the laboratory’s reading (docs/double-slit-model.md): Fleming says the photon takes the same time <i>t</i> and that its fields travel through the slits, and does not say where the central zeptons go at the wall. No interference pattern is drawn, because the chapter does not derive one. What becomes of the energy when the fields are held to c he does not say either.</p>,
       labs: [
         { lab: 'double-slit', scenario: 'slits', why: 'This figure as a laboratory: the surrounding zeptons, the field at B through the run, and the slit geometry to change.' },
         { lab: 'double-slit', scenario: 'light-speed', why: 'The counterfactual: fields held to the speed of light, and nothing reaching the slits.' },

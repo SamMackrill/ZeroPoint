@@ -83,7 +83,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 18-2 | Gravity’s path: a very long, very narrow cone | still | changed | 17-2’s 3D scene, not to scale (Star 2 moves out logarithmically); the ruler in a panel beneath. Exponents fixed book- and lab-wide |
 | 19-1 | A force that arrives late | animated | changed | Half speed; orbit at a fixed size, no growth or inner circle; A’s line to near the star; the speed slider from 1 c to ∞, naming Einstein, Laplace, Van Flandern and Newton; page no longer follows the figure |
 | 19-2 | How far a photon’s field gets | animated | changed | 3D, a much simplified form of the light lab: central zeptons along x, E and B trailing, a sphere for the field’s reach against half a wavelength; flat view as fallback |
-| 19-3 | One photon, two slits, the same time | animated | to review | |
+| 19-3 | One photon, two slits, the same time | animated | changed | The double-slit lab’s own drawing (`SlitDiagram`), with a quarter of its zeptons |
 | 19-4 | A half-turn is the speed of light; a field needs far less | animated | fine | No change |
 | 21-1 | Swimming across the æther | animated | to review | |
 | 22-1 | Light from a moving frame | animated | to review | |
@@ -434,3 +434,8 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** does not match the original at all; Fleming represents a light wave moving through 3D space. **Tried** a 3D scene with the printed axes, the central zepton at the origin and rows of zeptons out from the path.
 - **Owner:** confusing; as it links to the light lab, make it like the lab, simplified. **Done** (`PhotonScene`): the photon a sequence of central zeptons along x, a new one each half wavelength, with E and B trailing at right angles. **Owner:** the flashing red/blue pills make it messy; much, much simpler. **Done:** the surrounding zeptons are gone; a faint sphere shows how far the field gets in the zepton's life, against a red ring half a wavelength out (the reach at c). **Owner:** strange elongated pills: the central zepton's balls were stretched as it closed (scaled the wrong way), and the path's rings looked like pills edge on. **Fixed:** balls kept round; dots mark the path.
 - **Owner:** fine now.
+
+### Fig. 19-3
+
+- **Owner:** should match the two-slit lab in appearance, a simpler version. **Done:** the figure draws the laboratory's own `SlitDiagram` (wall, A and B, the path, the central pair with E and B, the routes through the slits, the light-speed band, and the status line beneath), with a new `sparse` option showing a quarter of the surrounding zeptons. Book styles match the lab's (`.bk-slit`).
+- **Owner:** fine.
