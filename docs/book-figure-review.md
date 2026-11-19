@@ -107,7 +107,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | x2-3 | Where the energy is | still | fine | No change |
 | x4-1 | A pair carries the photon’s energy | still | changed | Proper subscripts (λ_ph, λ_z, ν_z), and book-wide for B_m, F_m, ω_p |
 | x5-1 | Pair production: the pair was already there | animated | fine | No change |
-| x7-1 | The four equations, read as zeptons | animated | to review | |
+| x7-1 | The four equations, read as zeptons | animated | fine | No change |
 | x9-1 | Laithwaite’s flywheel: held up by the vacuum | animated | to review | |
 | x14-1 | The same laws, with matter for charge | still | to review | |
 | x14-2 | Matter attracts antimatter | animated | to review | |
