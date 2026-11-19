@@ -1,6 +1,7 @@
 // Chapter 25: The Strong Nuclear Force (PDF pp. 192–200). Figures 25-1 and 25-2.
-import { useMemo, useState } from 'react';
-import { Arrow, BlockArrow, Diagram, Line, Readout, Remark, Slider, Stage, T, Toggle, clamp, fmt, pathThrough } from '../kit';
+import { Suspense, lazy, useCallback, useMemo, useState } from 'react';
+import { Arrow, BlockArrow, Diagram, FallbackOnError, Line, Readout, Remark, Slider, Stage, T, Toggle, canDraw3D, clamp, fmt, pathThrough } from '../kit';
+import { STAR1_R as STAR1_SCENE_R } from '../three/shadow-math';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { triacontahedron } from './ch16';
@@ -49,6 +50,8 @@ function TwoProtons() {
   const [L, setL] = useState(1.755);
   const [porous, setPorous] = useState(true);
   const casimir = casimirForce(L) * (porous ? transparency(L) : 1), coulomb = coulombForce(L + 2 * PROTON_RADIUS), ratio = casimir / coulomb;
+  // The net force, positive together; its arrows' length follows its size on the same logarithmic scale as before.
+  const net = casimir - coulomb, netLen = 30 * clamp(Math.log10(Math.max(Math.abs(net), 1)) / 4);
   const H = 420, scale = 42, r = PROTON_RADIUS * scale, cx = 250, y = 110, xa = cx - (L * scale) / 2 - r, xb = cx + (L * scale) / 2 + r;
   // The two forces against distance, on a logarithmic scale of newtons.
   const px = 80, pw = 560, py = 230, ph = 150, fx = (l: number) => px + ((l - 0.1) / 3.9) * pw, fy = (f: number) => py + ph - (clamp((Math.log10(Math.max(f, 1)) - 0) / 5)) * ph;
@@ -57,9 +60,12 @@ function TwoProtons() {
     <Stage w={W} h={H} label={`Two protons drawn as shells, ${fmt(L, 3)} femtometres apart at their nearest. The Casimir force pushing them together is ${fmt(casimir, 3)} newtons and the Coulomb force pushing them apart is ${fmt(coulomb, 3)} newtons.`}>
       <Shell x={xa} y={y} r={r}/><Shell x={xb} y={y} r={r}/>
       <Arrow x1={xa + r} y1={y + r + 16} x2={xb - r} y2={y + r + 16} both tone="mark" w={1.4} head={6}/><T x={cx} y={y + r + 34} tone="mark" size="sm" italic>L = {fmt(L, 3)} fm</T>
-      {casimir > 1 && <><BlockArrow x1={xa - r - 14 - 30 * clamp(Math.log10(casimir) / 4)} y1={y} x2={xa - r - 4} y2={y} thick={10}/><BlockArrow x1={xb + r + 14 + 30 * clamp(Math.log10(casimir) / 4)} y1={y} x2={xb + r + 4} y2={y} thick={10}/></>}
+      {/* The net force on each particle: pushed together where the Casimir force is the larger, apart where Coulomb wins. */}
+      {Math.abs(net) > 0.5 && (net > 0
+        ? <><BlockArrow x1={xa - r - 14 - netLen} y1={y} x2={xa - r - 4} y2={y} thick={12}/><BlockArrow x1={xb + r + 14 + netLen} y1={y} x2={xb + r + 4} y2={y} thick={12}/></>
+        : <><BlockArrow x1={xa - r - 4} y1={y} x2={xa - r - 14 - netLen} y2={y} thick={12}/><BlockArrow x1={xb + r + 4} y1={y} x2={xb + r + 14 + netLen} y2={y} thick={12}/></>)}
       <Arrow x1={xa} y1={y - r - 12} x2={xa - 16 - 30 * clamp(Math.log10(coulomb) / 4)} y2={y - r - 12} tone="pos" w={2.4}/><Arrow x1={xb} y1={y - r - 12} x2={xb + 16 + 30 * clamp(Math.log10(coulomb) / 4)} y2={y - r - 12} tone="pos" w={2.4}/>
-      <T x={560} y={70} anchor="start" size="sm" tone="text">➤ Casimir: together</T><T x={560} y={92} anchor="start" size="sm" tone="pos">→ Coulomb: apart</T>
+      <T x={560} y={70} anchor="start" size="sm" tone="text">➤ net force: {net > 0 ? 'together' : 'apart'}</T><T x={560} y={92} anchor="start" size="sm" tone="pos">→ Coulomb: apart</T>
       <line x1={px} y1={py + ph} x2={px + pw} y2={py + ph} className="bk-s-muted"/><line x1={px} y1={py} x2={px} y2={py + ph} className="bk-s-muted"/>
       <Line d={curve(l => casimirForce(l) * (porous ? transparency(l) : 1))} tone="text" w={2.2}/><Line d={curve(l => coulombForce(l + 2 * PROTON_RADIUS))} tone="pos" w={2.2}/>
       <line x1={fx(L)} y1={py} x2={fx(L)} y2={py + ph} className="bk-s-mark" strokeDasharray="3 3"/>
@@ -70,6 +76,7 @@ function TwoProtons() {
     <Toggle label="Particles are transparent to short wavelengths" checked={porous} onChange={setPorous}/>
     <Readout label="Casimir force (together)" value={`${fmt(casimir, 3)} N`}/>
     <Readout label="Coulomb force (apart)" value={`${fmt(coulomb, 3)} N`} tone="e"/>
+    <Readout label="Net force" value={`${fmt(Math.abs(net), 3)} N, ${net > 0 ? 'together' : 'apart'}`} tone={net > 0 ? 'good' : 'bad'}/>
     <Readout label="Casimir ÷ Coulomb" value={casimir < 0.01 ? '0' : fmt(ratio, 3)} tone={ratio > 1 ? 'good' : 'bad'}/>
     <Remark>{ratio > 1 ? 'The net force is attractive at this distance.' : L < 0.9 && porous ? 'Closer than this the shell lets the short wavelengths through, the Casimir force fades, and Coulomb repulsion dominates.' : 'Beyond about 3 fm the Coulomb repulsion is the larger.'}</Remark>
   </Diagram>;
@@ -81,19 +88,50 @@ export const shadowWidth = (D: number, a = PROTON_RADIUS) => (2 * a * a) / D;
 /** The smaller width of one rhombic face of a proton-sized triacontahedron, in femtometres (p. 195). */
 export const OPENING = 0.6;
 
+/** Figure 25-2 drawn in three dimensions, with the scene of Figure 17-2: loaded on demand, since three.js is large. */
+const ShadowScene = lazy(() => import('../three/ShadowScene'));
+
+/** The rhombic triacontahedron as an open frame, for the 3D scene: its vertices scaled to the outer ones' sphere, and its struts. */
+const CAGE = (() => {
+  const v = triacontahedron(), outer = Math.hypot(...v.find(p => p.outer)!.p);
+  const edges: [number, number][] = [];
+  v.forEach((a, i) => v.forEach((b, j) => { if (a.outer && !b.outer && Math.hypot(a.p[0] - b.p[0], a.p[1] - b.p[1], a.p[2] - b.p[2]) < 1.2) edges.push([i, j]); }));
+  return { points: v.map(p => [p.p[0] / outer, p.p[1] / outer, p.p[2] / outer] as const), edges };
+})();
+
+/** Figure 25-2 as the printed page has it, flat: the two lines from one particle's edges to the other's centre. The fallback where 3D cannot be drawn. */
+function FlatShellShadow({ L, label }: { L: number; label: string }) {
+  const D = L + 2 * PROTON_RADIUS, shadow = shadowWidth(D), H = 260, scale = 60, r = PROTON_RADIUS * scale, y = 130, xa = 150, xb = xa + D * scale;
+  return <Stage w={W} h={H} label={label}>
+    <Line d={`M${Math.min(xb, W - 20)} ${y - r} L${xa} ${y} L${Math.min(xb, W - 20)} ${y + r}`} tone="mark" w={1.4}/>
+    <Shell x={xa} y={y} r={r}/>{xb < W + r && <Shell x={xb} y={y} r={r}/>}
+    <line x1={xa + r} y1={y - (shadow * scale) / 2} x2={xa + r} y2={y + (shadow * scale) / 2} className="bk-s-mark" strokeWidth="5" strokeLinecap="round"/>
+  </Stage>;
+}
+
 /** Figure 25-2: the shadow one particle casts on another, against the size of the openings in its shell. */
 function ShellShadow() {
   const [L, setL] = useState(2);
-  const D = L + 2 * PROTON_RADIUS, shadow = shadowWidth(D), H = 340, scale = 60, r = PROTON_RADIUS * scale, y = 150, xa = 150, xb = xa + D * scale;
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`Two particles ${fmt(L, 3)} femtometres apart. The shadow one casts on the other is ${fmt(shadow, 3)} femtometres across, ${shadow > OPENING ? 'larger' : 'smaller'} than the 0.60 femtometre openings in the shell.`}>
-      <Line d={`M${Math.min(xb, W - 20)} ${y - r} L${xa} ${y} L${Math.min(xb, W - 20)} ${y + r}`} tone="mark" w={1.4}/>
-      <Shell x={xa} y={y} r={r}/>{xb < W + r && <Shell x={xb} y={y} r={r}/>}
-      <line x1={xa + r} y1={y - (shadow * scale) / 2} x2={xa + r} y2={y + (shadow * scale) / 2} className="bk-s-mark" strokeWidth="5" strokeLinecap="round"/>
-      <line x1={xa + r + 12} y1={y - (OPENING * scale) / 2} x2={xa + r + 12} y2={y + (OPENING * scale) / 2} className="bk-s-accent" strokeWidth="3" strokeLinecap="round"/>
-      <T x={xa} y={y + r + 28} size="sm" tone="mark">shadow: {fmt(shadow, 3)} fm</T><T x={xa} y={y + r + 46} size="sm" tone="accent">opening in the shell: 0.60 fm</T>
-      <Arrow x1={xa + r} y1={H - 30} x2={Math.min(xb - r, W - 30)} y2={H - 30} both tone="muted" w={1.2} head={6}/><T x={(xa + r + Math.min(xb - r, W - 30)) / 2} y={H - 38} size="sm" italic>L = {fmt(L, 3)} fm</T>
-    </Stage>}>
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const fail = useCallback(() => setFlat(true), []);
+  const D = L + 2 * PROTON_RADIUS, shadow = shadowWidth(D), bar = 220;
+  const label = `Two particles ${fmt(L, 3)} femtometres apart. The shadow one casts on the other is ${fmt(shadow, 3)} femtometres across, ${shadow > OPENING ? 'larger' : 'smaller'} than the 0.60 femtometre openings in the shell.`;
+  return <Diagram stage={<>
+    {flat
+      ? <FlatShellShadow L={L} label={label}/>
+      : <FallbackOnError onError={fail} fallback={<FlatShellShadow L={L} label={label}/>}>
+          <Suspense fallback={<FlatShellShadow L={L} label={label}/>}>
+            <ShadowScene distance={(D / PROTON_RADIUS) * STAR1_SCENE_R} size={STAR1_SCENE_R} names={[]} cage={CAGE} onFail={fail} description={`${label} The particles are open rhombic triacontahedra; the cone from one particle's centre to the other's edges meets its surface in the shadow, a cap among the frame's openings. Drag to turn the view.`}/>
+          </Suspense>
+        </FallbackOnError>}
+    <Stage w={W} h={110} label={`The shadow, ${fmt(shadow, 3)} femtometres across, beside an opening in the shell, 0.60 femtometres.`}>
+      <line x1={140} y1={38} x2={140 + (shadow / 1.2) * bar} y2={38} className="bk-s-mark" strokeWidth="8" strokeLinecap="round"/>
+      <T x={130} y={43} anchor="end" size="sm" tone="mark">shadow</T><T x={150 + (shadow / 1.2) * bar} y={43} anchor="start" size="sm" tone="mark">{fmt(shadow, 3)} fm</T>
+      <line x1={140} y1={74} x2={140 + (OPENING / 1.2) * bar} y2={74} className="bk-s-accent" strokeWidth="8" strokeLinecap="round"/>
+      <T x={130} y={79} anchor="end" size="sm" tone="accent">opening</T><T x={150 + (OPENING / 1.2) * bar} y={79} anchor="start" size="sm" tone="accent">0.60 fm</T>
+      <T x={560} y={60} size="sm" tone={shadow > OPENING ? 'accent' : 'muted'}>{shadow > OPENING ? 'shadow wider than an opening' : 'shadow narrower than an opening'}</T>
+    </Stage>
+  </>}>
     <Slider label="Least distance between them, L" value={L} min={0.3} max={6} step={0.05} onChange={setL} show={v => `${fmt(v, 3)} fm`}/>
     <Readout label="Width of the shadow" value={`${fmt(shadow, 3)} fm`} tone="force"/>
     <Readout label="Smaller width of an opening" value="0.60 fm"/>
@@ -119,7 +157,7 @@ const chapter: ChapterContent = {
         <Eq n="25-3"><V>E</V> = − <Frac top={<>ħ<V>c</V>π²</>} bottom="1440"/> <Frac top={<>π<V>a</V>²</>} bottom={<><V>L</V>²(2<V>a</V> + <V>L</V>)</>}/></Eq>
         <p>With 2<V>a</V> = <V>L</V> = 1.755 fm this gives a Casimir force of 55.3 N against a Coulomb repulsion of 20.6 N. Over the whole range his chart peaks at 15.1 times the Coulomb repulsion at 0.9 fm, after the force is set to zero below 0.5 fm and reduced in a straight line between 0.5 and 0.9 fm <Q>for purposes of illustrating the effect due to the semi-transparent structure of the proton</Q> (<Pg n={197}/>, <Pg n={199}/>).</p>
       </>,
-      tryThis: ['Start at 1.755 fm, a proton diameter apart: the Casimir force is the larger and the protons are pushed together.', 'Move them apart until the two curves cross: beyond that Coulomb repulsion wins, and the nucleus would not hold.', 'Bring them closer than 0.9 fm and watch the Casimir force fall away. Then turn off the transparency: without it the force would run to hundreds of thousands of newtons at 0.1 fm (the text says more than 50,000).'],
+      tryThis: ['Start at 1.755 fm, a proton diameter apart: the Casimir force is the larger and the protons are pushed together.', 'Move them apart until the two curves cross: beyond that Coulomb repulsion wins, and the nucleus would not hold.', 'Bring them closer than 0.9 fm and watch the Casimir force fall away: below about 0.5 fm the net force turns round, and the white arrows push them apart. Then turn off the transparency: without it the force would run to hundreds of thousands of newtons at 0.1 fm (the text says more than 50,000).'],
       notes: <>
         <p>The Casimir curve here is the rate of change of Equation 25-3 with distance, at the proton’s radius, and the Coulomb curve is Equation 25-6 with the centres <V>L</V> + 2<V>a</V> apart. It has the shape of the book’s Chart 25-1 but not its exact values: with the same adjustment below 0.9 fm it peaks at about 20 times the Coulomb force near 0.8 fm, where the chart shows 15.1 at 0.9 fm, and the two curves cross near 3.1 fm, where the text says a little over 2.6. The text does not give enough of its working to reproduce the chart exactly.</p>
         <p>At 1.755 fm this curve gives 69 N. The text’s 55.3 N comes from its special case, Equation 25-5, in which <V>a</V> is set to <V>L</V>/2 before the rate of change is taken; the companion’s test suite reproduces that figure. For the Coulomb force at that spacing Equation 25-6 gives 18.7 N, where the text has 20.6.</p>
@@ -137,7 +175,7 @@ const chapter: ChapterContent = {
       </>,
       tryThis: ['At 2 fm apart the shadow is smaller than an opening, as the text says.', 'Bring the particles together until the shadow is as wide as the opening, then wider.', 'Compare with Figure 18-2: the same cone, between stars, is millimetres wide on a body a million kilometres across.'],
       notes: <>
-        <p>The shadow is the cone from the edges of one sphere to the centre of the other, cut at the other’s surface, as in Figures 17-2 and 18-2. The sentence before the one quoted says the force <Q>will diminish when the openings in the particle structure are smaller than the shadow</Q>, which is the same condition under which the next sentence says it is strongest. The diagram follows the second sentence, which matches the rest of the argument.</p>
+        <p>Drawn in three dimensions, as Figures 17-2 and 18-2, with the particles as open rhombic triacontahedra like the Star-Ball pictured, so that the shadow can be seen against the openings. The shadow is the cone from the edges of one sphere to the centre of the other, cut at the other’s surface. The sentence before the one quoted says the force <Q>will diminish when the openings in the particle structure are smaller than the shadow</Q>, which is the same condition under which the next sentence says it is strongest. The diagram follows the second sentence, which matches the rest of the argument.</p>
       </>,
     },
   ],

@@ -1,6 +1,8 @@
-// Figure 17-2 in three dimensions: Star 2 seen from the centre of Star 1 fills a cone, and where that cone meets Star 1's
-// surface is the "shadow": a cap on the sphere, facing Star 2. As Star 2 moves away the cone narrows and the cap shrinks,
-// as the inverse square. Loaded on demand, and drawn only when something changes.
+// Figures 17-2, 18-2 and 25-2 in three dimensions: the second body seen from the centre of the first fills a cone, and
+// where that cone meets the first body's surface is the "shadow": a cap on the sphere, facing the second. As the second
+// moves away the cone narrows and the cap shrinks, as the inverse square. For Figure 25-2 the bodies are particles drawn
+// as open rhombic triacontahedra, so the shadow can be set against the openings in the frame. Loaded on demand, and drawn
+// only when something changes.
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -8,8 +10,14 @@ import { palette } from '../../ui/palette';
 import { disposeAll, label, releaseControls, turnWithKeys } from './common';
 import { STAR1_R, tangentCone } from './shadow-math';
 
-/** The figure's scene. Calls `onFail` when the browser cannot draw WebGL, so the card can show the flat page instead. */
-export default function ShadowScene({ distance, size, onFail, onReady, description }: { distance: number; size: number; onFail(): void; onReady?(): void; description: string }) {
+/** An open frame to draw a body as: its vertices on a sphere of radius 1, and the struts between them, as index pairs. */
+export interface Cage { points: readonly (readonly [number, number, number])[]; edges: readonly (readonly [number, number])[] }
+
+/**
+ * The figure's scene. Calls `onFail` when the browser cannot draw WebGL, so the card can show the flat page instead.
+ * `names` labels the two bodies (none if empty); `cage` draws them as open frames on faint spheres instead of solid stars.
+ */
+export default function ShadowScene({ distance, size, onFail, onReady, description, names = ['Star 1', 'Star 2'], cage }: { distance: number; size: number; onFail(): void; onReady?(): void; description: string; names?: readonly string[]; cage?: Cage }) {
   const host = useRef<HTMLDivElement>(null);
   const api = useRef<((d: number, s: number) => void) | null>(null);
 
@@ -40,12 +48,32 @@ export default function ShadowScene({ distance, size, onFail, onReady, descripti
       key.position.set(-3, 5, 6);
       scene.add(key);
 
-      // The two stars, plain as in the printed figure.
-      const starMaterial = new THREE.MeshStandardMaterial({ color: palette.text4, roughness: 0.75 });
+      // The two bodies: plain stars as in the printed figure, or open frames on faint spheres.
+      const starMaterial = cage
+        ? new THREE.MeshStandardMaterial({ color: palette.text4, roughness: 0.9, transparent: true, opacity: 0.12, depthWrite: false })
+        : new THREE.MeshStandardMaterial({ color: palette.text4, roughness: 0.75 });
       const star1 = new THREE.Mesh(new THREE.SphereGeometry(STAR1_R, 64, 40), starMaterial);
       const star2 = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 40), starMaterial);
-      const name1 = label('Star 1', palette.text, 0.36), name2 = label('Star 2', palette.text, 0.36);
-      scene.add(star1, star2, name1, name2);
+      scene.add(star1, star2);
+      if (cage) {
+        // Struts along each edge of the frame, turned a little so the frame is seen at an angle, as photographed.
+        const strut = new THREE.MeshStandardMaterial({ color: palette.text3, roughness: 0.5 }), turn = new THREE.Euler(0.4, 0.5, 0.2);
+        const frame = (radius: number) => {
+          const group = new THREE.Group(), at = cage.points.map(([x, y, z]) => new THREE.Vector3(x, y, z).multiplyScalar(radius).applyEuler(turn));
+          for (const [i, j] of cage.edges) {
+            const a = at[i], b = at[j], length = a.distanceTo(b), rod = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.04, radius * 0.04, length, 8), strut);
+            rod.position.copy(a).add(b).multiplyScalar(0.5);
+            rod.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+            group.add(rod);
+          }
+          return group;
+        };
+        star1.add(frame(STAR1_R));
+        star2.add(frame(1));
+      }
+      const name1 = label(names[0] ?? '', palette.text, 0.36), name2 = label(names[1] ?? '', palette.text, 0.36);
+      if (names[0]) scene.add(name1);
+      if (names[1]) scene.add(name2);
       name1.position.set(-0.4, -STAR1_R - 0.45, 0);
 
       // The cone from Star 1's centre to Star 2's edges: a faint surface and four lines along it.
