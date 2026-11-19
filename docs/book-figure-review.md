@@ -69,7 +69,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 12-4 | Why orbiting bodies stop turning | animated | changed | Orbital-field zeptons turn either side, arrows only when paused; the planet turns with a dark cross; the Sun drawn symbolically at the left, named within it |
 | 12-5 | An ellipse that will not stay put | animated | fine | No change |
 | 12-6 | The force that turns the ellipse | animated | changed | Static force and rotation arrows only when paused; the Sun turns; a fading trail over three orbits; the orbit precesses on without looping |
-| 12-7 | The largest flywheel | animated | to review | |
+| 12-7 | The largest flywheel | animated | changed | Sliders, readouts and the field bar removed; Fleming’s relation B_m ∝ L = ½mr²ω written beside the disc |
 | 12-8 | Stars moving together are drawn together | animated | to review | |
 | 13-1 | Eddies where the two halves of the mass meet | animated | to review | |
 | 16-1 | A shell that shuts out a band of the vacuum | animated | to review | |
@@ -376,3 +376,8 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** the orbital trail should be strongest near the body and fade as it is left behind; then, a slower fade to see more of the older orbits. **Done:** a trail over the last three orbits, fading evenly to a faint floor.
 - **Owner:** the animation loops with a jump; keep the orbit and precession going. **Done:** `orbitCycle` computes one orbit, perihelion to perihelion, and its advance, finding the next perihelion where the outward speed passes through zero; each later orbit is that one turned on by the advance (`turnOrbitPoint`). Tested: closed with no force, and joining without a jump.
 - **Owner:** looks great.
+
+### Fig. 12-7
+
+- **Owner:** the diagram is excellent, but the sliders are a distraction. **Done:** the sliders and readouts are removed; the field bar, which would then read a constant 1 ×, is replaced by Fleming's relation, B_m ∝ L = Iω = ½mr²ω, beside the disc.
+- **Owner:** good now.

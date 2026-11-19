@@ -286,28 +286,22 @@ export const discAngularMomentum = (m: number, r: number, omega: number) => 0.5 
 
 /** Figure 12-7: a rotating disc, and how quickly its mattermagnetic field grows with radius. */
 function GalaxyDisc() {
-  const [m, setM] = useState(1);
-  const [r, setR] = useState(1);
-  const [omega, setOmega] = useState(1);
   const play = usePlayback();
-  const H = 380, cx = 260, cy = 190, R = 70 + 80 * (r - 0.5), L = discAngularMomentum(m, r, omega), turned = play.t * omega * 60;
+  const H = 380, cx = 260, cy = 190, R = 110, turned = play.t * 60;
+  /** A letter with a small subscript, for B_m. */
+  const sub = (letter: string, index: string) => <>{letter}<tspan dy={5} fontSize="0.7em" fontStyle="normal">{index}</tspan><tspan dy={-5}>{'​'}</tspan></>;
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A rotating disc of matter charge ${fmt(m, 2)}, radius ${fmt(r, 2)} and angular velocity ${fmt(omega, 2)}. Its angular momentum, and so its mattermagnetic field, is ${fmt(L / 0.5, 3)} times that of the starting disc.`}>
-      <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-plain" opacity={0.5 + 0.2 * m}/>
+    <Stage w={W} h={H} label="A rotating disc of matter charge m, radius r and angular velocity ω. Its mattermagnetic field is proportional to its angular momentum, L = Iω, with I = ½mr².">
+      <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-plain" opacity={0.7}/>
       {Array.from({ length: 26 }, (_, i) => { const [x, y] = polar(cx, cy, R * (0.15 + 0.82 * ((i * 0.618) % 1)), turned + i * 137.5); return <circle key={i} cx={x} cy={y} r={2.2} className="bk-f-mark"/>; })}
       <Arrow x1={cx} y1={cy} x2={cx - R} y2={cy} tone="text" w={2.4}/><T x={cx - R / 2} y={cy - 10} tone="text" italic>r</T>
       <Still><Spin x={cx} y={cy + 4} r={20} ccw sweep={250} tone="text" w={2.4}/><T x={cx + 34} y={cy + 30} tone="text" italic>ω</T></Still><T x={cx} y={cy - R + 26} tone="text" italic>m</T>
-      <rect x={520} y={60} width={46} height={250} className="bk-fill-soft"/>
-      <rect x={520} y={310 - clamp(L / 4.5) * 250} width={46} height={clamp(L / 4.5) * 250} className="bk-f-b"/>
-      <T x={543} y={332} size="sm" tone="b">B_m ∝ L</T><T x={600} y={310 - clamp(L / 4.5) * 250 + 5} anchor="start" tone="b">{fmt(L / 0.5, 3)} ×</T>
+      {/* Fleming's relation, written beside the disc: the field goes as the angular momentum, and that as r². */}
+      <T x={470} y={160} anchor="start" tone="b" size="lg" italic>{sub('B', 'm')} ∝ L</T>
+      <T x={470} y={200} anchor="start" tone="text" size="lg" italic>L = Iω = ½mr²ω</T>
     </Stage>}>
-    <Slider label="Matter charge of the disc, m" value={m} min={0.5} max={2} step={0.1} onChange={setM} show={v => `${fmt(v, 2)} ×`}/>
-    <Slider label="Radius, r" value={r} min={0.5} max={1.5} step={0.05} onChange={setR} show={v => `${fmt(v, 2)} ×`}/>
-    <Slider label="Angular velocity, ω" value={omega} min={0.2} max={2} step={0.1} onChange={setOmega} show={v => `${fmt(v, 2)} ×`}/>
     <PlayBar play={play} label="the disc"/>
-    <Readout label="Moment of inertia, ½mr²" value={`${fmt((0.5 * m * r * r) / 0.5, 3)} ×`}/>
-    <Readout label="Angular momentum, L = Iω" value={`${fmt(L / 0.5, 3)} ×`} tone="b"/>
-    <Remark>Doubling the matter doubles the field; half as much again in radius more than doubles it. Stars far from the centre, moving fast, make most of the field.</Remark>
+    <Remark>Stars far from the centre, moving fast, make most of the field: it grows as the square of the radius.</Remark>
   </Diagram>;
 }
 
@@ -426,8 +420,8 @@ const chapter: ChapterContent = {
         <p>In a spiral galaxy, stars further out, and so travelling faster, are more strongly drawn to the centre. <Q>What kind of force gets stronger with distance and the consequent higher tangential velocities? That would be a force that is the result of a vector cross product, a Lorentz force, not gravity</Q> (<Pg n={106}/>).</p>
         <p>Taking the galaxy as a disc, <Q>the magnetic field is then proportional to the angular momentum L</Q>, with <V>L</V> = <V>I</V>ω and <V>I</V> = ½<V>m</V><V>r</V>² for a uniform disc. <Q>While the galaxy is nowhere near a uniform disc, it is easy to see that the mattermagnetic field increases rapidly when there are stars far from the center of the galaxy moving very rapidly.</Q></p>
       </>,
-      tryThis: ['Raise the radius by half: the field more than doubles, because it goes as r².', 'Compare what the same change does to m and to ω: each only in proportion.'],
-      notes: <p>The readouts are <V>L</V> = ½<V>m</V><V>r</V>²ω relative to the starting disc. Fleming says the field is proportional to <V>L</V>; no constant is given.</p>,
+      tryThis: ['Watch the stars near the rim: they move fastest, and with the r² in L they make most of the field.'],
+      notes: <p>Fleming says the field is proportional to <V>L</V>; no constant is given.</p>,
     },
     {
       kind: 'figure', id: '12-8', page: 107, title: 'Stars moving together are drawn together',
