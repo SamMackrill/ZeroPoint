@@ -27,8 +27,14 @@ const SPEED_MARKS = [
   { exp: Math.log10(2e10), name: 'Van Flandern' },
 ];
 
-/** A slider position, settled onto a named speed when within one step of it. */
-export const snapSpeed = (v: number) => SPEED_MARKS.find(m => Math.abs(m.exp - v) < 0.06)?.exp ?? v;
+/**
+ * A slider position, settled onto a named speed when within one step of it, coming from `from`. A step away from the
+ * named speed the slider is already on is not pulled back to it, so the arrow keys can step past it.
+ */
+export function snapSpeed(v: number, from?: number) {
+  const mark = SPEED_MARKS.find(m => Math.abs(m.exp - v) < 0.06);
+  return mark && (from === undefined || Math.abs(mark.exp - from) > 1e-9) ? mark.exp : v;
+}
 
 /** How the speed-of-gravity slider reads: the speed in units of c, with its name where the chapter gives one. */
 export function speedName(v: number) {
@@ -55,7 +61,7 @@ function LateGravity() {
       <Body x={bx} y={by} r={9} tone="plain"/><T x={bx + (bx - cx) * 0.16} y={by + (by - cy) * 0.16 + 4} size="sm" tone="text">B</T>
       {!instant && <T x={560} y={80} anchor="start" size="sm">(angle A–B magnified)</T>}
     </Stage>}>
-    <Slider label="Speed of gravity" value={exp} min={0} max={INFINITE_EXP} step={0.1} onChange={v => setExp(snapSpeed(v))} show={speedName}/>
+    <Slider label="Speed of gravity" value={exp} min={0} max={INFINITE_EXP} step={0.1} onChange={v => setExp(from => snapSpeed(v, from))} show={speedName}/>
     <PlayBar play={play} label="the orbit"/>
     <Readout label="Lag of the force" value={instant ? 'none' : `${fmt((lag * 180 * 3600) / Math.PI, 3)}″`}/>
     <Readout label="Orbit doubles in" value={instant ? 'never' : `${fmt(doubling, 3)} years`} tone={doubling < 1e9 ? 'bad' : 'good'}/>
@@ -124,7 +130,7 @@ function TwoSlits() {
   const params: SlitParameters = { ...DEFAULT_SLITS, wall: wall ? 'slits' : 'open', fields: fast ? 'fast' : 'light', slitOffset: offset };
   // The run goes from A to B in the laboratory's ticks, holds a moment at the end, and then a new photon starts at A.
   const tick = Math.floor(play.t * SLIT_TICKS_PER_TAU) % (SLIT_END_TICK + SLIT_TICKS_PER_TAU);
-  const r = slitReadout(params, Math.min(tick, SLIT_END_TICK)), halted = r.status === 'halted';
+  const r = slitReadout(params, Math.min(tick, SLIT_END_TICK));
   return <Diagram stage={<div className="bk-slit">
     <SlitDiagram params={params} tick={Math.min(tick, SLIT_END_TICK)} layers={{ zeptons: true, fields: true, routes: true, reach: !fast, path: true }} sparse/>
     <p className="bk-slit-state">{stateLine(params, Math.min(tick, SLIT_END_TICK))}</p>
@@ -135,7 +141,7 @@ function TwoSlits() {
     <PlayBar play={play} label="the photon"/>
     <Readout label="Straight path, A to B" value={`${fmt(PATH_LENGTH, 3)} λ`}/>
     {wall && <Readout label="By way of a slit" value={`${fmt(routeViaSlit(params), 3)} λ`}/>}
-    <Readout label="Arrives at B after" value={halted ? 'never' : `${fmt(PATH_LENGTH, 3)} periods`} tone={halted ? 'bad' : 'good'}/>
+    <Readout label="Arrives at B after" value={r.arrival === null ? 'never' : `${fmt(r.arrival, 3)} periods`} tone={r.arrival === null ? 'bad' : 'good'}/>
     <Remark>{!fast && wall ? 'At the speed of light the fields would only go out half a wavelength to either side of the path.' : wall ? 'It still takes the same time t, even though the way through the slits is longer.' : 'With nothing in the way it reaches B in a time exactly in keeping with the speed of light.'}</Remark>
   </Diagram>;
 }
@@ -214,7 +220,7 @@ const chapter: ChapterContent = {
         <p>The fields <Q>are also extinguished each half wavelength along with the central zepton. Even so, the electric and magnetic fields are detectable at more than half a wavelength distance off to the side of the photon’s path. But remember that the half wavelength distance is related to the speed of light. That means that the electric and magnetic fields of the photon are propagating faster than the speed of light</Q> (<Pg n={146}/>).</p>
       </>,
       tryThis: ['Set the speed to 1 c: the sphere shrinks onto the red ring, half a wavelength out.', 'Raise the speed: the field reaches further and further to the side of the path in the same brief life.', 'Drag the figure round to look along the photon’s path, or across it.'],
-      notes: <p>Drawn in three dimensions with the printed figure’s axes, as a much simplified form of the laboratory’s light scene: the photon a sequence of central zeptons along x, its fields trailing behind, and a sphere for how far the field gets. The printed figure’s surrounding zeptons are left out for clarity. Speeds up to 100 c fit the picture; Fleming’s lower bound is 2 × 10¹⁰ c. Where 3D cannot be drawn, the figure is shown flat, looking along the photon’s path, with the surrounding zeptons; their lean is magnified (the square root of the inverse-square field) so that distant ones can be seen to turn.</p>,
+      notes: <p>Drawn in three dimensions with the printed figure’s axes, as a much simplified form of the laboratory’s light scene: the photon a sequence of central zeptons along x, its fields trailing behind, and a sphere for how far the field gets. The printed figure’s surrounding zeptons are left out for clarity. Beyond about 5 c the sphere and the half-wavelength ring are drawn to a smaller common scale, so the ring shrinks within the sphere; up to 100 c can be shown, where Fleming’s lower bound is 2 × 10¹⁰ c. Where 3D cannot be drawn, the figure is shown flat, looking along the photon’s path, with the surrounding zeptons; their lean is magnified (the square root of the inverse-square field) so that distant ones can be seen to turn.</p>,
       labs: [{ lab: 'light', scenario: 'absorption', query: 'L=+cone', why: 'The light cone at an absorbing wall: how little of the field’s energy could arrive if fields kept to the speed of light.' }],
     },
     {
