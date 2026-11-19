@@ -70,7 +70,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 12-5 | An ellipse that will not stay put | animated | fine | No change |
 | 12-6 | The force that turns the ellipse | animated | changed | Static force and rotation arrows only when paused; the Sun turns; a fading trail over three orbits; the orbit precesses on without looping |
 | 12-7 | The largest flywheel | animated | changed | Sliders, readouts and the field bar removed; Fleming’s relation B_m ∝ L = ½mr²ω written beside the disc |
-| 12-8 | Stars moving together are drawn together | animated | to review | |
+| 12-8 | Stars moving together are drawn together | animated | changed | Rebuilt: a fixed lattice of small zeptons that the moving stars turn (antimatter end toward them, as 11-4); arrows only when paused; force arrows on the stars; speed slider removed |
 | 13-1 | Eddies where the two halves of the mass meet | animated | to review | |
 | 16-1 | A shell that shuts out a band of the vacuum | animated | to review | |
 | 16-2 | A shape whose charges almost hold themselves | animated | to review | |
@@ -380,4 +380,10 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 ### Fig. 12-7
 
 - **Owner:** the diagram is excellent, but the sliders are a distraction. **Done:** the sliders and readouts are removed; the field bar, which would then read a constant 1 ×, is replaced by Fleming's relation, B_m ∝ L = Iω = ½mr²ω, beside the disc.
+- **Owner:** good now.
+
+### Fig. 12-8
+
+- **Owner:** needs a lot of work. The zepton rotations are arrows again, not proper rotations ("this keeps happening!"); the zeptons do not move: the bodies move and cause the zepton rotations that cause the attraction or repulsion; the force arrows belong on the bodies. **Done:** a fixed lattice of zeptons, each turning to keep its antimatter end toward the stars near it (the mechanism of 11-4, `starZeptonAngle`); curled arrows beside each force arrow, and the velocity arrows, only when paused, their sense found from how the zeptons would turn next; each force arrow drawn from its own star. The stars go round off the stage edges, so nothing jumps in view; moving the same way they close slowly on each pass, moving opposite ways they are pushed apart as they pass. The speed slider and readouts are removed. Saved as a standing rule (memory) to check every figure for arrows standing in for rotation.
+- **Owner:** much better; half-size zeptons. **Done.** Then: more zeptons, and make the induced spin more obvious. **Done:** a lattice twice as dense each way, the stars' reach widened, the zeptons' own directions held more weakly, and zeptons dimmed by how little a star is turning them.
 - **Owner:** good now.

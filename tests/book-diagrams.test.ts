@@ -11,7 +11,7 @@ import { COIL_LENGTH, COIL_RADIUS, COIL_ZEPTONS, SEEDS, ZEPTON_COUNTS, coilField
 import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/book/three/sphere-math';
 import { bodyVelocity, pushOfDrag, speedOfLight } from '../src/book/chapters/ch10';
 import { spinRate } from '../src/book/chapters/ch11';
-import { orbitCycle, precessingRadius, turnOrbitPoint } from '../src/book/chapters/ch12';
+import { orbitCycle, precessingRadius, starZeptonAngle, turnOrbitPoint } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
   it('Figure 8-1: Descartes’s vortex cells tile the engraving’s frame without gaps or overlaps', () => {
@@ -188,6 +188,13 @@ describe('book companion: diagrams', () => {
     expect(spinRate(1)).toBe(0);
     expect(spinRate(40)).toBeCloseTo(0.5);
     expect(spinRate(-1000)).toBe(-1);
+  });
+
+  it('Figure 12-8: a zepton turns its antimatter end toward a star near it, and keeps its own direction far from both', () => {
+    const z = { x: 300, y: 200, rest: 0 };
+    expect(starZeptonAngle(z, [{ x: 300, y: 160 }])).toBeCloseTo(90, 0);
+    expect(starZeptonAngle(z, [{ x: 260, y: 200 }])).toBeCloseTo(180, 0);
+    expect(Math.abs(starZeptonAngle({ ...z, rest: 30 }, [{ x: 3000, y: 200 }]) - 30)).toBeLessThan(15);
   });
 
   it('Figure 12-6: each orbit is the last turned on by a fixed advance, closed without the force and joining without a jump', () => {

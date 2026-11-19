@@ -305,37 +305,69 @@ function GalaxyDisc() {
   </Diagram>;
 }
 
-/** Figure 12-8: two stars moving side by side are drawn together, as two parallel currents are. */
+/** How far a star in Figure 12-8 reaches into the zeptons: at this distance its pull is half its full strength. */
+const STAR_REACH = 110;
+
+/** The zeptons of Figure 12-8: a fixed lattice, each with a resting direction of its own. */
+const STAR_ZEPTONS = Array.from({ length: 17 }, (_, row) => Array.from({ length: 30 }, (_, col) => ({ x: 12 + col * 24 + (row % 2) * 12, y: 16 + row * 20.5, rest: (row * 7 + col * 13) * 37 }))).flat();
+
+/**
+ * The direction a zepton of Figure 12-8 lies, with its antimatter end toward the stars near it: each star pulls it round
+ * the more strongly the nearer it is, and far from both it keeps its resting direction.
+ */
+export function starZeptonAngle(z: { x: number; y: number; rest: number }, stars: readonly { x: number; y: number }[]) {
+  let vx = 0.06 * Math.cos(rad(z.rest)), vy = 0.06 * Math.sin(rad(z.rest));
+  for (const s of stars) {
+    const dx = s.x - z.x, dy = -(s.y - z.y), d = Math.hypot(dx, dy) || 1, w = 1 / (1 + (d / STAR_REACH) ** 2);
+    vx += (w * dx) / d; vy += (w * dy) / d;
+  }
+  return deg(Math.atan2(vy, vx));
+}
+
+/** Figure 12-8: two stars moving side by side turn the zeptons they pass, and are drawn together, as two parallel currents are. */
 function ParallelStars() {
   const [same, setSame] = useState(true);
-  const [speed, setSpeed] = useState(1);
   const play = usePlayback();
-  const state = useRef({ t: 0, gap: 150, travel: 0 });
+  const state = useRef({ t: 0, gap: 160, travel: 0 });
   const dt = Math.max(0, Math.min(0.05, play.t - state.current.t)), s = state.current;
-  if (play.t < s.t) { s.gap = 150; s.travel = 0; }
+  if (play.t < s.t) { s.gap = 160; s.travel = 0; }
   s.t = play.t;
-  // The force follows the product of the two momenta, so the square of the speed when the stars are alike.
-  const force = speed * speed * (same ? 1 : -1);
-  s.gap = clamp(s.gap - force * 9 * dt, 70, 230); s.travel += speed * 60 * dt;
-  // The first star moves left; the second moves with it, or right when they move opposite ways.
-  const H = 360, cy = 180, x = 470 - (s.travel % 220), x2 = same ? x : 250 + (s.travel % 220), y1 = cy - s.gap / 2, y2 = cy + s.gap / 2, mid = x - 110;
+  const H = 360, cy = 180, span = W + 120, speed = 60;
+  // The first star moves left; the second moves with it, or right when they move opposite ways. Both go round off the
+  // stage edges, so the picture never jumps while they are in view.
+  const before = s.travel; s.travel += speed * dt;
+  const x = W + 60 - (s.travel % span), x2 = same ? x : -60 + (s.travel % span);
+  // Moving the same way they draw together as they go; once both have left the stage, the next pass starts afresh.
+  if (same && Math.floor(before / span) !== Math.floor(s.travel / span)) s.gap = 160;
+  if (same) s.gap = Math.max(90, s.gap - 4 * dt);
+  const y1 = cy - s.gap / 2, y2 = cy + s.gap / 2, stars = [{ x, y: y1 }, { x: x2, y: y2 }];
+  // Moving opposite ways they pass only once each time round: the push apart is strongest as they pass.
+  const near = same ? 1 : 1 / (1 + ((x - x2) / 140) ** 2);
+  // While paused, curled arrows show which way the zeptons between the stars are being turned: found by how each would
+  // turn if the stars moved on a little.
+  const ahead = [{ x: x - 4, y: y1 }, { x: x2 + (same ? -4 : 4), y: y2 }];
+  // As printed, one beside each force arrow: the zepton nearest a point just inside each star, off to the side of its arrow.
+  const nearest = (px: number, py: number) => STAR_ZEPTONS.reduce((best, z) => (Math.hypot(z.x - px, z.y - py) < Math.hypot(best.x - px, best.y - py) ? z : best));
+  const between = [nearest(x + 52, y1 + 44), nearest(x2 + 52, y2 - 44)];
   return <Diagram stage={
-    <Stage w={W} h={H} label={`Two stars moving ${same ? 'in the same direction' : 'in opposite directions'} side by side. Their mattermagnetic fields ${same ? 'oppose each other in the space between, and the stars are drawn together' : 'add in the space between, and the stars are pushed apart'}.`}>
-      <Body x={x} y={y1} r={22} tone="plain"/><Body x={x2} y={y2} r={22} tone="plain"/>
-      {speed > 0.05 && <>
-        <Still><Arrow x1={x - 28} y1={y1} x2={x - 28 - 70 * speed} y2={y1} tone="motion" w={2.6}/><T x={x - 110 - 70 * (speed - 1)} y={y1 - 10} tone="motion" italic>υ</T></Still>
-        <Still><Arrow x1={x2 + (same ? -28 : 28)} y1={y2} x2={x2 + (same ? -28 - 70 * speed : 28 + 70 * speed)} y2={y2} tone="motion" w={2.6}/></Still>
-        <Spin x={mid + 40} y={cy - 22} r={15} ccw sweep={230} w={1.8} steady/><Spin x={mid + 40} y={cy + 22} r={15} ccw={!same} sweep={230} w={1.8} steady/>
-        <BlockArrow x1={mid - 30} y1={y1 + 14} x2={mid - 30} y2={y1 + 14 + (same ? 1 : -1) * 34 * Math.min(1.4, speed * speed)} thick={9}/><BlockArrow x1={mid - 30} y1={y2 - 14} x2={mid - 30} y2={y2 - 14 - (same ? 1 : -1) * 34 * Math.min(1.4, speed * speed)} thick={9}/>
-        <T x={mid - 54} y={cy + 5} tone="text" italic>F</T>
-      </>}
-      <T x={W / 2} y={H - 14} size="sm">{same ? 'between the stars the two fields point opposite ways' : 'between the stars the two fields point the same way'}</T>
+    <Stage w={W} h={H} label={`Two stars moving ${same ? 'in the same direction' : 'in opposite directions'} side by side through a field of zeptons. Each zepton keeps its antimatter end toward the stars near it, so the moving stars turn the zeptons they pass, those between the stars turning opposite ways. The stars are ${same ? 'drawn together' : 'pushed apart'}.`}>
+      {STAR_ZEPTONS.map((z, n) => {
+        // The zeptons a star is turning stand out; those far from both are dimmed. Those under a star fade out.
+        const d = Math.min(...stars.map(st => Math.hypot(st.x - z.x, st.y - z.y))), pull = 1 / (1 + (d / STAR_REACH) ** 2);
+        return <Zepton key={n} x={z.x} y={z.y} angle={starZeptonAngle(z, stars)} len={11} polarity="matter" signs={false} opacity={clamp((d - 24) / 8) * (0.25 + 0.75 * pull)}/>;
+      })}
+      {between.map((z, n) => { const turn = starZeptonAngle(z, ahead) - starZeptonAngle(z, stars), sense = ((turn + 540) % 360) - 180; return Math.abs(sense) > 0.05 && <Spin key={n} x={z.x} y={z.y} r={12} ccw={sense > 0} sweep={220} w={1.6}/>; })}
+      {stars.map((st, n) => {
+        const dir = n === 0 || same ? -1 : 1, toward = (n === 0 ? 1 : -1) * (same ? 1 : -1), len = 34 * near;
+        return <g key={n}>
+          <Still><Arrow x1={st.x + dir * 28} y1={st.y} x2={st.x + dir * 90} y2={st.y} tone="motion" w={2.6}/><T x={st.x + dir * 100} y={st.y + 5} anchor={dir < 0 ? 'end' : 'start'} tone="motion" italic>υ</T></Still>
+          <Body x={st.x} y={st.y} r={22} tone="matter"/>
+          {len > 4 && <><BlockArrow x1={st.x} y1={st.y + toward * 24} x2={st.x} y2={st.y + toward * (24 + len)} thick={10}/><T x={st.x - 14} y={st.y + toward * (30 + len / 2) + 5} anchor="end" tone="text" italic>F</T></>}
+        </g>;
+      })}
     </Stage>}>
     <Choice label="The two stars move" value={same ? 'same' : 'opposite'} onChange={v => setSame(v === 'same')} options={[{ value: 'same', label: 'The same way' }, { value: 'opposite', label: 'Opposite ways' }]}/>
-    <Slider label="Their speed, υ" value={speed} min={0} max={1.5} step={0.05} onChange={setSpeed} show={v => `${fmt(v, 2)} ×`}/>
     <PlayBar play={play} label="the stars"/>
-    <Readout label="Force between them" value={speed < 0.05 ? 'none from motion' : `${fmt(Math.abs(force), 2)} × , ${same ? 'together' : 'apart'}`} tone="force"/>
-    <Readout label="Separation across their paths" value={`${Math.round(s.gap)} units`}/>
     <Remark>{same ? 'Like parallel conductors with currents in the same direction, the stars are attracted. This is what Fleming says forms the spiral arms.' : 'By the same analogy with conductors, opposite motion repels.'}</Remark>
   </Diagram>;
 }
@@ -428,8 +460,8 @@ const chapter: ChapterContent = {
       caption: 'Two stars moving in the same direction produce a mattermagnetic field that attracts them toward each other.',
       Diagram: ParallelStars,
       text: <p>The fast outer stars each make their own field, <Q>and because they are more or less moving parallel to one another, the mattermagnetic field produced by one is directed opposite to the magnetic field produced by the other in the space in between. The situation is analogous to having a pair of parallel conductors, with their current moving in the same direction. Like the parallel conductors, the stars are attracted to one another</Q>. <Q>It is this mutual attraction between the fast moving outer stars that causes the spiral arms to form</Q> (<Pg n={107}/>).</p>,
-      tryThis: ['Let the two stars run side by side: they close up as they go.', 'Raise their speed: the attraction grows as the square, since each star’s field and the force on the other both follow the speed.', 'Set the speed to zero: no attraction from motion.'],
-      notes: <p>Fleming describes only stars moving the same way. The opposite case is drawn by his own analogy with parallel conductors. The rate at which the stars close is a display choice.</p>,
+      tryThis: ['Watch the zeptons: they stay where they are, and turn as the stars pass, each keeping its antimatter end toward the stars near it.', 'Pause between the stars: the curled arrows show the zeptons there turning opposite ways, as in the printed figure.', 'Make them move opposite ways: they are pushed apart, most strongly as they pass.'],
+      notes: <p>Fleming describes only stars moving the same way. The opposite case is drawn by his own analogy with parallel conductors. That each zepton keeps its antimatter end toward the moving stars follows Figure 11-4. How fast the stars close is a display choice.</p>,
     },
   ],
 };
