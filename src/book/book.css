@@ -1651,3 +1651,20 @@ input {
     animation: none;
   }
 }
+
+/* A row of matter the reader pushes by dragging along it (Figure 10-2): sideways drags push, vertical swipes scroll. */
+.bk-push {
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.bk-push:active {
+  cursor: grabbing;
+}
+
+.bk-push:focus-visible {
+  outline: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}

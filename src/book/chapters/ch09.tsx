@@ -1,6 +1,6 @@
 // Chapter 9: Tops, Flywheels, and Gyroscopes (PDF pp. 81–85). Figures 9-1 and 9-2.
 import { Suspense, lazy, useCallback, useRef, useState } from 'react';
-import { Action, Arrow, BlockArrow, Choice, Diagram, FallbackOnError, canDraw3D, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, fmt, polar, rad, usePlayback } from '../kit';
+import { Action, Arrow, BlockArrow, Choice, Diagram, FallbackOnError, canDraw3D, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, polar, rad, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -111,14 +111,15 @@ function WallaceGyros() {
   // The detector is heavy and hangs on a knife edge: it settles toward the shift over a second or two.
   s.shift += (wallaceShift(poles, speed, s.over) - s.shift) * Math.min(1, dt * 0.8);
   const { wheel, over, shift } = s, rpm = Math.round(speed * 20000);
-  const side = Math.abs(shift) < 0.5 ? 'at its resting angle' : `${fmt(Math.abs(shift), 1)} arc minutes ${shift > 0 ? 'one way' : 'the other way'} from its resting angle`;
+  const side = Math.abs(shift) < 0.5 ? 'at its resting angle' : `${Math.abs(shift).toFixed(1)} arc minutes ${shift > 0 ? 'one way' : 'the other way'} from its resting angle`;
   const label = `Wallace's apparatus: two U-shaped brass members leave two gaps. In one, the generator's wheel spins at ${rpm.toLocaleString('en-GB')} rpm between its pole pieces${poles === 'turning' ? ' while the whole generator is turned over by a motor and belt' : `, held with its poles ${poles} with the detector's`}. In the other, the detector hangs on a knife edge; the light spot on the scale shows it ${side}.`;
   /** The flat drawing, face on as in the patent's FIG. 2: the fallback where 3D cannot be drawn (called, not mounted). */
   const flatRig = () => {
     const H = 360, gy = 170, gx = 230, dx = 420, lamp = [600, 250] as const, scaleX = 660;
-    const assembly = (x: number, angle: number, turned: number) => <g transform={`translate(${x} ${gy}) rotate(${angle})`}>
+    // A wheel seen edge on, its frame turned to `angle`; the mark across it foreshortens as the wheel spins (`spun`).
+    const assembly = (x: number, angle: number, spun: number) => <g transform={`translate(${x} ${gy}) rotate(${angle})`}>
       <rect x={-50} y={-6} width={100} height={12} rx={2} className="bk-body bk-body-plain"/>
-      <line x1={-40 * Math.cos(rad(turned))} y1={0} x2={40 * Math.cos(rad(turned))} y2={0} className="bk-s-mark" strokeWidth="3"/>
+      <line x1={-40 * Math.cos(rad(spun))} y1={0} x2={40 * Math.cos(rad(spun))} y2={0} className="bk-s-mark" strokeWidth="3"/>
       <rect x={-34} y={-22} width={68} height={12} className="bk-plate"/><rect x={-34} y={10} width={68} height={12} className="bk-plate"/>
       <rect x={-34} y={-22} width={68} height={4} className="bk-f-accent"/>
     </g>;
@@ -129,8 +130,8 @@ function WallaceGyros() {
     return <Stage w={W} h={H} label={label}>
       <rect x={110} y={gy - 140} width={420} height={40} className="bk-body bk-body-matter"/><rect x={110} y={gy + 100} width={420} height={40} className="bk-body bk-body-matter"/>
       {[gx, dx].map(x => <g key={x}><rect x={x - 45} y={gy - 100} width={90} height={42} className="bk-body bk-body-matter"/><rect x={x - 45} y={gy + 58} width={90} height={42} className="bk-body bk-body-matter"/></g>)}
-      {assembly(gx, -over, over)}
-      {assembly(dx, -45 + shift * TILT_SHOWN, 0)}
+      {assembly(gx, -over, wheel)}
+      {assembly(dx, -45 + shift * TILT_SHOWN, -wheel)}
       <line x1={lamp[0]} y1={lamp[1]} x2={mx} y2={my} className="bk-s-warn" strokeWidth="1.5"/><line x1={mx} y1={my} x2={scaleX} y2={sy} className="bk-s-warn" strokeWidth="1.5"/>
       <rect x={lamp[0] - 10} y={lamp[1] - 7} width={20} height={14} className="bk-plate"/>
       <line x1={scaleX} y1={gy - 140} x2={scaleX} y2={gy} className="bk-s-text" strokeWidth="3"/><circle cx={scaleX} cy={sy} r={5} className="bk-f-warn"/>
@@ -148,7 +149,7 @@ function WallaceGyros() {
     <Slider label="Speed of the wheels (compressed air)" value={speed} min={0} max={1} step={0.05} onChange={setSpeed} show={v => `${Math.round(v * 20000).toLocaleString('en-GB')} rpm`}/>
     <Choice label="The generator’s poles, to the detector’s" value={poles} onChange={setPoles} options={[{ value: 'aligned', label: 'Aligned' }, { value: 'opposed', label: 'Opposed' }, { value: 'turning', label: 'Turning' }]}/>
     <PlayBar play={play} label="the apparatus"/>
-    <Readout label="Detector, from its resting angle" value={Math.abs(shift) < 0.05 ? 'at rest' : `${fmt(shift, 1)} arc minutes`}/>
+    <Readout label="Detector, from its resting angle" value={Math.abs(shift) < 0.05 ? 'at rest' : `${shift.toFixed(1)} arc minutes`}/>
     <Remark>{poles === 'turning' ? 'Turned over, the generator’s poles change their orientation to the Earth, and the detector swings one way and the other with them.' : 'Wallace reversed the poles every 30 or 40 minutes and found the detector’s resting angle shifted by about 26 arc minutes between the two.'}</Remark>
   </Diagram>;
 }

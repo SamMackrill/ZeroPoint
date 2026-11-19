@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette } from '../../ui/palette';
-import { disposeAll, label, turnWithKeys } from './common';
+import { disposeAll, label, releaseControls, turnWithKeys } from './common';
 import { SPHERE_LINES, SPHERE_R_MAX, evenDirections, patchAngle } from './sphere-math';
 
 /** Where the patch sits: a direction facing the default view, so the reader sees it from the start. */
@@ -84,7 +84,7 @@ export default function SphereScene({ radius, onFail, onReady, description }: { 
 
       const controls = new OrbitControls(camera, renderer.domElement);
 
-      undo.push(() => controls.dispose());
+      undo.push(releaseControls(controls, renderer.domElement));
       undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page

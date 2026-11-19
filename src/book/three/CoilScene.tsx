@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette, scene as sceneColours } from '../../ui/palette';
 import { COIL_LENGTH, COIL_PITCH, COIL_RADIUS, COIL_TURNS, COIL_ZEPTONS, FIELD_BOX, SEEDS, coilField, coilFieldLine, linesForCurrent } from './coil-math';
-import { disposeAll, label, turnWithKeys } from './common';
+import { disposeAll, label, releaseControls, turnWithKeys } from './common';
 
 /** What the scene shows at a moment: the current (−1 to 1, sign for direction), the clock, and whether the front is cut away. */
 export interface CoilState { current: number; t: number; cutaway: boolean; zeptons: number }
@@ -118,7 +118,7 @@ export default function CoilScene({ state, onFail, description }: { state: CoilS
 
       const controls = new OrbitControls(camera, renderer.domElement);
 
-      undo.push(() => controls.dispose());
+      undo.push(releaseControls(controls, renderer.domElement));
       undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page

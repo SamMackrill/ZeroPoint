@@ -54,9 +54,9 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 8-6 | The field of a moving charge, and of moving matter | still | changed | Velocity slider removed: one speed, as printed; drag the point to see where the field is and which way |
 | 9-1 | Morgan’s flywheels: induction across an air gap | animated | changed | 3D, as in the photo: the discs face to face on one axis across the gap; turn arrows only when paused |
 | 9-2 | Wallace’s gyroscopes: the plane turned over | animated | changed | 3D after Wallace’s patent: brass mass circuit, generator turned over, detector on a knife edge read by a light beam |
-| 10-1 | The inertia of a current | animated | to review | |
-| 10-2 | The inertia of matter | animated | to review | |
-| 10-3 | Why a body at rest stays at rest | animated | to review | |
+| 10-1 | The inertia of a current | animated | fine | No change |
+| 10-2 | The inertia of matter | animated | changed | The reader pushes the matter: drag along it, or hold an arrow key; a force arrow shows the push; one fixed status line |
+| 10-3 | Why a body at rest stays at rest | animated | fine | No change |
 | 11-1 | The matter field of a body | animated | to review | |
 | 11-2 | Matter repels matter | animated | to review | |
 | 11-3 | Two kinds of zepton, and how they cancel | still | to review | |
@@ -297,3 +297,17 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** should be 3D as well. **From Wallace’s patent (US 3,626,605, which Fleming’s figure reproduces, FIGS. 2 and 6):** the old drawing showed a passive gyroscope induced to spin the opposite way, which is Fleming’s general summary, not Wallace’s apparatus. Asked the owner; chose the patent. Now 3D (`WallaceScene`): two U-shaped brass members with two gaps; the generator’s wheel between pole pieces, its assembly turned over by motor and belt; the detector hung on a knife edge, its tilt read by a lamp’s beam off a mirror onto a scale (magnified 24 times). Poles aligned, opposed, or turning; the shift is about 13 arc minutes either side, 26 between, as the patent reports. The notes record that Fleming calls 31 a pulley where the patent has bearings. Flat fallback redrawn to match.
 - **Owner:** looks great.
+
+### Fig. 10-1
+
+- **Owner:** fine as it is.
+
+### Fig. 10-2
+
+- **Owner:** the pushes are real pushes on the matter; better than text buttons, and dragging (or an arrow key) should push. **Done:** drag along the row of matter, forward to the right or back to the left, harder the further; or hold → or ← once it has the focus. A force arrow lies on the matter while it is pushed. Pushing starts the animation if paused.
+- **Owner:** the text jumped about, and the arrow keys did not work. **Fixed:** what is happening is one line, always in the same place at the top of the picture, and the remark no longer changes; a click on the row also gives it the keyboard focus.
+- **Owner:** great now.
+
+### Fig. 10-3
+
+- **Owner:** fine as it is.

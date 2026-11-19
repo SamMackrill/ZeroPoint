@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette, scene as sceneColours } from '../../ui/palette';
 import { FigureRunning } from '../kit/clock';
-import { disposeAll, label, turnWithKeys } from './common';
+import { disposeAll, label, releaseControls, turnWithKeys } from './common';
 
 /** What the scene shows at a moment. Angles in degrees. */
 export interface WallaceState {
@@ -30,19 +30,19 @@ const LAMP = new THREE.Vector3(2.15, 0.62, BEAM_Z), SCALE_X = 2.55, SCALE_AIM = 
 /** The wheel between its two pole pieces in a steel frame: the generator and the detector are built alike. The wheel turns about the group's y axis. */
 function wheelAssembly(metal: (c: string, r?: number) => THREE.Material, north: string) {
   const group = new THREE.Group(), wheel = new THREE.Group();
-  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.1, 64), metal(sceneColours.steel, 0.3));
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.1, 64), metal(sceneColours.steel, 0.3));
   // The turbine buckets cut in the rim, where the compressed air drives it, and a stripe so its turning shows.
-  const buckets = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.06, 64, 1, true), new THREE.MeshStandardMaterial({ color: palette.text4, roughness: 0.6, wireframe: true }));
-  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.105, 0.05), new THREE.MeshStandardMaterial({ color: palette.dataMark, roughness: 0.5 }));
-  stripe.position.x = 0.15;
+  const buckets = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.06, 64, 1, true), new THREE.MeshStandardMaterial({ color: palette.text4, roughness: 0.6, wireframe: true }));
+  const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.105, 0.05), new THREE.MeshStandardMaterial({ color: palette.dataMark, roughness: 0.5 }));
+  stripe.position.x = 0.13;
   wheel.add(disc, buckets, stripe);
   // The pole pieces face the wheel's two faces across a hair's gap; one is coloured so the assembly's orientation shows.
-  const pole = (y: number, colour: string) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.1, 40), metal(colour, 0.45)); m.position.y = y; return m; };
-  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.5, 0.3), metal(sceneColours.steel, 0.6)), frame2 = frame.clone();
-  frame.position.x = -0.36;
-  frame2.position.x = 0.36;
-  const bridge = (y: number) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.78, 0.04, 0.3), metal(sceneColours.steel, 0.6)); b.position.y = y; return b; };
-  group.add(wheel, pole(0.11, north), pole(-0.11, sceneColours.steel), frame, frame2, bridge(0.25), bridge(-0.25));
+  const pole = (y: number, colour: string) => { const m = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.1, 40), metal(colour, 0.45)); m.position.y = y; return m; };
+  const frame = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.44, 0.3), metal(sceneColours.steel, 0.6)), frame2 = frame.clone();
+  frame.position.x = -0.31;
+  frame2.position.x = 0.31;
+  const bridge = (y: number) => { const b = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.04, 0.3), metal(sceneColours.steel, 0.6)); b.position.y = y; return b; };
+  group.add(wheel, pole(0.11, north), pole(-0.11, sceneColours.steel), frame, frame2, bridge(0.22), bridge(-0.22));
   return { group, wheel };
 }
 
@@ -91,7 +91,7 @@ export default function WallaceScene({ state, onFail, description }: { state: Wa
       box(0.16, 2.2, 0.5, 1.82, 1.2, 0, steel);
       // The mass circuit: two U-shaped brass members, mirrored, whose arms meet across the two gaps.
       for (const s of [-1, 1]) {
-        const bar = GAP_Y + s * 0.95, arm = GAP_Y + s * 0.6;
+        const bar = GAP_Y + s * 0.95, arm = GAP_Y + s * 0.65; // the arms' faces 0.44 from the gap's centre: clear of the assemblies (0.42 at most) at any angle
         box(3.5, 0.3, 0.5, 0, bar, 0, brass);
         for (const x of [GEN_X, DET_X]) box(0.62, 0.42, 0.5, x, arm, 0, brass);
       }
@@ -161,7 +161,7 @@ export default function WallaceScene({ state, onFail, description }: { state: Wa
 
       const controls = new OrbitControls(camera, renderer.domElement);
 
-      undo.push(() => controls.dispose());
+      undo.push(releaseControls(controls, renderer.domElement));
       undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page
