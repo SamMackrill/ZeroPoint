@@ -74,11 +74,11 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 13-1 | Eddies where the two halves of the mass meet | animated | changed | Eddies drawn as turning loops of matter, inner against the body and outer with it; curled arrows only when paused |
 | 16-1 | A shell that shuts out a band of the vacuum | animated | changed | Fluctuations kept clear of the shell by their reach at full size and angle; the inner ones spread evenly |
 | 16-2 | A shape whose charges almost hold themselves | animated | fine | No change |
-| 17-1 | Push gravity: bodies that shade each other | animated | to review | |
-| 17-2 | The shadow, and the inverse square | still | to review | |
-| 17-3 | Electric dipoles side by side cancel | still | to review | |
-| 17-4 | Two zeptons of one kind cancel in both charges | still | to review | |
-| 17-5 | One of each kind cannot cancel both | still | to review | |
+| 17-1 | Push gravity: bodies that shade each other | animated | changed | Absorption slider removed (half, fixed); bodies drawn as the engraving's porous globes: lit upper left, pores spread over the sphere and foreshortened toward the limb |
+| 17-2 | The shadow, and the inverse square | still | changed | 3D: the cone from Star 1’s centre to Star 2’s edges meets Star 1 in the shadow, a cap; the view looks back over Star 2; the share-of-sky graph below |
+| 17-3 | Electric dipoles side by side cancel | still | changed | In 11-3’s style: each dipole an hourglass dumbbell, named, with a gap between; shared with 17-4 and 17-5 |
+| 17-4 | Two zeptons of one kind cancel in both charges | still | fine | 17-3’s dumbbell drawing (shared) |
+| 17-5 | One of each kind cannot cancel both | still | fine | 17-3’s dumbbell drawing (shared) |
 | 18-1 | Matter repulsion spreads through a wide region | animated | to review | |
 | 18-2 | Gravity’s path: a very long, very narrow cone | still | to review | |
 | 19-1 | A force that arrives late | animated | to review | |
@@ -397,3 +397,20 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** the fluctuations should not clip into the shell. **Done:** each ellipse is placed by how far it reaches toward or away from the centre at its fullest, given the angle it lies at, so it stays a small gap clear of the shell, inside or out (the large outer ones could reach across it). The inner ones are a little shorter and spread evenly over the inner disc.
 - **Owner:** good.
+
+### Fig. 17-1
+
+- **Owner:** the first slider serves little purpose. **Done:** each body stops half of what strikes it; the note says that with entirely elastic interactions there would be no shadow and no push.
+- **Owner:** match the original's spherical bodies; it is a nice aesthetic to honour. **Done** (`Globe`): lit from the upper left with a dark limb to the lower right, and pores. Then, after three rounds: the pores should be even and spiral-like (a sunflower spiral looked flat and odd); they should sit on the sphere and fade round it as in the engraving (now a Fibonacci lattice over the sphere, seen from in front, fading with the lighting); no contour lines; and the pores near the limb were distorting oddly, as they were squashed across the wrong axis (now flattened along the radius, with a floor).
+- **Owner:** great, good now.
+
+### Fig. 17-2
+
+- **Owner:** better in 3D, as the shadow is a projection onto a sphere. **Done** (`ShadowScene`, with the flat drawing as the fallback): two plain stars, a faint cone from Star 1's centre to Star 2's edges with four lines along it, and the shadow as a cap on Star 1 where the cone meets it. The view looks back at Star 1 over Star 2's shoulder, so the cap faces the reader, and follows Star 2 as it is moved. The share-of-sky graph is a panel beneath, as in 6-4.
+- **Owner:** "the shadow" label is not needed, and it clips Star 1. **Removed.**
+- **Owner:** good.
+
+### Fig. 17-3
+
+- **Owner:** should be closer in style to 11-3. **Done:** `DipolePair` (17-3 to 17-5) draws each dipole as 11-3's hourglass dumbbell, named above, with a gap between the two, each letter kept with its sign; the dumbbell drawing (`dumbbell`, `ZEPTON_PAIR`) moved to `shared.tsx` for both chapters.
+- **Owner:** fine.

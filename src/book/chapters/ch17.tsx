@@ -1,20 +1,58 @@
 // Chapter 17: Gravity (PDF pp. 129–136). Figures 17-1 to 17-5.
-import { useMemo, useState } from 'react';
-import { Arrow, BlockArrow, Body, Choice, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, clamp, deg, fmt, pathThrough, rng, usePlayback } from '../kit';
+import { Suspense, lazy, useCallback, useId, useMemo, useState } from 'react';
+import { Arrow, BlockArrow, Body, Choice, Diagram, FallbackOnError, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, canDraw3D, clamp, deg, fmt, pathThrough, rng, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
+import { ZEPTON_PAIR, dumbbell } from './shared';
 
 const W = 720;
 
 /** The net push on each of two bodies that shadow each other: it needs some inelasticity, and falls as the inverse square. */
 export const shadowPush = (absorbed: number, distance: number) => absorbed / (distance * distance);
 
+/**
+ * The pores of a globe in Figure 17-1, as in the engraving: spread evenly over the sphere (a Fibonacci lattice) and seen
+ * from in front, so those near the limb are foreshortened, squashed along the radius and closer together, and fade into
+ * its shade. Positions are in units of the radius; `turn` lays each pore's x axis, the one squashed, along its radius.
+ */
+const GLOBE_PORES = Array.from({ length: 110 }, (_, k) => {
+  const z = 1 - (k + 0.5) / 55, ring = Math.sqrt(Math.max(0, 1 - z * z)), a = k * 2.39996;
+  return { x: 0.96 * ring * Math.cos(a), y: 0.96 * ring * Math.sin(a), z };
+}).filter(p => p.z > 0.12).map(p => {
+  // Lit from the upper left, as the globe's shading is: pores on the shaded side fade into it.
+  const light = Math.max(0, (-0.5 * p.x - 0.42 * p.y + 0.76 * p.z) / Math.hypot(0.5, 0.42, 0.76));
+  return { ...p, turn: (Math.atan2(p.y, p.x) * 180) / Math.PI, fade: 0.95 * Math.min(1, 0.25 + light) * Math.min(1, p.z * 2.5) };
+});
+
+/**
+ * A body drawn as the engraving in Figure 17-1 draws it: a globe lit from the upper left, with a dark limb to the lower
+ * right, and pores, because Fatio's bodies let most of the corpuscles through.
+ */
+function Globe({ x, y, r }: { x: number; y: number; r: number }) {
+  const id = useId(), shade = `${id}-shade`, clip = `${id}-clip`;
+  const pores = GLOBE_PORES;
+  return <g>
+    <defs>
+      <radialGradient id={shade} cx="38%" cy="40%" r="68%" fx="34%" fy="36%">
+        <stop offset="0%" style={{ stopColor: 'var(--text-2)' }}/><stop offset="45%" style={{ stopColor: 'var(--text-4)' }}/><stop offset="80%" style={{ stopColor: 'var(--bg-3)' }}/><stop offset="100%" style={{ stopColor: 'var(--bg-0)' }}/>
+      </radialGradient>
+      <clipPath id={clip}><circle cx={x} cy={y} r={r}/></clipPath>
+    </defs>
+    <circle cx={x} cy={y} r={r} fill={`url(#${shade})`}/>
+    <g clipPath={`url(#${clip})`}>
+      {pores.map((p, i) => <ellipse key={i} cx={x + p.x * r} cy={y + p.y * r} rx={0.058 * r * Math.max(0.3, p.z)} ry={0.058 * r} transform={`rotate(${p.turn} ${x + p.x * r} ${y + p.y * r})`} className="bk-fill-panel" opacity={p.fade}/>)}
+    </g>
+    <circle cx={x} cy={y} r={r} fill="none" className="bk-s-text" strokeWidth="1.5"/>
+  </g>;
+}
+
 /** Figure 17-1: Fatio's corpuscles pushing on two bodies that shade each other. */
 function PushGravity() {
-  const [absorbed, setAbsorbed] = useState(0.5);
+  // Each body stops half of what strikes it: a display choice.
+  const absorbed = 0.5;
   const [gap, setGap] = useState(260);
   const play = usePlayback();
-  const H = 340, y = 170, xa = W / 2 - gap / 2, xb = W / 2 + gap / 2, R = 44, push = shadowPush(absorbed, gap / 260);
+  const H = 340, y = 170, xa = W / 2 - gap / 2, xb = W / 2 + gap / 2, R = 72, push = shadowPush(absorbed, gap / 260);
   const streams = useMemo(() => { const random = rng(171); return Array.from({ length: 13 }, (_, i) => ({ y: 26 + i * 24, phase: random(), dir: (i % 2 ? 1 : -1) as 1 | -1 })); }, []);
   return <Diagram stage={
     <Stage w={W} h={H} label={`Two bodies in a stream of corpuscles coming from every side, here drawn from left and right. Each body stops ${Math.round(absorbed * 100)} per cent of what strikes it, so fewer corpuscles reach the facing sides and the bodies are pushed together with a net push of ${fmt(push, 2)}.`}>
@@ -28,39 +66,59 @@ function PushGravity() {
           return inside ? null : <g key={`${i}-${k}`} opacity={(1 - absorbed) ** passed * 0.9 + 0.05}><circle cx={x} cy={s.y} r={3} className="bk-f-mark"/><line x1={x} y1={s.y} x2={x - s.dir * 12} y2={s.y} className="bk-s-mark" strokeWidth="1.2"/></g>;
         });
       })}
-      <Body x={xa} y={y} r={R} tone="plain"/><Body x={xb} y={y} r={R} tone="plain"/>
+      <Globe x={xa} y={y} r={R}/><Globe x={xb} y={y} r={R}/>
       {push > 0.01 && <><BlockArrow x1={xa - R - 60 * clamp(push)} y1={y} x2={xa - R - 2} y2={y} thick={12}/><BlockArrow x1={xb + R + 60 * clamp(push)} y1={y} x2={xb + R + 2} y2={y} thick={12}/></>}
-      <T x={W / 2} y={y + R + 30} size="sm" tone={absorbed > 0.02 ? 'mark' : 'muted'}>{absorbed > 0.02 ? 'between the bodies: fewer corpuscles, less push' : 'nothing is stopped: no shadow'}</T>
+      <T x={W / 2} y={y + R + 30} size="sm" tone="mark">between the bodies: fewer corpuscles, less push</T>
     </Stage>}>
-    <Slider label="Share of the push each body takes up" value={absorbed} min={0} max={0.9} step={0.05} onChange={setAbsorbed} show={v => (v === 0 ? 'none (entirely elastic)' : `${Math.round(v * 100)} %`)}/>
-    <Slider label="Distance between the bodies" value={gap} min={130} max={420} step={10} onChange={setGap} show={v => `${fmt(v / 260, 2)} ×`}/>
+    <Slider label="Distance between the bodies" value={gap} min={190} max={440} step={10} onChange={setGap} show={v => `${fmt(v / 260, 2)} ×`}/>
     <PlayBar play={play} label="the corpuscles"/>
     <Readout label="Net push together" value={push < 0.005 ? 'none' : fmt(push, 3)} tone="force"/>
-    <Remark>{absorbed === 0 ? 'If the interactions are entirely elastic the theory does not work: no shadowing occurs.' : 'Each body shadows the other from the pressure coming from behind it, so more pushes them together than apart.'}</Remark>
+    <Remark>Each body shadows the other from the pressure coming from behind it, so more pushes them together than apart.</Remark>
   </Diagram>;
 }
 
 /** The fraction of a body's whole sky that a sphere of radius R at distance d covers. */
 export const skyFraction = (R: number, d: number) => (1 - Math.sqrt(Math.max(0, 1 - (R / d) ** 2))) / 2;
 
-/** Figure 17-2: the shadow one star casts on another, and how it shrinks with distance. */
+/** Figure 17-2 drawn in three dimensions: loaded on demand, since three.js is large. */
+const ShadowScene = lazy(() => import('../three/ShadowScene'));
+
+/** Figure 17-2 as the printed page has it, flat: the two lines from Star 2's edges to Star 1's centre. The fallback where 3D cannot be drawn. */
+function FlatShadow({ d, size, label }: { d: number; size: number; label: string }) {
+  const H = 260, y = 130, x1 = 110, r1 = 44, x2 = 325 + ((d - 2.5) / 7.5) * 300, r2 = 30 * size, half = deg(Math.asin(clamp(size / d)));
+  return <Stage w={W} h={H} label={label}>
+    <Line d={`M${x2} ${y - r2} L${x1} ${y} L${x2} ${y + r2}`} tone="mark" w={1.4}/>
+    <Body x={x1} y={y} r={r1} tone="plain" label="Star 1"/>
+    {/* The distance range maps onto the stage, with room for the largest Star 2; the drawing is not to scale. */}
+    <Body x={x2} y={y} r={r2} tone="plain" label="Star 2"/>
+    <circle cx={x1 + r1} cy={y} r={Math.max(2.5, r1 * Math.sin((half * Math.PI) / 180))} className="bk-f-mark" opacity={0.9}/>
+    <Arrow x1={x1 + r1 + 46} y1={y - 64} x2={x1 + r1 + 6} y2={y - 8} tone="muted" w={1.2} head={7}/><T x={x1 + r1 + 50} y={y - 70} anchor="start" size="sm">the “shadow” on the star’s surface</T>
+  </Stage>;
+}
+
+/** Figure 17-2: the shadow one star casts on another, a cap on its surface, and how it shrinks with distance. */
 function Shadow() {
   const [d, setD] = useState(6);
   const [size, setSize] = useState(1);
-  const H = 320, y = 150, x1 = 110, r1 = 44, x2 = 325 + ((d - 2.5) / 7.5) * 300, r2 = 30 * size, share = skyFraction(size, d), half = deg(Math.asin(clamp(size / d)));
-  const px = 420, pw = 260, py = 230, ph = 70, curve = pathThrough(Array.from({ length: 50 }, (_, i) => { const dd = 2.5 + (i / 49) * 7.5; return [px + ((dd - 2.5) / 7.5) * pw, py + ph - (skyFraction(size, dd) / skyFraction(size, 2.5)) * ph] as const; }));
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`Star 2, ${fmt(d, 2)} of its radii away from Star 1, covers ${fmt(share * 100, 2)} per cent of Star 1's sky. The lines from its edges to the centre of Star 1 mark the shadow on Star 1's surface.`}>
-      <Line d={`M${x2} ${y - r2} L${x1} ${y} L${x2} ${y + r2}`} tone="mark" w={1.4}/>
-      <Body x={x1} y={y} r={r1} tone="plain" label="Star 1"/>
-      {/* The distance range maps onto the stage, with room for the largest Star 2; the drawing is not to scale. */}
-      <Body x={x2} y={y} r={r2} tone="plain" label="Star 2"/>
-      <circle cx={x1 + r1} cy={y} r={Math.max(2.5, r1 * Math.sin((half * Math.PI) / 180))} className="bk-f-mark" opacity={0.9}/>
-      <Arrow x1={x1 + r1 + 46} y1={y - 64} x2={x1 + r1 + 6} y2={y - 8} tone="muted" w={1.2} head={7}/><T x={x1 + r1 + 50} y={y - 70} anchor="start" size="sm">the “shadow” on the star’s surface</T>
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const fail = useCallback(() => setFlat(true), []);
+  const share = skyFraction(size, d), half = deg(Math.asin(clamp(size / d)));
+  const px = 90, pw = 540, py = 30, ph = 100, curve = pathThrough(Array.from({ length: 50 }, (_, i) => { const dd = 2.5 + (i / 49) * 7.5; return [px + ((dd - 2.5) / 7.5) * pw, py + ph - (skyFraction(size, dd) / skyFraction(size, 2.5)) * ph] as const; }));
+  const label = `Star 2, ${fmt(d, 2)} of its radii away from Star 1, covers ${fmt(share * 100, 2)} per cent of Star 1's sky. The lines from its edges to the centre of Star 1 mark the shadow on Star 1's surface.`;
+  return <Diagram stage={<>
+    {flat
+      ? <FlatShadow d={d} size={size} label={label}/>
+      : <FallbackOnError onError={fail} fallback={<FlatShadow d={d} size={size} label={label}/>}>
+          <Suspense fallback={<FlatShadow d={d} size={size} label={label}/>}>
+            <ShadowScene distance={d} size={size} onFail={fail} description={`${label} The cone from Star 1's centre to Star 2's edges meets Star 1's surface in the shadow, a cap facing Star 2. Drag to turn the view.`}/>
+          </Suspense>
+        </FallbackOnError>}
+    <Stage w={W} h={160} label={`The share of Star 1's sky that Star 2 covers, against distance: it falls as the inverse square. Now ${fmt(share * 100, 2)} per cent.`}>
       <line x1={px} y1={py + ph} x2={px + pw} y2={py + ph} className="bk-s-muted"/><Line d={curve} tone="mark" w={2}/>
       <circle cx={px + ((d - 2.5) / 7.5) * pw} cy={py + ph - (share / skyFraction(size, 2.5)) * ph} r={5} className="bk-f-accent"/>
-      <T x={px + pw / 2} y={py + ph + 18} size="sm">distance</T><T x={px + pw / 2} y={py - 8} size="sm" tone="mark">share of the sky covered</T>
-    </Stage>}>
+      <T x={px + pw / 2} y={py + ph + 20} size="sm">distance</T><T x={px + pw / 2} y={py - 10} size="sm" tone="mark">share of the sky covered</T>
+    </Stage>
+  </>}>
     <Slider label="Distance of Star 2" value={d} min={2.5} max={10} step={0.1} onChange={setD} show={v => `${fmt(v, 2)} radii`}/>
     <Slider label="Size of Star 2" value={size} min={0.5} max={1.5} step={0.05} onChange={setSize} show={v => `${fmt(v, 2)} ×`}/>
     <Readout label="Half-angle of the shadow" value={`${fmt(half, 3)}°`}/>
@@ -88,22 +146,28 @@ export function sideBySide(left: Kind, right: Kind, rightFlipped: boolean) {
 /** Figures 17-3 to 17-5: two dipoles side by side, and whether anything is left to act at a distance. */
 function DipolePair({ left, right, flipped: initial }: { left: Kind; right: Kind; flipped: boolean }) {
   const [flipped, setFlipped] = useState(initial);
-  const result = sideBySide(left, right, flipped), H = 360, cx = 200, cy = 170;
-  const a = topOf(left, false), b = topOf(right, flipped);
-  const lobe = (dx: number, top: boolean, end: { electric: 1 | -1; matter: 1 | -1 | 0 }) => {
-    const y = cy + (top ? -54 : 54), e = (top ? end.electric : -end.electric) as 1 | -1, m = top ? end.matter : -end.matter;
-    return <g key={`${dx}${top}`}><ellipse cx={cx + dx} cy={y} rx={46} ry={52} className="bk-zepton-oval" strokeWidth="2.5"/>
-      {m !== 0 && <text x={cx + dx - 13} y={y + 6} textAnchor="middle" className={`bk-t bk-t-lg ${m > 0 ? 'bk-f-matter' : 'bk-f-anti'}`}>{m > 0 ? 'm' : 'a'}</text>}
-      <text x={cx + dx + (m !== 0 ? 16 : 0)} y={y + 6} textAnchor="middle" className={`bk-t bk-t-lg ${e > 0 ? 'bk-f-pos' : 'bk-f-neg'}`}>{e > 0 ? '+' : '−'}</text></g>;
-  };
   const name = (k: Kind) => (k === 'electric' ? 'dipole' : `${k}-like`);
+  const { ZD, ZH, ZX } = ZEPTON_PAIR, result = sideBySide(left, right, flipped), H = 360, cx = 200, cy = 175;
+  const a = topOf(left, false), b = topOf(right, flipped);
+  /** One end of a dipole: its matter letter (if it has matter charge) and electric sign together, as Fleming writes "m−". */
+  const end = (dx: number, top: boolean, at: { electric: 1 | -1; matter: 1 | -1 | 0 }) => {
+    const y = cy + (top ? -ZD : ZD), e = (top ? at.electric : -at.electric) as 1 | -1, m = top ? at.matter : -at.matter;
+    return <g key={`${dx}${top}`}>
+      {m !== 0 && <text x={cx + dx - 12} y={y + 7} textAnchor="middle" className={`bk-t bk-t-lg ${m > 0 ? 'bk-f-matter' : 'bk-f-anti'}`}>{m > 0 ? 'm' : 'a'}</text>}
+      <text x={cx + dx + (m !== 0 ? 12 : 0)} y={y + 7} textAnchor="middle" className={`bk-t bk-t-lg ${e > 0 ? 'bk-f-pos' : 'bk-f-neg'}`}>{e > 0 ? '+' : '−'}</text></g>;
+  };
+  /** A whole dipole, drawn as the dumbbell of Figure 11-3, named above. */
+  const dipole = (dx: number, at: { electric: 1 | -1; matter: 1 | -1 | 0 }, kind: Kind) => <g>
+    <path d={dumbbell(cx + dx, cy)} className="bk-zepton-oval" strokeWidth="2.5"/>
+    {end(dx, true, at)}{end(dx, false, at)}
+    <T x={cx + dx} y={cy - ZH / 2 - 14} size="sm" tone="text">{name(kind)}</T>
+  </g>;
   // The force between such pairs against distance: an ordinary van der Waals force dies away steeply; a Coulomb one does not.
   const px = 420, pw = 260, py = 70, ph = 190, curve = (power: number) => pathThrough(Array.from({ length: 40 }, (_, i) => { const r = 1 + (i / 39) * 4; return [px + ((r - 1) / 4) * pw, py + ph - ph / r ** power] as const; }));
   return <Diagram stage={
     <Stage w={W} h={H} label={`A ${name(left)} and a ${name(right)} side by side. Their electric charges ${result.electric}${result.matter === 'none' ? '' : ` and their matter charges ${result.matter}`}. ${result.longRange ? 'A Coulomb repulsion is left, which falls only as the inverse square of the distance.' : 'Everything cancels, leaving only a short-ranged force.'}`}>
-      {lobe(-48, true, a)}{lobe(-48, false, a)}{lobe(48, true, b)}{lobe(48, false, b)}
-      <T x={cx - 48} y={H - 40} size="sm">{name(left)}</T><T x={cx + 48} y={H - 40} size="sm">{name(right)}</T>
-      {result.longRange && <><Arrow x1={cx - 100} y1={cy} x2={cx - 150} y2={cy} tone="force" w={3}/><Arrow x1={cx + 100} y1={cy} x2={cx + 150} y2={cy} tone="force" w={3}/></>}
+      {dipole(-ZX, a, left)}{dipole(ZX, b, right)}
+      {result.longRange && <><Arrow x1={cx - ZX - 50} y1={cy} x2={cx - ZX - 100} y2={cy} tone="force" w={3}/><Arrow x1={cx + ZX + 50} y1={cy} x2={cx + ZX + 100} y2={cy} tone="force" w={3}/></>}
       <line x1={px} y1={py + ph} x2={px + pw} y2={py + ph} className="bk-s-muted"/><line x1={px} y1={py} x2={px} y2={py + ph} className="bk-s-muted"/>
       <Line d={curve(7)} tone={result.longRange ? 'faint' : 'danger'} w={result.longRange ? 1.4 : 2.6}/><Line d={curve(2)} tone={result.longRange ? 'accent' : 'faint'} w={result.longRange ? 2.6 : 1.4}/>
       <T x={px + 62} y={py + ph - 14} anchor="start" size="sm" tone={result.longRange ? 'muted' : 'danger'}>ordinary van der Waals: 1/r³ to 1/r⁷</T>
@@ -133,8 +197,8 @@ const chapter: ChapterContent = {
         <p><Q>Fatio’s idea was that space is filled with corpuscles, and that as these corpuscles move through space, they randomly strike astronomical bodies, pushing them. If we then consider two bodies, the first body shadows the second body from the corpuscular pressure force coming from behind the first body, and in this way there is more force pushing the bodies together than pushing them apart</Q> (<Pg n={129}/>).</p>
         <p>The interaction must be partly inelastic: <Q>No shadowing effect occurs if the interaction is completely elastic</Q>. And for the force to follow mass and not surface, matter must be almost entirely porous, which Fatio argued and which zeptons satisfy: they <Q>can be many orders of magnitude smaller than even the smallest fundamental particle, making matter, for all intents, infinitely porous</Q> (<Pg n={130}/>, <Pg n={131}/>).</p>
       </>,
-      tryThis: ['Follow a stream that passes through a body: it comes out fainter, and reaches the second body fainter still.', 'Set the share taken up to none: every stream is as strong on both sides, and there is no net push.', 'Move the bodies apart: the push falls with the square of the distance.'],
-      notes: <p>The corpuscles are drawn travelling in two directions only; in the theory they come from every direction. The share each body takes up, and its effect on the streams, are display choices. With zeptons in place of corpuscles the interaction is not a collision at all; that is the subject of Figures 17-3 to 17-5.</p>,
+      tryThis: ['Follow a stream that passes through a body: it comes out fainter, and reaches the second body fainter still.', 'Move the bodies apart: the push falls with the square of the distance.'],
+      notes: <p>The corpuscles are drawn travelling in two directions only; in the theory they come from every direction. Each body is drawn stopping half of what strikes it; that share, and its effect on the streams, are display choices. Were the interactions entirely elastic nothing would be stopped, there would be no shadow, and no push. With zeptons in place of corpuscles the interaction is not a collision at all; that is the subject of Figures 17-3 to 17-5.</p>,
       labs: [{ lab: 'vdw', scenario: 'pressure', why: 'The Casimir plates of chapter 3, which Fleming says solved the heat and drag objections to this picture.' }],
     },
     {
@@ -143,7 +207,7 @@ const chapter: ChapterContent = {
       Diagram: Shadow,
       text: <p><Q>In principle, the push theory could describe the 1/r<sup>2</sup> varying force required</Q> (<Pg n={130}/>). The figure shows why: the part of one star’s surroundings that the other blocks is a cone, and the cone narrows as the stars separate. Chapter 18 opens with Feynman’s statement of it: <Q>The sun will appear smaller – in fact inversely as the square of the distance</Q> (<Pg n={137}/>).</p>,
       tryThis: ['Move Star 2 away: the lines to Star 1’s centre close up and the shadow on its surface shrinks.', 'Double the distance and compare the share of sky covered: about a quarter.', 'Make Star 2 larger: a larger shadow at the same distance.'],
-      notes: <p>The share of the sky is the exact solid angle of a sphere seen from a point. Distances are in units of Star 2’s radius, far closer than real stars, so the cone can be seen.</p>,
+      notes: <p>The printed figure is flat; here it is drawn in three dimensions, so the shadow shows as what it is, a cap on Star 1’s surface where the cone to Star 2 meets it. The share of the sky is the exact solid angle of a sphere seen from a point. Distances are in units of Star 2’s radius, far closer than real stars, so the cone can be seen.</p>,
     },
     {
       kind: 'figure', id: '17-3', page: 133, section: 'The Van der Waals Force', title: 'Electric dipoles side by side cancel',
