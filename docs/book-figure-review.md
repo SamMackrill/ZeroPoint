@@ -101,7 +101,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 |---|---|---|---|---|
 | x0-1 | The route of the book | still | fine | No change |
 | x1-1 | Twelve principles, and where they are used | still | fine | No change |
-| x1-2 | Everything moves because it is pushed | animated | to review | |
+| x1-2 | Everything moves because it is pushed | animated | fine | No change |
 | x2-1 | A drop in the ocean | still | to review | |
 | x2-2 | More energy, less time | animated | to review | |
 | x2-3 | Where the energy is | still | to review | |
