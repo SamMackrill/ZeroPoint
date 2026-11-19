@@ -69,13 +69,27 @@ function LightBending() {
   const [both, setBoth] = useState(true);
   const H = 400, cx = 330, cy = 210, full = bendingAngle(GM_SUN, radii * R_SUN), angle = both ? full : full / 2;
   // The bend is far too small to draw: it is magnified so that 1.75 arcseconds shows as about 16 degrees.
-  const shown = (angle / 1.75) * 16, off = 26 + radii * 9, x = cx + off, t = Math.tan((shown * Math.PI) / 180);
+  const shown = (angle / 1.75) * 16, off = 26 + radii * 9, x = cx + off, top = 30, yEarth = H - 34;
+  // The ray turns gradually as it passes: the share of the bend made by the time it is level with a point s along its
+  // path is (1 + s/√(s² + b²))/2, so it turns most beside the Sun and runs nearly straight far from it. Traced back
+  // from Earth, where it arrives heading straight down, to the star.
+  const ray = useMemo(() => {
+    const pts: [number, number][] = [[x, yEarth]], n = 200, dy = (yEarth - top) / n;
+    let px = x;
+    for (let i = 1; i <= n; i++) {
+      const yy = yEarth - i * dy, s = yy + dy / 2 - cy, made = (1 + s / Math.hypot(s, off)) / 2, phi = ((shown * (1 - made)) * Math.PI) / 180;
+      px -= Math.tan(phi) * dy;
+      pts.push([px, yy]);
+    }
+    return pts.reverse();
+  }, [x, yEarth, cy, off, shown]);
+  const [sx] = ray[0];
   return <Diagram stage={
     <Stage w={W} h={H} label={`A ray of light from a distant star passing the Sun at ${fmt(radii, 2)} solar radii and reaching Earth. It is bent by ${fmt(angle, 3)} arcseconds, so the star appears displaced from where it is.`}>
-      <Line d={`M${x - t * 170} 30 L${x} ${cy} L${x} ${H - 40}`} tone="e" w={2}/>
-      <line x1={x} y1={cy} x2={x} y2={30} className="bk-s-mark" strokeDasharray="4 4"/>
+      <Line d={pathThrough(ray)} tone="e" w={2}/>
+      <line x1={x} y1={cy} x2={x} y2={top} className="bk-s-mark" strokeDasharray="4 4"/>
       <Body x={cx} y={cy} r={22} tone="matter" label="Sun"/><Body x={x} y={H - 34} r={8} tone="plain"/><T x={x + 16} y={H - 30} anchor="start" size="sm">Earth</T>
-      <circle cx={x - t * 170} cy={26} r={5} className="bk-f-e"/><T x={x - t * 170 - 10} y={24} anchor="end" size="sm" tone="e">the star</T>
+      <circle cx={sx} cy={26} r={5} className="bk-f-e"/><T x={sx - 10} y={24} anchor="end" size="sm" tone="e">the star</T>
       <circle cx={x} cy={26} r={5} className="bk-s-mark" fill="none" strokeWidth="1.5"/><T x={x + 10} y={24} anchor="start" size="sm" tone="mark">where it appears</T>
       <T x={560} y={170} size="sm">bend, magnified</T><T x={560} y={196} tone="text" size="lg">{fmt(angle, 3)}″</T>
     </Stage>}>

@@ -90,7 +90,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 22-2 | A shorter wavelength, not a shorter space | animated | changed | A moves through each period while both lights are emitted, ending one λ′ and one λ₀; a draggable marker for where A is after a period |
 | 22-3 | Round a rotating body, both ways | animated | fine | No change |
 | 23-1 | A signal that comes back late | animated | changed | The radar signal visibly slows near the Sun (exaggerated, following the band); Mercury only, at its proportional distance |
-| 23-2 | Starlight turned by the Sun | still | to review | |
+| 23-2 | Starlight turned by the Sun | still | changed | The ray drawn as a smooth curve, turning most beside the Sun |
 | 25-1 | Two shells, a diameter apart | still | to review | |
 | 25-2 | The shadow and the openings | still | to review | |
 | 26-1 | Half a pair on each side of a boundary | animated | to review | |
@@ -463,3 +463,8 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** the moving dot is the radar signal; it should visibly slow nearer the Sun, for illustration, not to scale. **Done:** its speed follows the shape of the slowing band above it, down to about a quarter at closest approach, and its position comes from the time taken along the path; the note says it is exaggerated.
 - **Owner:** no need for the Mars choice. **Removed:** Mercury only, as printed. Then: put Mercury closer to the Sun. **Done:** at 0.39 of the Earth's distance, its proportion.
 - **Owner:** good now.
+
+### Fig. 23-2
+
+- **Owner:** the light bending near the Sun will be a curve, not an inflection. **Done:** the ray is traced back from Earth, turning by the share (1 + s/√(s² + b²))/2 of the bend as it goes, so it turns most beside the Sun and runs nearly straight far from it.
+- **Owner:** good.
