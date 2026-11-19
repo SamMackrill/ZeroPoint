@@ -65,7 +65,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 11-6 | A rotating pair with no electromagnetic field | animated | changed | 11-3’s hourglass zeptons; each letter and its sign (m−, a+) stay together, upright, as the pair turns |
 | 12-1 | Newtonian gravity as a difference | still | changed | Three double-headed arrowed bars on one scale in the printed order, named on the bars; Newtonian Gravity thickest; bodies m₁, m₂ and r marked; sliders removed |
 | 12-2 | A rotating sun pushes its planet inward | animated | changed | Real rotation: the Sun turns with a dark cross and its zeptons turn against it, curled arrows only when paused; the printed, balanced case only |
-| 12-3 | A planet’s own rotational field | animated | to review | |
+| 12-3 | A planet’s own rotational field | animated | fine | 12-2’s turning body and zeptons (shared); B_m subscripted |
 | 12-4 | Why orbiting bodies stop turning | animated | to review | |
 | 12-5 | An ellipse that will not stay put | animated | to review | |
 | 12-6 | The force that turns the ellipse | animated | to review | |

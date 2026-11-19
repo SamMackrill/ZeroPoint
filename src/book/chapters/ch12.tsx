@@ -99,7 +99,7 @@ function PlanetSpinField() {
       <CounterField x={cx} y={cy} inner={104} rings={2} sense={omega} turned={turned} count={10}/>
       <Body x={cx} y={cy} r={72} tone="matter"/><BodyCross x={cx} y={cy} r={72} turned={turned}/>
       {Math.abs(omega) > 0.05 && <Spin x={cx} y={cy} r={28} ccw={omega > 0} sweep={270} tone="text" w={3}/>}<T x={cx + 40} y={cy - 30} tone="text" italic>ω</T>
-      {Math.abs(omega) > 0.05 && <><InOut x={590} y={90} out={omega < 0} r={12}/><T x={612} y={96} anchor="start" tone="b" size="lg">B m</T></>}
+      {Math.abs(omega) > 0.05 && <><InOut x={590} y={90} out={omega < 0} r={12}/><T x={612} y={96} anchor="start" tone="b" size="lg" italic>B<tspan dy={4} fontSize="0.75em">m</tspan></T></>}
     </Stage>}>
     <Slider label="Rotation of the body, ω" value={omega} min={-1} max={1} step={0.05} onChange={setOmega} show={v => (Math.abs(v) < 0.05 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'counter-clockwise' : 'clockwise'}`)}/>
     <PlayBar play={play} label="the rotation"/>
