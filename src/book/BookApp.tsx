@@ -55,8 +55,8 @@ function PageLinks({ page, className, onNavigate }: { page: BookRoute['page']; c
   </nav>;
 }
 
-/** The book's contents as navigation: every chapter, with its figure count. */
-function ChapterNav({ current, onNavigate }: { current?: number; onNavigate?(): void }) {
+/** The book's contents as navigation: every chapter, with its figure count, then the back matter, References and Index (also in the page links). */
+function ChapterNav({ current, page, onNavigate }: { current?: number; page: BookRoute['page']; onNavigate?(): void }) {
   return <nav className="bk-nav" aria-label="Chapters">
     <ol>
       {CHAPTERS.map(c => <li key={c.n}>
@@ -64,6 +64,12 @@ function ChapterNav({ current, onNavigate }: { current?: number; onNavigate?(): 
           <span className="bk-nav-n">{c.n === 0 ? '·' : c.n}</span>
           <span className="bk-nav-title">{chapterTitle(c)}</span>
           {c.figures.length > 0 && <span className="bk-nav-count" title={`${c.figures.length} figures`}>{c.figures.length}</span>}
+        </a>
+      </li>)}
+      {([['references', 'References'], ['index', 'Index']] as const).map(([to, name], i) => <li key={to} className={i === 0 ? 'bk-nav-back' : undefined}>
+        <a href={`#/${to}`} aria-current={page === to ? 'page' : undefined} onClick={onNavigate}>
+          <span className="bk-nav-n" aria-hidden="true"/>
+          <span className="bk-nav-title">{name}</span>
         </a>
       </li>)}
     </ol>
@@ -88,7 +94,7 @@ export function BookApp() {
       <button type="button" className="bk-menu-button" aria-expanded={menu} aria-controls="bk-side" onClick={() => setMenu(m => !m)}>Menu</button>
     </header>
     <div className="bk-layout">
-      <aside id="bk-side" className={`bk-side${menu ? ' bk-side-open' : ''}`}><PageLinks page={route.page} className="bk-side-links" onNavigate={() => setMenu(false)}/><ChapterNav current={chapter} onNavigate={() => setMenu(false)}/></aside>
+      <aside id="bk-side" className={`bk-side${menu ? ' bk-side-open' : ''}`}><PageLinks page={route.page} className="bk-side-links" onNavigate={() => setMenu(false)}/><ChapterNav current={chapter} page={route.page} onNavigate={() => setMenu(false)}/></aside>
       <main className="bk-main" id="bk-main">
         {route.page === 'chapter' ? <ChapterPage key={route.n} n={route.n} item={route.item}/>
           : route.page === 'guide' ? <GuidePage/>
