@@ -64,7 +64,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 11-5 | A rotating body and its counter-rotating field | animated | changed | Solid dark cross on the body so its turning shows; the reader turns the body by hand (drag, flick, or arrow keys); direction labels removed; zepton key added, as in 11-1 |
 | 11-6 | A rotating pair with no electromagnetic field | animated | changed | 11-3’s hourglass zeptons; each letter and its sign (m−, a+) stay together, upright, as the pair turns |
 | 12-1 | Newtonian gravity as a difference | still | changed | Three double-headed arrowed bars on one scale in the printed order, named on the bars; Newtonian Gravity thickest; bodies m₁, m₂ and r marked; sliders removed |
-| 12-2 | A rotating sun pushes its planet inward | animated | to review | |
+| 12-2 | A rotating sun pushes its planet inward | animated | changed | Real rotation: the Sun turns with a dark cross and its zeptons turn against it, curled arrows only when paused; the printed, balanced case only |
 | 12-3 | A planet’s own rotational field | animated | to review | |
 | 12-4 | Why orbiting bodies stop turning | animated | to review | |
 | 12-5 | An ellipse that will not stay put | animated | to review | |
@@ -356,3 +356,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** put the green arrows in between, as in the original. **Done:** the printed order, Matter Force, Newtonian Gravity, gravity; the gravity labels moved clear of the dashed lines.
 - **Owner:** put m₁ and m₂ in the bodies to match the equations, and mark r. **Done:** a dimension line between the centres.
 - **Owner:** great now.
+
+### Fig. 12-2
+
+- **Owner:** once again arrows where we should have clear rotation. **Done:** the Sun is a matter body with 11-5's dark cross, turning; the curled-arrow field is rings of zeptons, fading with distance, turning against it. Curled arrows show only while paused. `CounterField` and `BodyCross` are shared with 12-3.
+- **Owner:** the small body orbits only because the forces balance; changing the Sun's rotation would unbalance them and it would leave the orbit, yet its velocity never changes, so the slider is not modelled accurately; modelling it would distract from Fleming's point. **Decision (asked):** as printed only. The rotation slider, orbit-direction choice and readouts are removed; the note says why the reversed and stopped cases are not animated. B_m and F_m are written with proper subscripts.
+- **Owner:** good now.

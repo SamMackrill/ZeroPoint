@@ -1,6 +1,6 @@
 // Chapter 12: Astronomical Motion (PDF pp. 98–109). Figures 12-1 to 12-8.
 import { useMemo, useRef, useState } from 'react';
-import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
+import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -45,40 +45,47 @@ function TwoForces() {
   </Diagram>;
 }
 
-/** Curled arrows standing for the zeptons round a rotating body: they turn the opposite way, and thin out with distance. */
-function CounterField({ x, y, inner, rings, sense, count = 9 }: { x: number; y: number; inner: number; rings: number; sense: number; count?: number }) {
-  if (Math.abs(sense) < 0.05) return null;
+/**
+ * The zeptons round a rotating body, in rings that thin out with distance. Each turns the opposite way to the body, like
+ * one gear against another, by `turned` (the body's own angle) scaled up; a body at rest leaves them where they lie.
+ * Curled arrows on some of them show the sense of turning while the figure is paused.
+ */
+function CounterField({ x, y, inner, rings, sense, turned, count = 9 }: { x: number; y: number; inner: number; rings: number; sense: number; turned: number; count?: number }) {
   return <g>{Array.from({ length: rings }, (_, k) => Array.from({ length: count + k * 2 }, (_, i) => {
-    const [px, py] = polar(x, y, inner + k * 36, (i / (count + k * 2)) * 360 + k * 17);
-    return <Spin key={`${k}-${i}`} x={px} y={py} r={10} ccw={sense < 0} sweep={90 + 160 * Math.min(1, Math.abs(sense))} w={1.4} opacity={0.9 / (1 + k * 0.9)} steady/>;
+    const at = (i / (count + k * 2)) * 360 + k * 17, [px, py] = polar(x, y, inner + k * 36, at), fade = 0.95 / (1 + k * 0.7);
+    return <g key={`${k}-${i}`}>
+      <Zepton x={px} y={py} angle={at + 180 - turned * 1.6} len={22} polarity="matter" signs={false} opacity={fade}/>
+      {Math.abs(sense) >= 0.05 && i % 2 === 0 && <Spin x={px} y={py} r={15} ccw={sense < 0} sweep={200} w={1.4} opacity={fade}/>}
+    </g>;
   }))}</g>;
+}
+
+/** A dark cross on a rotating body, turned to `turned` degrees, so the body's own rotation can be seen. Its arms stop short of the middle. */
+function BodyCross({ x, y, r, turned }: { x: number; y: number; r: number; turned: number }) {
+  return <g>{[0, 90, 180, 270].map(a => { const [x1, y1] = polar(x, y, Math.min(20, r * 0.35), turned + a), [x2, y2] = polar(x, y, r - 8, turned + a); return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2} className="bk-body-ink" strokeWidth="3.5" strokeLinecap="round"/>; })}</g>;
 }
 
 /** Figure 12-2: a small body orbiting a rotating one is pushed toward it by the mattermagnetic field. */
 function OrbitInField() {
-  const [omega, setOmega] = useState(0.7);
-  const [orbit, setOrbit] = useState<'ccw' | 'cw'>('ccw');
   const play = usePlayback({ speed: 0.25 });
-  const H = 400, cx = 300, cy = 200, R = 150, dir = orbit === 'ccw' ? 1 : -1, a = dir * play.t * 360, [px, py] = polar(cx, cy, R, a);
-  // B_m points into the page for a body rotating counter-clockwise. The force m(υ × B_m) is toward the body when the
-  // orbit goes the same way as the rotation, and away from it otherwise.
-  const inward = Math.sign(omega) * dir, strength = Math.abs(omega), [vx, vy] = polar(px, py, 52, a + dir * 90), [fx, fy] = polar(px, py, -inward * (18 + 44 * strength), a);
+  // As printed: the Sun and the orbit both turn counter-clockwise, in balance. B_m then points into the page, and the
+  // force m(υ × B_m) on the small body is toward the Sun. The Sun turns at its own rate, whatever the orbit is doing.
+  const H = 400, cx = 300, cy = 200, R = 150, a = play.t * 360, [px, py] = polar(cx, cy, R, a), turned = play.t * 0.7 * 360;
+  const [vx, vy] = polar(px, py, 52, a + 90), [fx, fy] = polar(px, py, -49, a);
+  /** A letter with a subscript m, as in F_m and B_m. */
+  const sub = (x: number, y: number, letter: string, tone: 'text' | 'b', anchor: 'start' | 'middle' = 'middle') => <T x={x} y={y} tone={tone} italic anchor={anchor}>{letter}<tspan dy={4} fontSize="0.75em">m</tspan></T>;
   return <Diagram stage={
-    <Stage w={W} h={H} label={Math.abs(omega) < 0.05 ? 'A small body orbiting a larger one that is not rotating: no mattermagnetic force.' : `A small body orbiting ${orbit === 'ccw' ? 'counter-clockwise' : 'clockwise'} round a larger body rotating ${omega > 0 ? 'counter-clockwise' : 'clockwise'}. The mattermagnetic field points ${omega > 0 ? 'into' : 'out of'} the page and the force on the small body is ${inward > 0 ? 'toward' : 'away from'} the larger one.`}>
+    <Stage w={W} h={H} label="A small body orbiting counter-clockwise round a larger body that is also rotating counter-clockwise. The zeptons round the larger body turn the other way. The mattermagnetic field points into the page and the extra force on the small body is toward the larger one.">
       <circle cx={cx} cy={cy} r={R} className="bk-s-faint" fill="none" strokeDasharray="3 6"/>
-      <CounterField x={cx} y={cy} inner={78} rings={3} sense={omega}/>
-      <Body x={cx} y={cy} r={52} tone="plain"/>{Math.abs(omega) > 0.05 && <Spin x={cx} y={cy} r={24} ccw={omega > 0} sweep={270} tone="text" w={3} steady/>}<T x={cx + 34} y={cy - 26} tone="text" italic>ω</T>
+      <CounterField x={cx} y={cy} inner={78} rings={3} sense={1} turned={turned}/>
+      <Body x={cx} y={cy} r={52} tone="matter"/><BodyCross x={cx} y={cy} r={52} turned={turned}/><Spin x={cx} y={cy} r={24} ccw sweep={270} tone="text" w={3}/><T x={cx + 34} y={cy - 26} tone="text" italic>ω</T>
       <Arrow x1={px} y1={py} x2={vx} y2={vy} tone="motion" w={2.4}/><T x={vx + 12} y={vy + 4} tone="motion" italic>υ</T>
-      {Math.abs(omega) > 0.05 && <><BlockArrow x1={px} y1={py} x2={fx} y2={fy} thick={10}/><T x={fx + (fx < px ? -18 : 18)} y={fy + 18} tone="text" italic>F m</T></>}
+      <BlockArrow x1={px} y1={py} x2={fx} y2={fy} thick={10}/>{sub(fx + (fx < px ? -18 : 18), fy + 18, 'F', 'text')}
       <Body x={px} y={py} r={15} tone="plain"/>
-      {Math.abs(omega) > 0.05 && <><InOut x={600} y={70} out={omega < 0} r={11}/><T x={620} y={75} anchor="start" tone="b">B_m</T></>}
+      <InOut x={600} y={70} out={false} r={11}/>{sub(620, 75, 'B', 'b', 'start')}
     </Stage>}>
-    <Slider label="Rotation of the larger body, ω" value={omega} min={-1} max={1} step={0.05} onChange={setOmega} show={v => (Math.abs(v) < 0.05 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'counter-clockwise' : 'clockwise'}`)}/>
-    <Choice label="Direction of the orbit" value={orbit} onChange={setOrbit} options={[{ value: 'ccw', label: 'Counter' }, { value: 'cw', label: 'Clockwise' }]}/>
     <PlayBar play={play} label="the orbit"/>
-    <Readout label="Mattermagnetic field" value={Math.abs(omega) < 0.05 ? 'none' : omega > 0 ? 'into the page' : 'out of the page'} tone="b"/>
-    <Readout label="Force on the small body" value={Math.abs(omega) < 0.05 ? 'none' : inward > 0 ? 'toward the larger' : 'away from it'} tone="force"/>
-    <Remark>{inward > 0 ? 'The extra inward push makes the orbiting body appear heavier than it is.' : 'Rotation and orbit must go the same way for the push to be inward.'}</Remark>
+    <Remark>The extra inward push makes the orbiting body appear heavier than it is.</Remark>
   </Diagram>;
 }
 
@@ -89,15 +96,14 @@ function PlanetSpinField() {
   const H = 360, cx = 320, cy = 180, turned = play.t * omega * 90;
   return <Diagram stage={
     <Stage w={W} h={H} label={Math.abs(omega) < 0.05 ? 'A body that is not rotating: no mattermagnetic field of rotation.' : `A small body rotating ${omega > 0 ? 'counter-clockwise' : 'clockwise'}, with a counter-rotating zepton field round it. Its mattermagnetic field points ${omega > 0 ? 'into' : 'out of'} the page.`}>
-      <CounterField x={cx} y={cy} inner={104} rings={2} sense={omega} count={10}/>
-      <Body x={cx} y={cy} r={72} tone="plain"/>
-      <line x1={polar(cx, cy, 66, turned)[0]} y1={polar(cx, cy, 66, turned)[1]} x2={polar(cx, cy, 66, turned + 180)[0]} y2={polar(cx, cy, 66, turned + 180)[1]} className="bk-s-muted" strokeDasharray="4 6"/>
+      <CounterField x={cx} y={cy} inner={104} rings={2} sense={omega} turned={turned} count={10}/>
+      <Body x={cx} y={cy} r={72} tone="matter"/><BodyCross x={cx} y={cy} r={72} turned={turned}/>
       {Math.abs(omega) > 0.05 && <Spin x={cx} y={cy} r={28} ccw={omega > 0} sweep={270} tone="text" w={3}/>}<T x={cx + 40} y={cy - 30} tone="text" italic>ω</T>
       {Math.abs(omega) > 0.05 && <><InOut x={590} y={90} out={omega < 0} r={12}/><T x={612} y={96} anchor="start" tone="b" size="lg">B m</T></>}
     </Stage>}>
     <Slider label="Rotation of the body, ω" value={omega} min={-1} max={1} step={0.05} onChange={setOmega} show={v => (Math.abs(v) < 0.05 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'counter-clockwise' : 'clockwise'}`)}/>
     <PlayBar play={play} label="the rotation"/>
-    <Readout label="Zeptons round it rotate" value={Math.abs(omega) < 0.05 ? 'not at all' : omega > 0 ? 'clockwise' : 'counter-clockwise'}/>
+    <Readout label="Zeptons round it rotate" value={Math.abs(omega) < 0.05 ? 'not turned by it' : omega > 0 ? 'clockwise' : 'counter-clockwise'}/>
     <Readout label="Mattermagnetic field" value={Math.abs(omega) < 0.05 ? 'none' : omega > 0 ? 'into the page' : 'out of the page'} tone="b"/>
     <Remark>This field is the body’s angular inertia. The Sun’s rotation makes one of the same sense round the Sun.</Remark>
   </Diagram>;
@@ -329,8 +335,8 @@ const chapter: ChapterContent = {
         <p><Q>If the Sun is seen from above as rotating counterclockwise, the zeptons around it will rotate clockwise. The angular momentum of the sun, which is directed toward us, causes a mattermagnetic field B<sub>m</sub> directed away from us. As the smaller body crosses this mattermagnetic field, it is subject to a Lorentz Force</Q>, <V>F</V><sub>m</sub> = <V>m</V>(<V>υ</V> × <V>B</V><sub>m</sub>) (Equation 12-4) (<Pg n={100}/>).</p>
         <p><Q>As long as the larger body is rotating in the same direction as the orbiting body, the resultant force will be directed inward</Q>. The extra force makes the orbiting body appear heavier than it is, and since the masses of planets have always been inferred from Newton’s law, the error would not show (<Pg n={101}/>).</p>
       </>,
-      tryThis: ['Watch the curled arrows round the large body: they turn the opposite way to it.', 'Reverse the orbit, or the rotation: the force turns outward. Reverse both and it is inward again.', 'Stop the rotation: no field, no extra force.'],
-      notes: <p>The size of the force arrow follows the rate of rotation only; the true force would also fall with distance.</p>,
+      tryThis: ['Watch the zeptons round the Sun: they turn the opposite way to it.', 'Pause: curled arrows show which way the Sun and its zeptons turn.'],
+      notes: <p>As printed, this is the one case: the Sun and the orbit both counter-clockwise, held in balance. Reversing either would turn the force outward, as the text says, and stopping the Sun would remove it; neither is animated, because the orbit drawn would then no longer be balanced and the small body would leave it. The force arrow is not to scale.</p>,
     },
     {
       kind: 'figure', id: '12-3', page: 102, section: 'Synchronous Rotation', title: 'A planet’s own rotational field',
