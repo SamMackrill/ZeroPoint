@@ -14,38 +14,48 @@ export const lagAngle = (speed: number) => EARTH_BETA / speed;
 /** The number of orbits in which such a lag would double the size of the orbit: the radius grows by e^(4π·lag) each orbit. */
 export const orbitsToDouble = (speed: number) => Math.log(2) / (4 * Math.PI * lagAngle(speed));
 
+/** Where the speed-of-gravity slider of Figure 19-1 stops: one step past 10¹¹ c, standing for an infinite speed. */
+const INFINITE_EXP = 11.5;
+
+/** The speeds of gravity the chapter names, as powers of ten of c: the slider settles on each when it comes near. */
+const SPEED_MARKS = [
+  { exp: 0, name: 'Einstein: relativity' },
+  { exp: Math.log10(7e6), name: 'Laplace' },
+  { exp: Math.log10(2e10), name: 'Van Flandern' },
+];
+
+/** A slider position, settled onto a named speed when within one step of it. */
+export const snapSpeed = (v: number) => SPEED_MARKS.find(m => Math.abs(m.exp - v) < 0.06)?.exp ?? v;
+
+/** How the speed-of-gravity slider reads: the speed in units of c, with its name where the chapter gives one. */
+export function speedName(v: number) {
+  if (v >= INFINITE_EXP - 0.05) return '∞ (no delay: Newton)';
+  const mark = SPEED_MARKS.find(m => Math.abs(m.exp - v) < 1e-9);
+  return `${fmt(10 ** v, 2)} c${mark ? ` (${mark.name})` : ''}`;
+}
+
 /** Figure 19-1: a force that arrives late points to where the planet was, and the orbit does not hold. */
 function LateGravity() {
-  const [exp, setExp] = useState(0); // log10 of the speed of gravity in units of c
-  const [instant, setInstant] = useState(false);
-  const play = usePlayback();
-  const state = useRef({ t: 0, years: 0 });
-  const speed = 10 ** exp, lag = instant ? 0 : lagAngle(speed), doubling = instant ? Infinity : orbitsToDouble(speed), lapse = 60;
-  const dt = Math.max(0, Math.min(0.05, play.t - state.current.t));
-  if (play.t < state.current.t) state.current.years = 0;
-  state.current.t = play.t; state.current.years += dt * lapse;
-  const years = state.current.years, growth = Math.exp(4 * Math.PI * lag * years), H = 400, cx = 300, cy = 200, r0 = 80, r = Math.min(175, r0 * growth);
+  const [exp, setExp] = useState(0); // log10 of the speed of gravity in units of c; the top of the slider is infinite
+  const instant = exp >= INFINITE_EXP - 0.05;
+  const play = usePlayback({ speed: 0.5 });
+  const speed = 10 ** exp, lag = instant ? 0 : lagAngle(speed), doubling = instant ? Infinity : orbitsToDouble(speed), H = 400, cx = 300, cy = 200, r = 150;
   // The planet is drawn going round once in two seconds whatever the time-lapse; the angle to A is magnified to be seen.
   const a = play.t * 180, shown = instant ? 0 : clamp(lag * 3e5, 4, 34), [bx, by] = polar(cx, cy, r, a), [ax, ay] = polar(cx, cy, r, a - shown);
   const [fx, fy] = [bx + (cx - ax) * 0.5, by + (cy - ay) * 0.5];
   return <Diagram stage={
     <Stage w={W} h={H} label={instant ? 'A planet orbiting a star with a force that arrives without delay: the force points at the star and the orbit holds.' : `A planet orbiting a star, with gravity travelling at ${fmt(speed, 2)} times the speed of light. The force lags by ${fmt((lag * 180 * 3600) / Math.PI, 2)} arcseconds, and the orbit would double in size in ${fmt(doubling, 2)} years.`}>
-      <circle cx={cx} cy={cy} r={r0} className="bk-s-faint" fill="none" strokeDasharray="2 5"/>
       <circle cx={cx} cy={cy} r={r} className="bk-s-muted" fill="none" strokeDasharray="2 4"/>
       <Body x={cx} y={cy} r={18} tone="matter"/>
-      {!instant && <><circle cx={ax} cy={ay} r={9} className="bk-s-muted" fill="none" strokeDasharray="2 2"/><T x={ax + (ax - cx) * 0.16} y={ay + (ay - cy) * 0.16 + 4} size="sm">A</T><Arrow x1={ax} y1={ay} x2={cx + (ax - cx) * 0.25} y2={cy + (ay - cy) * 0.25} both tone="faint" w={1.2} head={7}/></>}
+      {!instant && <><circle cx={ax} cy={ay} r={9} className="bk-s-muted" fill="none" strokeDasharray="2 2"/><T x={ax + (ax - cx) * 0.16} y={ay + (ay - cy) * 0.16 + 4} size="sm">A</T><Arrow x1={ax} y1={ay} x2={cx + (ax - cx) * (26 / r)} y2={cy + (ay - cy) * (26 / r)} both tone="faint" w={1.2} head={7}/></>}
       <BlockArrow x1={bx} y1={by} x2={fx} y2={fy} thick={7}/>
       <Body x={bx} y={by} r={9} tone="plain"/><T x={bx + (bx - cx) * 0.16} y={by + (by - cy) * 0.16 + 4} size="sm" tone="text">B</T>
-      <T x={560} y={80} anchor="start" size="sm">dotted: the orbit at the start</T>
-      <T x={560} y={104} anchor="start" size="sm">{Math.round(years).toLocaleString('en-GB')} years on</T>
-      {!instant && <T x={560} y={128} anchor="start" size="sm">(angle A–B magnified)</T>}
+      {!instant && <T x={560} y={80} anchor="start" size="sm">(angle A–B magnified)</T>}
     </Stage>}>
-    <Slider label="Speed of gravity" value={exp} min={-1} max={11} step={0.1} onChange={setExp} show={v => `${fmt(10 ** v, 2)} c`}/>
-    <Toggle label="No delay at all (Newton)" checked={instant} onChange={setInstant}/>
-    <PlayBar play={play} label="the years"/>
+    <Slider label="Speed of gravity" value={exp} min={0} max={INFINITE_EXP} step={0.1} onChange={v => setExp(snapSpeed(v))} show={speedName}/>
+    <PlayBar play={play} label="the orbit"/>
     <Readout label="Lag of the force" value={instant ? 'none' : `${fmt((lag * 180 * 3600) / Math.PI, 3)}″`}/>
     <Readout label="Orbit doubles in" value={instant ? 'never' : `${fmt(doubling, 3)} years`} tone={doubling < 1e9 ? 'bad' : 'good'}/>
-    <Readout label="Orbit now" value={`${fmt(Math.min(growth, 99), 3)} × its start`}/>
     <Remark>{instant ? 'For Newtonian gravity to work there has to be no delay in transmission of the force.' : exp < 6 ? 'At anything near the speed of light the orbit would change far more than is observed.' : 'Laplace’s bound was 7 × 10⁶ c; Van Flandern’s, from better data, 2 × 10¹⁰ c.'}</Remark>
   </Diagram>;
 }
@@ -170,8 +180,8 @@ const chapter: ChapterContent = {
         <p><Q>If gravity is not instantaneous, the force looks like it is coming from point A when the body is really at point B some distance away. This causes the body at point B [to] have a force F on it that [is] not directed toward the Star</Q>. In Eddington’s words, the couple <Q>will tend to increase the angular momentum of the system, and, acting cumulatively, will soon cause an appreciable change of period</Q>. <Q>The speed of light as it turns out is too slow by many orders of magnitude</Q> (<Pg n={142}/>, <Pg n={143}/>).</p>
         <p>Fleming’s charge against general relativity is that it needs space to know where all the matter is, nearly instantly, and so breaks the limit it is built on (<Pg n={144}/>).</p>
       </>,
-      tryThis: ['Leave the speed at c and let the years run: the orbit grows steadily, and doubles in a few hundred years.', 'Raise the speed. At Laplace’s 7 × 10⁶ c the doubling takes billions of years; at Van Flandern’s 2 × 10¹⁰ c, far longer than the age of the solar system.', 'Turn on “No delay at all”: the force points at the star and the orbit holds.'],
-      notes: <p>The numbers are for a planet moving at the Earth’s speed, 29.8 km/s. The lag is that speed divided by the speed of gravity, and the orbit’s growth follows from the part of the force along the motion; the book gives the argument and the two bounds, not this calculation. The planet is drawn circling every two seconds while a minute of years passes each second, and the angle between A and B is magnified.</p>,
+      tryThis: ['Leave the speed at c: the orbit would double in size in a few hundred years.', 'Raise the speed. At Laplace’s 7 × 10⁶ c the doubling takes billions of years; at Van Flandern’s 2 × 10¹⁰ c, far longer than the age of the solar system.', 'Slide the speed all the way up, to infinite (Newton’s case, no delay at all): the force points at the star and the orbit holds.'],
+      notes: <p>The numbers are for a planet moving at the Earth’s speed, 29.8 km/s. The lag is that speed divided by the speed of gravity, and the orbit’s growth follows from the part of the force along the motion; the book gives the argument and the two bounds, not this calculation. The orbit is drawn at a fixed size, its growth given only as the doubling time, and the angle between A and B is magnified.</p>,
     },
     {
       kind: 'figure', id: '19-2', page: 145, section: 'The Speed of Long-Range Van der Waals Gravity', title: 'How far a photon’s field gets',
