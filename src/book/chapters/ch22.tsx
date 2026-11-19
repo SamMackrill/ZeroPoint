@@ -1,6 +1,6 @@
 // Chapter 22: Relativity is Not Special (PDF pp. 162–175). Figures 22-1 to 22-3.
 import { useRef, useState } from 'react';
-import { Arrow, Diagram, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, fmt, pathThrough, polar, usePlayback } from '../kit';
+import { Arrow, Diagram, Drag, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, clamp, fmt, pathThrough, polar, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -39,22 +39,37 @@ function MovingFrameLight() {
 /** The wavelength of light emitted forward from a frame moving at V, relative to its wavelength in the zero-point field's frame (Figure 22-2). */
 export const emittedWavelength = (V: number) => 1 - V;
 
-/** Figure 22-2: the wavelength of light from a moving source, shortened by the distance the source moves. */
+/**
+ * Figure 22-2: the wavelength of light from a moving source, shortened by the distance the source moves. Over each period
+ * frame A moves from the left wall a distance λ₀V/c₀, while the light's front goes the whole wavelength λ₀ at c₀; so the
+ * light from A fits one shortened wavelength, λ′, between A and the far wall, and the light at rest a whole λ₀.
+ */
 function WavelengthContraction() {
   const [V, setV] = useState(0.3);
-  const play = usePlayback();
-  const H = 340, x0 = 70, L = 560, y1 = 110, y2 = 240, ratio = emittedWavelength(V), xa = x0 + L * V, phase = play.t * 2;
-  const wave = (from: number, to: number, y: number) => pathThrough(Array.from({ length: 81 }, (_, i) => { const k = i / 80; return [from + (to - from) * k, y - 22 * Math.sin(2 * Math.PI * (k - phase))] as const; }));
+  const play = usePlayback({ speed: 0.35 });
+  const H = 340, x0 = 70, L = 560, y1 = 110, y2 = 240, ratio = emittedWavelength(V), xEnd = x0 + L * V;
+  // One period, then a moment's hold showing the finished picture, then the next period from the left wall.
+  const cycle = 1.4, u = Math.min(1, (play.t % cycle) / 1), front = x0 + L * u, xa = x0 + L * V * u;
+  /** A wave of spatial period `period` from `from` to the light's front, its crest pinned to the front so it is emitted, not slid. */
+  const wave = (from: number, period: number, y: number) => from >= front - 1 ? '' : pathThrough(Array.from({ length: 81 }, (_, i) => { const x = from + ((front - from) * i) / 80; return [x, y - 22 * Math.sin((2 * Math.PI * (front - x)) / period)] as const; }));
   return <Diagram stage={
-    <Stage w={W} h={H} label={`One wavelength of light in the zero-point field's rest frame, and beneath the frame A that moves at ${fmt(V, 2)} c₀. Light emitted from A has a wavelength ${fmt(ratio, 3)} times as long, shortened by the distance A moves in one period.`}>
+    <Stage w={W} h={H} label={`One wavelength of light in the zero-point field's rest frame, and above it light from frame A, which moves at ${fmt(V, 2)} c₀. In one period A moves ${fmt(V, 2)} of a wavelength, so its light holds one wavelength ${fmt(ratio, 3)} times as long.`}>
       <line x1={x0} y1={50} x2={x0} y2={H - 40} className="bk-s-muted" strokeWidth="5"/><line x1={x0 + L} y1={50} x2={x0 + L} y2={H - 40} className="bk-s-muted" strokeWidth="5"/>
+      {/* Where A will be after one period: drag it to set the velocity. */}
+      <Drag x={xEnd} y={115} onMove={nx => setV(Math.round(clamp((nx - x0) / L, 0, 0.8) * 100) / 100)} bounds={{ x0, y0: 115, x1: x0 + 0.8 * L, y1: 115 }} label="Where frame A is after one period" step={L * 0.02}>
+        <line x1={xEnd} y1={60} x2={xEnd} y2={170} className="bk-s-mark" strokeWidth="3" strokeDasharray="4 4" opacity={0.6}/>
+      </Drag>
       <line x1={xa} y1={60} x2={xa} y2={170} className="bk-s-mark" strokeWidth="5"/><T x={xa} y={48} tone="mark" size="lg">A</T>
-      {V > 0.03 && <><Arrow x1={x0} y1={y1 + 50} x2={xa} y2={y1 + 50} both tone="mark" w={1.6} head={7}/><T x={(x0 + xa) / 2} y={y1 + 72} tone="mark" size="sm">λ₀V/c₀</T></>}
-      <Line d={wave(xa, x0 + L, y1)} tone="e" w={2}/><Arrow x1={xa} y1={y1 + 50} x2={x0 + L} y2={y1 + 50} both tone="e" w={1.6} head={7}/><T x={(xa + x0 + L) / 2} y={y1 + 72} tone="e" size="sm">λ′ = λ₀ − λ₀V/c₀</T>
-      <Line d={wave(x0, x0 + L, y2)} tone="text" w={2}/><Arrow x1={x0} y1={y2 + 44} x2={x0 + L} y2={y2 + 44} both tone="text" w={1.6} head={7}/><T x={x0 + L / 2} y={y2 + 66} tone="text" size="sm">λ = λ₀</T>
+      {u < 1 && <Arrow x1={xa + 6} y1={44} x2={xa + 34} y2={44} tone="motion" w={2}/>}
+      {u >= 1 && V > 0.03 && <><Arrow x1={x0} y1={y1 + 50} x2={xEnd} y2={y1 + 50} both tone="mark" w={1.6} head={7}/><T x={(x0 + xEnd) / 2} y={y1 + 72} tone="mark" size="sm">λ₀V/c₀</T></>}
+      <Line d={wave(xa, L * ratio, y1)} tone="e" w={2}/>
+      {u >= 1 && <><Arrow x1={xEnd} y1={y1 + 50} x2={x0 + L} y2={y1 + 50} both tone="e" w={1.6} head={7}/><T x={(xEnd + x0 + L) / 2} y={y1 + 72} tone="e" size="sm">λ′ = λ₀ − λ₀V/c₀</T></>}
+      <Line d={wave(x0, L, y2)} tone="text" w={2}/>
+      {u >= 1 && <><Arrow x1={x0} y1={y2 + 44} x2={x0 + L} y2={y2 + 44} both tone="text" w={1.6} head={7}/><T x={x0 + L / 2} y={y2 + 66} tone="text" size="sm">λ = λ₀</T></>}
     </Stage>}>
     <Slider label="Velocity of frame A, V" value={V} min={0} max={0.8} step={0.01} onChange={setV} show={v => `${fmt(v, 2)} c₀`}/>
-    <PlayBar play={play} label="the waves"/>
+    <PlayBar play={play} label="frame A and its light"/>
+    <Readout label="Distance A moves in one period" value={`${fmt(V, 2)} λ₀`}/>
     <Readout label="Wavelength from A, λ′" value={`${fmt(ratio, 3)} λ₀`} tone="e"/>
     <Readout label="Frequency, by a clock at rest in the field" value="unchanged"/>
     <Readout label="Frequency, by A’s own clock" value={`${fmt(1 / ratio, 3)} ×`}/>
@@ -154,7 +169,7 @@ const chapter: ChapterContent = {
         <p>Let the outer walls be one wavelength apart in the field’s rest frame. Frame A <Q>moves a distance that equates to the wavelength times the ratio of V/c<sub>0</sub>. The wavelength of light emitted from a source on the moving rest frame is then shortened by that amount</Q> (<Pg n={167}/>).</p>
         <p>Seen from the field’s frame the frequency is the same for both photons: <Q>there are an identical number of wavelengths in the two photons</Q>. The observer on A measures <V>c</V><sub>0</sub> all the same, <Q>because the clocks in his frame of reference run slow, making the frequency appear higher</Q>. <Q>This is in no way saying that the time of space is running slow</Q>; <Q>it is purely clock slowing</Q> (<Pg n={168}/>).</p>
       </>,
-      tryThis: ['Raise V: the upper wave is squeezed into what is left of the distance, and still holds exactly one wavelength.', 'Read the two frequencies: unchanged by a clock at rest in the field, higher by A’s slow clock, by just enough to bring f × λ′ back to c₀.'],
+      tryThis: ['Watch a period: A moves on while its light goes out at c₀, so the light from A ends up squeezed between A and the far wall.', 'Drag the dashed marker, where A is after one period, or raise V: the upper wave is squeezed into what is left of the distance, and still holds exactly one wavelength.', 'Read the two frequencies: unchanged by a clock at rest in the field, higher by A’s slow clock, by just enough to bring f × λ′ back to c₀.'],
       notes: <p>The text gives the ratio by which A’s frequency appears higher as <Q>c<sub>0</sub>/V</Q>. For the product of frequency and wavelength to come to <V>c</V><sub>0</sub>, as the same sentence says it does, the ratio must be <V>c</V><sub>0</sub>/(<V>c</V><sub>0</sub> − <V>V</V>), and that is what the readout uses.</p>,
     },
     {
