@@ -556,6 +556,9 @@ input {
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
+  /* Nothing in a figure may be the browser's scroll anchor: with a figure half off the top of the window, Chrome anchored
+     to a moving part of the drawing (19-1's orbiting planet) and scrolled the whole page to follow it. */
+  overflow-anchor: none;
 }
 
 .bk-stage {
