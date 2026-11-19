@@ -1,9 +1,10 @@
 // Diagrams that more than one chapter uses: Fleming's drawn hand for the right hand rule (Figures 7-4 and 8-4), and
-// the rotation that moving bodies leave in the zeptons beside them (chapters 6, 10, 11 and 12).
+// the rotation that moving bodies leave in the zeptons beside them (chapters 6, 10, 11 and 12), and the dumbbell zepton
+// pairs of chapters 11 and 17.
 import { useMemo, useState } from 'react';
 import { BOOK_PDF } from '../labs';
 import { HAND_DIGITS, HAND_PATH, HAND_SIZE } from '../art/fleming-hand';
-import { Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, PlayBar, Readout, Remark, Spin, Stage, Still, T, Toggle, Zepton, usePlayback, type Source, type Tone } from '../kit';
+import { Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, PlayBar, Readout, Remark, Spin, Stage, Still, T, Toggle, Zepton, rad, usePlayback, type Source, type Tone } from '../kit';
 
 /** What one digit of the drawn hand stands for: a name, a small hint under it, and its colour. */
 export interface HandDigit { name: string; hint: string; tone: Tone }
@@ -121,4 +122,22 @@ export function StepList({ label, steps, heading }: { label: string; steps: read
     <Remark>{step.says}{step.page ? <> <a className="bk-pg" href={`${BOOK_PDF}#page=${step.page}`} target="_blank" rel="noreferrer">p. {step.page}</a></> : null}</Remark>
     {step.see && <div className="bk-step-links"><span>Try it at</span>{step.see.map(link => <a key={link.href} href={link.href}>{link.label}</a>)}</div>}
   </Diagram>;
+}
+
+/** Each zepton in Figures 11-3, 11-6 and 17-3 to 17-5 is a dumbbell: two round ends of radius ZR, ZD above and below its middle,
+ *  joined by an hourglass neck ZN wide at its waist. ZH is its overall height; ZX is how far each zepton sits from the middle of the pair. */
+const ZR = 42, ZD = 60, ZN = 18, ZH = 2 * (ZD + ZR), ZX = 62;
+
+/** The sizes of a pair of dumbbell zeptons, as above, for the figures that draw them. */
+export const ZEPTON_PAIR = { ZR, ZD, ZN, ZH, ZX } as const;
+
+/** The outline of a dumbbell zepton centred on (x, y): two circles joined by a smooth hourglass neck, each curve leaving a circle along its tangent. */
+export function dumbbell(x: number, y: number) {
+  const shoulder = rad(45), k = 14, sx = ZR * Math.sin(shoulder), sy = ZD - ZR * Math.cos(shoulder), w = ZN / 2;
+  // From the shoulder on the circle, along its tangent toward the waist, which is reached heading straight along the zepton.
+  const cx1 = sx - k * Math.cos(shoulder), cy1 = sy - k * Math.sin(shoulder), cy2 = 12;
+  const neck = (side: 1 | -1) => side > 0
+    ? `C${x + cx1} ${y - cy1} ${x + w} ${y - cy2} ${x + w} ${y} C${x + w} ${y + cy2} ${x + cx1} ${y + cy1} ${x + sx} ${y + sy}`
+    : `C${x - cx1} ${y + cy1} ${x - w} ${y + cy2} ${x - w} ${y} C${x - w} ${y - cy2} ${x - cx1} ${y - cy1} ${x - sx} ${y - sy}`;
+  return `M${x - sx} ${y - sy} A${ZR} ${ZR} 0 1 1 ${x + sx} ${y - sy} ${neck(1)} A${ZR} ${ZR} 0 1 1 ${x - sx} ${y + sy} ${neck(-1)} Z`;
 }

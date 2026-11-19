@@ -3,7 +3,7 @@ import { useMemo, useRef, useState, type PointerEvent, type ReactNode } from 're
 import { Action, Arrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, bearing, clamp, polar, rad, turn, usePlayback, type Source } from '../kit';
 import { Paper, Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
-import { TwoSources } from './shared';
+import { TwoSources, ZEPTON_PAIR, dumbbell } from './shared';
 
 const W = 720;
 
@@ -30,20 +30,6 @@ type Facing = 'up' | 'down';
 /** A raised sign after a particle's letter in SVG text, with the baseline restored after it. */
 const sup = (sign: string) => <><tspan dy={-6} fontSize="0.8em">{sign}</tspan><tspan dy={6}>{'​'}</tspan></>;
 
-/** Each zepton in Figures 11-3 and 11-6 is a dumbbell: two round ends of radius ZR, ZD above and below its middle,
- *  joined by an hourglass neck ZN wide at its waist. ZH is its overall height; ZX is how far each zepton sits from the middle of the pair. */
-const ZR = 42, ZD = 60, ZN = 18, ZH = 2 * (ZD + ZR), ZX = 62;
-
-/** The outline of a dumbbell zepton centred on (x, y): two circles joined by a smooth hourglass neck, each curve leaving a circle along its tangent. */
-function dumbbell(x: number, y: number) {
-  const shoulder = rad(45), k = 14, sx = ZR * Math.sin(shoulder), sy = ZD - ZR * Math.cos(shoulder), w = ZN / 2;
-  // From the shoulder on the circle, along its tangent toward the waist, which is reached heading straight along the zepton.
-  const cx1 = sx - k * Math.cos(shoulder), cy1 = sy - k * Math.sin(shoulder), cy2 = 12;
-  const neck = (side: 1 | -1) => side > 0
-    ? `C${x + cx1} ${y - cy1} ${x + w} ${y - cy2} ${x + w} ${y} C${x + w} ${y + cy2} ${x + cx1} ${y + cy1} ${x + sx} ${y + sy}`
-    : `C${x - cx1} ${y + cy1} ${x - w} ${y + cy2} ${x - w} ${y} C${x - w} ${y - cy2} ${x - cx1} ${y - cy1} ${x - sx} ${y - sy}`;
-  return `M${x - sx} ${y - sy} A${ZR} ${ZR} 0 1 1 ${x + sx} ${y - sy} ${neck(1)} A${ZR} ${ZR} 0 1 1 ${x - sx} ${y + sy} ${neck(-1)} Z`;
-}
 
 /** The net dipoles of an electron-like zepton and a proton-like zepton set side by side, by which end of each is up. */
 export function pairDipoles(electronLike: Facing, protonLike: Facing) {
@@ -54,6 +40,7 @@ export function pairDipoles(electronLike: Facing, protonLike: Facing) {
 
 /** Figures 11-3 and 11-6: an electron-like and a proton-like zepton side by side, at rest or rotating together. */
 function ZeptonPair({ rotating }: { rotating: boolean }) {
+  const { ZD, ZH, ZX } = ZEPTON_PAIR;
   const [electronLike, setE] = useState<Facing>('up');
   const [protonLike, setP] = useState<Facing>('up');
   const play = usePlayback({ speed: 0.5 });

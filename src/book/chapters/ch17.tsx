@@ -3,6 +3,7 @@ import { Suspense, lazy, useCallback, useId, useMemo, useState } from 'react';
 import { Arrow, BlockArrow, Body, Choice, Diagram, FallbackOnError, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, canDraw3D, clamp, deg, fmt, pathThrough, rng, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
+import { ZEPTON_PAIR, dumbbell } from './shared';
 
 const W = 720;
 
@@ -145,22 +146,28 @@ export function sideBySide(left: Kind, right: Kind, rightFlipped: boolean) {
 /** Figures 17-3 to 17-5: two dipoles side by side, and whether anything is left to act at a distance. */
 function DipolePair({ left, right, flipped: initial }: { left: Kind; right: Kind; flipped: boolean }) {
   const [flipped, setFlipped] = useState(initial);
-  const result = sideBySide(left, right, flipped), H = 360, cx = 200, cy = 170;
-  const a = topOf(left, false), b = topOf(right, flipped);
-  const lobe = (dx: number, top: boolean, end: { electric: 1 | -1; matter: 1 | -1 | 0 }) => {
-    const y = cy + (top ? -54 : 54), e = (top ? end.electric : -end.electric) as 1 | -1, m = top ? end.matter : -end.matter;
-    return <g key={`${dx}${top}`}><ellipse cx={cx + dx} cy={y} rx={46} ry={52} className="bk-zepton-oval" strokeWidth="2.5"/>
-      {m !== 0 && <text x={cx + dx - 13} y={y + 6} textAnchor="middle" className={`bk-t bk-t-lg ${m > 0 ? 'bk-f-matter' : 'bk-f-anti'}`}>{m > 0 ? 'm' : 'a'}</text>}
-      <text x={cx + dx + (m !== 0 ? 16 : 0)} y={y + 6} textAnchor="middle" className={`bk-t bk-t-lg ${e > 0 ? 'bk-f-pos' : 'bk-f-neg'}`}>{e > 0 ? '+' : '−'}</text></g>;
-  };
   const name = (k: Kind) => (k === 'electric' ? 'dipole' : `${k}-like`);
+  const { ZD, ZH, ZX } = ZEPTON_PAIR, result = sideBySide(left, right, flipped), H = 360, cx = 200, cy = 175;
+  const a = topOf(left, false), b = topOf(right, flipped);
+  /** One end of a dipole: its matter letter (if it has matter charge) and electric sign together, as Fleming writes "m−". */
+  const end = (dx: number, top: boolean, at: { electric: 1 | -1; matter: 1 | -1 | 0 }) => {
+    const y = cy + (top ? -ZD : ZD), e = (top ? at.electric : -at.electric) as 1 | -1, m = top ? at.matter : -at.matter;
+    return <g key={`${dx}${top}`}>
+      {m !== 0 && <text x={cx + dx - 12} y={y + 7} textAnchor="middle" className={`bk-t bk-t-lg ${m > 0 ? 'bk-f-matter' : 'bk-f-anti'}`}>{m > 0 ? 'm' : 'a'}</text>}
+      <text x={cx + dx + (m !== 0 ? 12 : 0)} y={y + 7} textAnchor="middle" className={`bk-t bk-t-lg ${e > 0 ? 'bk-f-pos' : 'bk-f-neg'}`}>{e > 0 ? '+' : '−'}</text></g>;
+  };
+  /** A whole dipole, drawn as the dumbbell of Figure 11-3, named above. */
+  const dipole = (dx: number, at: { electric: 1 | -1; matter: 1 | -1 | 0 }, kind: Kind) => <g>
+    <path d={dumbbell(cx + dx, cy)} className="bk-zepton-oval" strokeWidth="2.5"/>
+    {end(dx, true, at)}{end(dx, false, at)}
+    <T x={cx + dx} y={cy - ZH / 2 - 14} size="sm" tone="text">{name(kind)}</T>
+  </g>;
   // The force between such pairs against distance: an ordinary van der Waals force dies away steeply; a Coulomb one does not.
   const px = 420, pw = 260, py = 70, ph = 190, curve = (power: number) => pathThrough(Array.from({ length: 40 }, (_, i) => { const r = 1 + (i / 39) * 4; return [px + ((r - 1) / 4) * pw, py + ph - ph / r ** power] as const; }));
   return <Diagram stage={
     <Stage w={W} h={H} label={`A ${name(left)} and a ${name(right)} side by side. Their electric charges ${result.electric}${result.matter === 'none' ? '' : ` and their matter charges ${result.matter}`}. ${result.longRange ? 'A Coulomb repulsion is left, which falls only as the inverse square of the distance.' : 'Everything cancels, leaving only a short-ranged force.'}`}>
-      {lobe(-48, true, a)}{lobe(-48, false, a)}{lobe(48, true, b)}{lobe(48, false, b)}
-      <T x={cx - 48} y={H - 40} size="sm">{name(left)}</T><T x={cx + 48} y={H - 40} size="sm">{name(right)}</T>
-      {result.longRange && <><Arrow x1={cx - 100} y1={cy} x2={cx - 150} y2={cy} tone="force" w={3}/><Arrow x1={cx + 100} y1={cy} x2={cx + 150} y2={cy} tone="force" w={3}/></>}
+      {dipole(-ZX, a, left)}{dipole(ZX, b, right)}
+      {result.longRange && <><Arrow x1={cx - ZX - 50} y1={cy} x2={cx - ZX - 100} y2={cy} tone="force" w={3}/><Arrow x1={cx + ZX + 50} y1={cy} x2={cx + ZX + 100} y2={cy} tone="force" w={3}/></>}
       <line x1={px} y1={py + ph} x2={px + pw} y2={py + ph} className="bk-s-muted"/><line x1={px} y1={py} x2={px} y2={py + ph} className="bk-s-muted"/>
       <Line d={curve(7)} tone={result.longRange ? 'faint' : 'danger'} w={result.longRange ? 1.4 : 2.6}/><Line d={curve(2)} tone={result.longRange ? 'accent' : 'faint'} w={result.longRange ? 2.6 : 1.4}/>
       <T x={px + 62} y={py + ph - 14} anchor="start" size="sm" tone={result.longRange ? 'muted' : 'danger'}>ordinary van der Waals: 1/r³ to 1/r⁷</T>
