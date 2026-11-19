@@ -99,7 +99,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 
 | Item | Card title | Motion before review | Status | Decision |
 |---|---|---|---|---|
-| x0-1 | The route of the book | still | to review | |
+| x0-1 | The route of the book | still | fine | No change |
 | x1-1 | Twelve principles, and where they are used | still | to review | |
 | x1-2 | Everything moves because it is pushed | animated | to review | |
 | x2-1 | A drop in the ocean | still | to review | |
