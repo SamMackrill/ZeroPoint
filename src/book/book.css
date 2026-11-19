@@ -753,6 +753,8 @@ input {
 .bk-f-mark { fill: var(--data-mark); }
 .bk-s-accent { stroke: var(--accent); }
 .bk-f-accent { fill: var(--accent); }
+
+.bk-f-ink { fill: var(--bg-0); font-weight: 600; }
 .bk-s-text { stroke: var(--text); }
 .bk-f-text { fill: var(--text); }
 .bk-s-muted { stroke: var(--text-3); }

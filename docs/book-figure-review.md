@@ -63,7 +63,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 11-4 | Moving matter makes a mattermagnetic field | still | fine | No change |
 | 11-5 | A rotating body and its counter-rotating field | animated | changed | Solid dark cross on the body so its turning shows; the reader turns the body by hand (drag, flick, or arrow keys); direction labels removed; zepton key added, as in 11-1 |
 | 11-6 | A rotating pair with no electromagnetic field | animated | changed | 11-3’s hourglass zeptons; each letter and its sign (m−, a+) stay together, upright, as the pair turns |
-| 12-1 | Newtonian gravity as a difference | still | to review | |
+| 12-1 | Newtonian gravity as a difference | still | changed | Three double-headed arrowed bars on one scale in the printed order, named on the bars; Newtonian Gravity thickest; bodies m₁, m₂ and r marked; sliders removed |
 | 12-2 | A rotating sun pushes its planet inward | animated | to review | |
 | 12-3 | A planet’s own rotational field | animated | to review | |
 | 12-4 | Why orbiting bodies stop turning | animated | to review | |
@@ -346,3 +346,13 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - Takes 11-3's drawing: the two hourglass zeptons, named, turning together.
 - **Owner:** Fleming's m− and m+ mean matter that is electrically negative or positive, and a+ and a− the same for antimatter, so the letter and sign must stay together as the pair turns; apart, they look strange. **Done:** each end's letter and sign are one label, kept upright about the end's centre.
 - **Owner:** good.
+
+### Fig. 12-1
+
+- **Owner:** one of Fleming's weaker drawings; can the forces be shown more clearly, ideally as one indicator combining matter, gravity and the net? Run some experiments. **Tried**, behind a temporary switch: a cancelling bar per body (hatched where the Matter Force cancels gravity), a tug-of-war meter, and the three forces as curves against distance.
+- **Owner:** none of them; take elements of the tug-of-war, which is closer to what Fleming conveys. As printed, Newtonian Gravity looks like the weak one, when gravity must win or the bodies would not attract. Try three stacked arrowed bars with a colour key. **Done**, on one scale from a common zero.
+- **Owner:** confusing: the bars must be double-headed, as the attraction and repulsion are mutual. **Done:** the Matter Force points out both ways, gravity and Newtonian Gravity in from both sides; dashed lines drop from the ends of the Matter Force through gravity. Offered the net under gravity's overhang or centred.
+- **Owner:** prefers centred. The sliders give no insight; the names fit on the arrows, so no "apart"/"together" or key; the green sum should be thickest, as it is what is measured. **Done:** sliders and readouts removed; the forces drawn at 1.5 and 2.5 times Newtonian Gravity (Fleming gives no ratio), noted.
+- **Owner:** put the green arrows in between, as in the original. **Done:** the printed order, Matter Force, Newtonian Gravity, gravity; the gravity labels moved clear of the dashed lines.
+- **Owner:** put m₁ and m₂ in the bodies to match the equations, and mark r. **Done:** a dimension line between the centres.
+- **Owner:** great now.

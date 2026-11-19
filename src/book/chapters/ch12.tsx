@@ -6,24 +6,42 @@ import type { ChapterContent } from '../types';
 
 const W = 720;
 
-/** Figure 12-1: Newtonian gravity as the small difference between two larger forces. */
+/** How much stronger than Newtonian Gravity the two real forces of Figure 12-1 are drawn. Fleming gives no ratio. */
+const REAL = { matter: 1.5, gravity: 2.5 };
+
+/**
+ * Figure 12-1: Newtonian gravity as the small difference between two larger forces. Three arrowed bars stacked on one
+ * scale between the bodies, in the printed order: the Matter Force, Newtonian Gravity, gravity. Each force acts on both bodies, so each has a head at each end: the Matter Force pointing out,
+ * apart; gravity and Newtonian Gravity pointing in, together. Newtonian Gravity, the one that is measured, is drawn thickest.
+ */
 function TwoForces() {
-  const [excess, setExcess] = useState(2);
-  const [r, setR] = useState(1);
-  const H = 300, y = 150, xa = 110, xb = 610, newton = 1 / (r * r), matter = excess * newton, gravity = (excess + 1) * newton, unit = 34;
+  const H = 262, RY = 236, mid = W / 2, newton = 1, { matter, gravity } = REAL, s = 236 / gravity, rows = [70, 124, 178], thick = 26, gap = 3;
+  /** A word written on an arrow, in the page's background colour so it reads on any of the arrows' colours. */
+  const word = (x: number, row: number, text: string) => <text x={x} y={row + 5} textAnchor="middle" className="bk-t bk-t-sm bk-f-ink">{text}</text>;
+  /** Two arrows meeting in the middle, one from each side: a force pushing the bodies together. */
+  const inward = (row: number, f: number, tone: 'force' | 'accent', width: number) => <>
+    <BlockArrow x1={mid - f * s} y1={row} x2={mid - gap} y2={row} tone={tone} thick={width}/>
+    <BlockArrow x1={mid + f * s} y1={row} x2={mid + gap} y2={row} tone={tone} thick={width}/>
+  </>;
   return <Diagram stage={
-    <Stage w={W} h={H} label={`Two bodies. The Matter Force pushes them apart with strength ${fmt(matter)}, gravity pushes them together with strength ${fmt(gravity)}, and the difference, ${fmt(newton)}, is Newtonian gravity.`}>
-      <Body x={xa} y={y} r={46} tone="plain"/><Body x={xb} y={y} r={46} tone="plain"/>
-      <Arrow x1={W / 2 - clamp(matter * unit, 8, 190)} y1={y - 44} x2={W / 2 + clamp(matter * unit, 8, 190)} y2={y - 44} both tone="matter" w={3} head={12}/><T x={W / 2} y={y - 56} tone="matter">Matter Force: apart</T>
-      <Arrow x1={W / 2 - clamp(gravity * unit, 8, 190)} y1={y + 44} x2={W / 2 - 3} y2={y + 44} tone="force" w={3} head={12}/><Arrow x1={W / 2 + clamp(gravity * unit, 8, 190)} y1={y + 44} x2={W / 2 + 3} y2={y + 44} tone="force" w={3} head={12}/><T x={W / 2} y={y + 72} tone="text">gravity: together</T>
-      <Arrow x1={W / 2 - clamp(newton * unit, 6, 190)} y1={y} x2={W / 2 - 3} y2={y} tone="accent" w={2} head={9}/><Arrow x1={W / 2 + clamp(newton * unit, 6, 190)} y1={y} x2={W / 2 + 3} y2={y} tone="accent" w={2} head={9}/><T x={W / 2} y={y - 10} tone="accent" size="sm">Newtonian Gravity: the difference</T>
+    <Stage w={W} h={H} label={`Two bodies, m1 and m2, a distance r apart, with three forces between them on one scale. The Matter Force pushes them apart, gravity pushes them together and is stronger, and Newtonian Gravity, the difference between the two, pushes them together. Newtonian Gravity is what is measured.`}>
+      {/* The bodies are named and spaced as in Equations 12-2 and 12-3: matter charges m₁ and m₂, a distance r apart, centre to centre. */}
+      {[[56, '1'], [W - 56, '2']].map(([x, i]) => <g key={i}><Body x={+x} y={rows[1]} r={34} tone="plain"/><T x={+x} y={rows[1] + 7} tone="text" size="lg" italic>m<tspan dy={5} fontSize="0.7em" fontStyle="normal">{i}</tspan></T></g>)}
+      {[56, W - 56].map(x => <line key={x} x1={x} y1={rows[1] + 40} x2={x} y2={RY + 10} className="bk-s-faint" strokeDasharray="3 4"/>)}
+      <Arrow x1={mid - 14} y1={RY} x2={62} y2={RY} tone="muted" w={1.5} head={9}/><Arrow x1={mid + 14} y1={RY} x2={W - 62} y2={RY} tone="muted" w={1.5} head={9}/>
+      <T x={mid} y={RY + 6} tone="text" size="lg" italic>r</T>
+      <BlockArrow x1={mid} y1={rows[0]} x2={mid - matter * s} y2={rows[0]} tone="matter" thick={thick}/>
+      <BlockArrow x1={mid} y1={rows[0]} x2={mid + matter * s} y2={rows[0]} tone="matter" thick={thick}/>
+      {word(mid, rows[0], 'Matter Force')}
+      {inward(rows[2], gravity, 'force', thick)}
+      {/* The names sit on the part of gravity beyond the Matter Force, clear of the dashed lines. */}
+      {[-1, 1].map(side => <g key={side}>{word(mid + side * (matter + newton / 2) * s, rows[2], 'gravity')}</g>)}
+      {/* Where the Matter Force reaches, marked down through gravity: beyond it, at each end, is the part of gravity left over. */}
+      {[-1, 1].map(side => <line key={side} x1={mid + side * matter * s} y1={rows[0] + thick / 2 + 2} x2={mid + side * matter * s} y2={rows[2] + thick / 2 + 6} className="bk-s-matter" strokeWidth="1.5" strokeDasharray="3 3"/>)}
+      {inward(rows[1], newton, 'accent', 38)}
+      {word(mid - (newton * s) / 2 - 8, rows[1], 'Newtonian')}{word(mid + (newton * s) / 2 + 8, rows[1], 'Gravity')}
     </Stage>}>
-    <Slider label="How much stronger the real forces are" value={excess} min={0.5} max={5} step={0.5} onChange={setExcess} show={v => `${v} × Newtonian`}/>
-    <Slider label="Distance between the bodies" value={r} min={0.6} max={2} step={0.05} onChange={setR} show={v => `${fmt(v, 2)} ×`}/>
-    <Readout label="Matter Force (apart)" value={fmt(matter)} tone="force"/>
-    <Readout label="Gravity (together)" value={fmt(gravity)}/>
-    <Readout label="Newtonian Gravity (net)" value={fmt(newton)} tone="good"/>
-    <Remark>Whatever the two real forces are, what is measured is their difference; both fall with the square of the distance here.</Remark>
+    <Remark>Whatever the two real forces are, what is measured is their difference.</Remark>
   </Diagram>;
 }
 
@@ -300,8 +318,8 @@ const chapter: ChapterContent = {
         <Eq n="12-2"><V>F</V><sub>m</sub> = <Frac top={<><V>m</V><sub>1</sub><V>m</V><sub>2</sub></>} bottom={<>4πε<sub>0m</sub><V>r</V>²</>}/></Eq>
         <Eq n="12-3"><V>F</V> = <V>G</V><sub>m</sub> <Frac top={<><V>m</V><sub>1</sub><V>m</V><sub>2</sub></>} bottom={<><V>r</V>²</>}/></Eq>
       </>,
-      tryThis: ['Raise “How much stronger the real forces are”. Both outer arrows grow; the inner one, their difference, does not change.', 'Change the distance: all three change together, by the inverse square.'],
-      notes: <p>Fleming does not give the ratio of the real forces to Newtonian gravity in this chapter, so it is a slider. That the two fall off identically with distance is the simple case of these equations; chapter 18 argues that gravity fades faster at very great distances.</p>,
+      tryThis: ['Follow the dashed lines down from the ends of the Matter Force: gravity reaches past them at each end by exactly the length of a green arrow.'],
+      notes: <p>The printed figure draws the three forces as lines. Here they are stacked on one scale as arrowed bars, in the printed order, each with a head at both ends because each acts on both bodies, and Newtonian Gravity, the force that is measured, is drawn thickest. Fleming does not give the ratio of the real forces to Newtonian Gravity in this chapter; they are drawn as 1.5 and 2.5 times it. Chapter 18 argues that gravity fades faster than the Matter Force at very great distances.</p>,
     },
     {
       kind: 'figure', id: '12-2', page: 101, section: 'Circular Orbits', title: 'A rotating sun pushes its planet inward',
