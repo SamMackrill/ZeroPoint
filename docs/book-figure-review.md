@@ -84,7 +84,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 19-1 | A force that arrives late | animated | changed | Half speed; orbit at a fixed size, no growth or inner circle; A’s line to near the star; the speed slider from 1 c to ∞, naming Einstein, Laplace, Van Flandern and Newton; page no longer follows the figure |
 | 19-2 | How far a photon’s field gets | animated | to review | |
 | 19-3 | One photon, two slits, the same time | animated | to review | |
-| 19-4 | A half-turn is the speed of light; a field needs far less | animated | to review | |
+| 19-4 | A half-turn is the speed of light; a field needs far less | animated | fine | No change |
 | 21-1 | Swimming across the æther | animated | to review | |
 | 22-1 | Light from a moving frame | animated | to review | |
 | 22-2 | A shorter wavelength, not a shorter space | animated | to review | |
