@@ -53,16 +53,20 @@ export function TwoSources({ signs, mode: initial, names, flip, matter }: { sign
   const W = 720, H = 360, k = flipped ? -1 : 1, qa = (signs[0] * k) as 1 | -1, qb = (signs[1] * k) as 1 | -1, like = qa === qb;
   const sources = useMemo<Source[]>(() => [{ x: a.x, y: a.y, q: qa }, { x: b.x, y: b.y, q: qb }], [a.x, a.y, b.x, b.y, qa, qb]);
   const bounds = { x0: 40, y0: 40, x1: W - 40, y1: H - 40 }, d = Math.hypot(b.x - a.x, b.y - a.y) || 1, ux = (b.x - a.x) / d, uy = (b.y - a.y) / d, s = like ? -1 : 1;
-  const glyph = (p: { x: number; y: number }, q: 1 | -1) => (matter ? <Body x={p.x} y={p.y} r={15} tone={q < 0 ? 'matter' : 'anti'}/> : <Charge x={p.x} y={p.y} sign={q} r={14}/>);
+  // Bodies of matter are marked M as in Figure 11-1 (M̄ for antimatter), and the key to a zepton's ends is drawn as there.
+  const glyph = (p: { x: number; y: number }, q: 1 | -1) => (matter
+    ? <><Body x={p.x} y={p.y} r={18} tone={q < 0 ? 'matter' : 'anti'}/><T x={p.x} y={p.y + 5} tone="text">{q < 0 ? 'M' : 'M̄'}</T></>
+    : <Charge x={p.x} y={p.y} sign={q} r={14}/>);
   return <Diagram stage={
     <Stage w={W} h={H} label={`${names[0]} and ${names[1]}, with the field between them drawn as ${mode === 'both' ? 'lines and zeptons' : mode}. ${like ? 'The lines turn aside from each other between the two: repulsion.' : 'The lines run from one to the other: attraction.'}`}>
-      <FieldPicture sources={sources} w={W} h={H} perUnit={10} lines={mode === 'zeptons' ? 0 : mode === 'both' ? 0.45 : 1} zeptons={mode === 'lines' ? 0 : 1} t={play.t} zeptonLen={17} polarity={matter ? 'matter' : 'electric'}/>
+      <FieldPicture sources={sources} w={W} h={H} perUnit={10} lines={mode === 'zeptons' ? 0 : mode === 'both' ? 0.45 : 1} zeptons={mode === 'lines' ? 0 : 1} t={play.t} zeptonLen={17} polarity={matter ? 'matter' : 'electric'} radii={matter ? [18, 18] : undefined}/>
       {push && <>
         <BlockArrow x1={a.x + s * ux * 24} y1={a.y + s * uy * 24} x2={a.x + s * ux * 66} y2={a.y + s * uy * 66} thick={11}/>
         <BlockArrow x1={b.x - s * ux * 24} y1={b.y - s * uy * 24} x2={b.x - s * ux * 66} y2={b.y - s * uy * 66} thick={11}/>
       </>}
       <Drag x={a.x} y={a.y} onMove={(x, y) => setA({ x, y })} bounds={bounds} label={names[0]}>{glyph(a, qa)}</Drag>
       <Drag x={b.x} y={b.y} onMove={(x, y) => setB({ x, y })} bounds={bounds} label={names[1]}>{glyph(b, qb)}</Drag>
+      {matter && <><Zepton x={90} y={H - 30} angle={180} len={46} polarity="matter" signs/><T x={126} y={H - 25} anchor="start" size="sm">a: antimatter end · m: matter end</T></>}
     </Stage>}>
     <Choice label="Draw the field as" value={mode} onChange={setMode} options={[{ value: 'lines', label: 'Lines' }, { value: 'zeptons', label: 'Zeptons' }, { value: 'both', label: 'Both' }]}/>
     {flip && <Toggle label={matter ? 'Make both antimatter' : 'Reverse both charges'} checked={flipped} onChange={setFlipped}/>}

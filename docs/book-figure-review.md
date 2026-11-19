@@ -58,7 +58,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 10-2 | The inertia of matter | animated | changed | The reader pushes the matter: drag along it, or hold an arrow key; a force arrow shows the push; one fixed status line |
 | 10-3 | Why a body at rest stays at rest | animated | fine | No change |
 | 11-1 | The matter field of a body | animated | changed | Amount slider removed; zeptons kept a small, even gap from the body, pulsing in rings so the picture stays balanced |
-| 11-2 | Matter repels matter | animated | to review | |
+| 11-2 | Matter repels matter | animated | changed | Bodies marked M with the zepton key, as in 11-1; zeptons keep the same small gap |
 | 11-3 | Two kinds of zepton, and how they cancel | still | to review | |
 | 11-4 | Moving matter makes a mattermagnetic field | still | to review | |
 | 11-5 | A rotating body and its counter-rotating field | animated | to review | |
@@ -317,4 +317,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** the antimatter ends of the zeptons nearest the body clip into it; there should be a gap. **Fixed:** `FieldPicture` takes the sources' drawn `radii`; the zeptons are counted from the body's end of each line (a negative source's lines are traced inward), so the first on every line sits a small gap out.
 - **Owner:** the slider adds nothing. **Agreed:** Fleming's text is about which way the zeptons lie and the lines reaching outward, not the amount of matter. Removed.
 - **Owner:** the gap should be smaller and equal on every line. A first attempt pinned the antimatter ends; **owner:** that seems wrong, keep it balanced and symmetrical. **Done:** each zepton opens and closes about its middle; the first one's middle is placed so that fully open it leaves a small gap; zeptons at the same distance pulse together, so the picture stays symmetrical.
+- **Owner:** great now.
+
+### Fig. 11-2
+
+- **Owner:** add the M and the key so it matches 11-1. **Done** in `TwoSources` for matter: bodies marked M (M̄ for antimatter), a little larger to hold the letter; the zepton key; and the zeptons keep 11-1's small, even gap. Shared with the matter figures of chapters 14 and 18.
 - **Owner:** great now.
