@@ -105,7 +105,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | x2-1 | A drop in the ocean | still | changed | Long slider readings keep their longest height (kit-wide), so nothing jumps; the scale's powers of ten on one line |
 | x2-2 | More energy, less time | animated | fine | No change |
 | x2-3 | Where the energy is | still | fine | No change |
-| x4-1 | A pair carries the photon’s energy | still | to review | |
+| x4-1 | A pair carries the photon’s energy | still | changed | Proper subscripts (λ_ph, λ_z, ν_z), and book-wide for B_m, F_m, ω_p |
 | x5-1 | Pair production: the pair was already there | animated | to review | |
 | x7-1 | The four equations, read as zeptons | animated | to review | |
 | x9-1 | Laithwaite’s flywheel: held up by the vacuum | animated | to review | |
@@ -488,4 +488,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** the green text is jumpy as the slider moves. The slider's reading, the ocean's name, wrapped onto a second line only at its longest, so the controls below jumped. **Fixed** in the kit's `Slider`: a long reading shares a grid cell with an unseen copy of the longest, so its line is always that tall (measured: 91 px at every value). Applies to every slider with a long reading.
 - **Owner:** the scale's numbers should line up. **Done:** the powers of ten on one line.
+- **Owner:** very good.
+
+### Explorer x4-1
+
+- **Owner:** λ_ph is used instead of a proper subscript. **Fixed** book-wide: every underscore subscript in visible text (x4-1's λ_ph, λ_z, ν_z; chapter 8's B_m, F_m, ω_p; 11-4's B_m) is a real subscript, by a new kit helper `Sb` in SVG text and `<sub>` in readouts. Those left are in comments and constant names.
 - **Owner:** very good.

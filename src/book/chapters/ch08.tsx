@@ -1,6 +1,6 @@
 // Chapter 8: The Mattermagnetic Field (PDF pp. 70–80). Figures 8-1 to 8-6.
 import { Suspense, lazy, useCallback, useId, useMemo, useRef, useState } from 'react';
-import { Action, Arrow, BlockArrow, Body, Charge, Choice, Diagram, FallbackOnError, canDraw3D, Drag, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
+import { Action, Arrow, BlockArrow, Body, Charge, Choice, Diagram, FallbackOnError, canDraw3D, Drag, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Zepton, clamp, deg, fmt, pathThrough, polar, rad, usePlayback, Sb } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { TOP_LAID } from '../three/top-math';
@@ -202,9 +202,9 @@ function PrecessingTop() {
         <Arrow x1={hx} y1={hy} x2={polar(hx, hy, 70, clockwise ? a + 180 : a)[0]} y2={polar(hx, hy, 70, clockwise ? a + 180 : a)[1]} tone="b" w={3}/>
         <InOut x={mx} y={my} out={false} r={11} tone="motion"/>
         <BlockArrow x1={mx} y1={my} x2={tx} y2={ty} thick={9}/>
-        <T x={560} y={120} anchor="start" size="sm" tone="b">B_m along the axis,</T><T x={560} y={136} anchor="start" size="sm" tone="b">{clockwise ? 'downward (toward the tip)' : 'upward (toward the head)'}</T>
+        <T x={560} y={120} anchor="start" size="sm" tone="b">B<Sb>m</Sb> along the axis,</T><T x={560} y={136} anchor="start" size="sm" tone="b">{clockwise ? 'downward (toward the tip)' : 'upward (toward the head)'}</T>
         <T x={560} y={166} anchor="start" size="sm" tone="motion">⊗ v: falling, into the page</T>
-        <T x={560} y={196} anchor="start" size="sm" tone="text">force F_m, at 90° to both</T>
+        <T x={560} y={196} anchor="start" size="sm" tone="text">force F<Sb>m</Sb>, at 90° to both</T>
       </>}
     </Stage>;
   return <Diagram stage={flat ? flatTop() : <FallbackOnError onError={fail} fallback={flatTop()}>
@@ -276,7 +276,7 @@ function TopTorque() {
     <PlayBar play={play} label="the top"/>
     <Readout label="Tip to centre of mass, r" value={`${fmt(r * 100, 2)} cm`}/>
     <Readout label="Torque, mgr sin α" value={`${fmt(torque)} N m`} tone="force"/>
-    <Readout label="Precession, from τ = ω_p × L" value={`${fmt(wp / (2 * Math.PI))} turns/s`}/>
+    <Readout label={<>Precession, from τ = ω<sub>p</sub> × L</>} value={`${fmt(wp / (2 * Math.PI))} turns/s`}/>
     <Remark>The torque grows with the lean; the precession rate does not, because the part of L it has to turn grows with the lean too.</Remark>
   </Diagram>;
 }
@@ -290,7 +290,7 @@ function MovingSourceField() {
   const [p, setP] = useState({ x: 480, y: 130 });
   const H = 380, sx = 280, sy = 300, dx = p.x - sx, dy = p.y - sy, r = Math.hypot(dx, dy), alpha = deg(Math.acos(clamp(-dy / (r || 1), -1, 1)));
   // At the source itself the inverse square has no value: it reads as none.
-  const strength = r < 1 ? 0 : movingField(r, alpha, 150), none = strength < 1e-6, right = dx > 0, name = matter ? 'B_m' : 'B';
+  const strength = r < 1 ? 0 : movingField(r, alpha, 150), none = strength < 1e-6, right = dx > 0, name = matter ? <>B<Sb>m</Sb></> : 'B', readoutName = matter ? <>B<sub>m</sub></> : 'B';
   const arc = pathThrough(Array.from({ length: 20 }, (_, i) => polar(sx, sy, 56, 90 - (Math.sign(dx) || 1) * (alpha * i) / 19)));
   return <Diagram stage={
     <Stage w={W} h={H} label={`A ${matter ? 'body of matter' : 'positive charge'} moving up the page. At the point marked, ${Math.round(r)} units away at ${Math.round(alpha)} degrees from the motion, ${none ? `there is no ${matter ? 'mattermagnetic' : 'magnetic'} field` : `the ${matter ? 'mattermagnetic' : 'magnetic'} field points ${right ? 'into' : 'out of'} the page with relative strength ${fmt(strength, 2)}`}.`}>
@@ -308,7 +308,7 @@ function MovingSourceField() {
     <Choice label="What is moving" value={matter ? 'matter' : 'charge'} onChange={v => setMatter(v === 'matter')} options={[{ value: 'charge', label: 'Charge q' }, { value: 'matter', label: 'Matter m' }]}/>
     <Readout label="Distance r" value={`${Math.round(r)} units`}/>
     <Readout label="Angle α" value={`${Math.round(alpha)}°`}/>
-    <Readout label={`${name}, relative`} value={none ? 'none' : `${fmt(strength, 2)} ${right ? 'into the page' : 'out of the page'}`} tone="b"/>
+    <Readout label={<>{readoutName}, relative</>} value={none ? 'none' : `${fmt(strength, 2)} ${right ? 'into the page' : 'out of the page'}`} tone="b"/>
     <Remark>{matter ? 'With matter in place of charge the numerator is mυ: the momentum of the body.' : 'Drag the point. The field is strongest beside the charge, falls with the square of the distance, and is zero straight ahead.'}</Remark>
   </Diagram>;
 }

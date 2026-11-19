@@ -1,6 +1,6 @@
 // Chapter 11: The Matter Dipole (PDF pp. 91–97). Figures 11-1 to 11-6.
 import { useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
-import { Action, Arrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, bearing, clamp, polar, rad, turn, usePlayback, type Source } from '../kit';
+import { Action, Arrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, bearing, clamp, polar, rad, turn, usePlayback, type Source, Sb } from '../kit';
 import { Paper, Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 import { TwoSources, ZEPTON_PAIR, dumbbell } from './shared';
@@ -102,7 +102,7 @@ function MovingBody() {
       {moving !== 0 && <>
         <Spin x={above.x} y={above.y} r={38} ccw={moving > 0} from={moving > 0 ? 20 : 160} sweep={140}/><Spin x={below.x} y={below.y} r={38} ccw={moving < 0} from={moving > 0 ? -20 : 200} sweep={140}/>
         <InOut x={above.x + 78} y={above.y} out={moving > 0} r={10}/><InOut x={below.x + 78} y={below.y} out={moving < 0} r={10}/>
-        <T x={above.x + 96} y={above.y + 5} anchor="start" tone="b">B_m {moving > 0 ? 'out of the page' : 'into the page'}</T><T x={below.x + 96} y={below.y + 5} anchor="start" tone="b">B_m {moving < 0 ? 'out of the page' : 'into the page'}</T>
+        <T x={above.x + 96} y={above.y + 5} anchor="start" tone="b">B<Sb>m</Sb> {moving > 0 ? 'out of the page' : 'into the page'}</T><T x={below.x + 96} y={below.y + 5} anchor="start" tone="b">B<Sb>m</Sb> {moving < 0 ? 'out of the page' : 'into the page'}</T>
         <Still><Arrow x1={bx + moving * 26} y1={y} x2={bx + moving * 62} y2={y} tone="motion" w={2.4}/></Still>
       </>}
       <Drag x={bx} y={y} onMove={nx => { if (!play.playing) setX(nx); }} bounds={{ x0: 80, y0: y, x1: 640, y1: y }} label="Body of matter"><Body x={bx} y={y} r={18}/><T x={bx} y={y + 6} tone="text" size="lg">M</T></Drag>
