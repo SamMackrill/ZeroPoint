@@ -1,6 +1,7 @@
 // Chapter 25: The Strong Nuclear Force (PDF pp. 192–200). Figures 25-1 and 25-2.
-import { useMemo, useState } from 'react';
-import { Arrow, BlockArrow, Diagram, Line, Readout, Remark, Slider, Stage, T, Toggle, clamp, fmt, pathThrough } from '../kit';
+import { Suspense, lazy, useCallback, useMemo, useState } from 'react';
+import { Arrow, BlockArrow, Diagram, FallbackOnError, Line, Readout, Remark, Slider, Stage, T, Toggle, canDraw3D, clamp, fmt, pathThrough } from '../kit';
+import { STAR1_R as STAR1_SCENE_R } from '../three/shadow-math';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { triacontahedron } from './ch16';
@@ -87,19 +88,50 @@ export const shadowWidth = (D: number, a = PROTON_RADIUS) => (2 * a * a) / D;
 /** The smaller width of one rhombic face of a proton-sized triacontahedron, in femtometres (p. 195). */
 export const OPENING = 0.6;
 
+/** Figure 25-2 drawn in three dimensions, with the scene of Figure 17-2: loaded on demand, since three.js is large. */
+const ShadowScene = lazy(() => import('../three/ShadowScene'));
+
+/** The rhombic triacontahedron as an open frame, for the 3D scene: its vertices scaled to the outer ones' sphere, and its struts. */
+const CAGE = (() => {
+  const v = triacontahedron(), outer = Math.hypot(...v.find(p => p.outer)!.p);
+  const edges: [number, number][] = [];
+  v.forEach((a, i) => v.forEach((b, j) => { if (a.outer && !b.outer && Math.hypot(a.p[0] - b.p[0], a.p[1] - b.p[1], a.p[2] - b.p[2]) < 1.2) edges.push([i, j]); }));
+  return { points: v.map(p => [p.p[0] / outer, p.p[1] / outer, p.p[2] / outer] as const), edges };
+})();
+
+/** Figure 25-2 as the printed page has it, flat: the two lines from one particle's edges to the other's centre. The fallback where 3D cannot be drawn. */
+function FlatShellShadow({ L, label }: { L: number; label: string }) {
+  const D = L + 2 * PROTON_RADIUS, shadow = shadowWidth(D), H = 260, scale = 60, r = PROTON_RADIUS * scale, y = 130, xa = 150, xb = xa + D * scale;
+  return <Stage w={W} h={H} label={label}>
+    <Line d={`M${Math.min(xb, W - 20)} ${y - r} L${xa} ${y} L${Math.min(xb, W - 20)} ${y + r}`} tone="mark" w={1.4}/>
+    <Shell x={xa} y={y} r={r}/>{xb < W + r && <Shell x={xb} y={y} r={r}/>}
+    <line x1={xa + r} y1={y - (shadow * scale) / 2} x2={xa + r} y2={y + (shadow * scale) / 2} className="bk-s-mark" strokeWidth="5" strokeLinecap="round"/>
+  </Stage>;
+}
+
 /** Figure 25-2: the shadow one particle casts on another, against the size of the openings in its shell. */
 function ShellShadow() {
   const [L, setL] = useState(2);
-  const D = L + 2 * PROTON_RADIUS, shadow = shadowWidth(D), H = 340, scale = 60, r = PROTON_RADIUS * scale, y = 150, xa = 150, xb = xa + D * scale;
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`Two particles ${fmt(L, 3)} femtometres apart. The shadow one casts on the other is ${fmt(shadow, 3)} femtometres across, ${shadow > OPENING ? 'larger' : 'smaller'} than the 0.60 femtometre openings in the shell.`}>
-      <Line d={`M${Math.min(xb, W - 20)} ${y - r} L${xa} ${y} L${Math.min(xb, W - 20)} ${y + r}`} tone="mark" w={1.4}/>
-      <Shell x={xa} y={y} r={r}/>{xb < W + r && <Shell x={xb} y={y} r={r}/>}
-      <line x1={xa + r} y1={y - (shadow * scale) / 2} x2={xa + r} y2={y + (shadow * scale) / 2} className="bk-s-mark" strokeWidth="5" strokeLinecap="round"/>
-      <line x1={xa + r + 12} y1={y - (OPENING * scale) / 2} x2={xa + r + 12} y2={y + (OPENING * scale) / 2} className="bk-s-accent" strokeWidth="3" strokeLinecap="round"/>
-      <T x={xa} y={y + r + 28} size="sm" tone="mark">shadow: {fmt(shadow, 3)} fm</T><T x={xa} y={y + r + 46} size="sm" tone="accent">opening in the shell: 0.60 fm</T>
-      <Arrow x1={xa + r} y1={H - 30} x2={Math.min(xb - r, W - 30)} y2={H - 30} both tone="muted" w={1.2} head={6}/><T x={(xa + r + Math.min(xb - r, W - 30)) / 2} y={H - 38} size="sm" italic>L = {fmt(L, 3)} fm</T>
-    </Stage>}>
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const fail = useCallback(() => setFlat(true), []);
+  const D = L + 2 * PROTON_RADIUS, shadow = shadowWidth(D), bar = 220;
+  const label = `Two particles ${fmt(L, 3)} femtometres apart. The shadow one casts on the other is ${fmt(shadow, 3)} femtometres across, ${shadow > OPENING ? 'larger' : 'smaller'} than the 0.60 femtometre openings in the shell.`;
+  return <Diagram stage={<>
+    {flat
+      ? <FlatShellShadow L={L} label={label}/>
+      : <FallbackOnError onError={fail} fallback={<FlatShellShadow L={L} label={label}/>}>
+          <Suspense fallback={<FlatShellShadow L={L} label={label}/>}>
+            <ShadowScene distance={(D / PROTON_RADIUS) * STAR1_SCENE_R} size={STAR1_SCENE_R} names={[]} cage={CAGE} onFail={fail} description={`${label} The particles are open rhombic triacontahedra; the cone from one particle's centre to the other's edges meets its surface in the shadow, a cap among the frame's openings. Drag to turn the view.`}/>
+          </Suspense>
+        </FallbackOnError>}
+    <Stage w={W} h={110} label={`The shadow, ${fmt(shadow, 3)} femtometres across, beside an opening in the shell, 0.60 femtometres.`}>
+      <line x1={140} y1={38} x2={140 + (shadow / 1.2) * bar} y2={38} className="bk-s-mark" strokeWidth="8" strokeLinecap="round"/>
+      <T x={130} y={43} anchor="end" size="sm" tone="mark">shadow</T><T x={150 + (shadow / 1.2) * bar} y={43} anchor="start" size="sm" tone="mark">{fmt(shadow, 3)} fm</T>
+      <line x1={140} y1={74} x2={140 + (OPENING / 1.2) * bar} y2={74} className="bk-s-accent" strokeWidth="8" strokeLinecap="round"/>
+      <T x={130} y={79} anchor="end" size="sm" tone="accent">opening</T><T x={150 + (OPENING / 1.2) * bar} y={79} anchor="start" size="sm" tone="accent">0.60 fm</T>
+      <T x={560} y={60} size="sm" tone={shadow > OPENING ? 'accent' : 'muted'}>{shadow > OPENING ? 'shadow wider than an opening' : 'shadow narrower than an opening'}</T>
+    </Stage>
+  </>}>
     <Slider label="Least distance between them, L" value={L} min={0.3} max={6} step={0.05} onChange={setL} show={v => `${fmt(v, 3)} fm`}/>
     <Readout label="Width of the shadow" value={`${fmt(shadow, 3)} fm`} tone="force"/>
     <Readout label="Smaller width of an opening" value="0.60 fm"/>
@@ -143,7 +175,7 @@ const chapter: ChapterContent = {
       </>,
       tryThis: ['At 2 fm apart the shadow is smaller than an opening, as the text says.', 'Bring the particles together until the shadow is as wide as the opening, then wider.', 'Compare with Figure 18-2: the same cone, between stars, is millimetres wide on a body a million kilometres across.'],
       notes: <>
-        <p>The shadow is the cone from the edges of one sphere to the centre of the other, cut at the other’s surface, as in Figures 17-2 and 18-2. The sentence before the one quoted says the force <Q>will diminish when the openings in the particle structure are smaller than the shadow</Q>, which is the same condition under which the next sentence says it is strongest. The diagram follows the second sentence, which matches the rest of the argument.</p>
+        <p>Drawn in three dimensions, as Figures 17-2 and 18-2, with the particles as open rhombic triacontahedra like the Star-Ball pictured, so that the shadow can be seen against the openings. The shadow is the cone from the edges of one sphere to the centre of the other, cut at the other’s surface. The sentence before the one quoted says the force <Q>will diminish when the openings in the particle structure are smaller than the shadow</Q>, which is the same condition under which the next sentence says it is strongest. The diagram follows the second sentence, which matches the rest of the argument.</p>
       </>,
     },
   ],

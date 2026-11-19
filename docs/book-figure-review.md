@@ -92,7 +92,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 23-1 | A signal that comes back late | animated | changed | The radar signal visibly slows near the Sun (exaggerated, following the band); Mercury only, at its proportional distance |
 | 23-2 | Starlight turned by the Sun | still | changed | The ray drawn as a smooth curve, turning most beside the Sun |
 | 25-1 | Two shells, a diameter apart | still | changed | The white arrows show the net force, turning round to push apart where Coulomb wins (below 0.5 fm, beyond 3.1 fm) |
-| 25-2 | The shadow and the openings | still | to review | |
+| 25-2 | The shadow and the openings | still | changed | 3D as 17-2, the particles open rhombic triacontahedra so the shadow cap sits among the openings; widths compared beneath |
 | 26-1 | Half a pair on each side of a boundary | animated | to review | |
 
 ## Explorers (second pass)
@@ -473,3 +473,8 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** the white force arrows should reverse when the shells get close, showing repulsion. They showed the Casimir force alone, which fades but never turns. **Done:** they show the net force, together where the Casimir force is the larger and apart where Coulomb wins, below about 0.5 fm and beyond about 3.1 fm (computed); a net-force readout added.
 - **Owner:** good.
+
+### Fig. 25-2
+
+- **Owner:** like 17-2, best shown in 3D. **Done:** `ShadowScene` gains a `cage` option drawing the bodies as open rhombic triacontahedra (struts on faint spheres), so the cone and the shadow cap can be seen among the frame's openings; a panel beneath compares the shadow's width with an opening's 0.60 fm. The flat drawing is the fallback.
+- **Owner:** good now.
