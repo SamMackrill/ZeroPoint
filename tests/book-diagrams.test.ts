@@ -11,7 +11,7 @@ import { COIL_LENGTH, COIL_RADIUS, COIL_ZEPTONS, SEEDS, ZEPTON_COUNTS, coilField
 import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/book/three/sphere-math';
 import { bodyVelocity, pushOfDrag, speedOfLight } from '../src/book/chapters/ch10';
 import { spinRate } from '../src/book/chapters/ch11';
-import { precessingRadius } from '../src/book/chapters/ch12';
+import { orbitCycle, precessingRadius, turnOrbitPoint } from '../src/book/chapters/ch12';
 
 describe('book companion: diagrams', () => {
   it('Figure 8-1: Descartes’s vortex cells tile the engraving’s frame without gaps or overlaps', () => {
@@ -188,5 +188,15 @@ describe('book companion: diagrams', () => {
     expect(spinRate(1)).toBe(0);
     expect(spinRate(40)).toBeCloseTo(0.5);
     expect(spinRate(-1000)).toBe(-1);
+  });
+
+  it('Figure 12-6: each orbit is the last turned on by a fixed advance, closed without the force and joining without a jump', () => {
+    expect(Math.abs(orbitCycle(0).advance)).toBeLessThan(1e-3);
+    const { points, advance } = orbitCycle(0.03);
+    expect(advance).toBeGreaterThan(0.01);
+    // The last point of one orbit and the first of the next, turned on, are one small step apart.
+    const last = points[points.length - 1], first = turnOrbitPoint(points[0], advance);
+    const step = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
+    expect(Math.hypot(first.x - last.x, first.y - last.y)).toBeLessThan(step * 1.5);
   });
 });

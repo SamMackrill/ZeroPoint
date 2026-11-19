@@ -68,7 +68,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 12-3 | A planet’s own rotational field | animated | fine | 12-2’s turning body and zeptons (shared); B_m subscripted |
 | 12-4 | Why orbiting bodies stop turning | animated | changed | Orbital-field zeptons turn either side, arrows only when paused; the planet turns with a dark cross; the Sun drawn symbolically at the left, named within it |
 | 12-5 | An ellipse that will not stay put | animated | fine | No change |
-| 12-6 | The force that turns the ellipse | animated | to review | |
+| 12-6 | The force that turns the ellipse | animated | changed | Static force and rotation arrows only when paused; the Sun turns; a fading trail over three orbits; the orbit precesses on without looping |
 | 12-7 | The largest flywheel | animated | to review | |
 | 12-8 | Stars moving together are drawn together | animated | to review | |
 | 13-1 | Eddies where the two halves of the mass meet | animated | to review | |
@@ -369,3 +369,10 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** add the Sun symbolically, not to scale, as sketched. **Done:** the edge of a great gold disc down the left, with flares off its limb.
 - **Owner:** name it vertically within the Sun; "not to scale" is obvious. Then: the "to the Sun" arrow and label are unnecessary. **Done** both.
 - **Owner:** great now.
+
+### Fig. 12-6
+
+- **Owner:** the static force and rotation arrows are not needed unless paused. **Done:** the small force arrows round the orbit and the Sun's curled arrow show only when paused; the Sun, a little larger, turns with the dark cross. The moving planet keeps its own velocity and force arrows.
+- **Owner:** the orbital trail should be strongest near the body and fade as it is left behind; then, a slower fade to see more of the older orbits. **Done:** a trail over the last three orbits, fading evenly to a faint floor.
+- **Owner:** the animation loops with a jump; keep the orbit and precession going. **Done:** `orbitCycle` computes one orbit, perihelion to perihelion, and its advance, finding the next perihelion where the outward speed passes through zero; each later orbit is that one turned on by the advance (`turnOrbitPoint`). Tested: closed with no force, and joining without a jump.
+- **Owner:** looks great.

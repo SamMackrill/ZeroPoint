@@ -222,21 +222,51 @@ export function orbitWithLorentz(k: number, turns = 4, e = 0.55, perihelion = 0.
   return out;
 }
 
+/**
+ * One orbit, perihelion to perihelion, of the orbit of `orbitWithLorentz`, and the angle (radians) by which its perihelion
+ * advanced. Every later orbit is the same one turned on by that angle, so the motion can run on for ever without a jump.
+ */
+export function orbitCycle(k: number): { points: OrbitPoint[]; advance: number } {
+  const all = orbitWithLorentz(k, 1.4), outward = (q: OrbitPoint) => q.x * q.vx + q.y * q.vy, angle = (q: OrbitPoint) => Math.atan2(q.y, q.x);
+  // The next perihelion is where the planet, past aphelion, stops closing on the sun and starts to recede. Between the two
+  // samples either side of it, the angle is found where the outward speed passes through zero.
+  let next = Math.floor(all.length / 2);
+  while (next < all.length - 1 && !(outward(all[next - 1]) < 0 && outward(all[next]) >= 0)) next++;
+  const before = all[next - 1], after = all[next], f = -outward(before) / (outward(after) - outward(before));
+  const turn = Math.atan2(Math.sin(angle(after) - angle(before)), Math.cos(angle(after) - angle(before)));
+  return { points: all.slice(0, next), advance: angle(before) + f * turn - angle(all[0]) };
+}
+
+/** A point of an orbit turned about the sun by `angle` radians, with its velocity and force turned with it. */
+export function turnOrbitPoint(q: OrbitPoint, angle: number): OrbitPoint {
+  const c = Math.cos(angle), s = Math.sin(angle), rot = (x: number, y: number) => [x * c - y * s, x * s + y * c] as const;
+  const [x, y] = rot(q.x, q.y), [vx, vy] = rot(q.vx, q.vy), [fx, fy] = rot(q.fx, q.fy);
+  return { x, y, vx, vy, fx, fy };
+}
+
 /** Figure 12-6: the mattermagnetic force along an elliptical orbit round a rotating sun, and the precession it causes. */
 function LorentzOnOrbit() {
   const [k, setK] = useState(0.03);
   const play = usePlayback({ speed: 0.12 });
   const H = 420, cx = 300, sunY = 250, scale = 105;
-  const orbit = useMemo(() => orbitWithLorentz(k), [k]);
+  const cycle = useMemo(() => orbitCycle(k), [k]), perOrbit = cycle.points.length;
+  /** The planet's g-th point since the start: the g-th of one orbit, turned on by the advance of each orbit completed. */
+  const at = (g: number) => turnOrbitPoint(cycle.points[g % perOrbit], Math.floor(g / perOrbit) * cycle.advance);
   const screen = (p: { x: number; y: number }): [number, number] => [cx + p.y * scale, sunY + p.x * scale];
-  const i = Math.floor((play.t % 1) * (orbit.length - 1)), p = orbit[i], [px, py] = screen(p), r = Math.hypot(p.x, p.y);
+  // Four orbits for each unit of playback time, as before, but carried on without end.
+  const i = Math.floor(play.t * 4 * perOrbit), p = at(i), [px, py] = screen(p), r = Math.hypot(p.x, p.y);
   const toSun = deg(Math.atan2(-p.y, -p.x)), force = deg(Math.atan2(p.fy, p.fx)), off = k === 0 ? 0 : Math.abs(((force - toSun + 540) % 360) - 180);
-  const perOrbit = Math.round(orbit.length / 4);
+  const trail = Math.round(perOrbit * 3), now = Math.floor(i / perOrbit) * cycle.advance;
   return <Diagram stage={
     <Stage w={W} h={H} label={`A planet on an elliptical orbit round a rotating sun. The mattermagnetic force on it is at right angles to its velocity and ${Math.round(off)} degrees away from the direction of the sun. ${k > 0 ? 'With this force added the ellipse precesses.' : 'With no such force the ellipse is closed.'}`}>
-      <Line d={pathThrough(orbit.map(screen))} tone="muted" w={1.4}/>
-      {k > 0 && orbit.slice(0, perOrbit).filter((_, n) => n % Math.round(perOrbit / 10) === 0).map((q, n) => { const [x, y] = screen(q), m = Math.hypot(q.fx, q.fy) || 1, len = 14 + 26 * Math.min(1, m / (k * 9)); return <Arrow key={n} x1={x} y1={y} x2={x + (q.fy / m) * len} y2={y + (q.fx / m) * len} tone="text" w={1.6} head={7}/>; })}
-      <Body x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={15} tone="matter"/><Spin x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={25} ccw sweep={230} tone="text" steady/>
+      {/* The trail the planet leaves: strong where it has just been, fading over the last three orbits behind it. */}
+      {Array.from({ length: Math.ceil(Math.min(i, trail) / 5) }, (_, c) => {
+        const end = i - c * 5, start = Math.max(0, end - 5), age = (i - end) / trail;
+        return <polyline key={c} points={Array.from({ length: end - start + 1 }, (_, j) => screen(at(start + j)).join(',')).join(' ')} className="bk-s-muted" fill="none" strokeWidth={2.2 - 1.2 * age} strokeLinecap="round" opacity={0.08 + 0.92 * (1 - age)}/>;
+      })}
+      {/* The small force arrows round the present orbit are a still picture; the moving planet carries its own while it plays. */}
+      <Still>{k > 0 && cycle.points.filter((_, n) => n % Math.round(perOrbit / 10) === 0).map(o => turnOrbitPoint(o, now)).map((q, n) => { const [x, y] = screen(q), m = Math.hypot(q.fx, q.fy) || 1, len = 14 + 26 * Math.min(1, m / (k * 9)); return <Arrow key={n} x1={x} y1={y} x2={x + (q.fy / m) * len} y2={y + (q.fx / m) * len} tone="text" w={1.6} head={7}/>; })}</Still>
+      <Body x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={22} tone="matter"/><BodyCross x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={22} turned={play.t * 1500}/><Spin x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={32} ccw sweep={230} tone="text"/>
       <Arrow x1={px} y1={py} x2={px + p.vy * 26} y2={py + p.vx * 26} tone="motion" w={2.2}/>
       {k > 0 && <BlockArrow x1={px} y1={py} x2={px + (p.fy / (Math.hypot(p.fx, p.fy) || 1)) * 44} y2={py + (p.fx / (Math.hypot(p.fx, p.fy) || 1)) * 44} thick={8}/>}
       <Line d={`M${px} ${py} L${screen({ x: 0, y: 0 })[0]} ${screen({ x: 0, y: 0 })[1]}`} tone="faint" dash="3 4"/>
@@ -382,10 +412,10 @@ const chapter: ChapterContent = {
         <p>The force of Figure 12-2 was left out of the Newtonian computation. In an elliptical orbit it <Q>is not usually directed toward the sun</Q>. It is directed <Q>first one way and then the opposite way as it rounds the perihelion</Q>, so most of it is periodic, but <Q>There is, however, a residual, secular component that does cause precession</Q>: <Q>the classically unaccounted for 43 arcseconds of perihelion advance per century</Q> (<Pg n={104}/>, <Pg n={105}/>).</p>
         <p>Fleming cites Danby’s computation with a small modification to Newtonian gravity, and Van Flandern’s <Q>tangential pseudo-force directed along the velocity vector</Q>, as the same mathematics without the cause.</p>
       </>,
-      tryThis: ['Follow the planet and compare the broad force arrow with the dotted line to the sun: they agree only at perihelion and aphelion.', 'Set the strength to none: a closed ellipse. Raise it: each orbit is turned from the last, in the direction the planet moves.', 'Watch the small arrows round the first orbit: longest near the sun.'],
+      tryThis: ['Follow the planet and compare the broad force arrow with the dotted line to the sun: they agree only at perihelion and aphelion.', 'Set the strength to none: a closed ellipse. Raise it: each orbit is turned from the last, in the direction the planet moves.', 'Pause, and small arrows show the force round the present orbit: longest near the sun.'],
       notes: <>
         <p>The text and caption call the force <Q>tangential</Q> to the velocity, and say it speeds Mercury up and slows it down. The printed figure draws the arrows across the path, toward the inside of the orbit, which is the direction <V>m</V>(<V>υ</V> × <V>B</V><sub>m</sub>) has when <V>B</V><sub>m</sub> points into the page. The diagram follows the figure and Equation 12-4; a force at right angles to the velocity turns the planet without changing its speed.</p>
-        <p>The orbit is computed by adding that force, with the sun’s field falling as the inverse square of distance, to Newtonian gravity. The strength is exaggerated by many orders of magnitude so the precession can be seen in four orbits.</p>
+        <p>The orbit is computed by adding that force, with the sun’s field falling as the inverse square of distance, to Newtonian gravity. The strength is exaggerated by many orders of magnitude so the precession can be seen within a few orbits.</p>
       </>,
     },
     {
