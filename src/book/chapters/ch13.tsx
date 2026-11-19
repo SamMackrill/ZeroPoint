@@ -9,6 +9,14 @@ const W = 720;
 /** The radius, as a fraction of a uniform sphere's radius, that encloses a given fraction of its mass. */
 export const dividingRadius = (fraction: number) => Math.cbrt(fraction);
 
+/** An eddy of stirred matter: a small loop with three specks of matter carried round it, turned to `turned` degrees. */
+function Eddy({ x, y, turned }: { x: number; y: number; turned: number }) {
+  return <g>
+    <circle cx={x} cy={y} r={12} fill="none" className="bk-s-muted" strokeWidth="1.2" strokeDasharray="2 3"/>
+    {[0, 120, 240].map(a => { const [px, py] = polar(x, y, 12, turned + a); return <circle key={a} cx={px} cy={py} r={3} className="bk-f-mark"/>; })}
+  </g>;
+}
+
 /** Figure 13-1: a rotating body divided into two halves of its mass, with counter-rotating eddies where they meet. */
 function DynamoEddies() {
   const [rate, setRate] = useState(0.7);
@@ -21,14 +29,15 @@ function DynamoEddies() {
       <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-plain"/>
       {molten && turning && <circle cx={cx} cy={cy} r={shell} className="bk-s-danger" fill="none" strokeWidth={54} opacity={0.16 + 0.14 * Math.abs(rate)}/>}
       <circle cx={cx} cy={cy} r={shell} className="bk-s-text" fill="none" strokeWidth="2"/>
-      {[0, 60, 120].map(a => <line key={a} x1={polar(cx, cy, R - 4, turned + a)[0]} y1={polar(cx, cy, R - 4, turned + a)[1]} x2={polar(cx, cy, R - 4, turned + a + 180)[0]} y2={polar(cx, cy, R - 4, turned + a + 180)[1]} className="bk-s-faint" strokeDasharray="3 8"/>)}
+      {[0, 60, 120].map(a => <line key={a} x1={polar(cx, cy, R - 4, turned + a)[0]} y1={polar(cx, cy, R - 4, turned + a)[1]} x2={polar(cx, cy, R - 4, turned + a + 180)[0]} y2={polar(cx, cy, R - 4, turned + a + 180)[1]} className="bk-s-muted" strokeWidth="2" strokeDasharray="6 8"/>)}
       {turning && <>
         <Spin x={cx} y={cy} r={30} ccw={rate > 0} sweep={270} tone="text" w={3}/>
         <Still><Arrow x1={cx + R + 26} y1={cy + 40 * Math.sign(rate)} x2={cx + R + 26} y2={cy - 40 * Math.sign(rate)} tone="text" w={3}/><Arrow x1={cx - R - 26} y1={cy - 40 * Math.sign(rate)} x2={cx - R - 26} y2={cy + 40 * Math.sign(rate)} tone="text" w={3}/></Still>
         {Array.from({ length: n }, (_, i) => {
           const a = (i / n) * 360 + 12, [ix, iy] = polar(cx, cy, shell - 19, a), [ox, oy] = polar(cx, cy, shell + 19, a);
           // The outer half's field stirs the region inside the shell one way; the inner half's field stirs the region outside it the other.
-          return <g key={i}><Spin x={ix} y={iy} r={13} ccw={rate < 0} sweep={150 + 130 * Math.abs(rate)} w={1.6} steady/><Spin x={ox} y={oy} r={13} ccw={rate > 0} sweep={150 + 130 * Math.abs(rate)} w={1.6} steady/></g>;
+          // Each eddy turns: the inner ring against the body, the outer ring with it. Curled arrows show the sense while paused.
+          return <g key={i}><Eddy x={ix} y={iy} turned={-turned * 4}/><Eddy x={ox} y={oy} turned={turned * 4}/><Spin x={ix} y={iy} r={17} ccw={rate < 0} sweep={200} w={1.6}/><Spin x={ox} y={oy} r={17} ccw={rate > 0} sweep={200} w={1.6}/></g>;
         })}
       </>}
       <T x={cx} y={cy - shell + 44} size="sm">inner {Math.round(fraction * 100)} % of the mass</T>
