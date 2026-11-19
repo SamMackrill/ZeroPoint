@@ -1,8 +1,9 @@
 // Chapter 19: The Speed of the Zero-Point Universe (PDF pp. 142–150). Figures 19-1 to 19-4.
-import { useMemo, useRef, useState } from 'react';
-import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, lerpAngle, polar, rng, usePlayback } from '../kit';
+import { Suspense, lazy, useCallback, useMemo, useRef, useState } from 'react';
+import { Arrow, BlockArrow, Body, Choice, Diagram, FallbackOnError, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, canDraw3D, clamp, fmt, lerpAngle, polar, rad, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
+import { PATH_SITES, PATH_START, centralX } from '../three/photon-math';
 
 const W = 720;
 /** The Earth's orbital speed as a fraction of the speed of light: the lag angle, in radians, if gravity travelled at c. */
@@ -63,33 +64,51 @@ function LateGravity() {
 /** How far a field spreads from a zepton during its life, in photon wavelengths, at a speed given in units of c. */
 export const fieldReach = (speed: number) => speed * 0.5;
 
+/** Figure 19-2 drawn in three dimensions, as printed: loaded on demand, since three.js is large. */
+const PhotonScene = lazy(() => import('../three/PhotonScene'));
+
+/** Figure 19-2 seen along the photon's path, flat: the fallback where 3D cannot be drawn. */
+function FlatPhoton({ exp, t, label }: { exp: number; t: number; label: string }) {
+  const H = 380, cx = 360, cy = 190, lambda = 70, speed = 10 ** exp, reach = fieldReach(speed) * lambda;
+  const n = Math.floor(t), u = t - n, clockwise = n % 2 === 0, central = clockwise ? 180 - 180 * u : 180 + 180 * u, open = Math.max(0.2, Math.sin(Math.PI * u));
+  const sites = useMemo(() => { const random = rng(192), list: { x: number; y: number; seed: number }[] = []; for (let j = 0; j < 5; j++) for (let i = 0; i < 11; i++) { const x = 40 + i * 64 + (random() - 0.5) * 20, y = 38 + j * 76 + (random() - 0.5) * 20; if (Math.hypot(x - cx, y - cy) > 46) list.push({ x, y, seed: Math.floor(random() * 1e6) }); } return list; }, []);
+  return <Stage w={W} h={H} label={label}>
+    <circle cx={cx} cy={cy} r={Math.min(reach, 520)} className="bk-s-e" fill="none" strokeWidth="1.4" strokeDasharray="6 5" opacity={0.7}/>
+    <circle cx={cx} cy={cy} r={lambda / 2} className="bk-s-danger" fill="none" strokeWidth="1.4" strokeDasharray="3 3"/>
+    {sites.map((s, i) => {
+      const d = Math.hypot(s.x - cx, s.y - cy), reached = d <= reach, own = rng(s.seed + n * 17)() * 360;
+      // The field falls as the inverse square; the lean is shown by its square root so the far zeptons can be seen to turn.
+      const share = reached ? clamp(Math.sqrt(lambda / d) * 0.9) : 0;
+      return <Zepton key={i} x={s.x} y={s.y} angle={lerpAngle(own, central, share)} len={22} open={open} oval={false} signs={false} emphasis={reached ? 'normal' : 'dim'}/>;
+    })}
+    <Zepton x={cx} y={cy} angle={central} len={lambda * 0.8} open={open} emphasis="key" signs/>
+    <T x={cx} y={cy + lambda / 2 + 16} size="sm" tone="danger">half a wavelength: the reach at c</T>
+    <T x={W - 20} y={24} anchor="end" size="sm" tone="e">dashed: how far the field gets in the zepton’s life</T>
+  </Stage>;
+}
+
 /** Figure 19-2: the zeptons round a photon's central zepton respond only as far as its field can reach in its lifetime. */
 function PhotonReach() {
-  const [exp, setExp] = useState(1.3);
+  const [exp, setExp] = useState(Math.log10(4));
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const fail = useCallback(() => setFlat(true), []);
   const play = usePlayback({ speed: 0.4 });
-  const H = 380, cx = 360, cy = 190, lambda = 70, speed = 10 ** exp, reach = fieldReach(speed) * lambda;
-  const n = Math.floor(play.t), u = play.t - n, clockwise = n % 2 === 0, central = clockwise ? 180 - 180 * u : 180 + 180 * u, open = Math.max(0.2, Math.sin(Math.PI * u));
-  const sites = useMemo(() => { const random = rng(192), list: { x: number; y: number; seed: number }[] = []; for (let j = 0; j < 5; j++) for (let i = 0; i < 11; i++) { const x = 40 + i * 64 + (random() - 0.5) * 20, y = 38 + j * 76 + (random() - 0.5) * 20; if (Math.hypot(x - cx, y - cy) > 46) list.push({ x, y, seed: Math.floor(random() * 1e6) }); } return list; }, []);
-  let responding = 0;
-  return <Diagram stage={
-    <Stage w={W} h={H} label={`A photon's central zepton, seen along its path, with zeptons round it. With fields spreading at ${fmt(speed, 2)} times the speed of light they reach ${fmt(fieldReach(speed), 2)} wavelengths from the path in the zepton's lifetime.`}>
-      <circle cx={cx} cy={cy} r={Math.min(reach, 520)} className="bk-s-e" fill="none" strokeWidth="1.4" strokeDasharray="6 5" opacity={0.7}/>
-      <circle cx={cx} cy={cy} r={lambda / 2} className="bk-s-danger" fill="none" strokeWidth="1.4" strokeDasharray="3 3"/>
-      {sites.map((s, i) => {
-        const d = Math.hypot(s.x - cx, s.y - cy), reached = d <= reach, own = rng(s.seed + n * 17)() * 360;
-        if (reached) responding++;
-        // The field falls as the inverse square; the lean is shown by its fourth root so the far zeptons can be seen to turn.
-        const share = reached ? clamp(Math.sqrt(lambda / d) * 0.9) : 0;
-        return <Zepton key={i} x={s.x} y={s.y} angle={lerpAngle(own, central, share)} len={22} open={open} oval={false} signs={false} emphasis={reached ? 'normal' : 'dim'}/>;
-      })}
-      <Zepton x={cx} y={cy} angle={central} len={lambda * 0.8} open={open} emphasis="key" signs/>
-      <T x={cx} y={cy + lambda / 2 + 16} size="sm" tone="danger">half a wavelength: the reach at c</T>
-      <T x={W - 20} y={24} anchor="end" size="sm" tone="e">dashed: how far the field gets in the zepton’s life</T>
-    </Stage>}>
+  const speed = 10 ** exp, reach = fieldReach(speed);
+  // The central zepton turns half a turn in each lifetime, one way and then the other, opening and closing as it goes.
+  const n = Math.floor(play.t), u = play.t - n, central = n % 2 === 0 ? 180 - 180 * u : 180 + 180 * u, open = Math.max(0.2, Math.sin(Math.PI * u));
+  // A new central zepton each lifetime, a half wavelength along; the photon's front moves on smoothly between them.
+  const x = centralX(n), front = PATH_START + 0.5 * ((n % PATH_SITES) + u);
+  const label = `A photon travelling along x as a sequence of central zeptons, a new one each half wavelength, its electric and magnetic fields trailing behind at right angles to each other and to the path. With fields spreading at ${fmt(speed, 2)} times the speed of light they reach ${fmt(reach, 2)} wavelengths from the path in the zepton's lifetime.`;
+  return <Diagram stage={flat
+    ? <FlatPhoton exp={exp} t={play.t} label={label}/>
+    : <FallbackOnError onError={fail} fallback={<FlatPhoton exp={exp} t={play.t} label={label}/>}>
+        <Suspense fallback={<FlatPhoton exp={exp} t={play.t} label={label}/>}>
+          <PhotonScene frame={{ central: rad(central), open, reach, x, front }} onFail={fail} description={`${label} A sphere round the central zepton shows how far its field gets, against a red ring half a wavelength out, the reach at the speed of light. Drag to turn the view.`}/>
+        </Suspense>
+      </FallbackOnError>}>
     <Slider label="Speed at which the fields spread" value={exp} min={0} max={2} step={0.05} onChange={setExp} show={v => `${fmt(10 ** v, 2)} c`}/>
     <PlayBar play={play} label="the central zepton"/>
-    <Readout label="Reach of the field" value={`${fmt(fieldReach(speed), 2)} λ`} tone="e"/>
-    <Readout label="Zeptons shown responding" value={`${responding} of ${sites.length}`}/>
+    <Readout label="Reach of the field" value={`${fmt(reach, 2)} λ`} tone="e"/>
     <Remark>{exp < 0.05 ? 'At the speed of light the fields are gone, with their zepton, before they get past half a wavelength.' : 'The fields are detectable more than half a wavelength to the side of the path, so they spread faster than light.'}</Remark>
   </Diagram>;
 }
@@ -191,8 +210,8 @@ const chapter: ChapterContent = {
         <p>The fields of the central zepton <Q>propagate outward at a 90-degree angle to each other, while also perpendicular to the direction that the photon is moving</Q>, and the field <Q>declines in strength at a rate proportional to the inverse of the distance squared</Q> (<Pg n={145}/>).</p>
         <p>The fields <Q>are also extinguished each half wavelength along with the central zepton. Even so, the electric and magnetic fields are detectable at more than half a wavelength distance off to the side of the photon’s path. But remember that the half wavelength distance is related to the speed of light. That means that the electric and magnetic fields of the photon are propagating faster than the speed of light</Q> (<Pg n={146}/>).</p>
       </>,
-      tryThis: ['Set the speed to 1 c: the dashed circle shrinks onto the red one, half a wavelength out, and no zepton beyond it responds.', 'Raise the speed: more and more of the surrounding zeptons turn with the central one, each less the further away it is.'],
-      notes: <p>The view here is along the photon’s path, where the printed figure is oblique. The lean of each zepton is magnified (the square root of the inverse-square field) so that distant ones can be seen to turn. Speeds up to 100 c fit the picture; Fleming’s lower bound is 2 × 10¹⁰ c.</p>,
+      tryThis: ['Set the speed to 1 c: the sphere shrinks onto the red ring, half a wavelength out.', 'Raise the speed: the field reaches further and further to the side of the path in the same brief life.', 'Drag the figure round to look along the photon’s path, or across it.'],
+      notes: <p>Drawn in three dimensions with the printed figure’s axes, as a much simplified form of the laboratory’s light scene: the photon a sequence of central zeptons along x, its fields trailing behind, and a sphere for how far the field gets. The printed figure’s surrounding zeptons are left out for clarity. Speeds up to 100 c fit the picture; Fleming’s lower bound is 2 × 10¹⁰ c. Where 3D cannot be drawn, the figure is shown flat, looking along the photon’s path, with the surrounding zeptons; their lean is magnified (the square root of the inverse-square field) so that distant ones can be seen to turn.</p>,
       labs: [{ lab: 'light', scenario: 'absorption', query: 'L=+cone', why: 'The light cone at an absorbing wall: how little of the field’s energy could arrive if fields kept to the speed of light.' }],
     },
     {
