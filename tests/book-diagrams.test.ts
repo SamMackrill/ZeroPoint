@@ -197,6 +197,10 @@ describe('book companion: diagrams', () => {
     expect(speedName(snapSpeed(10.3))).toMatch(/\(Van Flandern\)$/);
     expect(speedName(snapSpeed(3))).not.toMatch(/\(/);
     expect(speedName(11.5)).toBe('∞ (no delay: Newton)');
+    // From a named speed, an arrow-key step moves on rather than being pulled back.
+    const laplace = snapSpeed(6.8);
+    expect(snapSpeed(6.9, laplace)).toBe(6.9);
+    expect(snapSpeed(6.8, laplace)).toBe(6.8);
   });
 
   it('Figure 12-8: a zepton turns its antimatter end toward a star near it, and keeps its own direction far from both', () => {

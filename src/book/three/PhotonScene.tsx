@@ -134,10 +134,13 @@ export default function PhotonScene({ frame, onFail, onReady, description }: { f
         };
         waveE.geometry.dispose(); waveE.geometry = new THREE.BufferGeometry().setFromPoints(points('y'));
         waveB.geometry.dispose(); waveB.geometry = new THREE.BufferGeometry().setFromPoints(points('z'));
-        const r = Math.min(f.reach, 2.6);
+        // Past the picture's size the sphere and the half-wavelength ring are drawn to a smaller common scale, so the ring
+        // shrinks within the sphere and their ratio, the speed in units of c, stays true.
+        const k = Math.min(1, 2.6 / f.reach);
         reachSphere.position.x = f.x;
-        reachSphere.scale.setScalar(r);
+        reachSphere.scale.setScalar(f.reach * k);
         half.position.x = f.x;
+        half.scale.set(1, k, k);
         draw();
       };
       api.current(frame);

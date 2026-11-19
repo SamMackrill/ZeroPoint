@@ -184,7 +184,7 @@ const chapter: ChapterContent = {
         <p>In the Matter Force account this is <Q>a two-part process that is identical to Shapiro Delay, except in this case the slowing of light near matter additionally causes the light to bend. The clock slowing or frequency change due to the tangential motion is responsible for half the bending, while slowing due to the radial component is responsible for the other half</Q> (<Pg n={183}/>).</p>
       </>,
       tryThis: ['At one solar radius the bend is 1.75 arcseconds.', 'Turn off one of the two slowings: 0.875, the Newtonian figure.', 'Move the ray outward: the bend falls in proportion to the distance.'],
-      notes: <p>The readout is Equation 23-7. The bend is drawn about thirty thousand times too large, and as a single corner at closest approach; the true path curves gently. This is the bending chapter 20 calls refraction, with the Sun’s matter field in place of glass.</p>,
+      notes: <p>The readout is Equation 23-7. The bend is drawn about thirty thousand times too large, as a smooth curve that turns most beside the Sun, where its field is strongest. This is the bending chapter 20 calls refraction, with the Sun’s matter field in place of glass.</p>,
     },
   ],
 };

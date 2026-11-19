@@ -186,6 +186,13 @@ input {
   background: var(--accent-bg);
 }
 
+/* The back matter after the chapters: set a little apart from them. */
+.bk-nav-back {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
 .bk-nav-n {
   font-family: var(--mono);
   font-size: var(--fs-ui);
