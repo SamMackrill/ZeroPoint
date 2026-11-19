@@ -88,6 +88,13 @@ describe('book companion: rotation arrows step aside while a figure plays', () =
     expect(getByRole('slider').getAttribute('aria-valuetext')).toBe('1');
   });
 
+  it('takes a dial to its exact maximum with End, even off the step grid', () => {
+    let value = 0;
+    const { getByRole } = render(<Dial label="Off grid" value={value} min={0} max={1} step={0.3} onChange={v => { value = v; }} show={v => `${v}`}/>);
+    fireEvent.keyDown(getByRole('slider'), { key: 'End' });
+    expect(value).toBe(1);
+  });
+
   it('measures a slider again when its formatter changes its rules, not only its range', () => {
     const short = (v: number) => `${v}`, long = (v: number) => (v === 1 ? 'a long reading here' : `${v}`);
     const { container, rerender } = render(<Slider label="Mode" value={0} min={0} max={2} step={1} onChange={() => {}} show={short}/>);

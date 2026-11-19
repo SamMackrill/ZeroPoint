@@ -53,7 +53,18 @@ export function Dial({ label, value, min, max, step = 1, onChange, show, marks }
   const snap = (v: number) => Math.min(max, Math.max(min, Math.round((v - min) / step) * step + min));
   const set = (v: number) => { const next = Number(snap(v).toFixed(6)); if (next !== value) onChange(next); };
   const turnTo = (e: PointerEvent<SVGSVGElement>) => {
-    const box = knob.current!.getBoundingClientRect(), dx = e.clientX - (box.left + box.width / 2), dy = e.clientY - (box.top + box.height / 2);
+    // Measured from the knob's turning centre, (50, 50) in the drawing's own units (the viewBox starts at y = -10).
+    const svg = knob.current!, matrix = typeof svg.getScreenCTM === 'function' && typeof DOMPoint === 'function' ? svg.getScreenCTM() : null;
+    let dx: number, dy: number;
+    if (matrix) {
+      const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(matrix.inverse());
+      dx = p.x - 50;
+      dy = p.y - 50;
+    } else {
+      const box = svg.getBoundingClientRect();
+      dx = e.clientX - (box.left + box.width / 2);
+      dy = e.clientY - (box.top + (box.height * 60) / 110);
+    }
     const a = (Math.atan2(dx, -dy) * 180) / Math.PI; // 0 straight up, clockwise positive
     if (Math.abs(a) > DIAL_SWEEP + 20) return; // the dead zone at the bottom: ignore, rather than jump end to end
     set(min + ((Math.max(-DIAL_SWEEP, Math.min(DIAL_SWEEP, a)) + DIAL_SWEEP) / (2 * DIAL_SWEEP)) * (max - min));
@@ -61,8 +72,9 @@ export function Dial({ label, value, min, max, step = 1, onChange, show, marks }
   const keys: Record<string, number> = { ArrowRight: step, ArrowUp: step, ArrowLeft: -step, ArrowDown: -step, PageUp: 10 * step, PageDown: -10 * step };
   const onKey = (e: KeyboardEvent<SVGSVGElement>) => {
     if (e.key in keys) set(value + keys[e.key]);
-    else if (e.key === 'Home') set(min);
-    else if (e.key === 'End') set(max);
+    // Home and End go to the ends exactly, even when the last step does not land on them.
+    else if (e.key === 'Home') { if (value !== min) onChange(min); }
+    else if (e.key === 'End') { if (value !== max) onChange(max); }
     else return;
     e.preventDefault();
   };

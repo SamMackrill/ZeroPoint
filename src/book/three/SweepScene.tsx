@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette } from '../../ui/palette';
-import { disposeAll, label, solidArrow } from './common';
+import { disposeAll, label, solidArrow, turnWithKeys } from './common';
 
 /** Where the reader looks from: turned to show the plane, or straight down on it, as the page prints it. */
 export type SweepView = 'turned' | 'above';
@@ -55,9 +55,13 @@ export default function SweepScene({ state, onFail, description }: { state: Swee
     // If the browser takes the drawing context away (a GPU reset, too many contexts), fall back to the flat view.
     const lost = (e: Event) => { e.preventDefault(); onFail(); };
     renderer.domElement.addEventListener('webglcontextlost', lost);
+    // Everything set up is undone in reverse, the same way on unmount and when setup fails part way.
+    const undo: (() => void)[] = [() => renderer.domElement.remove(), () => renderer.dispose(), () => renderer.domElement.removeEventListener('webglcontextlost', lost)];
+    const teardown = () => { api.current = null; while (undo.length) { try { undo.pop()!(); } catch { /* keep releasing the rest */ } } };
     // Build the scene; if anything fails part way, undo what was set up and show the flat view instead.
     try {
       const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(34, 720 / 400, 0.1, 100);
+      undo.push(() => disposeAll(scene));
       scene.add(new THREE.AmbientLight(0xffffff, 1.5));
       const key = new THREE.DirectionalLight(0xffffff, 2.2);
       key.position.set(3, 8, 6);
@@ -82,7 +86,9 @@ export default function SweepScene({ state, onFail, description }: { state: Swee
       const layerSets = LAYERS.map(({ y, weight }, k) => {
         const posM = new THREE.MeshStandardMaterial({ color: palette.dataPos, roughness: 0.45, transparent: true }), negM = new THREE.MeshStandardMaterial({ color: palette.dataNeg, roughness: 0.45, transparent: true });
         const rodM = new THREE.MeshStandardMaterial({ color: palette.text3, transparent: true });
-        const shift = k % 2 ? [0.665, 0.55] : [0, 0]; // the layers next to the plane are shifted; the outer ones line up with it
+        // The two layers next to the plane are shifted half a cell, opposite ways in x so they do not stack on each other;
+        // the outer two line up with the plane, where the nearer layers keep them from stacking on it.
+        const shift = y === 0.9 ? [0.665, 0.55] : y === -0.9 ? [-0.665, 0.55] : [0, 0];
         const zeptons = ZEPTONS.map(([x, z], i) => {
           const g = new THREE.Group(), p = new THREE.Mesh(sphere, posM), n = new THREE.Mesh(sphere, negM), r = new THREE.Mesh(rod, rodM);
           p.position.x = 0.25;
@@ -111,6 +117,9 @@ export default function SweepScene({ state, onFail, description }: { state: Swee
       scene.add(charge, plus, minus);
 
       const controls = new OrbitControls(camera, renderer.domElement);
+
+      undo.push(() => controls.dispose());
+      undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page
       // A vertical swipe scrolls the page, as the wheel does; a sideways one turns the view.
@@ -127,6 +136,7 @@ export default function SweepScene({ state, onFail, description }: { state: Swee
         draw();
       });
       resize.observe(el);
+      undo.push(() => resize.disconnect());
 
       let drawnPath: readonly [number, number][] | null = null;
       api.current = {
@@ -160,19 +170,10 @@ export default function SweepScene({ state, onFail, description }: { state: Swee
       };
       view(state.view);
       api.current.update(state);
-      return () => {
-        api.current = null;
-        resize.disconnect();
-        renderer.domElement.removeEventListener('webglcontextlost', lost);
-        controls.dispose();
-        renderer.dispose();
-        disposeAll(scene);
-        renderer.domElement.remove();
-      };
-    } catch {
-      renderer.domElement.removeEventListener('webglcontextlost', lost);
-      renderer.dispose();
-      renderer.domElement.remove();
+      return teardown;
+    } catch (error) {
+      console.error('A 3D figure failed to set up; showing its flat drawing instead.', error);
+      teardown();
       onFail();
       return undefined;
     }
@@ -182,5 +183,5 @@ export default function SweepScene({ state, onFail, description }: { state: Swee
   useEffect(() => { api.current?.update(state); }, [state]);
   useEffect(() => { api.current?.view(state.view); }, [state.view, state.reset]);
 
-  return <div ref={host} className="bk-stage-3d" style={{ aspectRatio: '720 / 400' }} role="img" aria-label={description}/>;
+  return <div ref={host} className="bk-stage-3d" style={{ aspectRatio: '720 / 400' }} role="img" aria-label={`${description} With the figure focused, the arrow keys turn it too.`}/>;
 }

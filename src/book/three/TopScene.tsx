@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette } from '../../ui/palette';
-import { disposeAll, label, solidArrow, woodTexture } from './common';
+import { disposeAll, label, solidArrow, turnWithKeys, woodTexture } from './common';
 import { PROFILE, TOP_CM, TOP_LAID } from './top-math';
 
 /** What the scene shows at a moment. Angles in degrees. */
@@ -67,9 +67,13 @@ export default function TopScene({ state, onFail, description, onLean }: { state
     // If the browser takes the drawing context away (a GPU reset, too many contexts), fall back to the flat view.
     const lost = (e: Event) => { e.preventDefault(); onFail(); };
     renderer.domElement.addEventListener('webglcontextlost', lost);
+    // Everything set up is undone in reverse, the same way on unmount and when setup fails part way.
+    const undo: (() => void)[] = [() => renderer.domElement.remove(), () => renderer.dispose(), () => renderer.domElement.removeEventListener('webglcontextlost', lost)];
+    const teardown = () => { api.current = null; while (undo.length) { try { undo.pop()!(); } catch { /* keep releasing the rest */ } } };
     // Build the scene; if anything fails part way, undo what was set up and show the flat view instead.
     try {
       const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera(32, 720 / 360, 0.1, 100);
+      undo.push(() => disposeAll(scene));
       scene.add(new THREE.AmbientLight(0xffffff, 1.3));
       const key = new THREE.DirectionalLight(0xffffff, 2.4);
       key.position.set(3, 6, 5);
@@ -138,10 +142,22 @@ export default function TopScene({ state, onFail, description, onLean }: { state
         pointer.set(((e.clientX - box.left) / box.width) * 2 - 1, -((e.clientY - box.top) / box.height) * 2 + 1);
         ray.setFromCamera(pointer, camera);
       };
+      let leanNow = state.lean;
       const onTop = (e: PointerEvent) => { aim(e); return ray.intersectObject(body, true).length > 0; };
-      let dragging = false;
+      // The pointer's angle from the upright, seen from the tip, in the upright plane the top leans in.
+      const pointerAngle = () => {
+        const h = (heading.current * Math.PI) / 180, across = new THREE.Vector3(Math.cos(h), 0, -Math.sin(h));
+        const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3().crossVectors(across, new THREE.Vector3(0, 1, 0)).normalize(), new THREE.Vector3());
+        return ray.ray.intersectPlane(plane, hit) ? (Math.atan2(hit.dot(across), Math.max(0.05, hit.y)) * 180) / Math.PI : null;
+      };
+      // A drag turns the top by as much as the pointer turns about the tip from where it was grabbed, so grabbing the
+      // shoulder rather than the axis does not make it jump.
+      let dragging = false, grip = { pointer: 0, lean: 0 };
       const press = (e: PointerEvent) => {
         if (!leanTo.current || !onTop(e)) return;
+        const at = pointerAngle();
+        if (at === null) return;
+        grip = { pointer: at, lean: leanNow };
         dragging = true;
         e.stopImmediatePropagation();
         renderer.domElement.setPointerCapture(e.pointerId);
@@ -150,11 +166,9 @@ export default function TopScene({ state, onFail, description, onLean }: { state
       const move = (e: PointerEvent) => {
         if (!dragging) { if (leanTo.current) renderer.domElement.style.cursor = onTop(e) ? 'grab' : ''; return; }
         aim(e);
-        const h = (heading.current * Math.PI) / 180, across = new THREE.Vector3(Math.cos(h), 0, -Math.sin(h));
-        // The upright plane through the tip that contains the lean direction.
-        const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3().crossVectors(across, new THREE.Vector3(0, 1, 0)).normalize(), new THREE.Vector3());
-        if (!ray.ray.intersectPlane(plane, hit)) return;
-        leanTo.current?.((Math.atan2(hit.dot(across), Math.max(0.05, hit.y)) * 180) / Math.PI);
+        const at = pointerAngle();
+        if (at === null) return;
+        leanTo.current?.(grip.lean + at - grip.pointer);
         e.stopImmediatePropagation();
       };
       const release = (e: PointerEvent) => {
@@ -168,6 +182,8 @@ export default function TopScene({ state, onFail, description, onLean }: { state
       renderer.domElement.addEventListener('pointerup', release);
       renderer.domElement.addEventListener('pointercancel', release);
       const controls = new OrbitControls(camera, renderer.domElement);
+      undo.push(() => controls.dispose());
+      undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page
       // A vertical swipe scrolls the page, as the wheel does; a sideways one turns the view.
@@ -189,12 +205,14 @@ export default function TopScene({ state, onFail, description, onLean }: { state
         draw();
       });
       resize.observe(el);
+      undo.push(() => resize.disconnect());
 
       const up = new THREE.Vector3(0, 1, 0);
       let drawnPath = '';
       api.current = {
         view,
         update(s) {
+          leanNow = s.lean;
           // Turn about its own axis, lean, then face the heading: all about the tip, which stays on the floor.
           body.rotation.set(0, (s.spun * Math.PI) / 180, 0);
           // Never further over than lying on the floor.
@@ -269,19 +287,10 @@ export default function TopScene({ state, onFail, description, onLean }: { state
       };
       view();
       api.current.update(state);
-      return () => {
-        api.current = null;
-        resize.disconnect();
-        renderer.domElement.removeEventListener('webglcontextlost', lost);
-        controls.dispose();
-        renderer.dispose();
-        disposeAll(scene);
-        renderer.domElement.remove();
-      };
-    } catch {
-      renderer.domElement.removeEventListener('webglcontextlost', lost);
-      renderer.dispose();
-      renderer.domElement.remove();
+      return teardown;
+    } catch (error) {
+      console.error('A 3D figure failed to set up; showing its flat drawing instead.', error);
+      teardown();
       onFail();
       return undefined;
     }
@@ -291,5 +300,5 @@ export default function TopScene({ state, onFail, description, onLean }: { state
   useEffect(() => { api.current?.update(state); }, [state]);
   useEffect(() => { api.current?.view(); }, [state.reset]);
 
-  return <div ref={host} className="bk-stage-3d" style={{ aspectRatio: '720 / 360' }} role="img" aria-label={description}/>;
+  return <div ref={host} className="bk-stage-3d" style={{ aspectRatio: '720 / 360' }} role="img" aria-label={`${description} With the figure focused, the arrow keys turn it too.`}/>;
 }
