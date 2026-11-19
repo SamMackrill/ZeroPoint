@@ -1,66 +1,91 @@
 // Chapter 12: Astronomical Motion (PDF pp. 98–109). Figures 12-1 to 12-8.
 import { useMemo, useRef, useState } from 'react';
-import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
+import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 
 const W = 720;
 
-/** Figure 12-1: Newtonian gravity as the small difference between two larger forces. */
+/** How much stronger than Newtonian Gravity the two real forces of Figure 12-1 are drawn. Fleming gives no ratio. */
+const REAL = { matter: 1.5, gravity: 2.5 };
+
+/**
+ * Figure 12-1: Newtonian gravity as the small difference between two larger forces. Three arrowed bars stacked on one
+ * scale between the bodies, in the printed order: the Matter Force, Newtonian Gravity, gravity. Each force acts on both bodies, so each has a head at each end: the Matter Force pointing out,
+ * apart; gravity and Newtonian Gravity pointing in, together. Newtonian Gravity, the one that is measured, is drawn thickest.
+ */
 function TwoForces() {
-  const [excess, setExcess] = useState(2);
-  const [r, setR] = useState(1);
-  const H = 300, y = 150, xa = 110, xb = 610, newton = 1 / (r * r), matter = excess * newton, gravity = (excess + 1) * newton, unit = 34;
+  const H = 262, RY = 236, mid = W / 2, newton = 1, { matter, gravity } = REAL, s = 236 / gravity, rows = [70, 124, 178], thick = 26, gap = 3;
+  /** A word written on an arrow, in the page's background colour so it reads on any of the arrows' colours. */
+  const word = (x: number, row: number, text: string) => <text x={x} y={row + 5} textAnchor="middle" className="bk-t bk-t-sm bk-f-ink">{text}</text>;
+  /** Two arrows meeting in the middle, one from each side: a force pushing the bodies together. */
+  const inward = (row: number, f: number, tone: 'force' | 'accent', width: number) => <>
+    <BlockArrow x1={mid - f * s} y1={row} x2={mid - gap} y2={row} tone={tone} thick={width}/>
+    <BlockArrow x1={mid + f * s} y1={row} x2={mid + gap} y2={row} tone={tone} thick={width}/>
+  </>;
   return <Diagram stage={
-    <Stage w={W} h={H} label={`Two bodies. The Matter Force pushes them apart with strength ${fmt(matter)}, gravity pushes them together with strength ${fmt(gravity)}, and the difference, ${fmt(newton)}, is Newtonian gravity.`}>
-      <Body x={xa} y={y} r={46} tone="plain"/><Body x={xb} y={y} r={46} tone="plain"/>
-      <Arrow x1={W / 2 - clamp(matter * unit, 8, 190)} y1={y - 44} x2={W / 2 + clamp(matter * unit, 8, 190)} y2={y - 44} both tone="matter" w={3} head={12}/><T x={W / 2} y={y - 56} tone="matter">Matter Force: apart</T>
-      <Arrow x1={W / 2 - clamp(gravity * unit, 8, 190)} y1={y + 44} x2={W / 2 - 3} y2={y + 44} tone="force" w={3} head={12}/><Arrow x1={W / 2 + clamp(gravity * unit, 8, 190)} y1={y + 44} x2={W / 2 + 3} y2={y + 44} tone="force" w={3} head={12}/><T x={W / 2} y={y + 72} tone="text">gravity: together</T>
-      <Arrow x1={W / 2 - clamp(newton * unit, 6, 190)} y1={y} x2={W / 2 - 3} y2={y} tone="accent" w={2} head={9}/><Arrow x1={W / 2 + clamp(newton * unit, 6, 190)} y1={y} x2={W / 2 + 3} y2={y} tone="accent" w={2} head={9}/><T x={W / 2} y={y - 10} tone="accent" size="sm">Newtonian Gravity: the difference</T>
+    <Stage w={W} h={H} label={`Two bodies, m1 and m2, a distance r apart, with three forces between them on one scale. The Matter Force pushes them apart, gravity pushes them together and is stronger, and Newtonian Gravity, the difference between the two, pushes them together. Newtonian Gravity is what is measured.`}>
+      {/* The bodies are named and spaced as in Equations 12-2 and 12-3: matter charges m₁ and m₂, a distance r apart, centre to centre. */}
+      {[[56, '1'], [W - 56, '2']].map(([x, i]) => <g key={i}><Body x={+x} y={rows[1]} r={34} tone="plain"/><T x={+x} y={rows[1] + 7} tone="text" size="lg" italic>m<tspan dy={5} fontSize="0.7em" fontStyle="normal">{i}</tspan></T></g>)}
+      {[56, W - 56].map(x => <line key={x} x1={x} y1={rows[1] + 40} x2={x} y2={RY + 10} className="bk-s-faint" strokeDasharray="3 4"/>)}
+      <Arrow x1={mid - 14} y1={RY} x2={62} y2={RY} tone="muted" w={1.5} head={9}/><Arrow x1={mid + 14} y1={RY} x2={W - 62} y2={RY} tone="muted" w={1.5} head={9}/>
+      <T x={mid} y={RY + 6} tone="text" size="lg" italic>r</T>
+      <BlockArrow x1={mid} y1={rows[0]} x2={mid - matter * s} y2={rows[0]} tone="matter" thick={thick}/>
+      <BlockArrow x1={mid} y1={rows[0]} x2={mid + matter * s} y2={rows[0]} tone="matter" thick={thick}/>
+      {word(mid, rows[0], 'Matter Force')}
+      {inward(rows[2], gravity, 'force', thick)}
+      {/* The names sit on the part of gravity beyond the Matter Force, clear of the dashed lines. */}
+      {[-1, 1].map(side => <g key={side}>{word(mid + side * (matter + newton / 2) * s, rows[2], 'gravity')}</g>)}
+      {/* Where the Matter Force reaches, marked down through gravity: beyond it, at each end, is the part of gravity left over. */}
+      {[-1, 1].map(side => <line key={side} x1={mid + side * matter * s} y1={rows[0] + thick / 2 + 2} x2={mid + side * matter * s} y2={rows[2] + thick / 2 + 6} className="bk-s-matter" strokeWidth="1.5" strokeDasharray="3 3"/>)}
+      {inward(rows[1], newton, 'accent', 38)}
+      {word(mid - (newton * s) / 2 - 8, rows[1], 'Newtonian')}{word(mid + (newton * s) / 2 + 8, rows[1], 'Gravity')}
     </Stage>}>
-    <Slider label="How much stronger the real forces are" value={excess} min={0.5} max={5} step={0.5} onChange={setExcess} show={v => `${v} × Newtonian`}/>
-    <Slider label="Distance between the bodies" value={r} min={0.6} max={2} step={0.05} onChange={setR} show={v => `${fmt(v, 2)} ×`}/>
-    <Readout label="Matter Force (apart)" value={fmt(matter)} tone="force"/>
-    <Readout label="Gravity (together)" value={fmt(gravity)}/>
-    <Readout label="Newtonian Gravity (net)" value={fmt(newton)} tone="good"/>
-    <Remark>Whatever the two real forces are, what is measured is their difference; both fall with the square of the distance here.</Remark>
+    <Remark>Whatever the two real forces are, what is measured is their difference.</Remark>
   </Diagram>;
 }
 
-/** Curled arrows standing for the zeptons round a rotating body: they turn the opposite way, and thin out with distance. */
-function CounterField({ x, y, inner, rings, sense, count = 9 }: { x: number; y: number; inner: number; rings: number; sense: number; count?: number }) {
-  if (Math.abs(sense) < 0.05) return null;
+/**
+ * The zeptons round a rotating body, in rings that thin out with distance. Each turns the opposite way to the body, like
+ * one gear against another, by `turned` (the body's own angle) scaled up; a body at rest leaves them where they lie.
+ * Curled arrows on some of them show the sense of turning while the figure is paused.
+ */
+function CounterField({ x, y, inner, rings, sense, turned, count = 9 }: { x: number; y: number; inner: number; rings: number; sense: number; turned: number; count?: number }) {
   return <g>{Array.from({ length: rings }, (_, k) => Array.from({ length: count + k * 2 }, (_, i) => {
-    const [px, py] = polar(x, y, inner + k * 36, (i / (count + k * 2)) * 360 + k * 17);
-    return <Spin key={`${k}-${i}`} x={px} y={py} r={10} ccw={sense < 0} sweep={90 + 160 * Math.min(1, Math.abs(sense))} w={1.4} opacity={0.9 / (1 + k * 0.9)} steady/>;
+    const at = (i / (count + k * 2)) * 360 + k * 17, [px, py] = polar(x, y, inner + k * 36, at), fade = 0.95 / (1 + k * 0.7);
+    return <g key={`${k}-${i}`}>
+      <Zepton x={px} y={py} angle={at + 180 - turned * 1.6} len={22} polarity="matter" signs={false} opacity={fade}/>
+      {Math.abs(sense) >= 0.05 && i % 2 === 0 && <Spin x={px} y={py} r={15} ccw={sense < 0} sweep={200} w={1.4} opacity={fade}/>}
+    </g>;
   }))}</g>;
+}
+
+/** A dark cross on a rotating body, turned to `turned` degrees, so the body's own rotation can be seen. Its arms stop short of the middle. */
+function BodyCross({ x, y, r, turned }: { x: number; y: number; r: number; turned: number }) {
+  return <g>{[0, 90, 180, 270].map(a => { const [x1, y1] = polar(x, y, Math.min(20, r * 0.35), turned + a), [x2, y2] = polar(x, y, r - 8, turned + a); return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2} className="bk-body-ink" strokeWidth="3.5" strokeLinecap="round"/>; })}</g>;
 }
 
 /** Figure 12-2: a small body orbiting a rotating one is pushed toward it by the mattermagnetic field. */
 function OrbitInField() {
-  const [omega, setOmega] = useState(0.7);
-  const [orbit, setOrbit] = useState<'ccw' | 'cw'>('ccw');
   const play = usePlayback({ speed: 0.25 });
-  const H = 400, cx = 300, cy = 200, R = 150, dir = orbit === 'ccw' ? 1 : -1, a = dir * play.t * 360, [px, py] = polar(cx, cy, R, a);
-  // B_m points into the page for a body rotating counter-clockwise. The force m(υ × B_m) is toward the body when the
-  // orbit goes the same way as the rotation, and away from it otherwise.
-  const inward = Math.sign(omega) * dir, strength = Math.abs(omega), [vx, vy] = polar(px, py, 52, a + dir * 90), [fx, fy] = polar(px, py, -inward * (18 + 44 * strength), a);
+  // As printed: the Sun and the orbit both turn counter-clockwise, in balance. B_m then points into the page, and the
+  // force m(υ × B_m) on the small body is toward the Sun. The Sun turns at its own rate, whatever the orbit is doing.
+  const H = 400, cx = 300, cy = 200, R = 150, a = play.t * 360, [px, py] = polar(cx, cy, R, a), turned = play.t * 0.7 * 360;
+  const [vx, vy] = polar(px, py, 52, a + 90), [fx, fy] = polar(px, py, -49, a);
+  /** A letter with a subscript m, as in F_m and B_m. */
+  const sub = (x: number, y: number, letter: string, tone: 'text' | 'b', anchor: 'start' | 'middle' = 'middle') => <T x={x} y={y} tone={tone} italic anchor={anchor}>{letter}<tspan dy={4} fontSize="0.75em">m</tspan></T>;
   return <Diagram stage={
-    <Stage w={W} h={H} label={Math.abs(omega) < 0.05 ? 'A small body orbiting a larger one that is not rotating: no mattermagnetic force.' : `A small body orbiting ${orbit === 'ccw' ? 'counter-clockwise' : 'clockwise'} round a larger body rotating ${omega > 0 ? 'counter-clockwise' : 'clockwise'}. The mattermagnetic field points ${omega > 0 ? 'into' : 'out of'} the page and the force on the small body is ${inward > 0 ? 'toward' : 'away from'} the larger one.`}>
+    <Stage w={W} h={H} label="A small body orbiting counter-clockwise round a larger body that is also rotating counter-clockwise. The zeptons round the larger body turn the other way. The mattermagnetic field points into the page and the extra force on the small body is toward the larger one.">
       <circle cx={cx} cy={cy} r={R} className="bk-s-faint" fill="none" strokeDasharray="3 6"/>
-      <CounterField x={cx} y={cy} inner={78} rings={3} sense={omega}/>
-      <Body x={cx} y={cy} r={52} tone="plain"/>{Math.abs(omega) > 0.05 && <Spin x={cx} y={cy} r={24} ccw={omega > 0} sweep={270} tone="text" w={3} steady/>}<T x={cx + 34} y={cy - 26} tone="text" italic>ω</T>
+      <CounterField x={cx} y={cy} inner={78} rings={3} sense={1} turned={turned}/>
+      <Body x={cx} y={cy} r={52} tone="matter"/><BodyCross x={cx} y={cy} r={52} turned={turned}/><Spin x={cx} y={cy} r={24} ccw sweep={270} tone="text" w={3}/><T x={cx + 34} y={cy - 26} tone="text" italic>ω</T>
       <Arrow x1={px} y1={py} x2={vx} y2={vy} tone="motion" w={2.4}/><T x={vx + 12} y={vy + 4} tone="motion" italic>υ</T>
-      {Math.abs(omega) > 0.05 && <><BlockArrow x1={px} y1={py} x2={fx} y2={fy} thick={10}/><T x={fx + (fx < px ? -18 : 18)} y={fy + 18} tone="text" italic>F m</T></>}
+      <BlockArrow x1={px} y1={py} x2={fx} y2={fy} thick={10}/>{sub(fx + (fx < px ? -18 : 18), fy + 18, 'F', 'text')}
       <Body x={px} y={py} r={15} tone="plain"/>
-      {Math.abs(omega) > 0.05 && <><InOut x={600} y={70} out={omega < 0} r={11}/><T x={620} y={75} anchor="start" tone="b">B_m</T></>}
+      <InOut x={600} y={70} out={false} r={11}/>{sub(620, 75, 'B', 'b', 'start')}
     </Stage>}>
-    <Slider label="Rotation of the larger body, ω" value={omega} min={-1} max={1} step={0.05} onChange={setOmega} show={v => (Math.abs(v) < 0.05 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'counter-clockwise' : 'clockwise'}`)}/>
-    <Choice label="Direction of the orbit" value={orbit} onChange={setOrbit} options={[{ value: 'ccw', label: 'Counter' }, { value: 'cw', label: 'Clockwise' }]}/>
     <PlayBar play={play} label="the orbit"/>
-    <Readout label="Mattermagnetic field" value={Math.abs(omega) < 0.05 ? 'none' : omega > 0 ? 'into the page' : 'out of the page'} tone="b"/>
-    <Readout label="Force on the small body" value={Math.abs(omega) < 0.05 ? 'none' : inward > 0 ? 'toward the larger' : 'away from it'} tone="force"/>
-    <Remark>{inward > 0 ? 'The extra inward push makes the orbiting body appear heavier than it is.' : 'Rotation and orbit must go the same way for the push to be inward.'}</Remark>
+    <Remark>The extra inward push makes the orbiting body appear heavier than it is.</Remark>
   </Diagram>;
 }
 
@@ -71,15 +96,14 @@ function PlanetSpinField() {
   const H = 360, cx = 320, cy = 180, turned = play.t * omega * 90;
   return <Diagram stage={
     <Stage w={W} h={H} label={Math.abs(omega) < 0.05 ? 'A body that is not rotating: no mattermagnetic field of rotation.' : `A small body rotating ${omega > 0 ? 'counter-clockwise' : 'clockwise'}, with a counter-rotating zepton field round it. Its mattermagnetic field points ${omega > 0 ? 'into' : 'out of'} the page.`}>
-      <CounterField x={cx} y={cy} inner={104} rings={2} sense={omega} count={10}/>
-      <Body x={cx} y={cy} r={72} tone="plain"/>
-      <line x1={polar(cx, cy, 66, turned)[0]} y1={polar(cx, cy, 66, turned)[1]} x2={polar(cx, cy, 66, turned + 180)[0]} y2={polar(cx, cy, 66, turned + 180)[1]} className="bk-s-muted" strokeDasharray="4 6"/>
+      <CounterField x={cx} y={cy} inner={104} rings={2} sense={omega} turned={turned} count={10}/>
+      <Body x={cx} y={cy} r={72} tone="matter"/><BodyCross x={cx} y={cy} r={72} turned={turned}/>
       {Math.abs(omega) > 0.05 && <Spin x={cx} y={cy} r={28} ccw={omega > 0} sweep={270} tone="text" w={3}/>}<T x={cx + 40} y={cy - 30} tone="text" italic>ω</T>
-      {Math.abs(omega) > 0.05 && <><InOut x={590} y={90} out={omega < 0} r={12}/><T x={612} y={96} anchor="start" tone="b" size="lg">B m</T></>}
+      {Math.abs(omega) > 0.05 && <><InOut x={590} y={90} out={omega < 0} r={12}/><T x={612} y={96} anchor="start" tone="b" size="lg" italic>B<tspan dy={4} fontSize="0.75em">m</tspan></T></>}
     </Stage>}>
     <Slider label="Rotation of the body, ω" value={omega} min={-1} max={1} step={0.05} onChange={setOmega} show={v => (Math.abs(v) < 0.05 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'counter-clockwise' : 'clockwise'}`)}/>
     <PlayBar play={play} label="the rotation"/>
-    <Readout label="Zeptons round it rotate" value={Math.abs(omega) < 0.05 ? 'not at all' : omega > 0 ? 'clockwise' : 'counter-clockwise'}/>
+    <Readout label="Zeptons round it rotate" value={Math.abs(omega) < 0.05 ? 'not turned by it' : omega > 0 ? 'clockwise' : 'counter-clockwise'}/>
     <Readout label="Mattermagnetic field" value={Math.abs(omega) < 0.05 ? 'none' : omega > 0 ? 'into the page' : 'out of the page'} tone="b"/>
     <Remark>This field is the body’s angular inertia. The Sun’s rotation makes one of the same sense round the Sun.</Remark>
   </Diagram>;
@@ -90,6 +114,9 @@ export function sunFieldAt(sides: 'inner' | 'outer', strength: number) {
   // Inverse square from the Sun: the side nearer the Sun is a little closer, so the field is a little stronger there.
   return strength * (sides === 'inner' ? 1 / 0.9 ** 2 : 1 / 1.1 ** 2);
 }
+
+/** Where Figure 12-4 draws the edge of the Sun: the centre of a great disc far off the left of the stage, and its radius. */
+const SUN = { x: -1000, r: 1046 };
 
 /** Figure 12-4: the two fields either side of an orbiting planet, and how the Sun's field unbalances them. */
 function SynchronousRotation() {
@@ -107,17 +134,23 @@ function SynchronousRotation() {
   const H = 380, cx = 410, cy = 200, R = 60, grid = [-70, -25, 20, 65];
   return <Diagram stage={
     <Stage w={W} h={H} label={`A planet moving up the page in its orbit, with the Sun to the left. Its orbital motion makes a field out of the page on the Sun's side and into the page on the far side. ${sun ? 'The Sun’s own rotational field, into the page, is stronger on the near side, so the planet’s rotation slows.' : 'Without the Sun’s field the two sides are equal and the rotation does not change.'}`}>
-      <Arrow x1={110} y1={cy} x2={50} y2={cy} tone="muted" w={1.6}/><T x={120} y={cy - 12} anchor="start" size="sm">to the Sun</T>
-      {grid.map(dy => <g key={dy}>
-        <Spin x={cx - 128} y={cy + dy} r={13} ccw sweep={220} w={1.6} steady/>
-        <Spin x={cx + 128} y={cy + dy} r={13} ccw={false} sweep={220} w={1.6} steady/>
+      {/* The Sun, symbolically and not to scale: the edge of a great disc at the left, with a few flares off its limb. */}
+      <circle cx={SUN.x} cy={cy} r={SUN.r} className="bk-body bk-body-matter"/>
+      {[-150, -80, -10, 60, 140].map(dy => { const x = SUN.x + Math.sqrt(SUN.r * SUN.r - dy * dy) + 4, y = cy + dy; return <path key={dy} d={`M${x} ${y} q 6 -9 12 0 t 12 0 t 12 0`} className="bk-s-matter" fill="none" strokeWidth="3" strokeLinecap="round"/>; })}
+      <text x={24} y={cy} textAnchor="middle" className="bk-t bk-t-md bk-f-ink" transform={`rotate(-90 24 ${cy})`}>the Sun</text>
+      {/* The orbital field: zeptons either side of the moving planet, turning opposite ways (out of the page on the Sun's side,
+          into it beyond); curled arrows show the sense only while paused. */}
+      {grid.map((dy, i) => <g key={dy}>
+        <Zepton x={cx - 128} y={cy + dy} angle={i * 50 + play.t * 120} len={26} polarity="matter" signs={false}/>
+        <Zepton x={cx + 128} y={cy + dy} angle={i * 50 + 90 - play.t * 120} len={26} polarity="matter" signs={false}/>
+        <Spin x={cx - 128} y={cy + dy} r={18} ccw sweep={220} w={1.6}/>
+        <Spin x={cx + 128} y={cy + dy} r={18} ccw={false} sweep={220} w={1.6}/>
         {sun && <><InOut x={cx - 176} y={cy + dy} out={false} r={5 + 9 * inner} tone="b" opacity={0.9}/><InOut x={cx + 176} y={cy + dy} out={false} r={5 + 9 * outer} tone="b" opacity={0.9}/></>}
       </g>)}
       <T x={cx - 128} y={cy - 104} size="sm" tone="motion">orbital field: out of the page</T><T x={cx + 128} y={cy - 104} size="sm" tone="motion">orbital field: into the page</T>
       {sun && <T x={cx} y={H - 16} size="sm" tone="b">⊗ the Sun’s rotational field: into the page on both sides, stronger nearer the Sun</T>}
       <Arrow x1={cx} y1={cy - R - 8} x2={cx} y2={cy - R - 70} tone="motion" w={3}/><T x={cx + 14} y={cy - R - 44} tone="motion" italic>υ</T>
-      <Body x={cx} y={cy} r={R} tone="plain"/>
-      <line x1={polar(cx, cy, R - 6, s.angle)[0]} y1={polar(cx, cy, R - 6, s.angle)[1]} x2={polar(cx, cy, R - 6, s.angle + 180)[0]} y2={polar(cx, cy, R - 6, s.angle + 180)[1]} className="bk-s-muted" strokeWidth="2" strokeDasharray="5 6"/>
+      <Body x={cx} y={cy} r={R} tone="matter"/><BodyCross x={cx} y={cy} r={R} turned={s.angle}/>
       <Still><Spin x={cx} y={cy} r={22} ccw sweep={60 + 210 * s.spin} tone="text" w={3}/><T x={cx + 34} y={cy - 22} tone="text" italic>ω</T></Still>
     </Stage>}>
     <Toggle label="Include the Sun’s rotational field" checked={sun} onChange={setSun}/>
@@ -189,21 +222,51 @@ export function orbitWithLorentz(k: number, turns = 4, e = 0.55, perihelion = 0.
   return out;
 }
 
+/**
+ * One orbit, perihelion to perihelion, of the orbit of `orbitWithLorentz`, and the angle (radians) by which its perihelion
+ * advanced. Every later orbit is the same one turned on by that angle, so the motion can run on for ever without a jump.
+ */
+export function orbitCycle(k: number): { points: OrbitPoint[]; advance: number } {
+  const all = orbitWithLorentz(k, 1.4), outward = (q: OrbitPoint) => q.x * q.vx + q.y * q.vy, angle = (q: OrbitPoint) => Math.atan2(q.y, q.x);
+  // The next perihelion is where the planet, past aphelion, stops closing on the sun and starts to recede. Between the two
+  // samples either side of it, the angle is found where the outward speed passes through zero.
+  let next = Math.floor(all.length / 2);
+  while (next < all.length - 1 && !(outward(all[next - 1]) < 0 && outward(all[next]) >= 0)) next++;
+  const before = all[next - 1], after = all[next], f = -outward(before) / (outward(after) - outward(before));
+  const turn = Math.atan2(Math.sin(angle(after) - angle(before)), Math.cos(angle(after) - angle(before)));
+  return { points: all.slice(0, next), advance: angle(before) + f * turn - angle(all[0]) };
+}
+
+/** A point of an orbit turned about the sun by `angle` radians, with its velocity and force turned with it. */
+export function turnOrbitPoint(q: OrbitPoint, angle: number): OrbitPoint {
+  const c = Math.cos(angle), s = Math.sin(angle), rot = (x: number, y: number) => [x * c - y * s, x * s + y * c] as const;
+  const [x, y] = rot(q.x, q.y), [vx, vy] = rot(q.vx, q.vy), [fx, fy] = rot(q.fx, q.fy);
+  return { x, y, vx, vy, fx, fy };
+}
+
 /** Figure 12-6: the mattermagnetic force along an elliptical orbit round a rotating sun, and the precession it causes. */
 function LorentzOnOrbit() {
   const [k, setK] = useState(0.03);
   const play = usePlayback({ speed: 0.12 });
   const H = 420, cx = 300, sunY = 250, scale = 105;
-  const orbit = useMemo(() => orbitWithLorentz(k), [k]);
+  const cycle = useMemo(() => orbitCycle(k), [k]), perOrbit = cycle.points.length;
+  /** The planet's g-th point since the start: the g-th of one orbit, turned on by the advance of each orbit completed. */
+  const at = (g: number) => turnOrbitPoint(cycle.points[g % perOrbit], Math.floor(g / perOrbit) * cycle.advance);
   const screen = (p: { x: number; y: number }): [number, number] => [cx + p.y * scale, sunY + p.x * scale];
-  const i = Math.floor((play.t % 1) * (orbit.length - 1)), p = orbit[i], [px, py] = screen(p), r = Math.hypot(p.x, p.y);
+  // Four orbits for each unit of playback time, as before, but carried on without end.
+  const i = Math.floor(play.t * 4 * perOrbit), p = at(i), [px, py] = screen(p), r = Math.hypot(p.x, p.y);
   const toSun = deg(Math.atan2(-p.y, -p.x)), force = deg(Math.atan2(p.fy, p.fx)), off = k === 0 ? 0 : Math.abs(((force - toSun + 540) % 360) - 180);
-  const perOrbit = Math.round(orbit.length / 4);
+  const trail = Math.round(perOrbit * 3), now = Math.floor(i / perOrbit) * cycle.advance;
   return <Diagram stage={
     <Stage w={W} h={H} label={`A planet on an elliptical orbit round a rotating sun. The mattermagnetic force on it is at right angles to its velocity and ${Math.round(off)} degrees away from the direction of the sun. ${k > 0 ? 'With this force added the ellipse precesses.' : 'With no such force the ellipse is closed.'}`}>
-      <Line d={pathThrough(orbit.map(screen))} tone="muted" w={1.4}/>
-      {k > 0 && orbit.slice(0, perOrbit).filter((_, n) => n % Math.round(perOrbit / 10) === 0).map((q, n) => { const [x, y] = screen(q), m = Math.hypot(q.fx, q.fy) || 1, len = 14 + 26 * Math.min(1, m / (k * 9)); return <Arrow key={n} x1={x} y1={y} x2={x + (q.fy / m) * len} y2={y + (q.fx / m) * len} tone="text" w={1.6} head={7}/>; })}
-      <Body x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={15} tone="matter"/><Spin x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={25} ccw sweep={230} tone="text" steady/>
+      {/* The trail the planet leaves: strong where it has just been, fading over the last three orbits behind it. */}
+      {Array.from({ length: Math.ceil(Math.min(i, trail) / 5) }, (_, c) => {
+        const end = i - c * 5, start = Math.max(0, end - 5), age = (i - end) / trail;
+        return <polyline key={c} points={Array.from({ length: end - start + 1 }, (_, j) => screen(at(start + j)).join(',')).join(' ')} className="bk-s-muted" fill="none" strokeWidth={2.2 - 1.2 * age} strokeLinecap="round" opacity={0.08 + 0.92 * (1 - age)}/>;
+      })}
+      {/* The small force arrows round the present orbit are a still picture; the moving planet carries its own while it plays. */}
+      <Still>{k > 0 && cycle.points.filter((_, n) => n % Math.round(perOrbit / 10) === 0).map(o => turnOrbitPoint(o, now)).map((q, n) => { const [x, y] = screen(q), m = Math.hypot(q.fx, q.fy) || 1, len = 14 + 26 * Math.min(1, m / (k * 9)); return <Arrow key={n} x1={x} y1={y} x2={x + (q.fy / m) * len} y2={y + (q.fx / m) * len} tone="text" w={1.6} head={7}/>; })}</Still>
+      <Body x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={22} tone="matter"/><BodyCross x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={22} turned={play.t * 1500}/><Spin x={screen({ x: 0, y: 0 })[0]} y={screen({ x: 0, y: 0 })[1]} r={32} ccw sweep={230} tone="text"/>
       <Arrow x1={px} y1={py} x2={px + p.vy * 26} y2={py + p.vx * 26} tone="motion" w={2.2}/>
       {k > 0 && <BlockArrow x1={px} y1={py} x2={px + (p.fy / (Math.hypot(p.fx, p.fy) || 1)) * 44} y2={py + (p.fx / (Math.hypot(p.fx, p.fy) || 1)) * 44} thick={8}/>}
       <Line d={`M${px} ${py} L${screen({ x: 0, y: 0 })[0]} ${screen({ x: 0, y: 0 })[1]}`} tone="faint" dash="3 4"/>
@@ -223,62 +286,88 @@ export const discAngularMomentum = (m: number, r: number, omega: number) => 0.5 
 
 /** Figure 12-7: a rotating disc, and how quickly its mattermagnetic field grows with radius. */
 function GalaxyDisc() {
-  const [m, setM] = useState(1);
-  const [r, setR] = useState(1);
-  const [omega, setOmega] = useState(1);
   const play = usePlayback();
-  const H = 380, cx = 260, cy = 190, R = 70 + 80 * (r - 0.5), L = discAngularMomentum(m, r, omega), turned = play.t * omega * 60;
+  const H = 380, cx = 260, cy = 190, R = 110, turned = play.t * 60;
+  /** A letter with a small subscript, for B_m. */
+  const sub = (letter: string, index: string) => <>{letter}<tspan dy={5} fontSize="0.7em" fontStyle="normal">{index}</tspan><tspan dy={-5}>{'​'}</tspan></>;
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A rotating disc of matter charge ${fmt(m, 2)}, radius ${fmt(r, 2)} and angular velocity ${fmt(omega, 2)}. Its angular momentum, and so its mattermagnetic field, is ${fmt(L / 0.5, 3)} times that of the starting disc.`}>
-      <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-plain" opacity={0.5 + 0.2 * m}/>
+    <Stage w={W} h={H} label="A rotating disc of matter charge m, radius r and angular velocity ω. Its mattermagnetic field is proportional to its angular momentum, L = Iω, with I = ½mr².">
+      <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-plain" opacity={0.7}/>
       {Array.from({ length: 26 }, (_, i) => { const [x, y] = polar(cx, cy, R * (0.15 + 0.82 * ((i * 0.618) % 1)), turned + i * 137.5); return <circle key={i} cx={x} cy={y} r={2.2} className="bk-f-mark"/>; })}
       <Arrow x1={cx} y1={cy} x2={cx - R} y2={cy} tone="text" w={2.4}/><T x={cx - R / 2} y={cy - 10} tone="text" italic>r</T>
       <Still><Spin x={cx} y={cy + 4} r={20} ccw sweep={250} tone="text" w={2.4}/><T x={cx + 34} y={cy + 30} tone="text" italic>ω</T></Still><T x={cx} y={cy - R + 26} tone="text" italic>m</T>
-      <rect x={520} y={60} width={46} height={250} className="bk-fill-soft"/>
-      <rect x={520} y={310 - clamp(L / 4.5) * 250} width={46} height={clamp(L / 4.5) * 250} className="bk-f-b"/>
-      <T x={543} y={332} size="sm" tone="b">B_m ∝ L</T><T x={600} y={310 - clamp(L / 4.5) * 250 + 5} anchor="start" tone="b">{fmt(L / 0.5, 3)} ×</T>
+      {/* Fleming's relation, written beside the disc: the field goes as the angular momentum, and that as r². */}
+      <T x={470} y={160} anchor="start" tone="b" size="lg" italic>{sub('B', 'm')} ∝ L</T>
+      <T x={470} y={200} anchor="start" tone="text" size="lg" italic>L = Iω = ½mr²ω</T>
     </Stage>}>
-    <Slider label="Matter charge of the disc, m" value={m} min={0.5} max={2} step={0.1} onChange={setM} show={v => `${fmt(v, 2)} ×`}/>
-    <Slider label="Radius, r" value={r} min={0.5} max={1.5} step={0.05} onChange={setR} show={v => `${fmt(v, 2)} ×`}/>
-    <Slider label="Angular velocity, ω" value={omega} min={0.2} max={2} step={0.1} onChange={setOmega} show={v => `${fmt(v, 2)} ×`}/>
     <PlayBar play={play} label="the disc"/>
-    <Readout label="Moment of inertia, ½mr²" value={`${fmt((0.5 * m * r * r) / 0.5, 3)} ×`}/>
-    <Readout label="Angular momentum, L = Iω" value={`${fmt(L / 0.5, 3)} ×`} tone="b"/>
-    <Remark>Doubling the matter doubles the field; half as much again in radius more than doubles it. Stars far from the centre, moving fast, make most of the field.</Remark>
+    <Remark>Stars far from the centre, moving fast, make most of the field: it grows as the square of the radius.</Remark>
   </Diagram>;
 }
 
-/** Figure 12-8: two stars moving side by side are drawn together, as two parallel currents are. */
+/** How far a star in Figure 12-8 reaches into the zeptons: at this distance its pull is half its full strength. */
+const STAR_REACH = 110;
+
+/** The zeptons of Figure 12-8: a fixed lattice, each with a resting direction of its own. */
+const STAR_ZEPTONS = Array.from({ length: 17 }, (_, row) => Array.from({ length: 30 }, (_, col) => ({ x: 12 + col * 24 + (row % 2) * 12, y: 16 + row * 20.5, rest: (row * 7 + col * 13) * 37 }))).flat();
+
+/**
+ * The direction a zepton of Figure 12-8 lies, with its antimatter end toward the stars near it: each star pulls it round
+ * the more strongly the nearer it is, and far from both it keeps its resting direction.
+ */
+export function starZeptonAngle(z: { x: number; y: number; rest: number }, stars: readonly { x: number; y: number }[]) {
+  let vx = 0.06 * Math.cos(rad(z.rest)), vy = 0.06 * Math.sin(rad(z.rest));
+  for (const s of stars) {
+    const dx = s.x - z.x, dy = -(s.y - z.y), d = Math.hypot(dx, dy) || 1, w = 1 / (1 + (d / STAR_REACH) ** 2);
+    vx += (w * dx) / d; vy += (w * dy) / d;
+  }
+  return deg(Math.atan2(vy, vx));
+}
+
+/** Figure 12-8: two stars moving side by side turn the zeptons they pass, and are drawn together, as two parallel currents are. */
 function ParallelStars() {
   const [same, setSame] = useState(true);
-  const [speed, setSpeed] = useState(1);
   const play = usePlayback();
-  const state = useRef({ t: 0, gap: 150, travel: 0 });
+  const state = useRef({ t: 0, gap: 160, travel: 0 });
   const dt = Math.max(0, Math.min(0.05, play.t - state.current.t)), s = state.current;
-  if (play.t < s.t) { s.gap = 150; s.travel = 0; }
+  if (play.t < s.t) { s.gap = 160; s.travel = 0; }
   s.t = play.t;
-  // The force follows the product of the two momenta, so the square of the speed when the stars are alike.
-  const force = speed * speed * (same ? 1 : -1);
-  s.gap = clamp(s.gap - force * 9 * dt, 70, 230); s.travel += speed * 60 * dt;
-  // The first star moves left; the second moves with it, or right when they move opposite ways.
-  const H = 360, cy = 180, x = 470 - (s.travel % 220), x2 = same ? x : 250 + (s.travel % 220), y1 = cy - s.gap / 2, y2 = cy + s.gap / 2, mid = x - 110;
+  const H = 360, cy = 180, span = W + 120, speed = 60;
+  // The first star moves left; the second moves with it, or right when they move opposite ways. Both go round off the
+  // stage edges, so the picture never jumps while they are in view.
+  const before = s.travel; s.travel += speed * dt;
+  const x = W + 60 - (s.travel % span), x2 = same ? x : -60 + (s.travel % span);
+  // Moving the same way they draw together as they go; once both have left the stage, the next pass starts afresh.
+  if (same && Math.floor(before / span) !== Math.floor(s.travel / span)) s.gap = 160;
+  if (same) s.gap = Math.max(90, s.gap - 4 * dt);
+  const y1 = cy - s.gap / 2, y2 = cy + s.gap / 2, stars = [{ x, y: y1 }, { x: x2, y: y2 }];
+  // Moving opposite ways they pass only once each time round: the push apart is strongest as they pass.
+  const near = same ? 1 : 1 / (1 + ((x - x2) / 140) ** 2);
+  // While paused, curled arrows show which way the zeptons between the stars are being turned: found by how each would
+  // turn if the stars moved on a little.
+  const ahead = [{ x: x - 4, y: y1 }, { x: x2 + (same ? -4 : 4), y: y2 }];
+  // As printed, one beside each force arrow: the zepton nearest a point just inside each star, off to the side of its arrow.
+  const nearest = (px: number, py: number) => STAR_ZEPTONS.reduce((best, z) => (Math.hypot(z.x - px, z.y - py) < Math.hypot(best.x - px, best.y - py) ? z : best));
+  const between = [nearest(x + 52, y1 + 44), nearest(x2 + 52, y2 - 44)];
   return <Diagram stage={
-    <Stage w={W} h={H} label={`Two stars moving ${same ? 'in the same direction' : 'in opposite directions'} side by side. Their mattermagnetic fields ${same ? 'oppose each other in the space between, and the stars are drawn together' : 'add in the space between, and the stars are pushed apart'}.`}>
-      <Body x={x} y={y1} r={22} tone="plain"/><Body x={x2} y={y2} r={22} tone="plain"/>
-      {speed > 0.05 && <>
-        <Still><Arrow x1={x - 28} y1={y1} x2={x - 28 - 70 * speed} y2={y1} tone="motion" w={2.6}/><T x={x - 110 - 70 * (speed - 1)} y={y1 - 10} tone="motion" italic>υ</T></Still>
-        <Still><Arrow x1={x2 + (same ? -28 : 28)} y1={y2} x2={x2 + (same ? -28 - 70 * speed : 28 + 70 * speed)} y2={y2} tone="motion" w={2.6}/></Still>
-        <Spin x={mid + 40} y={cy - 22} r={15} ccw sweep={230} w={1.8} steady/><Spin x={mid + 40} y={cy + 22} r={15} ccw={!same} sweep={230} w={1.8} steady/>
-        <BlockArrow x1={mid - 30} y1={y1 + 14} x2={mid - 30} y2={y1 + 14 + (same ? 1 : -1) * 34 * Math.min(1.4, speed * speed)} thick={9}/><BlockArrow x1={mid - 30} y1={y2 - 14} x2={mid - 30} y2={y2 - 14 - (same ? 1 : -1) * 34 * Math.min(1.4, speed * speed)} thick={9}/>
-        <T x={mid - 54} y={cy + 5} tone="text" italic>F</T>
-      </>}
-      <T x={W / 2} y={H - 14} size="sm">{same ? 'between the stars the two fields point opposite ways' : 'between the stars the two fields point the same way'}</T>
+    <Stage w={W} h={H} label={`Two stars moving ${same ? 'in the same direction' : 'in opposite directions'} side by side through a field of zeptons. Each zepton keeps its antimatter end toward the stars near it, so the moving stars turn the zeptons they pass, those between the stars turning opposite ways. The stars are ${same ? 'drawn together' : 'pushed apart'}.`}>
+      {STAR_ZEPTONS.map((z, n) => {
+        // The zeptons a star is turning stand out; those far from both are dimmed. Those under a star fade out.
+        const d = Math.min(...stars.map(st => Math.hypot(st.x - z.x, st.y - z.y))), pull = 1 / (1 + (d / STAR_REACH) ** 2);
+        return <Zepton key={n} x={z.x} y={z.y} angle={starZeptonAngle(z, stars)} len={11} polarity="matter" signs={false} opacity={clamp((d - 24) / 8) * (0.25 + 0.75 * pull)}/>;
+      })}
+      {between.map((z, n) => { const turn = starZeptonAngle(z, ahead) - starZeptonAngle(z, stars), sense = ((turn + 540) % 360) - 180; return Math.abs(sense) > 0.05 && <Spin key={n} x={z.x} y={z.y} r={12} ccw={sense > 0} sweep={220} w={1.6}/>; })}
+      {stars.map((st, n) => {
+        const dir = n === 0 || same ? -1 : 1, toward = (n === 0 ? 1 : -1) * (same ? 1 : -1), len = 34 * near;
+        return <g key={n}>
+          <Still><Arrow x1={st.x + dir * 28} y1={st.y} x2={st.x + dir * 90} y2={st.y} tone="motion" w={2.6}/><T x={st.x + dir * 100} y={st.y + 5} anchor={dir < 0 ? 'end' : 'start'} tone="motion" italic>υ</T></Still>
+          <Body x={st.x} y={st.y} r={22} tone="matter"/>
+          {len > 4 && <><BlockArrow x1={st.x} y1={st.y + toward * 24} x2={st.x} y2={st.y + toward * (24 + len)} thick={10}/><T x={st.x - 14} y={st.y + toward * (30 + len / 2) + 5} anchor="end" tone="text" italic>F</T></>}
+        </g>;
+      })}
     </Stage>}>
     <Choice label="The two stars move" value={same ? 'same' : 'opposite'} onChange={v => setSame(v === 'same')} options={[{ value: 'same', label: 'The same way' }, { value: 'opposite', label: 'Opposite ways' }]}/>
-    <Slider label="Their speed, υ" value={speed} min={0} max={1.5} step={0.05} onChange={setSpeed} show={v => `${fmt(v, 2)} ×`}/>
     <PlayBar play={play} label="the stars"/>
-    <Readout label="Force between them" value={speed < 0.05 ? 'none from motion' : `${fmt(Math.abs(force), 2)} × , ${same ? 'together' : 'apart'}`} tone="force"/>
-    <Readout label="Separation across their paths" value={`${Math.round(s.gap)} units`}/>
     <Remark>{same ? 'Like parallel conductors with currents in the same direction, the stars are attracted. This is what Fleming says forms the spiral arms.' : 'By the same analogy with conductors, opposite motion repels.'}</Remark>
   </Diagram>;
 }
@@ -300,8 +389,8 @@ const chapter: ChapterContent = {
         <Eq n="12-2"><V>F</V><sub>m</sub> = <Frac top={<><V>m</V><sub>1</sub><V>m</V><sub>2</sub></>} bottom={<>4πε<sub>0m</sub><V>r</V>²</>}/></Eq>
         <Eq n="12-3"><V>F</V> = <V>G</V><sub>m</sub> <Frac top={<><V>m</V><sub>1</sub><V>m</V><sub>2</sub></>} bottom={<><V>r</V>²</>}/></Eq>
       </>,
-      tryThis: ['Raise “How much stronger the real forces are”. Both outer arrows grow; the inner one, their difference, does not change.', 'Change the distance: all three change together, by the inverse square.'],
-      notes: <p>Fleming does not give the ratio of the real forces to Newtonian gravity in this chapter, so it is a slider. That the two fall off identically with distance is the simple case of these equations; chapter 18 argues that gravity fades faster at very great distances.</p>,
+      tryThis: ['Follow the dashed lines down from the ends of the Matter Force: gravity reaches past them at each end by exactly the length of a green arrow.'],
+      notes: <p>The printed figure draws the three forces as lines. Here they are stacked on one scale as arrowed bars, in the printed order, each with a head at both ends because each acts on both bodies, and Newtonian Gravity, the force that is measured, is drawn thickest. Fleming does not give the ratio of the real forces to Newtonian Gravity in this chapter; they are drawn as 1.5 and 2.5 times it. Chapter 18 argues that gravity fades faster than the Matter Force at very great distances.</p>,
     },
     {
       kind: 'figure', id: '12-2', page: 101, section: 'Circular Orbits', title: 'A rotating sun pushes its planet inward',
@@ -311,8 +400,8 @@ const chapter: ChapterContent = {
         <p><Q>If the Sun is seen from above as rotating counterclockwise, the zeptons around it will rotate clockwise. The angular momentum of the sun, which is directed toward us, causes a mattermagnetic field B<sub>m</sub> directed away from us. As the smaller body crosses this mattermagnetic field, it is subject to a Lorentz Force</Q>, <V>F</V><sub>m</sub> = <V>m</V>(<V>υ</V> × <V>B</V><sub>m</sub>) (Equation 12-4) (<Pg n={100}/>).</p>
         <p><Q>As long as the larger body is rotating in the same direction as the orbiting body, the resultant force will be directed inward</Q>. The extra force makes the orbiting body appear heavier than it is, and since the masses of planets have always been inferred from Newton’s law, the error would not show (<Pg n={101}/>).</p>
       </>,
-      tryThis: ['Watch the curled arrows round the large body: they turn the opposite way to it.', 'Reverse the orbit, or the rotation: the force turns outward. Reverse both and it is inward again.', 'Stop the rotation: no field, no extra force.'],
-      notes: <p>The size of the force arrow follows the rate of rotation only; the true force would also fall with distance.</p>,
+      tryThis: ['Watch the zeptons round the Sun: they turn the opposite way to it.', 'Pause: curled arrows show which way the Sun and its zeptons turn.'],
+      notes: <p>As printed, this is the one case: the Sun and the orbit both counter-clockwise, held in balance. Reversing either would turn the force outward, as the text says, and stopping the Sun would remove it; neither is animated, because the orbit drawn would then no longer be balanced and the small body would leave it. The force arrow is not to scale.</p>,
     },
     {
       kind: 'figure', id: '12-3', page: 102, section: 'Synchronous Rotation', title: 'A planet’s own rotational field',
@@ -349,10 +438,10 @@ const chapter: ChapterContent = {
         <p>The force of Figure 12-2 was left out of the Newtonian computation. In an elliptical orbit it <Q>is not usually directed toward the sun</Q>. It is directed <Q>first one way and then the opposite way as it rounds the perihelion</Q>, so most of it is periodic, but <Q>There is, however, a residual, secular component that does cause precession</Q>: <Q>the classically unaccounted for 43 arcseconds of perihelion advance per century</Q> (<Pg n={104}/>, <Pg n={105}/>).</p>
         <p>Fleming cites Danby’s computation with a small modification to Newtonian gravity, and Van Flandern’s <Q>tangential pseudo-force directed along the velocity vector</Q>, as the same mathematics without the cause.</p>
       </>,
-      tryThis: ['Follow the planet and compare the broad force arrow with the dotted line to the sun: they agree only at perihelion and aphelion.', 'Set the strength to none: a closed ellipse. Raise it: each orbit is turned from the last, in the direction the planet moves.', 'Watch the small arrows round the first orbit: longest near the sun.'],
+      tryThis: ['Follow the planet and compare the broad force arrow with the dotted line to the sun: they agree only at perihelion and aphelion.', 'Set the strength to none: a closed ellipse. Raise it: each orbit is turned from the last, in the direction the planet moves.', 'Pause, and small arrows show the force round the present orbit: longest near the sun.'],
       notes: <>
         <p>The text and caption call the force <Q>tangential</Q> to the velocity, and say it speeds Mercury up and slows it down. The printed figure draws the arrows across the path, toward the inside of the orbit, which is the direction <V>m</V>(<V>υ</V> × <V>B</V><sub>m</sub>) has when <V>B</V><sub>m</sub> points into the page. The diagram follows the figure and Equation 12-4; a force at right angles to the velocity turns the planet without changing its speed.</p>
-        <p>The orbit is computed by adding that force, with the sun’s field falling as the inverse square of distance, to Newtonian gravity. The strength is exaggerated by many orders of magnitude so the precession can be seen in four orbits.</p>
+        <p>The orbit is computed by adding that force, with the sun’s field falling as the inverse square of distance, to Newtonian gravity. The strength is exaggerated by many orders of magnitude so the precession can be seen within a few orbits.</p>
       </>,
     },
     {
@@ -363,16 +452,16 @@ const chapter: ChapterContent = {
         <p>In a spiral galaxy, stars further out, and so travelling faster, are more strongly drawn to the centre. <Q>What kind of force gets stronger with distance and the consequent higher tangential velocities? That would be a force that is the result of a vector cross product, a Lorentz force, not gravity</Q> (<Pg n={106}/>).</p>
         <p>Taking the galaxy as a disc, <Q>the magnetic field is then proportional to the angular momentum L</Q>, with <V>L</V> = <V>I</V>ω and <V>I</V> = ½<V>m</V><V>r</V>² for a uniform disc. <Q>While the galaxy is nowhere near a uniform disc, it is easy to see that the mattermagnetic field increases rapidly when there are stars far from the center of the galaxy moving very rapidly.</Q></p>
       </>,
-      tryThis: ['Raise the radius by half: the field more than doubles, because it goes as r².', 'Compare what the same change does to m and to ω: each only in proportion.'],
-      notes: <p>The readouts are <V>L</V> = ½<V>m</V><V>r</V>²ω relative to the starting disc. Fleming says the field is proportional to <V>L</V>; no constant is given.</p>,
+      tryThis: ['Watch the stars near the rim: they move fastest, and with the r² in L they make most of the field.'],
+      notes: <p>Fleming says the field is proportional to <V>L</V>; no constant is given.</p>,
     },
     {
       kind: 'figure', id: '12-8', page: 107, title: 'Stars moving together are drawn together',
       caption: 'Two stars moving in the same direction produce a mattermagnetic field that attracts them toward each other.',
       Diagram: ParallelStars,
       text: <p>The fast outer stars each make their own field, <Q>and because they are more or less moving parallel to one another, the mattermagnetic field produced by one is directed opposite to the magnetic field produced by the other in the space in between. The situation is analogous to having a pair of parallel conductors, with their current moving in the same direction. Like the parallel conductors, the stars are attracted to one another</Q>. <Q>It is this mutual attraction between the fast moving outer stars that causes the spiral arms to form</Q> (<Pg n={107}/>).</p>,
-      tryThis: ['Let the two stars run side by side: they close up as they go.', 'Raise their speed: the attraction grows as the square, since each star’s field and the force on the other both follow the speed.', 'Set the speed to zero: no attraction from motion.'],
-      notes: <p>Fleming describes only stars moving the same way. The opposite case is drawn by his own analogy with parallel conductors. The rate at which the stars close is a display choice.</p>,
+      tryThis: ['Watch the zeptons: they stay where they are, and turn as the stars pass, each keeping its antimatter end toward the stars near it.', 'Pause between the stars: the curled arrows show the zeptons there turning opposite ways, as in the printed figure.', 'Make them move opposite ways: they are pushed apart, most strongly as they pass.'],
+      notes: <p>Fleming describes only stars moving the same way. The opposite case is drawn by his own analogy with parallel conductors. That each zepton keeps its antimatter end toward the moving stars follows Figure 11-4. How fast the stars close is a display choice.</p>,
     },
   ],
 };

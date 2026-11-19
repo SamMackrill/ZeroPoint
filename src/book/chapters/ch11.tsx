@@ -161,9 +161,11 @@ function RotatingBody() {
     setBase({ t: play.t, angle: g.angle }); setRateNow(next); setHeld(null);
     if (next && !play.playing) play.toggle();
   };
+  // Restart begins the rotation again from the body's first angle, not from wherever a rate change or a hand left it.
+  const restart = () => { setBase({ t: 0, angle: 0 }); play.restart(); };
   const moving = held === null && Math.abs(rate) >= 0.05;
   return <Diagram stage={
-    <Stage w={W} h={H} label={Math.abs(rate) < 0.05 ? 'A body of matter that is not rotating, with zeptons round it: the body does not turn them.' : `A body of matter rotating ${rate > 0 ? 'counter-clockwise' : 'clockwise'}. The zeptons round its circumference rotate ${rate > 0 ? 'clockwise' : 'counter-clockwise'}, the opposite way.`}>
+    <Stage w={W} h={H} role="group" label={Math.abs(rate) < 0.05 ? 'A body of matter that is not rotating, with zeptons round it: the body does not turn them.' : `A body of matter rotating ${rate > 0 ? 'counter-clockwise' : 'clockwise'}. The zeptons round its circumference rotate ${rate > 0 ? 'clockwise' : 'counter-clockwise'}, the opposite way.`}>
       <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-matter"/>
       {/* A dark cross on the body, so its turning can be seen. */}
       {[0, 90, 180, 270].map(a => { const [x1, y1] = polar(cx, cy, 24, turned + a), [x2, y2] = polar(cx, cy, R - 8, turned + a); return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2} className="bk-body-ink" strokeWidth="3.5" strokeLinecap="round"/>; })}
@@ -201,7 +203,7 @@ function RotatingBody() {
         }}/>
     </Stage>}>
     <Slider label="Rotation of the body" value={rate} min={-1} max={1} step={0.05} onChange={setRate} show={v => (Math.abs(v) < 0.05 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'counter-clockwise' : 'clockwise'}`)}/>
-    <PlayBar play={play} label="the rotation"/>
+    <PlayBar play={{ ...play, restart }} label="the rotation"/>
     <Readout label="Mattermagnetic field round the rim" value={Math.abs(rate) < 0.05 ? 'none' : 'counter-rotating'} tone="b"/>
     <Remark>A large rotating body produces a counter-rotating mattermagnetic field around its circumference. Newtonian gravity has no rotational force between bodies; the Matter Force does.</Remark>
   </Diagram>;

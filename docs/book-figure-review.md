@@ -63,14 +63,14 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 11-4 | Moving matter makes a mattermagnetic field | still | fine | No change |
 | 11-5 | A rotating body and its counter-rotating field | animated | changed | Solid dark cross on the body so its turning shows; the reader turns the body by hand (drag, flick, or arrow keys); direction labels removed; zepton key added, as in 11-1 |
 | 11-6 | A rotating pair with no electromagnetic field | animated | changed | 11-3’s hourglass zeptons; each letter and its sign (m−, a+) stay together, upright, as the pair turns |
-| 12-1 | Newtonian gravity as a difference | still | to review | |
-| 12-2 | A rotating sun pushes its planet inward | animated | to review | |
-| 12-3 | A planet’s own rotational field | animated | to review | |
-| 12-4 | Why orbiting bodies stop turning | animated | to review | |
-| 12-5 | An ellipse that will not stay put | animated | to review | |
-| 12-6 | The force that turns the ellipse | animated | to review | |
-| 12-7 | The largest flywheel | animated | to review | |
-| 12-8 | Stars moving together are drawn together | animated | to review | |
+| 12-1 | Newtonian gravity as a difference | still | changed | Three double-headed arrowed bars on one scale in the printed order, named on the bars; Newtonian Gravity thickest; bodies m₁, m₂ and r marked; sliders removed |
+| 12-2 | A rotating sun pushes its planet inward | animated | changed | Real rotation: the Sun turns with a dark cross and its zeptons turn against it, curled arrows only when paused; the printed, balanced case only |
+| 12-3 | A planet’s own rotational field | animated | fine | 12-2’s turning body and zeptons (shared); B_m subscripted |
+| 12-4 | Why orbiting bodies stop turning | animated | changed | Orbital-field zeptons turn either side, arrows only when paused; the planet turns with a dark cross; the Sun drawn symbolically at the left, named within it |
+| 12-5 | An ellipse that will not stay put | animated | fine | No change |
+| 12-6 | The force that turns the ellipse | animated | changed | Static force and rotation arrows only when paused; the Sun turns; a fading trail over three orbits; the orbit precesses on without looping |
+| 12-7 | The largest flywheel | animated | changed | Sliders, readouts and the field bar removed; Fleming’s relation B_m ∝ L = ½mr²ω written beside the disc |
+| 12-8 | Stars moving together are drawn together | animated | changed | Rebuilt: a fixed lattice of small zeptons that the moving stars turn (antimatter end toward them, as 11-4); arrows only when paused; force arrows on the stars; speed slider removed |
 | 13-1 | Eddies where the two halves of the mass meet | animated | to review | |
 | 16-1 | A shell that shuts out a band of the vacuum | animated | to review | |
 | 16-2 | A shape whose charges almost hold themselves | animated | to review | |
@@ -346,3 +346,44 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - Takes 11-3's drawing: the two hourglass zeptons, named, turning together.
 - **Owner:** Fleming's m− and m+ mean matter that is electrically negative or positive, and a+ and a− the same for antimatter, so the letter and sign must stay together as the pair turns; apart, they look strange. **Done:** each end's letter and sign are one label, kept upright about the end's centre.
 - **Owner:** good.
+
+### Fig. 12-1
+
+- **Owner:** one of Fleming's weaker drawings; can the forces be shown more clearly, ideally as one indicator combining matter, gravity and the net? Run some experiments. **Tried**, behind a temporary switch: a cancelling bar per body (hatched where the Matter Force cancels gravity), a tug-of-war meter, and the three forces as curves against distance.
+- **Owner:** none of them; take elements of the tug-of-war, which is closer to what Fleming conveys. As printed, Newtonian Gravity looks like the weak one, when gravity must win or the bodies would not attract. Try three stacked arrowed bars with a colour key. **Done**, on one scale from a common zero.
+- **Owner:** confusing: the bars must be double-headed, as the attraction and repulsion are mutual. **Done:** the Matter Force points out both ways, gravity and Newtonian Gravity in from both sides; dashed lines drop from the ends of the Matter Force through gravity. Offered the net under gravity's overhang or centred.
+- **Owner:** prefers centred. The sliders give no insight; the names fit on the arrows, so no "apart"/"together" or key; the green sum should be thickest, as it is what is measured. **Done:** sliders and readouts removed; the forces drawn at 1.5 and 2.5 times Newtonian Gravity (Fleming gives no ratio), noted.
+- **Owner:** put the green arrows in between, as in the original. **Done:** the printed order, Matter Force, Newtonian Gravity, gravity; the gravity labels moved clear of the dashed lines.
+- **Owner:** put m₁ and m₂ in the bodies to match the equations, and mark r. **Done:** a dimension line between the centres.
+- **Owner:** great now.
+
+### Fig. 12-2
+
+- **Owner:** once again arrows where we should have clear rotation. **Done:** the Sun is a matter body with 11-5's dark cross, turning; the curled-arrow field is rings of zeptons, fading with distance, turning against it. Curled arrows show only while paused. `CounterField` and `BodyCross` are shared with 12-3.
+- **Owner:** the small body orbits only because the forces balance; changing the Sun's rotation would unbalance them and it would leave the orbit, yet its velocity never changes, so the slider is not modelled accurately; modelling it would distract from Fleming's point. **Decision (asked):** as printed only. The rotation slider, orbit-direction choice and readouts are removed; the note says why the reversed and stopped cases are not animated. B_m and F_m are written with proper subscripts.
+- **Owner:** good now.
+
+### Fig. 12-4
+
+- **Owner:** once again arrows where we should have clear rotation. **Done:** the two columns of curled arrows are zeptons turning opposite ways, counter-clockwise on the Sun's side and clockwise beyond, with curled arrows only when paused; the planet is a matter body with the dark cross, visibly slowing.
+- **Owner:** add the Sun symbolically, not to scale, as sketched. **Done:** the edge of a great gold disc down the left, with flares off its limb.
+- **Owner:** name it vertically within the Sun; "not to scale" is obvious. Then: the "to the Sun" arrow and label are unnecessary. **Done** both.
+- **Owner:** great now.
+
+### Fig. 12-6
+
+- **Owner:** the static force and rotation arrows are not needed unless paused. **Done:** the small force arrows round the orbit and the Sun's curled arrow show only when paused; the Sun, a little larger, turns with the dark cross. The moving planet keeps its own velocity and force arrows.
+- **Owner:** the orbital trail should be strongest near the body and fade as it is left behind; then, a slower fade to see more of the older orbits. **Done:** a trail over the last three orbits, fading evenly to a faint floor.
+- **Owner:** the animation loops with a jump; keep the orbit and precession going. **Done:** `orbitCycle` computes one orbit, perihelion to perihelion, and its advance, finding the next perihelion where the outward speed passes through zero; each later orbit is that one turned on by the advance (`turnOrbitPoint`). Tested: closed with no force, and joining without a jump.
+- **Owner:** looks great.
+
+### Fig. 12-7
+
+- **Owner:** the diagram is excellent, but the sliders are a distraction. **Done:** the sliders and readouts are removed; the field bar, which would then read a constant 1 ×, is replaced by Fleming's relation, B_m ∝ L = Iω = ½mr²ω, beside the disc.
+- **Owner:** good now.
+
+### Fig. 12-8
+
+- **Owner:** needs a lot of work. The zepton rotations are arrows again, not proper rotations ("this keeps happening!"); the zeptons do not move: the bodies move and cause the zepton rotations that cause the attraction or repulsion; the force arrows belong on the bodies. **Done:** a fixed lattice of zeptons, each turning to keep its antimatter end toward the stars near it (the mechanism of 11-4, `starZeptonAngle`); curled arrows beside each force arrow, and the velocity arrows, only when paused, their sense found from how the zeptons would turn next; each force arrow drawn from its own star. The stars go round off the stage edges, so nothing jumps in view; moving the same way they close slowly on each pass, moving opposite ways they are pushed apart as they pass. The speed slider and readouts are removed. Saved as a standing rule (memory) to check every figure for arrows standing in for rotation.
+- **Owner:** much better; half-size zeptons. **Done.** Then: more zeptons, and make the induced spin more obvious. **Done:** a lattice twice as dense each way, the stars' reach widened, the zeptons' own directions held more weakly, and zeptons dimmed by how little a star is turning them.
+- **Owner:** good now.
