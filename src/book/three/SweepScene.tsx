@@ -86,9 +86,10 @@ export default function SweepScene({ state, onFail, description }: { state: Swee
       const layerSets = LAYERS.map(({ y, weight }, k) => {
         const posM = new THREE.MeshStandardMaterial({ color: palette.dataPos, roughness: 0.45, transparent: true }), negM = new THREE.MeshStandardMaterial({ color: palette.dataNeg, roughness: 0.45, transparent: true });
         const rodM = new THREE.MeshStandardMaterial({ color: palette.text3, transparent: true });
-        // The two layers next to the plane are shifted half a cell, opposite ways in x so they do not stack on each other;
-        // the outer two line up with the plane, where the nearer layers keep them from stacking on it.
-        const shift = y === 0.9 ? [0.665, 0.55] : y === -0.9 ? [-0.665, 0.55] : [0, 0];
+        // Seen from above, no layer next to the plane sits on the plane's zeptons or on the other's: the one above is
+        // shifted half a cell in both directions, the one below half a cell along z only (x and z grids are 1.33 and
+        // 1.1 apart, so these differ modulo the grid). The outer two line up with the plane, behind the nearer layers.
+        const shift = y === 0.9 ? [0.665, 0.55] : y === -0.9 ? [0, 0.55] : [0, 0];
         const zeptons = ZEPTONS.map(([x, z], i) => {
           const g = new THREE.Group(), p = new THREE.Mesh(sphere, posM), n = new THREE.Mesh(sphere, negM), r = new THREE.Mesh(rod, rodM);
           p.position.x = 0.25;

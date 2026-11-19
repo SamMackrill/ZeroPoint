@@ -52,8 +52,8 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 8-4 | The right hand rule again: torque and angular momentum | still | changed | Figure 7-4 again, with a switch: torque (r, F, Γ; p. 73) or the magnetic force (7-4's labels) |
 | 8-5 | The torque of gravity on a leaning top | still | changed | 3D wooden top, side view as printed; r, α, mg, and the lever r sin α on the floor |
 | 8-6 | The field of a moving charge, and of moving matter | still | changed | Velocity slider removed: one speed, as printed; drag the point to see where the field is and which way |
-| 9-1 | Morgan’s flywheels: induction across an air gap | animated | to review | |
-| 9-2 | Wallace’s gyroscopes: the plane turned over | animated | to review | |
+| 9-1 | Morgan’s flywheels: induction across an air gap | animated | changed | 3D, as in the photo: the discs face to face on one axis across the gap; turn arrows only when paused |
+| 9-2 | Wallace’s gyroscopes: the plane turned over | animated | changed | 3D after Wallace’s patent: brass mass circuit, generator turned over, detector on a knife edge read by a light beam |
 | 10-1 | The inertia of a current | animated | to review | |
 | 10-2 | The inertia of matter | animated | to review | |
 | 10-3 | Why a body at rest stays at rest | animated | to review | |
@@ -286,3 +286,14 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 ### Fig. 8-6
 
 - **Owner:** the velocity slider gives nothing meaningful here. **Agreed:** the strength is relative, so the slider only scaled it; Fleming shows one speed and makes his point with where the field is and which way it points. Removed; the arrow is a fixed length.
+
+### Fig. 9-1
+
+- **Owner:** misleading as drawn; better in 3D, since the discs share a plane. **Checked against the photograph (p. 83):** the discs are face to face on one axis, so they lie in parallel planes; the owner agreed. Now 3D (`FlywheelScene`): motor on a base, the smaller driven disc, the larger passive disc across the gap (drawn wider than 1/16 inch), carried on an upright. Fleming's p. 84 line that Morgan's discs were "oriented perpendicular to the Earth" is quoted in the notes. The flat drawing is the fallback.
+- **Owner:** the arrows showing motion are unnecessary while it runs. **Agreed:** the book's rule (#73); the 3D arrows now fade while playing and return when paused.
+- **Owner:** added Wallace's patents (`docs/papers/Henry-William-Wallace-Patents-3626605-3626606.pdf`). They do not describe Morgan's apparatus; they are the source of Figure 9-2.
+
+### Fig. 9-2
+
+- **Owner:** should be 3D as well. **From Wallace’s patent (US 3,626,605, which Fleming’s figure reproduces, FIGS. 2 and 6):** the old drawing showed a passive gyroscope induced to spin the opposite way, which is Fleming’s general summary, not Wallace’s apparatus. Asked the owner; chose the patent. Now 3D (`WallaceScene`): two U-shaped brass members with two gaps; the generator’s wheel between pole pieces, its assembly turned over by motor and belt; the detector hung on a knife edge, its tilt read by a lamp’s beam off a mirror onto a scale (magnified 24 times). Poles aligned, opposed, or turning; the shift is about 13 arc minutes either side, 26 between, as the patent reports. The notes record that Fleming calls 31 a pulley where the patent has bearings. Flat fallback redrawn to match.
+- **Owner:** looks great.

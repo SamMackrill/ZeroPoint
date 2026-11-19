@@ -6,6 +6,7 @@ import { percentOfPeak } from '../src/book/kit';
 import { dwellAngle, meanOffset } from '../src/book/chapters/ch06';
 import { channelFlow, circleRadii, deflectionPath, fieldLineXs } from '../src/book/chapters/ch07';
 import { vortexCells } from '../src/book/chapters/ch08';
+import { wallaceShift } from '../src/book/chapters/ch09';
 import { COIL_LENGTH, COIL_RADIUS, COIL_ZEPTONS, SEEDS, ZEPTON_COUNTS, coilField, coilFieldLine, linesForCurrent } from '../src/book/three/coil-math';
 import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/book/three/sphere-math';
 import { bodyVelocity, speedOfLight } from '../src/book/chapters/ch10';
@@ -167,5 +168,11 @@ describe('book companion: diagrams', () => {
     expect(speedOfLight(bodyVelocity(20, 1))).toBe('0.9988 c');
     expect(speedOfLight(bodyVelocity(500, 1))).toMatch(/^0\.99999\d* c$/);
     expect(speedOfLight(bodyVelocity(1e6, 1))).toBe('within a billionth of c');
+  });
+
+  it('Figure 9-2: Wallace’s detector settles 26 arc minutes apart between poles aligned and opposed, and not at all with the wheels still', () => {
+    expect(wallaceShift('aligned', 1, 0) - wallaceShift('opposed', 1, 0)).toBeCloseTo(26);
+    expect(wallaceShift('turning', 1, 180)).toBeCloseTo(wallaceShift('opposed', 1, 0));
+    expect(wallaceShift('turning', 0, 37)).toBe(0);
   });
 });
