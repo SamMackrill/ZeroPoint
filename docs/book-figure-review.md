@@ -93,7 +93,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 23-2 | Starlight turned by the Sun | still | changed | The ray drawn as a smooth curve, turning most beside the Sun |
 | 25-1 | Two shells, a diameter apart | still | changed | The white arrows show the net force, turning round to push apart where Coulomb wins (below 0.5 fm, beyond 3.1 fm) |
 | 25-2 | The shadow and the openings | still | changed | 3D as 17-2, the particles open rhombic triacontahedra so the shadow cap sits among the openings; widths compared beneath |
-| 26-1 | Half a pair on each side of a boundary | animated | to review | |
+| 26-1 | Half a pair on each side of a boundary | animated | changed | The freed half moves off in one continuous motion instead of stopping between two eased steps |
 
 ## Explorers (second pass)
 
@@ -478,3 +478,8 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** like 17-2, best shown in 3D. **Done:** `ShadowScene` gains a `cage` option drawing the bodies as open rhombic triacontahedra (struts on faint spheres), so the cone and the shadow cap can be seen among the frame's openings; a panel beneath compares the shadow's width with an opening's 0.60 fm. The flat drawing is the fallback.
 - **Owner:** good now.
+
+### Fig. 26-1
+
+- **Owner:** why does the electron seem to stop, then continue away? Its outward motion was two separately eased steps with a pause between. **Fixed:** one continuous motion, gathering speed as the pair parts and carrying on steadily to the end of the cycle.
+- **Owner:** good.

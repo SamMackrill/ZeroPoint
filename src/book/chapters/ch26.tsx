@@ -24,7 +24,10 @@ function PairAtBoundary() {
   // In capture the pair is as wide as the atom (p. 204): its positron half lies at the orbital electron and its electron
   // half in the nucleus, so neither travels. Elsewhere the pair forms at the boundary and its halves part.
   const capture = process === 'capture', bx = capture ? cx + 115 : cx + R + 14;
-  const inward = capture ? cx + 10 : lerp(bx - 14, cx + 40, parting), outward = capture ? cx + 222 : lerp(bx + 14, bx + 150 + 110 * settled, parting);
+  // The half that stays outside moves off in one continuous motion: gathering speed as the pair parts, then carrying on
+  // steadily once free, rather than stopping between the two.
+  const away = clamp((u - 0.25) / 0.75), flight = away < 0.3 ? (away * away) / 0.6 : away - 0.15;
+  const inward = capture ? cx + 10 : lerp(bx - 14, cx + 40, parting), outward = capture ? cx + 222 : bx + 14 + (300 * flight) / 0.85;
   // In neutron decay the positron goes in and the electron out; in electron capture the electron goes in.
   const inSign: 1 | -1 = process === 'capture' ? -1 : 1, outSign = (-inSign) as 1 | -1, orbital = { x: cx + 230, y: cy };
   const annihilate = process === 'neutron' ? settled : 0, flashOut = process === 'capture' ? settled : 0;
