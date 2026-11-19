@@ -306,15 +306,21 @@ input {
 
 .bk-eq {
   display: flex;
+  flex-wrap: wrap; /* short of room, the equation number goes below; the equation itself never breaks */
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 6px 16px;
+  overflow-x: auto; /* on the narrowest screens an equation wider than the page scrolls rather than breaking */
   padding: 10px 16px;
   font-family: 'Superscripts', 'Times New Roman', Georgia, serif;
   font-size: 19px;
   color: var(--text);
   background: var(--bg-2);
   border-radius: 6px;
+}
+
+.bk-eq-body {
+  white-space: nowrap;
 }
 
 .bk-eq-n {
@@ -629,6 +635,19 @@ input {
 .bk-control.is-stacked label {
   flex-direction: column;
   align-items: stretch;
+}
+
+/* A long reading and an unseen copy of the longest share one grid cell, so the box keeps the longest one's height. */
+.bk-reading-stacked {
+  display: grid;
+}
+
+.bk-reading-stacked > span {
+  grid-area: 1 / 1;
+}
+
+.bk-reading-room {
+  visibility: hidden;
 }
 
 .bk-control.is-stacked label > output {
@@ -1481,10 +1500,14 @@ input {
 /* A pair of equations set side by side, as a diagram's stage */
 .bk-eq-pair {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); /* columns may shrink, so a long equation scrolls rather than widening its column */
   gap: 14px 18px;
   padding: 20px;
   color: var(--text-2);
+}
+
+.bk-eq-pair > * {
+  min-width: 0;
 }
 
 .bk-eq-pair > p {

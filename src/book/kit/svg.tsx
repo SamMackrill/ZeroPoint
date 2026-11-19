@@ -17,6 +17,12 @@ export function T({ x, y, children, anchor = 'middle', tone = 'muted', size = 'm
   return <text x={x} y={y} textAnchor={anchor} className={`bk-t bk-t-${size} bk-f-${tone}${italic ? ' bk-italic' : ''}`} {...rest}>{children}</text>;
 }
 
+/** A subscript inside SVG text, as in λ<Sb>ph</Sb> or B<Sb>m</Sb>: lowered and smaller, with the baseline restored after it. */
+export function Sb({ children }: { children: ReactNode }) {
+  // Both offsets are in the subscript's own size, so they cancel exactly and the text after it keeps its baseline.
+  return <><tspan dy="0.32em" fontSize="0.72em">{children}</tspan><tspan dy="-0.32em" fontSize="0.72em">{'​'}</tspan></>;
+}
+
 /** A straight arrow from (x1, y1) to (x2, y2), with a head at the end (and at the start when `both`). */
 export function Arrow({ x1, y1, x2, y2, tone = 'text', w = 2, head = 9, both, dash, opacity }: { x1: number; y1: number; x2: number; y2: number; tone?: Tone; w?: number; head?: number; both?: boolean; dash?: string; opacity?: number }) {
   const len = Math.hypot(x2 - x1, y2 - y1);

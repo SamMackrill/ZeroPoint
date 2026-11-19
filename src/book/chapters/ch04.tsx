@@ -1,6 +1,6 @@
 // Chapter 4: What is a Virtual Photon? (PDF pp. 33–42). Figures 4-1 to 4-9.
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from 'react';
-import { Action, Arrow, Choice, Diagram, FallbackOnError, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback } from '../kit';
+import { Action, Arrow, Choice, Diagram, FallbackOnError, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, clamp, fmt, pathThrough, percentOfPeak, polar, rng, usePlayback, Sb } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { PairView } from '../three/PairScene';
 import type { ChapterContent } from '../types';
@@ -266,13 +266,13 @@ function PairEnergy() {
   return <Diagram stage={
     <Stage h={230} label={`A photon of wavelength ${nm} nanometres and a pair of wavelength ${pairWavelength} nanometres. Both carry ${fmt(photon, 3)} electron volts.`}>
       <Line d={pathThrough(Array.from({ length: 121 }, (_, i) => [x0 + (i / 120) * nm * scale, y - 30 * Math.sin((i / 120) * 2 * Math.PI)] as const))} tone="e" w={2.2}/>
-      <Arrow x1={x0} y1={y + 52} x2={x0 + nm * scale} y2={y + 52} both tone="e" w={1.4} head={6}/><T x={x0 + (nm * scale) / 2} y={y + 72} tone="e" size="sm">photon wavelength λ_ph = {nm} nm</T>
+      <Arrow x1={x0} y1={y + 52} x2={x0 + nm * scale} y2={y + 52} both tone="e" w={1.4} head={6}/><T x={x0 + (nm * scale) / 2} y={y + 72} tone="e" size="sm">photon wavelength λ<Sb>ph</Sb> = {nm} nm</T>
       <Zepton x={x0 + (nm * scale) / 4} y={y} angle={0} len={(nm * scale) / 2} oval={false} signs/>
-      <Arrow x1={x0} y1={y + 96} x2={x0 + (nm * scale) / 2} y2={y + 96} both tone="mark" w={1.4} head={6}/><T x={x0 + (nm * scale) / 4} y={y + 116} tone="mark" size="sm" anchor={nm < 420 ? 'start' : 'middle'}>pair wavelength λ_z = {pairWavelength} nm</T>
+      <Arrow x1={x0} y1={y + 96} x2={x0 + (nm * scale) / 2} y2={y + 96} both tone="mark" w={1.4} head={6}/><T x={x0 + (nm * scale) / 4} y={y + 116} tone="mark" size="sm" anchor={nm < 420 ? 'start' : 'middle'}>pair wavelength λ<Sb>z</Sb> = {pairWavelength} nm</T>
     </Stage>}>
     <Slider label="Photon wavelength" value={nm} min={250} max={1200} step={10} onChange={setNm} unit="nm"/>
-    <Readout label={<>Photon, <V>hc</V>/λ_ph</>} value={`${fmt(photon, 3)} eV`} tone="e"/>
-    <Readout label={<>Pair, <V>h</V>ν_z/2</>} value={`${fmt(pair, 3)} eV`} tone="good"/>
+    <Readout label={<>Photon, <V>hc</V>/λ<sub>ph</sub></>} value={`${fmt(photon, 3)} eV`} tone="e"/>
+    <Readout label={<>Pair, <V>h</V>ν<sub>z</sub>/2</>} value={`${fmt(pair, 3)} eV`} tone="good"/>
     <Remark tone="good">The same at every wavelength: a pair carries a photon’s energy during half a wavelength.</Remark>
   </Diagram>;
 }

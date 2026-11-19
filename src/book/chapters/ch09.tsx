@@ -156,9 +156,14 @@ function WallaceGyros() {
 
 type Mode = 'still' | 'spinning' | 'pushed' | 'locked';
 
+/** Laithwaite's flywheel in three dimensions: loaded on demand, since three.js is large. */
+const LaithwaiteScene = lazy(() => import('../three/LaithwaiteScene'));
+
 /** Explorer: Laithwaite's flywheel on a pivoted shaft, in the four cases the text describes. */
 function LaithwaiteFlywheel() {
   const [mode, setMode] = useState<Mode>('spinning');
+  const [flat, setFlat] = useState(() => !canDraw3D());
+  const fail = useCallback(() => setFlat(true), []);
   const play = usePlayback();
   const state = useRef({ t: 0, lift: -18, turn: 0, spin: 0, mode: 'spinning' as Mode });
   // Restart (or a step back) begins again from the starting state.
@@ -173,8 +178,10 @@ function LaithwaiteFlywheel() {
   s.turn += (mode === 'spinning' ? 26 : mode === 'pushed' ? 60 : 0) * dt;
   s.spin += (mode === 'still' ? 0 : 700) * dt;
   const H = 360, px = 230, py = 150, len = 230, [ex, ey] = polar(px, py, len, s.lift), tx = 560, ty = 110;
-  return <Diagram stage={
-    <Stage w={W} h={H} label={{ still: 'A flywheel that is not spinning, on a pivoted shaft: it falls.', spinning: 'A spinning flywheel on a pivoted shaft: it supports its own weight and precesses round the stand.', pushed: 'The spinning flywheel pushed along its precession: it rises until the shaft is level.', locked: 'The spinning flywheel held so it cannot tilt downward, then pushed: it simply topples.' }[mode]}>
+  const says = { still: 'not spinning: it falls under gravity', spinning: 'spinning: it holds its height and precesses', pushed: s.lift > -2 ? 'level: the upward force has stopped' : 'pushed along the precession: the whole assembly rises', locked: 'not free to tilt: no precession, and it topples' }[mode];
+  const label = { still: 'A flywheel that is not spinning, on a pivoted shaft: it falls.', spinning: 'A spinning flywheel on a pivoted shaft: it supports its own weight and precesses round the stand.', pushed: 'The spinning flywheel pushed along its precession: it rises until the shaft is level.', locked: 'The spinning flywheel held so it cannot tilt downward, then pushed: it simply topples.' }[mode];
+  /** The explorer drawn flat: the side view with a small view from above. The fallback where 3D cannot be drawn. */
+  const flatRig = () => <Stage w={W} h={H} label={{ still: 'A flywheel that is not spinning, on a pivoted shaft: it falls.', spinning: 'A spinning flywheel on a pivoted shaft: it supports its own weight and precesses round the stand.', pushed: 'The spinning flywheel pushed along its precession: it rises until the shaft is level.', locked: 'The spinning flywheel held so it cannot tilt downward, then pushed: it simply topples.' }[mode]}>
       <rect x={px - 14} y={py} width={28} height={130} className="bk-plate"/><rect x={px - 60} y={py + 130} width={120} height={12} className="bk-plate"/>
       <line x1={px} y1={py} x2={ex} y2={ey} className="bk-s-text" strokeWidth="5" strokeLinecap="round"/>
       <ellipse cx={ex} cy={ey} rx={16} ry={64} transform={`rotate(${-s.lift} ${ex} ${ey})`} className="bk-body bk-body-matter"/>
@@ -185,10 +192,16 @@ function LaithwaiteFlywheel() {
       <circle cx={tx} cy={ty} r={54} className="bk-s-faint" fill="none" strokeDasharray="4 5"/><circle cx={tx} cy={ty} r={4} className="bk-f-mark"/>
       <line x1={tx} y1={ty} x2={polar(tx, ty, 54, s.turn)[0]} y2={polar(tx, ty, 54, s.turn)[1]} className="bk-s-text" strokeWidth="3"/><circle cx={polar(tx, ty, 54, s.turn)[0]} cy={polar(tx, ty, 54, s.turn)[1]} r={9} className="bk-body bk-body-matter"/>
       <T x={tx} y={ty + 78} size="sm">seen from above</T>
-      <T x={W / 2} y={H - 12} size="sm" tone="mark">{{ still: 'not spinning: it falls under gravity', spinning: 'spinning: it holds its height and precesses', pushed: s.lift > -2 ? 'level: the upward force has stopped' : 'pushed along the precession: the whole assembly rises', locked: 'not free to tilt: no precession, and it topples' }[mode]}</T>
-    </Stage>}>
+      <T x={W / 2} y={H - 12} size="sm" tone="mark">{says}</T>
+    </Stage>;
+  return <Diagram stage={flat ? flatRig() : <FallbackOnError onError={fail} fallback={flatRig()}>
+      <Suspense fallback={flatRig()}>
+        <LaithwaiteScene state={{ lift: s.lift, turn: s.turn, spin: s.spin, rising: mode === 'pushed' && s.lift < -2 }} onFail={fail} description={`${label} Drag to turn the view.`}/>
+      </Suspense>
+    </FallbackOnError>}>
     <Choice label="The flywheel is" value={mode} onChange={setMode} options={[{ value: 'still', label: 'Still' }, { value: 'spinning', label: 'Spinning' }, { value: 'pushed', label: 'Pushed' }, { value: 'locked', label: 'Locked' }]}/>
     <PlayBar play={play} label="the flywheel"/>
+    <Readout label="What happens" value={says}/>
     <Readout label="Shaft" value={`${Math.round(s.lift)}° from level`}/>
     <Remark>The flywheel rises only until it is rotating parallel to the Earth’s surface. Turn it right round and you end where you started: no net propulsion.</Remark>
   </Diagram>;
@@ -209,8 +222,8 @@ const chapter: ChapterContent = {
         <p>The conditions matter. Locked so that it cannot tilt downward and then pushed, <Q>it simply topples over. It must be free to tilt downward for precession to occur</Q>. And the rise has a limit: <Q>the flywheel will rise until it is rotating parallel to the Earth’s surface where the upward force stops</Q>, so there is no net propulsive force (<Pg n={82}/>).</p>
         <p>What Fleming takes from it: <Q>none of this could happen if the rotating flywheel was not producing and interacting with a mattermagnetic field</Q>.</p>
       </>,
-      tryThis: ['Step through the four cases. Still: it falls. Spinning: it stays up and goes round the stand. Pushed: it rises to level and no further. Locked: it topples.', 'In the Pushed case watch the top view: the push is along the circle of precession, and the response is upward, at right angles to it.'],
-      notes: <p>The angles and rates are illustrative; the text describes the demonstrations in words. The spring and sliding bearing of Laithwaite’s stand are not drawn.</p>,
+      tryThis: ['Step through the four cases. Still: it falls. Spinning: it stays up and goes round the stand. Pushed: it rises to level and no further. Locked: it topples.', 'In the Pushed case watch it go round: the push is along the circle of precession, and the response is upward, at right angles to it.', 'Drag the view round to see the flywheel from above.'],
+      notes: <p>Drawn in three dimensions; where 3D cannot be drawn, a side view with a view from above. The angles and rates are illustrative; the text describes the demonstrations in words. The spring and sliding bearing of Laithwaite’s stand are not drawn.</p>,
     },
     {
       kind: 'figure', id: '9-1', page: 83, section: 'Wallace, Morgan, and Inductive Matter Forces', title: 'Morgan’s flywheels: induction across an air gap',

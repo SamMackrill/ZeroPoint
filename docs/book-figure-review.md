@@ -99,19 +99,19 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 
 | Item | Card title | Motion before review | Status | Decision |
 |---|---|---|---|---|
-| x0-1 | The route of the book | still | to review | |
-| x1-1 | Twelve principles, and where they are used | still | to review | |
-| x1-2 | Everything moves because it is pushed | animated | to review | |
-| x2-1 | A drop in the ocean | still | to review | |
-| x2-2 | More energy, less time | animated | to review | |
-| x2-3 | Where the energy is | still | to review | |
-| x4-1 | A pair carries the photon’s energy | still | to review | |
-| x5-1 | Pair production: the pair was already there | animated | to review | |
-| x7-1 | The four equations, read as zeptons | animated | to review | |
-| x9-1 | Laithwaite’s flywheel: held up by the vacuum | animated | to review | |
-| x14-1 | The same laws, with matter for charge | still | to review | |
-| x14-2 | Matter attracts antimatter | animated | to review | |
-| x14-3 | Why only one kind is left | animated | to review | |
+| x0-1 | The route of the book | still | fine | No change |
+| x1-1 | Twelve principles, and where they are used | still | fine | No change |
+| x1-2 | Everything moves because it is pushed | animated | fine | No change |
+| x2-1 | A drop in the ocean | still | changed | Long slider readings keep their longest height (kit-wide), so nothing jumps; the scale's powers of ten on one line |
+| x2-2 | More energy, less time | animated | fine | No change |
+| x2-3 | Where the energy is | still | fine | No change |
+| x4-1 | A pair carries the photon’s energy | still | changed | Proper subscripts (λ_ph, λ_z, ν_z), and book-wide for B_m, F_m, ω_p |
+| x5-1 | Pair production: the pair was already there | animated | fine | No change |
+| x7-1 | The four equations, read as zeptons | animated | fine | No change |
+| x9-1 | Laithwaite’s flywheel: held up by the vacuum | animated | changed | In 3D: stand, pivoted shaft and spinning flywheel precessing, rising when pushed, falling when still or locked |
+| x14-1 | The same laws, with matter for charge | still | changed | Equations never wrap (book-wide): the number goes below when short of room |
+| x14-2 | Matter attracts antimatter | animated | fine | No change |
+| x14-3 | Why only one kind is left | animated | fine | No change |
 | x15-1 | Two charges, two fields, one force | still | to review | |
 | x20-1 | What holds a zepton’s rotation back | animated | to review | |
 | x20-2 | Slower in glass, and turned | animated | to review | |
@@ -483,3 +483,24 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** why does the electron seem to stop, then continue away? Its outward motion was two separately eased steps with a pause between. **Fixed:** one continuous motion, gathering speed as the pair parts and carrying on steadily to the end of the cycle.
 - **Owner:** good.
+
+### Explorer x2-1
+
+- **Owner:** the green text is jumpy as the slider moves. The slider's reading, the ocean's name, wrapped onto a second line only at its longest, so the controls below jumped. **Fixed** in the kit's `Slider`: a long reading shares a grid cell with an unseen copy of the longest, so its line is always that tall (measured: 91 px at every value). Applies to every slider with a long reading.
+- **Owner:** the scale's numbers should line up. **Done:** the powers of ten on one line.
+- **Owner:** very good.
+
+### Explorer x4-1
+
+- **Owner:** λ_ph is used instead of a proper subscript. **Fixed** book-wide: every underscore subscript in visible text (x4-1's λ_ph, λ_z, ν_z; chapter 8's B_m, F_m, ω_p; 11-4's B_m) is a real subscript, by a new kit helper `Sb` in SVG text and `<sub>` in readouts. Those left are in comments and constant names.
+- **Owner:** very good.
+
+### Explorer x9-1
+
+- **Owner:** this should be in 3D. **Done** (`LaithwaiteScene`): the stand, the shaft pivoted on top and the flywheel with spokes to show its spin; spinning it precesses round the stand on a dashed circle, pushed it rises to level with an upward arrow, still or locked it falls; the weight hangs from it. The flat side view with its view from above is the fallback; the caption line is a "What happens" readout.
+- **Owner:** very good.
+
+### Explorer x14-1
+
+- **Owner:** Eq. 14-6 wraps, spoiling the effect. In the narrow side-by-side column the equation broke to make room for its number. **Fixed** book-wide: an equation's body never wraps; short of room its number goes below, and on the narrowest screens a too-wide equation scrolls. Checked on all seven laws.
+- **Owner:** very good.
