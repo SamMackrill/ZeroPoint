@@ -306,15 +306,21 @@ input {
 
 .bk-eq {
   display: flex;
+  flex-wrap: wrap; /* short of room, the equation number goes below; the equation itself never breaks */
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 6px 16px;
+  overflow-x: auto; /* on the narrowest screens an equation wider than the page scrolls rather than breaking */
   padding: 10px 16px;
   font-family: 'Superscripts', 'Times New Roman', Georgia, serif;
   font-size: 19px;
   color: var(--text);
   background: var(--bg-2);
   border-radius: 6px;
+}
+
+.bk-eq-body {
+  white-space: nowrap;
 }
 
 .bk-eq-n {

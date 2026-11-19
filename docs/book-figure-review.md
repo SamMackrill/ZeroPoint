@@ -109,7 +109,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | x5-1 | Pair production: the pair was already there | animated | fine | No change |
 | x7-1 | The four equations, read as zeptons | animated | fine | No change |
 | x9-1 | Laithwaite’s flywheel: held up by the vacuum | animated | changed | In 3D: stand, pivoted shaft and spinning flywheel precessing, rising when pushed, falling when still or locked |
-| x14-1 | The same laws, with matter for charge | still | to review | |
+| x14-1 | The same laws, with matter for charge | still | changed | Equations never wrap (book-wide): the number goes below when short of room |
 | x14-2 | Matter attracts antimatter | animated | to review | |
 | x14-3 | Why only one kind is left | animated | to review | |
 | x15-1 | Two charges, two fields, one force | still | to review | |
@@ -498,4 +498,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 ### Explorer x9-1
 
 - **Owner:** this should be in 3D. **Done** (`LaithwaiteScene`): the stand, the shaft pivoted on top and the flywheel with spokes to show its spin; spinning it precesses round the stand on a dashed circle, pushed it rises to level with an upward arrow, still or locked it falls; the weight hangs from it. The flat side view with its view from above is the fallback; the caption line is a "What happens" readout.
+- **Owner:** very good.
+
+### Explorer x14-1
+
+- **Owner:** Eq. 14-6 wraps, spoiling the effect. In the narrow side-by-side column the equation broke to make room for its number. **Fixed** book-wide: an equation's body never wraps; short of room its number goes below, and on the narrowest screens a too-wide equation scrolls. Checked on all seven laws.
 - **Owner:** very good.
