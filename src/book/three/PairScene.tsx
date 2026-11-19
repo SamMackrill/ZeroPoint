@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette } from '../../ui/palette';
-import { disposeAll, label, solidArrow, turnWithKeys } from './common';
+import { disposeAll, label, releaseControls, solidArrow, turnWithKeys } from './common';
 
 /** Where the reader looks from: the printed page face on, turned to show depth, or along the photon's path. */
 export type PairView = 'turned' | 'page' | 'path';
@@ -118,7 +118,7 @@ export default function PairScene({ state, onFail, description }: { state: PairS
 
       const controls = new OrbitControls(camera, renderer.domElement);
 
-      undo.push(() => controls.dispose());
+      undo.push(releaseControls(controls, renderer.domElement));
       undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page

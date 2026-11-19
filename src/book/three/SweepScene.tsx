@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette } from '../../ui/palette';
-import { disposeAll, label, solidArrow, turnWithKeys } from './common';
+import { disposeAll, label, releaseControls, solidArrow, turnWithKeys } from './common';
 
 /** Where the reader looks from: turned to show the plane, or straight down on it, as the page prints it. */
 export type SweepView = 'turned' | 'above';
@@ -119,7 +119,7 @@ export default function SweepScene({ state, onFail, description }: { state: Swee
 
       const controls = new OrbitControls(camera, renderer.domElement);
 
-      undo.push(() => controls.dispose());
+      undo.push(releaseControls(controls, renderer.domElement));
       undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page

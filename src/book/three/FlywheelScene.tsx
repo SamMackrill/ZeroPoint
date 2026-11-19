@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette } from '../../ui/palette';
 import { FigureRunning } from '../kit/clock';
-import { disposeAll, label, turnWithKeys } from './common';
+import { disposeAll, label, releaseControls, turnWithKeys } from './common';
 
 /** What the scene shows at a moment: each disc's turn (degrees, about the shared axis) and its speed (signed, for the arrows). */
 export interface FlywheelState {
@@ -126,7 +126,7 @@ export default function FlywheelScene({ state, onFail, description }: { state: F
 
       const controls = new OrbitControls(camera, renderer.domElement);
 
-      undo.push(() => controls.dispose());
+      undo.push(releaseControls(controls, renderer.domElement));
       undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page

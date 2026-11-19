@@ -108,3 +108,19 @@ export function turnWithKeys(el: HTMLElement, camera: THREE.Camera, controls: { 
   el.addEventListener('keydown', key);
   return () => { el.removeEventListener('keydown', key); el.removeAttribute('tabindex'); };
 }
+
+/**
+ * The undo for orbit controls. OrbitControls registers key listeners on the canvas's root (the document) and removes
+ * them from whatever root the canvas has at `dispose()`; by the time a scene's teardown runs, React has already taken
+ * the canvas out of the page, so they would stay. The root is recorded here, while the canvas is in the page, and the
+ * listeners are removed from it as well.
+ */
+export function releaseControls(controls: { dispose(): void }, canvas: HTMLElement) {
+  const root = canvas.getRootNode();
+  return () => {
+    controls.dispose();
+    const held = controls as unknown as { _interceptControlDown?: EventListener; _interceptControlUp?: EventListener };
+    if (held._interceptControlDown) root.removeEventListener('keydown', held._interceptControlDown, { capture: true });
+    if (held._interceptControlUp) root.removeEventListener('keyup', held._interceptControlUp, { capture: true });
+  };
+}

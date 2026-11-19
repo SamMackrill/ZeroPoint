@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { palette } from '../../ui/palette';
-import { disposeAll, label, solidArrow, turnWithKeys, woodTexture } from './common';
+import { disposeAll, label, releaseControls, solidArrow, turnWithKeys, woodTexture } from './common';
 import { PROFILE, TOP_CM, TOP_LAID } from './top-math';
 
 /** What the scene shows at a moment. Angles in degrees. */
@@ -182,7 +182,7 @@ export default function TopScene({ state, onFail, description, onLean }: { state
       renderer.domElement.addEventListener('pointerup', release);
       renderer.domElement.addEventListener('pointercancel', release);
       const controls = new OrbitControls(camera, renderer.domElement);
-      undo.push(() => controls.dispose());
+      undo.push(releaseControls(controls, renderer.domElement));
       undo.push(turnWithKeys(el, camera, controls, () => draw()));
       controls.enablePan = false;
       controls.enableZoom = false; // the mouse wheel scrolls the book, as everywhere else on the page
