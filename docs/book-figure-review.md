@@ -74,7 +74,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 13-1 | Eddies where the two halves of the mass meet | animated | changed | Eddies drawn as turning loops of matter, inner against the body and outer with it; curled arrows only when paused |
 | 16-1 | A shell that shuts out a band of the vacuum | animated | changed | Fluctuations kept clear of the shell by their reach at full size and angle; the inner ones spread evenly |
 | 16-2 | A shape whose charges almost hold themselves | animated | fine | No change |
-| 17-1 | Push gravity: bodies that shade each other | animated | to review | |
+| 17-1 | Push gravity: bodies that shade each other | animated | changed | Absorption slider removed (half, fixed); bodies drawn as the engraving's porous globes: lit upper left, pores spread over the sphere and foreshortened toward the limb |
 | 17-2 | The shadow, and the inverse square | still | to review | |
 | 17-3 | Electric dipoles side by side cancel | still | to review | |
 | 17-4 | Two zeptons of one kind cancel in both charges | still | to review | |
@@ -397,3 +397,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** the fluctuations should not clip into the shell. **Done:** each ellipse is placed by how far it reaches toward or away from the centre at its fullest, given the angle it lies at, so it stays a small gap clear of the shell, inside or out (the large outer ones could reach across it). The inner ones are a little shorter and spread evenly over the inner disc.
 - **Owner:** good.
+
+### Fig. 17-1
+
+- **Owner:** the first slider serves little purpose. **Done:** each body stops half of what strikes it; the note says that with entirely elastic interactions there would be no shadow and no push.
+- **Owner:** match the original's spherical bodies; it is a nice aesthetic to honour. **Done** (`Globe`): lit from the upper left with a dark limb to the lower right, and pores. Then, after three rounds: the pores should be even and spiral-like (a sunflower spiral looked flat and odd); they should sit on the sphere and fade round it as in the engraving (now a Fibonacci lattice over the sphere, seen from in front, fading with the lighting); no contour lines; and the pores near the limb were distorting oddly, as they were squashed across the wrong axis (now flattened along the radius, with a floor).
+- **Owner:** great, good now.

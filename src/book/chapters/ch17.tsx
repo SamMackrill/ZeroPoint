@@ -1,5 +1,5 @@
 // Chapter 17: Gravity (PDF pp. 129–136). Figures 17-1 to 17-5.
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { Arrow, BlockArrow, Body, Choice, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, clamp, deg, fmt, pathThrough, rng, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
@@ -9,12 +9,49 @@ const W = 720;
 /** The net push on each of two bodies that shadow each other: it needs some inelasticity, and falls as the inverse square. */
 export const shadowPush = (absorbed: number, distance: number) => absorbed / (distance * distance);
 
+/**
+ * The pores of a globe in Figure 17-1, as in the engraving: spread evenly over the sphere (a Fibonacci lattice) and seen
+ * from in front, so those near the limb are foreshortened, squashed along the radius and closer together, and fade into
+ * its shade. Positions are in units of the radius; `turn` lays each pore's x axis, the one squashed, along its radius.
+ */
+const GLOBE_PORES = Array.from({ length: 110 }, (_, k) => {
+  const z = 1 - (k + 0.5) / 55, ring = Math.sqrt(Math.max(0, 1 - z * z)), a = k * 2.39996;
+  return { x: 0.96 * ring * Math.cos(a), y: 0.96 * ring * Math.sin(a), z };
+}).filter(p => p.z > 0.12).map(p => {
+  // Lit from the upper left, as the globe's shading is: pores on the shaded side fade into it.
+  const light = Math.max(0, (-0.5 * p.x - 0.42 * p.y + 0.76 * p.z) / Math.hypot(0.5, 0.42, 0.76));
+  return { ...p, turn: (Math.atan2(p.y, p.x) * 180) / Math.PI, fade: 0.95 * Math.min(1, 0.25 + light) * Math.min(1, p.z * 2.5) };
+});
+
+/**
+ * A body drawn as the engraving in Figure 17-1 draws it: a globe lit from the upper left, with a dark limb to the lower
+ * right, and pores, because Fatio's bodies let most of the corpuscles through.
+ */
+function Globe({ x, y, r }: { x: number; y: number; r: number }) {
+  const id = useId(), shade = `${id}-shade`, clip = `${id}-clip`;
+  const pores = GLOBE_PORES;
+  return <g>
+    <defs>
+      <radialGradient id={shade} cx="38%" cy="40%" r="68%" fx="34%" fy="36%">
+        <stop offset="0%" style={{ stopColor: 'var(--text-2)' }}/><stop offset="45%" style={{ stopColor: 'var(--text-4)' }}/><stop offset="80%" style={{ stopColor: 'var(--bg-3)' }}/><stop offset="100%" style={{ stopColor: 'var(--bg-0)' }}/>
+      </radialGradient>
+      <clipPath id={clip}><circle cx={x} cy={y} r={r}/></clipPath>
+    </defs>
+    <circle cx={x} cy={y} r={r} fill={`url(#${shade})`}/>
+    <g clipPath={`url(#${clip})`}>
+      {pores.map((p, i) => <ellipse key={i} cx={x + p.x * r} cy={y + p.y * r} rx={0.058 * r * Math.max(0.3, p.z)} ry={0.058 * r} transform={`rotate(${p.turn} ${x + p.x * r} ${y + p.y * r})`} className="bk-fill-panel" opacity={p.fade}/>)}
+    </g>
+    <circle cx={x} cy={y} r={r} fill="none" className="bk-s-text" strokeWidth="1.5"/>
+  </g>;
+}
+
 /** Figure 17-1: Fatio's corpuscles pushing on two bodies that shade each other. */
 function PushGravity() {
-  const [absorbed, setAbsorbed] = useState(0.5);
+  // Each body stops half of what strikes it: a display choice.
+  const absorbed = 0.5;
   const [gap, setGap] = useState(260);
   const play = usePlayback();
-  const H = 340, y = 170, xa = W / 2 - gap / 2, xb = W / 2 + gap / 2, R = 44, push = shadowPush(absorbed, gap / 260);
+  const H = 340, y = 170, xa = W / 2 - gap / 2, xb = W / 2 + gap / 2, R = 72, push = shadowPush(absorbed, gap / 260);
   const streams = useMemo(() => { const random = rng(171); return Array.from({ length: 13 }, (_, i) => ({ y: 26 + i * 24, phase: random(), dir: (i % 2 ? 1 : -1) as 1 | -1 })); }, []);
   return <Diagram stage={
     <Stage w={W} h={H} label={`Two bodies in a stream of corpuscles coming from every side, here drawn from left and right. Each body stops ${Math.round(absorbed * 100)} per cent of what strikes it, so fewer corpuscles reach the facing sides and the bodies are pushed together with a net push of ${fmt(push, 2)}.`}>
@@ -28,15 +65,14 @@ function PushGravity() {
           return inside ? null : <g key={`${i}-${k}`} opacity={(1 - absorbed) ** passed * 0.9 + 0.05}><circle cx={x} cy={s.y} r={3} className="bk-f-mark"/><line x1={x} y1={s.y} x2={x - s.dir * 12} y2={s.y} className="bk-s-mark" strokeWidth="1.2"/></g>;
         });
       })}
-      <Body x={xa} y={y} r={R} tone="plain"/><Body x={xb} y={y} r={R} tone="plain"/>
+      <Globe x={xa} y={y} r={R}/><Globe x={xb} y={y} r={R}/>
       {push > 0.01 && <><BlockArrow x1={xa - R - 60 * clamp(push)} y1={y} x2={xa - R - 2} y2={y} thick={12}/><BlockArrow x1={xb + R + 60 * clamp(push)} y1={y} x2={xb + R + 2} y2={y} thick={12}/></>}
-      <T x={W / 2} y={y + R + 30} size="sm" tone={absorbed > 0.02 ? 'mark' : 'muted'}>{absorbed > 0.02 ? 'between the bodies: fewer corpuscles, less push' : 'nothing is stopped: no shadow'}</T>
+      <T x={W / 2} y={y + R + 30} size="sm" tone="mark">between the bodies: fewer corpuscles, less push</T>
     </Stage>}>
-    <Slider label="Share of the push each body takes up" value={absorbed} min={0} max={0.9} step={0.05} onChange={setAbsorbed} show={v => (v === 0 ? 'none (entirely elastic)' : `${Math.round(v * 100)} %`)}/>
-    <Slider label="Distance between the bodies" value={gap} min={130} max={420} step={10} onChange={setGap} show={v => `${fmt(v / 260, 2)} ×`}/>
+    <Slider label="Distance between the bodies" value={gap} min={190} max={440} step={10} onChange={setGap} show={v => `${fmt(v / 260, 2)} ×`}/>
     <PlayBar play={play} label="the corpuscles"/>
     <Readout label="Net push together" value={push < 0.005 ? 'none' : fmt(push, 3)} tone="force"/>
-    <Remark>{absorbed === 0 ? 'If the interactions are entirely elastic the theory does not work: no shadowing occurs.' : 'Each body shadows the other from the pressure coming from behind it, so more pushes them together than apart.'}</Remark>
+    <Remark>Each body shadows the other from the pressure coming from behind it, so more pushes them together than apart.</Remark>
   </Diagram>;
 }
 
@@ -133,8 +169,8 @@ const chapter: ChapterContent = {
         <p><Q>Fatio’s idea was that space is filled with corpuscles, and that as these corpuscles move through space, they randomly strike astronomical bodies, pushing them. If we then consider two bodies, the first body shadows the second body from the corpuscular pressure force coming from behind the first body, and in this way there is more force pushing the bodies together than pushing them apart</Q> (<Pg n={129}/>).</p>
         <p>The interaction must be partly inelastic: <Q>No shadowing effect occurs if the interaction is completely elastic</Q>. And for the force to follow mass and not surface, matter must be almost entirely porous, which Fatio argued and which zeptons satisfy: they <Q>can be many orders of magnitude smaller than even the smallest fundamental particle, making matter, for all intents, infinitely porous</Q> (<Pg n={130}/>, <Pg n={131}/>).</p>
       </>,
-      tryThis: ['Follow a stream that passes through a body: it comes out fainter, and reaches the second body fainter still.', 'Set the share taken up to none: every stream is as strong on both sides, and there is no net push.', 'Move the bodies apart: the push falls with the square of the distance.'],
-      notes: <p>The corpuscles are drawn travelling in two directions only; in the theory they come from every direction. The share each body takes up, and its effect on the streams, are display choices. With zeptons in place of corpuscles the interaction is not a collision at all; that is the subject of Figures 17-3 to 17-5.</p>,
+      tryThis: ['Follow a stream that passes through a body: it comes out fainter, and reaches the second body fainter still.', 'Move the bodies apart: the push falls with the square of the distance.'],
+      notes: <p>The corpuscles are drawn travelling in two directions only; in the theory they come from every direction. Each body is drawn stopping half of what strikes it; that share, and its effect on the streams, are display choices. Were the interactions entirely elastic nothing would be stopped, there would be no shadow, and no push. With zeptons in place of corpuscles the interaction is not a collision at all; that is the subject of Figures 17-3 to 17-5.</p>,
       labs: [{ lab: 'vdw', scenario: 'pressure', why: 'The Casimir plates of chapter 3, which Fleming says solved the heat and drag objections to this picture.' }],
     },
     {
