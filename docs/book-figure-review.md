@@ -91,7 +91,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 22-3 | Round a rotating body, both ways | animated | fine | No change |
 | 23-1 | A signal that comes back late | animated | changed | The radar signal visibly slows near the Sun (exaggerated, following the band); Mercury only, at its proportional distance |
 | 23-2 | Starlight turned by the Sun | still | changed | The ray drawn as a smooth curve, turning most beside the Sun |
-| 25-1 | Two shells, a diameter apart | still | to review | |
+| 25-1 | Two shells, a diameter apart | still | changed | The white arrows show the net force, turning round to push apart where Coulomb wins (below 0.5 fm, beyond 3.1 fm) |
 | 25-2 | The shadow and the openings | still | to review | |
 | 26-1 | Half a pair on each side of a boundary | animated | to review | |
 
@@ -467,4 +467,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 ### Fig. 23-2
 
 - **Owner:** the light bending near the Sun will be a curve, not an inflection. **Done:** the ray is traced back from Earth, turning by the share (1 + s/√(s² + b²))/2 of the bend as it goes, so it turns most beside the Sun and runs nearly straight far from it.
+- **Owner:** good.
+
+### Fig. 25-1
+
+- **Owner:** the white force arrows should reverse when the shells get close, showing repulsion. They showed the Casimir force alone, which fades but never turns. **Done:** they show the net force, together where the Casimir force is the larger and apart where Coulomb wins, below about 0.5 fm and beyond about 3.1 fm (computed); a net-force readout added.
 - **Owner:** good.
