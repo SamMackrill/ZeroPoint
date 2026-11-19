@@ -66,13 +66,21 @@ export interface FieldPictureProps {
   zeptonLen?: number;
   /** Where round each source the first line leaves, as a fraction of the spacing between lines. */
   offset?: number;
+  /**
+   * Each source's radius as drawn. The zeptons then start a small gap outside it, whatever its size, and none is drawn
+   * touching it; without it they start at a fixed distance along the line.
+   */
+  radii?: readonly number[];
 }
+
+/** The clear space left between a source as drawn and the nearest end of a zepton. */
+const ZEPTON_GAP = 4;
 
 /**
  * A field as lines, as zeptons, or as both at once. The zeptons lie along the lines with their positive ends toward
  * the negative source, the way the electric field points (Figure 6-7), each one opening and closing in its turn.
  */
-export function FieldPicture({ sources, w, h, perUnit = 8, lines = 1, zeptons = 0, t, polarity = 'electric', tone = 'e', zeptonLen = 20, offset = 0 }: FieldPictureProps) {
+export function FieldPicture({ sources, w, h, perUnit = 8, lines = 1, zeptons = 0, t, polarity = 'electric', tone = 'e', zeptonLen = 20, offset = 0, radii }: FieldPictureProps) {
   const traced = useMemo(() => fieldLines(sources, { w, h }, perUnit, 16, offset), [sources, w, h, perUnit, offset]);
   return <g>
     {lines > 0 && traced.map((line, i) => {
@@ -82,11 +90,28 @@ export function FieldPicture({ sources, w, h, perUnit = 8, lines = 1, zeptons = 
         {marks.map((m, k) => <polygon key={k} points="6,0 -5,4.5 -5,-4.5" transform={`translate(${m.x} ${m.y}) rotate(${-m.angle})`} stroke="none"/>)}
       </g>;
     })}
-    {zeptons > 0 && traced.map((line, i) => alongLine(line.points, zeptonLen + 9, zeptonLen * 0.9).map((m, k) => {
+    {zeptons > 0 && traced.map((line, i) => {
       // Each zepton lives its own short life, out of step with its neighbours.
-      const life = t === undefined ? 0.5 : (t * 0.9 + ((i * 7 + k * 3) % 10) / 10) % 1;
-      return <Zepton key={`${i}-${k}`} x={m.x} y={m.y} angle={m.angle} len={zeptonLen} open={0.45 + 0.55 * Math.sin(Math.PI * life)} polarity={polarity} oval={false} signs={false} opacity={zeptons * (0.45 + 0.55 * Math.sin(Math.PI * life))}/>;
-    }))}
+      const life = (k: number) => (t === undefined ? 0.5 : (t * 0.9 + ((i * 7 + k * 3) % 10) / 10) % 1);
+      if (!radii) return alongLine(line.points, zeptonLen + 9, zeptonLen * 0.9).map((m, k) => {
+        const open = 0.45 + 0.55 * Math.sin(Math.PI * life(k));
+        return <Zepton key={`${i}-${k}`} x={m.x} y={m.y} angle={m.angle} len={zeptonLen} open={open} polarity={polarity} oval={false} signs={false} opacity={zeptons * open}/>;
+      });
+      // With the sources' sizes known, the zeptons are counted from the end of the line at a source (a negative source's
+      // lines are traced inward, so that end is last), the first one's middle far enough out that even fully open it
+      // leaves a small gap. Each opens and closes about its middle, and those at the same distance along their lines do
+      // so together, so the picture stays balanced round the source.
+      const gap = (j: number) => radii[j] + ZEPTON_GAP + zeptonLen / 2 + 0.4 * Math.min(11, Math.max(2.5, zeptonLen * 0.15));
+      const toNearest = ([x, y]: readonly [number, number]) => sources.reduce((best, s, j) => { const d = Math.hypot(x - s.x, y - s.y); return d < best.d ? { j, d } : best; }, { j: 0, d: Infinity });
+      const head = toNearest(line.points[0]), tail = toNearest(line.points[line.points.length - 1]), flip = tail.d < head.d;
+      const points = flip ? [...line.points].reverse() : line.points, end = flip ? tail : head;
+      return alongLine(points, zeptonLen + 9, Math.max(0, gap(end.j) - end.d))
+        .filter(m => sources.every((s, j) => Math.hypot(m.x - s.x, m.y - s.y) >= gap(j) - 0.5))
+        .map((m, k) => {
+          const ring = t === undefined ? 0.5 : (t * 0.9 + ((k * 3) % 10) / 10) % 1, open = 0.45 + 0.55 * Math.sin(Math.PI * ring);
+          return <Zepton key={`${i}-${k}`} x={m.x} y={m.y} angle={flip ? m.angle + 180 : m.angle} len={zeptonLen} open={open} polarity={polarity} oval={false} signs={false} opacity={zeptons * open}/>;
+        });
+    })}
   </g>;
 }
 

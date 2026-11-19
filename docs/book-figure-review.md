@@ -57,12 +57,12 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | 10-1 | The inertia of a current | animated | fine | No change |
 | 10-2 | The inertia of matter | animated | changed | The reader pushes the matter: drag along it, or hold an arrow key; a force arrow shows the push; one fixed status line |
 | 10-3 | Why a body at rest stays at rest | animated | fine | No change |
-| 11-1 | The matter field of a body | animated | to review | |
-| 11-2 | Matter repels matter | animated | to review | |
-| 11-3 | Two kinds of zepton, and how they cancel | still | to review | |
-| 11-4 | Moving matter makes a mattermagnetic field | still | to review | |
-| 11-5 | A rotating body and its counter-rotating field | animated | to review | |
-| 11-6 | A rotating pair with no electromagnetic field | animated | to review | |
+| 11-1 | The matter field of a body | animated | changed | Amount slider removed; zeptons kept a small, even gap from the body, pulsing in rings so the picture stays balanced |
+| 11-2 | Matter repels matter | animated | changed | Bodies marked M with the zepton key, as in 11-1; zeptons keep the same small gap |
+| 11-3 | Two kinds of zepton, and how they cancel | still | changed | Each zepton drawn as an hourglass dumbbell with a gap between the two, named, with Fleming’s particle-pair gloss; same drawing in 11-6 |
+| 11-4 | Moving matter makes a mattermagnetic field | still | fine | No change |
+| 11-5 | A rotating body and its counter-rotating field | animated | changed | Solid dark cross on the body so its turning shows; the reader turns the body by hand (drag, flick, or arrow keys); direction labels removed; zepton key added, as in 11-1 |
+| 11-6 | A rotating pair with no electromagnetic field | animated | changed | 11-3’s hourglass zeptons; each letter and its sign (m−, a+) stay together, upright, as the pair turns |
 | 12-1 | Newtonian gravity as a difference | still | to review | |
 | 12-2 | A rotating sun pushes its planet inward | animated | to review | |
 | 12-3 | A planet’s own rotational field | animated | to review | |
@@ -311,3 +311,38 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 ### Fig. 10-3
 
 - **Owner:** fine as it is.
+
+### Fig. 11-1
+
+- **Owner:** the antimatter ends of the zeptons nearest the body clip into it; there should be a gap. **Fixed:** `FieldPicture` takes the sources' drawn `radii`; the zeptons are counted from the body's end of each line (a negative source's lines are traced inward), so the first on every line sits a small gap out.
+- **Owner:** the slider adds nothing. **Agreed:** Fleming's text is about which way the zeptons lie and the lines reaching outward, not the amount of matter. Removed.
+- **Owner:** the gap should be smaller and equal on every line. A first attempt pinned the antimatter ends; **owner:** that seems wrong, keep it balanced and symmetrical. **Done:** each zepton opens and closes about its middle; the first one's middle is placed so that fully open it leaves a small gap; zeptons at the same distance pulse together, so the picture stays symmetrical.
+- **Owner:** great now.
+
+### Fig. 11-2
+
+- **Owner:** add the M and the key so it matches 11-1. **Done** in `TwoSources` for matter: bodies marked M (M̄ for antimatter), a little larger to hold the letter; the zepton key; and the zeptons keep 11-1's small, even gap. Shared with the matter figures of chapters 14 and 18.
+- **Owner:** great now.
+
+### Fig. 11-3
+
+- **Owner:** stylised and unclear; it represents the original, but is one of Fleming's weaker drawings. Is there a better one in his papers? It is two zeptons, electron-like left and proton-like right, but the print does not make that obvious. **Found:** none clearer. Fig. 5 of *Electromagnetic Motion as an Extended Casimir Effect* is the same four ovals, unlabelled. Its text does call the kinds "like a quantum electron-positron pair" and "a proton-antiproton pair".
+- **Decision (asked):** two clear dipoles. Each zepton is one outline holding Fleming's two ends (m or a with its sign), with a gap between the zeptons, its name above, and the paper's gloss below ("like e⁻ with e⁺", "like p with p̄"). The note cites the paper's Fig. 5.
+- **Owner:** better; make them dumbbells to show they are particle pairs. **Done.** Then: a smoother, hourglass neck. **Done:** each curve leaves its round end along the tangent and narrows to a slim waist.
+- The same drawing serves Fig. 11-6, where the names turn with the pair and stay upright, and the circular arrow is drawn wider to clear them.
+- **Owner:** perfect.
+
+### Fig. 11-5
+
+- **Owner:** the body's rotation is hard to see; the colours are too close. **Done:** the thin dashed grey cross is a solid dark-brown one, with its arms stopping short of the M.
+- **Owner:** we should be able to grab the body and turn it with the mouse. **Done:** drag round it and it follows from where it was grabbed, the zeptons turning the other way; flick it and it keeps the speed it was given (starting the figure if paused); hold it still before letting go and it stops. Focused, ← and → turn it 15°. The body's angle is now carried from a base, so changing the rate no longer makes it jump.
+- **Owner:** the text on the figure jumps about as the direction changes, and the zeptons are never "at rest": they are just not turned by the body; the animation is clear without the text. **Done:** the two direction labels are removed, and the description and Try line say the stopped body no longer turns the zeptons.
+- **Owner:** good now.
+- **Owner:** it should have a key like the other diagrams, showing the matter and antimatter colours. **Done:** 11-1's zepton key, in the bottom-left corner clear of the ring.
+- **Owner:** done now.
+
+### Fig. 11-6
+
+- Takes 11-3's drawing: the two hourglass zeptons, named, turning together.
+- **Owner:** Fleming's m− and m+ mean matter that is electrically negative or positive, and a+ and a− the same for antimatter, so the letter and sign must stay together as the pair turns; apart, they look strange. **Done:** each end's letter and sign are one label, kept upright about the end's centre.
+- **Owner:** good.

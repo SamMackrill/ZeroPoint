@@ -839,6 +839,10 @@ input {
   stroke: var(--data-shell-1);
 }
 
+.bk-body-ink {
+  stroke: var(--data-mark-deep);
+}
+
 .bk-body-anti {
   fill: var(--data-bspin-lo);
   stroke: var(--data-shell-4);
@@ -1653,6 +1657,22 @@ input {
 }
 
 /* A row of matter the reader pushes by dragging along it (Figure 10-2): sideways drags push, vertical swipes scroll. */
+.bk-turn {
+  cursor: grab;
+  touch-action: none;
+}
+
+.bk-turn:active {
+  cursor: grabbing;
+}
+
+.bk-turn:focus-visible {
+  outline: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+
 .bk-push {
   cursor: grab;
   touch-action: pan-y;

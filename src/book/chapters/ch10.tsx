@@ -58,12 +58,13 @@ function MatterInertia() {
   const state = useRef({ t: 0, p: 0, angle: 0, flow: 0 });
   // The push in hand: a drag along the row (where it was pressed, and where the pointer is now), or an arrow key held.
   const grip = useRef<{ from: number; at: number } | null>(null);
-  const held = useRef<0 | 1 | -1>(0);
+  // The arrow keys held, most recent last: the push follows the latest still held, so releasing one leaves the other.
+  const held = useRef<(1 | -1)[]>([]);
   // Restart (or a step back) begins again from the starting state.
   if (play.t < state.current.t) state.current = { t: 0, p: 0, angle: 0, flow: 0 };
   const dt = Math.max(0, Math.min(0.1, play.t - state.current.t)), s = state.current;
   s.t = play.t;
-  const push = grip.current ? pushOfDrag(grip.current.at - grip.current.from) : held.current;
+  const push = grip.current ? pushOfDrag(grip.current.at - grip.current.from) : held.current.at(-1) ?? 0;
   // Momentum has no limit; only the velocity does (bodyVelocity), as the zeptons cannot turn faster.
   s.p += push * dt * 1.6;
   const v = bodyVelocity(s.p, matter);
@@ -73,13 +74,16 @@ function MatterInertia() {
   const along = (e: PointerEvent<SVGRectElement>) => { const m = e.currentTarget.ownerSVGElement?.getScreenCTM?.(); return m ? new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse()).x : null; };
   // Pushing sets the figure going if it was paused, so the push has an effect to see.
   const start = () => { if (!play.playing) play.toggle(); };
-  const arrow = grip.current ? [grip.current.from, grip.current.at] : held.current ? [W / 2 - 55 * held.current, W / 2 + 55 * held.current] : null;
+  const arrow = grip.current ? [grip.current.from, grip.current.at] : push ? [W / 2 - 55 * push, W / 2 + 55 * push] : null;
+  // A push along the motion (or from rest) makes the zeptons turn faster; against it, it slows them.
+  const faster = push * s.p >= 0;
+  // The stage is a group, not a picture (role img), since the matter in it is a control the reader can reach and use.
   return <Diagram stage={
-    <Stage w={W} h={320} label={`Pieces of matter moving along a line at ${Math.round(Math.abs(v) * 100)} per cent of the speed of light, with momentum ${fmt(Math.abs(s.p), 2)}. The zeptons either side rotate in proportion to the momentum.${push ? ` It is being pushed ${push > 0 ? 'forward' : 'back'}.` : ''}`}>
+    <Stage w={W} h={320} role="group" label={`Pieces of matter moving along a line at ${Math.round(Math.abs(v) * 100)} per cent of the speed of light, with momentum ${fmt(Math.abs(s.p), 2)}. The zeptons either side rotate in proportion to the momentum.${push ? ` It is being pushed ${push > 0 ? 'forward' : 'back'}.` : ''}`}>
       <SpinRow kind="matter" current={clamp(s.p / 4, -1, 1)} angle={s.angle} flow={s.flow} t={play.t} field/>
       {arrow && Math.abs(arrow[1] - arrow[0]) > 6 && <BlockArrow x1={arrow[0]} y1={mid} x2={arrow[1]} y2={mid} thick={16} opacity={0.9}/>}
       {/* One line, always in the same place, says what is happening, so nothing beside the figure changes size as it goes. */}
-      <T x={W / 2} y={24} tone={push ? 'text' : 'muted'}>{push > 0 ? 'pushing forward: the zeptons are forced to turn faster' : push < 0 ? 'pushing back: the zeptons are forced to slow' : Math.abs(s.p) < 0.05 ? 'at rest it stays at rest: drag along the matter, or hold → or ←, to push it' : 'no push, and it keeps moving: the turning zeptons carry it on'}</T>
+      <T x={W / 2} y={24} tone={push ? 'text' : 'muted'}>{push ? `pushing ${push > 0 ? 'forward' : 'back'}: the zeptons are forced to ${faster ? 'turn faster' : 'slow'}` : Math.abs(s.p) < 0.05 ? 'at rest it stays at rest: drag along the matter, or hold → or ←, to push it' : 'no push, and it keeps moving: the turning zeptons carry it on'}</T>
       {/* The row of matter is what the reader pushes: by dragging along it, or with the arrow keys once it has the focus. */}
       <rect x={20} y={mid - 34} width={W - 40} height={68} fill="transparent" className="bk-push" tabIndex={0} role="application"
         aria-label="The moving matter. Drag along it to push it, forward to the right or back to the left, harder the further you drag; or hold the right or left arrow key."
@@ -87,9 +91,9 @@ function MatterInertia() {
         onPointerMove={e => { if (!grip.current) return; const x = along(e); if (x !== null) grip.current.at = x; }}
         onPointerUp={e => { grip.current = null; e.currentTarget.releasePointerCapture?.(e.pointerId); }}
         onPointerCancel={() => { grip.current = null; }}
-        onKeyDown={e => { const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!dir) return; e.preventDefault(); held.current = dir; start(); }}
-        onKeyUp={e => { if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') held.current = 0; }}
-        onBlur={() => { held.current = 0; }}/>
+        onKeyDown={e => { const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!dir) return; e.preventDefault(); if (!held.current.includes(dir)) held.current = [...held.current, dir]; start(); }}
+        onKeyUp={e => { const dir = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (dir) held.current = held.current.filter(d => d !== dir); }}
+        onBlur={() => { held.current = []; }}/>
     </Stage>}>
     <Slider label="Matter charge of the body, m" value={matter} min={1} max={5} step={0.5} onChange={setMatter} unit="units"/>
     <PlayBar play={play} label="the moving matter"/>
