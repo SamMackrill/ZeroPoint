@@ -103,7 +103,7 @@ Status: **to review**, **agreed** (no change), **changed** (fixed and agreed), *
 | x1-1 | Twelve principles, and where they are used | still | fine | No change |
 | x1-2 | Everything moves because it is pushed | animated | fine | No change |
 | x2-1 | A drop in the ocean | still | changed | Long slider readings keep their longest height (kit-wide), so nothing jumps; the scale's powers of ten on one line |
-| x2-2 | More energy, less time | animated | to review | |
+| x2-2 | More energy, less time | animated | fine | No change |
 | x2-3 | Where the energy is | still | to review | |
 | x4-1 | A pair carries the photon’s energy | still | to review | |
 | x5-1 | Pair production: the pair was already there | animated | to review | |
