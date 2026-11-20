@@ -20,6 +20,7 @@ import { copyLinkAction, encodeUrl, routeFor, useUrlWriter, type ScenarioRequest
 import { doubleSlitDefinition, type SlitView } from './definition';
 import { parseSlitFile, slitFile } from './file';
 import './double-slit-workbench.css';
+import { LAB_PEOPLE } from '../../papertrails/people';
 
 const BOOK = './docs/papers/Book%20-%20the-zero-point-universe.pdf';
 /** PDF pages of chapter 19's figures. */
@@ -208,7 +209,7 @@ export function DoubleSlitWorkbench({ active, rail, header, scenarioRequest, onS
   );
 
   const aboutNode = (
-    <AboutSheet {...about} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={current.title} sections={[
+    <AboutSheet {...about} people={LAB_PEOPLE['double-slit']} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={current.title} sections={[
       { id: 'scenario', content: <div className="slit-about"><h3>{heading}</h3><p>{explanation}</p>
         <h3>What is drawn</h3>
         <p>The page is the plane the zeptons rotate in, as in Figure 19-3: the electric field alternates left and right and the magnetic field points in and out of the page. The central pairs keep to the straight line from A to B. The surrounding zeptons turn toward the active pair’s orientation wherever its field reaches them, and relax when it is extinguished at each hand-off.</p>

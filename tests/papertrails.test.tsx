@@ -13,7 +13,8 @@ import { CHAPTERS } from '../src/book/toc';
 import { ReferencesPage } from '../src/book/pages/ReferencesPage';
 import { PAPERTRAILS, forgetPaperTrails, photoUrl, publicationHref, readScientists, scientistHref } from '../src/papertrails/data';
 import { PublicationLink, ScientistLink, lifespan } from '../src/papertrails/PaperTrailsLink';
-import { INDEX_PEOPLE, NOTE_LINKS, PEOPLE } from '../src/papertrails/people';
+import { INDEX_PEOPLE, LAB_PEOPLE, NOTE_LINKS, PEOPLE } from '../src/papertrails/people';
+import { AboutSheet } from '../src/workbench/AboutSheet';
 
 beforeAll(() => { window.scrollTo = () => undefined; });
 afterEach(() => { vi.unstubAllGlobals(); forgetPaperTrails(); });
@@ -132,5 +133,13 @@ describe('PaperTrails: links and cards', () => {
     expect(linked.get(7)).toEqual(['maxwell']);
     expect(linked.get(2)).toEqual(['planck', 'einstein', 'stern', 'nernst', 'heisenberg']);
     expect(linked.get(27)).toEqual(['bohr', 'casimir']);
+  });
+
+  it('lists the people behind a lab at the end of its Help › Sources', () => {
+    for (const ids of Object.values(LAB_PEOPLE)) for (const id of ids) expect(PEOPLE[id], id).toBeTruthy();
+    render(<AboutSheet open active section="sources" onOpenChange={() => undefined} onSection={() => undefined} experiment="Electron in the ZPF" sections={[{ id: 'sources', content: <p>Notes</p> }]} people={LAB_PEOPLE.electron}/>);
+    const people = screen.getByTestId('about-people');
+    expect([...people.querySelectorAll('a.pt-link')].map(a => a.textContent)).toEqual(['Michael Faraday', 'James Clerk Maxwell', 'Hendrik Lorentz', 'Paul Dirac', 'Carl D. Anderson']);
+    expect(people.querySelector('img')?.getAttribute('alt')).toBe('People on PaperTrails');
   });
 });

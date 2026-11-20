@@ -3,6 +3,8 @@ import * as Tabs from '@radix-ui/react-tabs';
 import { X } from 'lucide-react';
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { BOOK_COMPANION } from '../app/BookLink';
+import { PaperTrailsMark, ScientistLink } from '../papertrails/PaperTrailsLink';
+import type { PersonId } from '../papertrails/people';
 import { ACTION_GROUPS, keyLabel, useCommand, type Action } from './actions';
 import './about-sheet.css';
 
@@ -41,6 +43,12 @@ function ShortcutList({ actions, pointer = [] }: { actions: readonly Action[]; p
 }
 
 
+/** The people behind the lab, each linked to PaperTrails with a hover card of their life and papers. */
+function PeopleNote({ people }: { people: readonly PersonId[] }) {
+  if (!people.length) return null;
+  return <p className="about-people" data-testid="about-people"><PaperTrailsMark label="People on PaperTrails"/> {people.map((id, i) => <span key={id}>{i > 0 && ' · '}<ScientistLink id={id}/></span>)}</p>;
+}
+
 /** Every lab's Sources end with the book companion, where each figure of Fleming's book links back to these labs. */
 function BookNote() {
   return <p className="about-book" data-testid="about-book"><a href={BOOK_COMPANION}>Read the book alongside</a>: an interactive diagram for every figure of <em>The Zero-Point Universe</em>, each linked to the laboratory scenarios that take it further.</p>;
@@ -77,6 +85,8 @@ export interface AboutSheetProps {
   pointer?: readonly PointerGesture[];
   /** Named links to states of this lab, listed in a Saved views tab. */
   views?: readonly SavedView[];
+  /** The people behind the lab, listed at the end of Sources with links to PaperTrails. */
+  people?: readonly PersonId[];
   /** Whether Shift ? opens it (the lab is visible). */
   active: boolean;
 }
@@ -85,7 +95,7 @@ export interface AboutSheetProps {
  * The About sheet (plan §10): the full context behind the workspace — what the scenario shows and assumes, units and
  * constants, and sources — in a sheet over the inspector. The header chip, ? and Shift ? open it; Esc closes it.
  */
-export function AboutSheet({ open, onOpenChange, section, onSection, experiment, scenario, sections: about, shortcuts, pointer, views, active }: AboutSheetProps) {
+export function AboutSheet({ open, onOpenChange, section, onSection, experiment, scenario, sections: about, shortcuts, pointer, views, people = [], active }: AboutSheetProps) {
   /** Follow a saved view: the hash routes it (re-applied even when the address bar already shows it), and Help closes. */
   const follow = (view: SavedView) => { if (location.hash === view.hash) window.dispatchEvent(new HashChangeEvent('hashchange')); onOpenChange(false); };
   const sections: readonly AboutSection[] = [
@@ -112,7 +122,7 @@ export function AboutSheet({ open, onOpenChange, section, onSection, experiment,
             <Tabs.List className="about-tab-list" aria-label="About sections">
               {sections.map(s => <Tabs.Trigger key={s.id} value={s.id} data-testid={`about-${s.id}`}>{LABELS[s.id]}</Tabs.Trigger>)}
             </Tabs.List>
-            {sections.map(s => <Tabs.Content key={s.id} value={s.id} className="about-body">{s.content}{s.id === 'sources' && <BookNote/>}</Tabs.Content>)}
+            {sections.map(s => <Tabs.Content key={s.id} value={s.id} className="about-body">{s.content}{s.id === 'sources' && <><PeopleNote people={people}/><BookNote/></>}</Tabs.Content>)}
           </Tabs.Root>
         </Dialog.Content>
       </Dialog.Portal>
