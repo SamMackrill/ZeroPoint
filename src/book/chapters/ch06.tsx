@@ -322,13 +322,13 @@ function MovingCharge() {
   const play = usePlayback({ autoplay: false, speed: 0.22 });
   const motion = useRef({ t: 0, x: 150, dir: 1 as 1 | -1 });
   const H = 320, y = 160, zx = 360, above = { x: zx, y: 84 }, below = { x: zx, y: 236 };
-  // Playing carries the electron smoothly from where it sits between 110 and 610 and back; dragging sets it by hand.
+  // Playing carries the electron smoothly from where it sits between 80 and 640 and back; dragging sets it by hand.
   const dt = Math.max(0, Math.min(0.05, play.t - motion.current.t));
   motion.current.t = play.t;
   if (play.playing) {
     let next = motion.current.x + motion.current.dir * 220 * dt;
-    if (next >= 610) { next = 610; motion.current.dir = -1; }
-    else if (next <= 110) { next = 110; motion.current.dir = 1; }
+    if (next >= 640) { next = 640; motion.current.dir = -1; }
+    else if (next <= 80) { next = 80; motion.current.dir = 1; }
     motion.current.x = next;
   } else {
     motion.current.x = x;

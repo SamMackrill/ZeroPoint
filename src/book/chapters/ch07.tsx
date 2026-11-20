@@ -308,13 +308,13 @@ function FourEquations() {
   const H = 300, cx = 360, cy = 150;
   const charge = useMemo<Source[]>(() => [{ x: cx, y: cy, q: -1 }], []);
   const label = { gauss: 'Gauss’s Law', gaussB: 'Gauss’s Law for Magnetism', faraday: 'Faraday’s Law of Induction', ampere: 'Ampère’s law with Maxwell’s correction' }[law];
-  const barX = 180 + (state.current.bar % 360), rings = circleRadii(amount, 46, 118);
+  const barX = 180 + (state.current.bar % 360), rings = circleRadii(amount, 46, 118), fluxLen = 28 + 44 * amount;
   return <Diagram stage={
     <Stage w={W} h={H} label={`${label}, drawn in terms of zeptons.`}>
       {law === 'gauss' && <><FieldPicture sources={charge} w={W} h={H} perUnit={12} lines={0} zeptons={0.9} t={play.t} zeptonLen={15} radii={[13]}/><circle cx={cx} cy={cy} r={50 + 80 * amount} className="bk-s-mark" fill="none" strokeWidth="2" strokeDasharray="5 4"/><Charge x={cx} y={cy} sign={-1} r={13}/><T x={cx} y={H - 12} size="sm" tone="mark">the same total orientation through any surface round the charge</T></>}
       {law === 'gaussB' && <>
         <rect x={cx - 210} y={cy - 48} width={420} height={96} rx={18} className="bk-s-mark" fill="none" strokeWidth="1.8" strokeDasharray="5 4"/>
-        {[-140, 0, 140].map(dx => <g key={dx}><SpinLoop x={cx + dx} y={cy} angle={90} r={24} turn={state.current.spin} tone="motion"/><Arrow x1={cx + dx} y1={cy - 32} x2={cx + dx} y2={cy - 32 - 64 * amount} tone="b" w={3}/><Arrow x1={cx + dx} y1={cy + 32 + 64 * amount} x2={cx + dx} y2={cy + 32} tone="b" w={3}/></g>)}
+        {[-140, 0, 140].map(dx => <g key={dx}><SpinLoop x={cx + dx} y={cy} angle={90} r={24} turn={state.current.spin} tone="motion"/><Arrow x1={cx + dx} y1={cy - 32} x2={cx + dx} y2={cy - 32 - fluxLen} tone="b" w={3}/><Arrow x1={cx + dx} y1={cy + 32 + fluxLen} x2={cx + dx} y2={cy + 32} tone="b" w={3}/></g>)}
         <T x={cx + 220} y={cy - 54} anchor="start" size="sm" tone="b">flux out</T><T x={cx + 220} y={cy + 64} anchor="start" size="sm" tone="b">equal flux in</T>
         <T x={cx} y={H - 12} size="sm" tone="b">every field line leaving the surface above enters below: net magnetic flux is zero</T>
       </>}

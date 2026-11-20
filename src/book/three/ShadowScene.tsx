@@ -96,30 +96,48 @@ export default function ShadowScene({ distance, size, onFail, onReady, descripti
       const draw = () => renderer.render(scene, camera);
       controls.addEventListener('change', draw);
       // From over Star 2's shoulder, looking back at Star 1, so the shadow on Star 1 faces the reader. When Star 2 is moved
-      // or resized the view keeps whatever angle the reader has turned it to, and stands back far enough to keep both stars
-      // and their labels clear of the viewport edges from any orbit angle.
-      const frame = (d: number, s: number) => new THREE.Vector3(0.65 * d + 2.8 + 2.2 * s, 2.4 + 0.4 * s, 5.2 + 1.8 * s);
-      controls.target.set(distance * 0.45, 0, 0);
-      camera.position.copy(controls.target).add(frame(distance, size));
-      camera.lookAt(controls.target);
-      controls.update();
+      // or resized — or the viewport resizes — the view keeps whatever angle the reader has turned it to, and calculates its
+      // orbit distance from the enclosing sphere of both stars and their labels against the camera's limiting field of view.
+      const latest = { d: distance, s: size };
+      const initialDirection = new THREE.Vector3(1.05, 0.36, 0.9).normalize();
+      const label1Radius = names[0] ? Math.hypot(name1.scale.x, name1.scale.y) / 2 : 0;
+      const label2Radius = names[1] ? Math.hypot(name2.scale.x, name2.scale.y) / 2 : 0;
+      const frameCamera = (d: number, s: number, direction: THREE.Vector3) => {
+        const cx = (d + s - STAR1_R) / 2;
+        const boundR = Math.max(
+          Math.abs(cx) + STAR1_R,
+          Math.abs(d - cx) + s,
+          names[0] ? Math.hypot(cx + 0.4, STAR1_R + 0.45) + label1Radius : 0,
+          names[1] ? Math.hypot(d - cx, s + 0.5) + label2Radius : 0,
+        );
+        const vFov = THREE.MathUtils.degToRad(camera.fov);
+        const hFov = 2 * Math.atan(Math.tan(vFov / 2) * Math.max(0.5, camera.aspect));
+        const halfMinFov = Math.min(vFov, hFov) / 2;
+        const orbitDistance = (boundR / Math.sin(halfMinFov)) * 1.04;
+        controls.target.set(cx, 0, 0);
+        camera.position.copy(controls.target).add(direction.clone().normalize().multiplyScalar(orbitDistance));
+        camera.lookAt(controls.target);
+        controls.update();
+      };
+      frameCamera(distance, size, initialDirection);
       const resize = new ResizeObserver(() => {
         const w = el.clientWidth, h = el.clientHeight;
         if (!w || !h) return;
+        const direction = camera.position.clone().sub(controls.target).normalize();
         renderer.setSize(w, h, false);
         camera.aspect = w / h;
         camera.updateProjectionMatrix();
+        frameCamera(latest.d, latest.s, direction);
         draw();
       });
       resize.observe(el);
       undo.push(() => resize.disconnect());
 
       api.current = (d, s) => {
+        latest.d = d;
+        latest.s = s;
         const direction = camera.position.clone().sub(controls.target).normalize();
-        controls.target.set(d * 0.45, 0, 0);
-        camera.position.copy(controls.target).add(direction.multiplyScalar(frame(d, s).length()));
-        camera.lookAt(controls.target);
-        controls.update();
+        frameCamera(d, s, direction);
         star2.position.set(d, 0, 0);
         star2.scale.setScalar(s);
         name2.position.set(d, s + 0.5, 0);

@@ -112,13 +112,14 @@ function PhotonReach() {
   // The central zepton turns half a turn in each lifetime, one way and then the other, opening and closing as it goes.
   const n = Math.floor(play.t), u = play.t - n, central = n % 2 === 0 ? 180 - 180 * u : 180 + 180 * u, open = Math.max(0.2, Math.sin(Math.PI * u));
   // A new central zepton each lifetime, a half wavelength along; the photon's front moves on smoothly between them.
-  const x = centralX(n), front = PATH_START + 0.5 * ((n % PATH_SITES) + u);
+  const site = ((n % PATH_SITES) + PATH_SITES) % PATH_SITES;
+  const x = centralX(n), front = PATH_START + 0.5 * (site + u), waveSign: 1 | -1 = (n - site) % 2 === 0 ? 1 : -1;
   const label = `A photon travelling along x as a sequence of central zeptons, a new one each half wavelength, its electric and magnetic fields trailing behind at right angles to each other and to the path. With fields spreading at ${fmt(speed, 2)} times the speed of light they reach ${fmt(reach, 2)} wavelengths from the path in the zepton's lifetime.`;
   return <Diagram stage={flat
     ? <FlatPhoton exp={exp} t={play.t} label={label}/>
     : <FallbackOnError onError={fail} fallback={<FlatPhoton exp={exp} t={play.t} label={label}/>}>
         <Suspense fallback={<FlatPhoton exp={exp} t={play.t} label={label}/>}>
-          <PhotonScene frame={{ central: rad(central), open, reach, x, front }} onFail={fail} description={`${label} A sphere round the central zepton shows how far its field gets, against a red ring half a wavelength out, the reach at the speed of light. Drag to turn the view.`}/>
+          <PhotonScene frame={{ central: rad(central), open, reach, x, front, waveSign }} onFail={fail} description={`${label} A sphere round the central zepton shows how far its field gets, against a red ring half a wavelength out, the reach at the speed of light. Drag to turn the view.`}/>
         </Suspense>
       </FallbackOnError>}>
     <Slider label="Speed at which the fields spread" value={exp} min={0} max={2} step={0.05} onChange={setExp} show={v => `${fmt(10 ** v, 2)} c`}/>

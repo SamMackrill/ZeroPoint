@@ -13,7 +13,7 @@ import { PATH_SITES, PATH_START } from './photon-math';
 /**
  * What the scene draws at a moment: the central zepton's angle and opening, where it sits and how far the photon's front has got along x, and how far its field reaches (wavelengths).
  */
-export interface PhotonFrame { central: number; open: number; x: number; front: number; reach: number }
+export interface PhotonFrame { central: number; open: number; x: number; front: number; reach: number; waveSign?: 1 | -1 }
 
 /** A zepton: a bar with a positive and a negative end, starting along x and turned in the x-y plane about z (so E lies along y and B along z). */
 function zepton(length: number, ball: number, materials: { bar: THREE.Material; pos: THREE.Material; neg: THREE.Material }) {
@@ -128,12 +128,13 @@ export default function PhotonScene({ frame, onFail, onReady, description }: { f
       api.current = f => {
         centre.group.position.x = f.x;
         centre.set(f.central, f.open);
-        // The waves trail from PATH_START to the photon's front, anchored to the sites so each half-wave crest (+E, -B
-        // for clockwise even sites; -E, +B for counter-clockwise odd sites) aligns with the central zepton at its midpoint.
+        // The waves trail from PATH_START to the photon's front, anchored to the sites so each half-wave crest aligns with the
+        // central zepton at its midpoint, flipping sign via `waveSign` when an odd-length path wraps.
+        const sign = f.waveSign ?? 1;
         const points = (plane: 'y' | 'z') => {
           const from = PATH_START, span = Math.max(0.05, f.front - from), n = Math.max(2, Math.round(span * 40));
           return Array.from({ length: n + 1 }, (_, i) => {
-            const x = from + (span * i) / n, s = 0.55 * Math.sin(2 * Math.PI * (x - PATH_START));
+            const x = from + (span * i) / n, s = 0.55 * sign * Math.sin(2 * Math.PI * (x - PATH_START));
             return new THREE.Vector3(x, plane === 'y' ? s : 0, plane === 'z' ? -s : 0);
           });
         };

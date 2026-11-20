@@ -105,8 +105,8 @@ function MovingBody() {
   motion.current.t = play.t;
   if (play.playing) {
     let next = motion.current.x + motion.current.dir * 220 * dt;
-    if (next >= 610) { next = 610; motion.current.dir = -1; }
-    else if (next <= 110) { next = 110; motion.current.dir = 1; }
+    if (next >= 640) { next = 640; motion.current.dir = -1; }
+    else if (next <= 80) { next = 80; motion.current.dir = 1; }
     motion.current.x = next;
   } else {
     motion.current.x = x;

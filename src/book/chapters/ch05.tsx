@@ -20,7 +20,9 @@ function PairSeries() {
   const wave = pathThrough(Array.from({ length: 181 }, (_, i) => { const s = (i / 180) * count; return [x0 - spacing / 2 + s * spacing, 62 - 24 * Math.sin(Math.PI * s)] as const; }));
   const now = seriesPair(active), strength = alive ? Math.sin(Math.PI * u) : 0;
   return <Diagram stage={
-    <Stage w={W} h={322} label={`A photon as a row of ${count} virtual electron-positron pairs. Pair ${active + 1} is turning ${now.clockwise ? 'clockwise' : 'counter-clockwise'}: its electric field points ${now.up > 0 ? 'up' : 'down'} and its magnetic field ${now.clockwise ? 'into' : 'out of'} the page.`}>
+    <Stage w={W} h={322} label={alive
+      ? `A photon as a row of ${count} virtual electron-positron pairs. Pair ${active + 1} is turning ${now.clockwise ? 'clockwise' : 'counter-clockwise'}: its electric field points ${now.up > 0 ? 'up' : 'down'} and its magnetic field ${now.clockwise ? 'into' : 'out of'} the page.`
+      : `A photon as a row of ${count} virtual electron-positron pairs. Between cycles, no pair is turning and both the electric and magnetic fields are zero.`}>
       <T x={24} y={66} anchor="start" tone="e" size="lg">E</T><T x={24} y={y + 6} anchor="start" size="sm">pairs</T><T x={24} y={264} anchor="start" tone="b" size="lg">B</T>
       {record && <Line d={wave} tone="e" w={1.4} opacity={0.5}/>}
       <line x1={x0 - spacing / 2} y1={62} x2={x0 + spacing * (count - 0.5)} y2={62} className="bk-s-faint" strokeWidth="1"/>
