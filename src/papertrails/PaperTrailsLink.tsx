@@ -5,6 +5,7 @@ import * as HoverCard from '@radix-ui/react-hover-card';
 import { useEffect, useState, type ReactNode } from 'react';
 import { loadPaperTrails, publicationHref, scientistHref, type PtData, type PtScientist } from './data';
 import { PEOPLE, type PersonId } from './people';
+import mark from './papertrails-mark.png';
 import './papertrails.css';
 
 type Loaded = { state: 'loading' } | { state: 'ready'; data: PtData } | { state: 'failed' };
@@ -99,4 +100,9 @@ export function PublicationLink({ id, title, children }: { id: string; title: st
     </>}>
     {children ?? title}
   </Trigger>;
+}
+
+/** PaperTrails' mark, the dipole in its orbits, labelling links that lead there. */
+export function PaperTrailsMark({ label = 'On PaperTrails' }: { label?: string }) {
+  return <img className="pt-mark" src={mark} alt={label} title={label} width={18} height={18}/>;
 }

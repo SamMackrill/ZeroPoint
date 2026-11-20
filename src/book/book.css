@@ -1308,8 +1308,8 @@ input {
   color: var(--text-2);
 }
 
-.bk-ref-pt-label {
-  color: var(--text-3);
+.bk-ref-pt .pt-mark {
+  margin-right: 2px;
 }
 
 .bk-chapter-notes {

@@ -136,3 +136,10 @@
     transform: translateY(-3px);
   }
 }
+
+.pt-mark {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+}

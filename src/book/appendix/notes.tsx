@@ -3,7 +3,7 @@
 import { Fragment, type ReactNode } from 'react';
 import data from './references.json';
 import { Pg } from '../prose';
-import { PublicationLink, ScientistLink } from '../../papertrails/PaperTrailsLink';
+import { PaperTrailsMark, PublicationLink, ScientistLink } from '../../papertrails/PaperTrailsLink';
 import { NOTE_LINKS } from '../../papertrails/people';
 
 /** One endnote: its number, chapter, where it is printed, its text as printed, and where the text cites it. */
@@ -44,7 +44,7 @@ export function PaperTrailsLine({ n }: { n: number }) {
   const links = NOTE_LINKS[n];
   if (!links) return null;
   return <p className="bk-ref-pt">
-    <span className="bk-ref-pt-label">On PaperTrails:</span> {links.authors.map((id, i) => <Fragment key={id}>{i > 0 && ', '}<ScientistLink id={id}/></Fragment>)}
+    <PaperTrailsMark/> {links.authors.map((id, i) => <Fragment key={id}>{i > 0 && ', '}<ScientistLink id={id}/></Fragment>)}
     {links.paper && <> · <PublicationLink id={links.paper.id} title={links.paper.title}><cite>{links.paper.title}</cite></PublicationLink></>}
   </p>;
 }
