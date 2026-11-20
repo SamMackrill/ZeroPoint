@@ -540,3 +540,11 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** an explorer is missing for the redshift: "Photons accelerate as they leave a gravitational field in the radial direction, and as they speed up their wavelengths become longer". **Done:** light leaving a body's surface (Earth, Sun, Sirius B, a neutron star), drawn as in x20-2; each half-turn the same time, so as the light speeds up the sites spread and the wave behind it stretches, its glow reddening; the field's zeptons turn more slowly nearer the body; readouts of Equation 23-5 and the radial slowing; the stretch on a power-of-ten scale (`redshift`, `shownStretch`, `climbingSites`).
 - **Owner:** a good start; the open question, long considered, is how to show changes in torque visibly.
+
+### Showing the torque of the vacuum (x20-1, x20-2, x23-1, x23-2)
+
+- **Owner:** how to show changes in torque visibly is a long-standing problem. **Tried**, side by side on a temporary card: phase bands, background colour, a wobble, and a probe to spin. **Owner:** the colour does not work; the wobble is best but subtle; add faint links between the zeptons showing the retardation, fainter where the resistance is less. **Tried** links that thicken and links that only fade. **Owner chose** the fading links.
+- **Done:** `TorqueLinks`, `linksBetween` and `wobbleAngle` in `shared.tsx`, applied wherever the torque is key: x20-1 (links between the central zepton and its neighbours, plainer with the torque), x20-2 (the field wobbles, held in the medium; links faint in the vacuum, plain in the glass), x23-1 (links plainest at the Earth, fading with height), x23-2 (links following the light's slowing, reaching into the light's path). The prototypes removed.
+- **Owner:** the explorers are hard to tell apart without a mark. **Done:** each explorer card's kicker names its id, quietly, as "Explorer x23-2".
+- **Owner (x23-2):** the torque links must reach into the light's path; one star, not a choice of bodies, drawn with the strongest effect but not called a neutron star. **Done:** the light's zeptons linked to each other and the field; a single "Star", the readouts giving the Sun's real figures.
+- **Owner:** very happy with the torque depictions.

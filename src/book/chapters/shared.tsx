@@ -154,3 +154,24 @@ export function PendulumClock({ x, y, swing, beats, tone, size = 1 }: { x: numbe
     <circle cx={bobX} cy={bobY} r={10} className={tone === 'mark' ? 'bk-f-mark' : 'bk-f-text'}/>
   </g>;
 }
+
+/** A point of a field of zeptons, for linking neighbours. */
+export interface FieldPoint { x: number; y: number }
+
+/** The pairs of neighbouring points in a field, those closer together than `reach`, each pair once. */
+export function linksBetween<P extends FieldPoint>(points: readonly P[], reach: number): (readonly [P, P])[] {
+  return points.flatMap((a, i) => points.slice(i + 1).filter(b => Math.hypot(a.x - b.x, a.y - b.y) < reach).map(b => [a, b] as const));
+}
+
+/**
+ * The torque of the vacuum drawn as faint links between neighbouring zeptons: the resistance each must overcome to turn
+ * the others. `hold` gives the resistance (0 to 1) at a point; a link is drawn at its middle's, fading to nothing where
+ * the zeptons turn freely (chapters 20 and 23).
+ */
+export function TorqueLinks({ links, hold }: { links: readonly (readonly [FieldPoint, FieldPoint])[]; hold(x: number, y: number): number }) {
+  return <g>{links.map(([a, b], i) => { const h = Math.min(1, Math.max(0, hold((a.x + b.x) / 2, (a.y + b.y) / 2)));
+    return h > 0.02 ? <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="bk-s-muted" strokeWidth={1} opacity={0.6 * h}/> : null; })}</g>;
+}
+
+/** A zepton's restless wobble about its resting angle, in degrees, at time t: wide where it is free (`freedom` 1), still where it is held (0). `a` and `b` are its own phases. */
+export const wobbleAngle = (rest: number, freedom: number, t: number, a: number, b: number) => rest + 80 * freedom * (Math.sin(3.1 * t + a) + 0.6 * Math.sin(5.3 * t + b));

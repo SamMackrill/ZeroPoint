@@ -400,6 +400,11 @@ input {
   text-decoration: none;
 }
 
+.bk-card-kicker .bk-card-id {
+  color: var(--text-3);
+  font-weight: 400;
+}
+
 .bk-card-head h3 {
   margin-top: 2px;
   font-size: 22px;

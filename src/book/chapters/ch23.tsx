@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Arrow, Body, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, Zepton, Choice, clamp, fmt, pathThrough, rad, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
-import { PendulumClock } from './shared';
+import { PendulumClock, TorqueLinks, linksBetween } from './shared';
 
 const W = 720;
 const GM_SUN = 1.32712440018e20, GM_EARTH = 3.986004418e14, C = 299792458, R_SUN = 6.957e8, R_EARTH = 6.371e6, AU = 1.495978707e11;
@@ -122,6 +122,9 @@ export const drawnToHeight = (d: number) => (d < HEIGHT_FROM ? (100 * Math.max(0
 /** The zero-point field round the Earth: zeptons in a loose lattice outside it, each at a scattered starting angle. */
 const EARTH_FIELD = (() => { const random = rng(2301); return Array.from({ length: 19 * 11 }, (_, k) => ({ x: 18 + (k % 19) * 38 + (Math.floor(k / 19) % 2) * 19, y: 20 + Math.floor(k / 19) * 40, start: random() * 180 })).filter(z => z.x < 712 && Math.hypot(z.x - EARTH.x, z.y - EARTH.y) > EARTH.r + 10 && !(z.x > 400 && z.y > 390)); })();
 
+/** Neighbouring zeptons round the Earth, for drawing the torque between them. */
+const EARTH_LINKS = linksBetween(EARTH_FIELD, 48);
+
 /** Explorer: a clock higher above the Earth runs faster, and light climbing away is redshifted (Equations 23-4 and 23-5). */
 function ClocksAndRedshift() {
   const [km, setKm] = useState(20200);
@@ -140,6 +143,7 @@ function ClocksAndRedshift() {
   return <Diagram stage={
     <Stage w={W} h={H} label={`A pendulum clock on the Earth's surface and one ${km.toLocaleString('en-GB')} kilometres above it, among the zeptons of the zero-point field, which turn more slowly nearer the Earth. The higher clock gains ${fmt(gain, 3)} microseconds a day, and light climbing to it is redshifted by ${fmt(shift, 3)}.`}>
       {/* The zeptons all turn, more slowly the nearer the Earth: the greater torque its matter adds. Their rates, like the clocks', are magnified. */}
+      <TorqueLinks links={EARTH_LINKS} hold={(lx, ly) => (rate(40000) - rate(drawnToHeight(Math.hypot(lx - EARTH.x, ly - EARTH.y) - EARTH.r))) / (rate(40000) - 1)}/>
       {EARTH_FIELD.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={z.start + 70 * play.t * rate(drawnToHeight(Math.hypot(z.x - EARTH.x, z.y - EARTH.y) - EARTH.r))} len={14} oval={false} signs={false} opacity={0.5}/>)}
       <circle cx={EARTH.x} cy={EARTH.y} r={EARTH.r} className="bk-body bk-body-matter"/><T x={EARTH.x} y={H - 20} tone="text" size="sm">Earth</T>
       <PendulumClock x={EARTH.x} y={EARTH.y - EARTH.r} swing={swing(swings.current.ground)} beats={beats(swings.current.ground)} tone="text" size={0.7}/>
@@ -157,20 +161,11 @@ function ClocksAndRedshift() {
   </Diagram>;
 }
 
-/** Bodies light can climb away from, with GM (m³/s²) and radius (m): the Earth, the Sun, the white dwarf Sirius B and a typical neutron star. */
-const EMITTERS = {
-  earth: { name: 'Earth', said: 'the Earth', gm: GM_EARTH, r: R_EARTH },
-  sun: { name: 'Sun', said: 'the Sun', gm: GM_SUN, r: R_SUN },
-  dwarf: { name: 'Sirius B', said: 'the white dwarf Sirius B', gm: 1.02 * GM_SUN, r: 5.8e6 },
-  neutron: { name: 'Neutron star', said: 'a neutron star', gm: 1.4 * GM_SUN, r: 1.2e4 },
-} as const;
-type Emitter = keyof typeof EMITTERS;
-
 /** The redshift of light from the surface of a body seen far away, Δλ/λ = GM/(c²r) (Equation 23-5). */
 export const redshift = (gm: number, r: number) => gm / (C * C * r);
 
-/** How strongly the drawing shows a redshift: the shift's power of ten mapped from 10⁻¹⁰ (nothing) to 1 (0.8), so every body's can be seen. */
-export const shownStretch = (z: number) => 0.08 * clamp(Math.log10(z) + 10, 0, 10);
+/** How much the drawn star slows light at its surface: far more than any real star but a collapsed one, so the effect can be seen. */
+const STRETCH = 0.74;
 
 /** The drawing's star: its centre is off the stage to the left, its surface at x = 80; the light leaves along y = 180. */
 const STAR = { x: -60, y: 180, r: 140 }, RAY_END = 700;
@@ -189,11 +184,13 @@ export function climbingSites(stretch: number, halfFar = 30) {
   return sites;
 }
 
-/** Explorer: light leaving a star speeds up as it climbs out of the field, and its wavelength lengthens: the redshift. */
+/** Neighbouring zeptons round the star, for drawing the torque between them. */
+const STAR_LINKS = linksBetween(STAR_FIELD, 48);
+
+/** Where the light's central zeptons are along the ray as it climbs out of the field, and its wavelength lengthens: the redshift. */
 function Redshift() {
-  const [body, setBody] = useState<Emitter>('sun');
   const play = usePlayback({ speed: 0.6 });
-  const { name, said, gm, r } = EMITTERS[body], z = redshift(gm, r), stretch = shownStretch(z), sites = useMemo(() => climbingSites(stretch), [stretch]);
+  const z = redshift(GM_SUN, R_SUN), stretch = STRETCH, sites = STAR_SITES, links = STAR_TORQUE;
   const H = 360, speedAt = (x: number) => 1 - (stretch * STAR.r) / (x - STAR.x);
   // The light: each central zepton makes one half-turn, the next the other way; after the last a short pause, then again.
   const at = (play.t * 2) % (sites.length + 1), now = Math.floor(at), u = at - now, carrying = now < sites.length;
@@ -205,22 +202,22 @@ function Redshift() {
     return `${i ? 'L' : 'M'}${x.toFixed(1)} ${(STAR.y - 16 * Math.sin(Math.PI * (j + (x - sites[j]) / (next - sites[j])))).toFixed(1)}`;
   }).join(' ');
   return <Diagram stage={
-    <Stage w={W} h={H} label={`Light leaving the surface of ${said} and climbing away. The zeptons near the body turn more slowly and the light is slower there; as it climbs it speeds up and its wavelength lengthens, a redshift of ${fmt(z, 3)}.`}>
+    <Stage w={W} h={H} label={`Light leaving the surface of a star and climbing away. The zeptons near the star turn more slowly and the light is slower there; as it climbs it speeds up and its wavelength lengthens: a redshift. For the Sun the shift is ${fmt(z, 3)}.`}>
+      <TorqueLinks links={links} hold={(lx, ly) => ((stretch * STAR.r) / Math.hypot(lx - STAR.x, ly - STAR.y) - 0.05) / 0.3}/>
       {STAR_FIELD.map((f, i) => <Zepton key={i} x={f.x} y={f.y} angle={f.start + 70 * play.t * (1 - (stretch * STAR.r) / Math.hypot(f.x - STAR.x, f.y - STAR.y))} len={14} oval={false} signs={false} opacity={0.45}/>)}
       <circle cx={STAR.x} cy={STAR.y} r={STAR.r} className="bk-body bk-body-matter"/>
-      <T x={30} y={STAR.y + 5} tone="text" size="sm" transform={`rotate(-90 30 ${STAR.y})`}>{name}</T>
+      <T x={30} y={STAR.y + 5} tone="text" size="sm" transform={`rotate(-90 30 ${STAR.y})`}>Star</T>
       <path d={wave} className="bk-s-e" strokeWidth="1.6" fill="none" opacity={0.7}/>
       {sites.map((x, k) => { const on = carrying && k === now, size = Math.min(22, ((sites[k + 1] ?? RAY_END) - x) * 0.9);
         return <g key={k}>{on && <><circle cx={x} cy={STAR.y} r={17} className="bk-f-e" opacity={0.35 * (1 - redness)}/><circle cx={x} cy={STAR.y} r={17} className="bk-f-danger" opacity={0.35 * redness}/></>}
           <Zepton x={x} y={STAR.y} angle={turnOf(k)} len={on ? size + 4 : size} oval={false} signs={false} emphasis={on ? 'key' : 'normal'} opacity={on ? 1 : 0.35}/></g>; })}
-      <T x={110} y={H - 18} anchor="start" size="sm">slower near the {body === 'earth' ? 'Earth' : 'star'}: shorter waves</T>
+      <T x={110} y={H - 18} anchor="start" size="sm">slower near the star: shorter waves</T>
       <T x={RAY_END} y={H - 18} anchor="end" size="sm" tone="danger">faster far out: longer waves, redder</T>
     </Stage>}>
-    <Choice label="Light leaving" value={body} onChange={setBody} options={(Object.keys(EMITTERS) as Emitter[]).map(k => ({ value: k, label: EMITTERS[k].name }))}/>
     <PlayBar play={play} label="the light"/>
-    <Readout label="Redshift seen far away, Δλ/λ" value={fmt(z, 3)} tone="bad"/>
-    <Readout label="Speed of light at the surface" value={`(1 − ${fmt(z, 3)}) c₀`}/>
-    <Remark>The light is slower near the body, where the zeptons turn more slowly. Each half-turn takes the same time, so as the light climbs and speeds up, each carries it further: the wavelength grows, and the light is redshifted.</Remark>
+    <Readout label="For the Sun: redshift seen far away, Δλ/λ" value={fmt(z, 3)} tone="bad"/>
+    <Readout label="For the Sun: speed of light at its surface" value={`(1 − ${fmt(z, 3)}) c₀`}/>
+    <Remark>The light is slower near the star, where the zeptons turn more slowly. Each half-turn takes the same time, so as the light climbs and speeds up, each carries it further: the wavelength grows, and the light is redshifted.</Remark>
   </Diagram>;
 }
 
@@ -243,7 +240,7 @@ const chapter: ChapterContent = {
       tryThis: ['Set the height to 20,200 km, where the GPS satellites are: the upper clock gains about 46 microseconds a day.', 'Bring the clock down: the gain shrinks toward zero at the surface.', 'Watch the zeptons: those near the Earth turn more slowly than those far out, and the clocks among them keep the same pace.', 'Compare the redshift readout: it is the same fraction, seen in the light instead of the clock.'],
       notes: <>
         <p>The readouts are Equation 23-4 with its square root left off, as Fleming says it may be, for the Earth: the difference between the surface and the height chosen. That gives about 45.7 µs a day at the height of the GPS satellites, the figure usually quoted. Taken with the square root as printed, the equation gives half that, about 22.9 µs; the standard form has 2<V>GM</V> under the root. The book does not remark on the difference.</p>
-        <p>The correction for the satellite’s motion, which Fleming assigns to the Sagnac effect of chapter 22, is not included. The drawing magnifies the difference in rate about a billion times, in proportion to the gain, so a lower clock visibly gains less. The zeptons are drawn turning at the same magnified rate as a clock at their height: Fleming says their rotation is slowed near matter, not by how much.</p>
+        <p>The correction for the satellite’s motion, which Fleming assigns to the Sagnac effect of chapter 22, is not included. The drawing magnifies the difference in rate about a billion times, in proportion to the gain, so a lower clock visibly gains less. The zeptons are drawn turning at the same magnified rate as a clock at their height: Fleming says their rotation is slowed near matter, not by how much. The faint links between neighbouring zeptons stand for the torque, the resistance each meets in turning the others: plainer where it is greater, fading where they turn freely.</p>
       </>,
     },
     {
@@ -254,10 +251,10 @@ const chapter: ChapterContent = {
         <Eq n="23-5"><Frac top="Δλ" bottom="λ"/> = <Frac top={<V>GM</V>} bottom={<><V>c</V>²<V>r</V></>}/></Eq>
         <p>In the zero-point field it is like light sent from a frame moving at <V>v</V>, which goes at <V>c</V> − <V>v</V> with its wavelength contracted; as the frame slows, the light goes faster and its wavelength grows. <Q>To put it more plainly, photons accelerate as they leave a gravitational field in the radial direction, and as they speed up their wavelengths become longer.</Q> It is <Q>a consequence of the conservation of energy and the slowing of the speed of light in the vicinity of matter</Q> (<Pg n={179}/>).</p>
       </>,
-      tryThis: ['Follow the lit zepton out from the surface: each half-turn carries it further than the last, and the wave behind it stretches.', 'Watch the zeptons of the field: near the body they turn more slowly, and that is where the light is slow.', 'Change the body: from the Earth to a neutron star the shift grows by a factor of a few hundred million.'],
+      tryThis: ['Follow the lit zepton out from the surface: each half-turn carries it further than the last, and the wave behind it stretches.', 'Watch the zeptons of the field: near the star they turn more slowly and the links between them are plainest, and that is where the light is slow.'],
       notes: <>
-        <p>The readouts are Equation 23-5 for light from the body’s surface seen far away, and the radial slowing of light it implies; Fleming’s Equation 23-6 doubles that for light passing a body, adding the tangential part. For the neutron star Equation 23-5 is only a first approximation.</p>
-        <p>The shifts are far too small to draw: 7 × 10⁻¹⁰ for the Earth, 2 × 10⁻⁶ for the Sun. The drawing shows each on a scale of its power of ten, so the stretch grows from body to body but is not to scale. The light is drawn as in Figure 5-1 and explorer x20-2, one central zepton each half wavelength, each half-turn taking the same time; the field’s zeptons turn more slowly nearer the body in proportion to the light’s slowing there. Fleming gives the slowing, not how the zeptons’ turning varies with distance.</p>
+        <p>The readouts are Equation 23-5 for light from the Sun’s surface seen far away, and the radial slowing of light it implies; Fleming’s Equation 23-6 doubles that for light passing a body, adding the tangential part.</p>
+        <p>The Sun’s shift, 2 × 10⁻⁶, is far too small to draw: at the surface of the star drawn, light goes at about a quarter of its speed far away, far more slowing than any but the most collapsed stars could give. The light is drawn as in Figure 5-1 and explorer x20-2, one central zepton each half wavelength, each half-turn taking the same time; the field’s zeptons turn more slowly nearer the star in proportion to the light’s slowing there. Fleming gives the slowing, not how the zeptons’ turning varies with distance. The faint links between neighbouring zeptons stand for the torque, the resistance each meets in turning the others: plainer where it is greater, fading where they turn freely.</p>
       </>,
     },
     {
@@ -287,4 +284,11 @@ const chapter: ChapterContent = {
     },
   ],
 };
-export default chapter;
+export default chapter;/** Where the drawn star's light is carried, and the torque round it: the field's links, and links reaching into the light's
+ * path, joining the zeptons that carry it to each other and to the field round them. */
+const STAR_SITES = climbingSites(STRETCH), STAR_TORQUE = (() => {
+  const path = STAR_SITES.map(x => ({ x, y: STAR.y })), onPath = new Set<{ x: number; y: number }>(path);
+  return [...STAR_LINKS, ...linksBetween([...STAR_FIELD, ...path], 48).filter(([a, b]) => onPath.has(a) || onPath.has(b))];
+})();
+
+
