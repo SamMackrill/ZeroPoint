@@ -557,3 +557,7 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 ### Explorer x24-1
 
 - **Owner:** approved as it stands.
+
+### Explorer x27-1
+
+- **Owner:** approved as it stands. The second pass over the explorers is complete.
