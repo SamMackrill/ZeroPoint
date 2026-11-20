@@ -23,6 +23,7 @@ import { copyLinkAction, encodeUrl, routeFor, useUrlWriter, type ScenarioRequest
 import { SplitView } from '../../workbench/SplitView';
 import { InfoTip } from '../../ui/InfoTip';
 import { AboutSheet, helpActions, useAbout } from '../../workbench/AboutSheet';
+import { LAB_PEOPLE } from '../../papertrails/people';
 
 /** Format a pressure delta with an explicit sign and fixed precision. */
 const signed = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(3)}`;
@@ -219,7 +220,7 @@ export function CasimirWorkbench({ active, rail, header, scenarioRequest, onScen
   );
 
   const aboutNode = (
-    <AboutSheet {...about} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={casimirDefinition.scenarios.find(s => s.id === scenario)?.title} sections={[
+    <AboutSheet {...about} people={LAB_PEOPLE['casimir']} shortcuts={actions} onOpenChange={about.setOpen} onSection={about.setSection} active={active} experiment={header.experiment} scenario={casimirDefinition.scenarios.find(s => s.id === scenario)?.title} sections={[
       { id: 'scenario', content: <div className="casimir-about">
           <p>This experiment animates Fleming’s proposed mechanism in Section 4, Figures 3–4. Pressure kernels, lifetimes and motion gain are illustrative choices; this is not a validated derivation of electrostatic force. Section 5 leaves the quantitative force law unresolved. τ is an expanded observation clock, not seconds. Dipole sizes and spacing are exaggerated, but each opens in proportion to its lifetime, as a Zepton’s wavelength is as far as it can reach while it lasts.</p>
           <section className="casimir-explanation" aria-label="Mechanism sequence">{(like ? [

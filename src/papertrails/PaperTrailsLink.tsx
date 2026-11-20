@@ -3,9 +3,8 @@
 // touch screen, where there is no hover, it simply opens PaperTrails.
 import * as HoverCard from '@radix-ui/react-hover-card';
 import { useEffect, useState, type ReactNode } from 'react';
-import { loadPaperTrails, publicationHref, scientistHref, type PtData, type PtScientist } from './data';
+import { PAPERTRAILS, loadPaperTrails, publicationHref, scientistHref, type PtData, type PtScientist } from './data';
 import { PEOPLE, type PersonId } from './people';
-import mark from './papertrails-mark.png';
 import './papertrails.css';
 
 type Loaded = { state: 'loading' } | { state: 'ready'; data: PtData } | { state: 'failed' };
@@ -102,7 +101,10 @@ export function PublicationLink({ id, title, children }: { id: string; title: st
   </Trigger>;
 }
 
-/** PaperTrails' mark, the dipole in its orbits, labelling links that lead there. */
+/** PaperTrails' own brand mark, served by PaperTrails so that it follows any change there. */
+export const PAPERTRAILS_MARK = `${PAPERTRAILS}images/icon.svg`;
+
+/** PaperTrails' mark, labelling links that lead there. If it cannot load, its label shows in its place. */
 export function PaperTrailsMark({ label = 'On PaperTrails' }: { label?: string }) {
-  return <img className="pt-mark" src={mark} alt={label} title={label} width={18} height={18}/>;
+  return <img className="pt-mark" src={PAPERTRAILS_MARK} alt={label} title={label} width={18} height={18}/>;
 }

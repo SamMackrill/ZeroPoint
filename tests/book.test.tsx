@@ -115,7 +115,8 @@ describe('book companion: pages', () => {
     return route.page !== 'contents' || hash === '#/';
   };
 
-  it('renders every chapter, and every link between pages lands on a page or an item', async () => {
+  // Renders all 28 chapters: about 2 s locally, over 5 s on a busy CI runner.
+  it('renders every chapter, and every link between pages lands on a page or an item', { timeout: 20_000 }, async () => {
     const seen = new Set<string>();
     for (const meta of CHAPTERS) {
       const { container, unmount, findByTestId } = render(<ChapterPage n={meta.n}/>);

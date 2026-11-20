@@ -252,6 +252,20 @@
   font-size: var(--fs-ui);
 }
 
+.about-people {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  color: var(--text-2);
+  font-size: var(--fs-ui);
+}
+
+.about-people + .about-book {
+  margin-top: 10px;
+  padding-top: 0;
+  border-top: 0;
+}
+
 .about-book a {
   font-weight: 600;
 }

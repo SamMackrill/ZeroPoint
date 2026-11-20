@@ -173,3 +173,20 @@ export const NOTE_LINKS: Readonly<Record<number, NoteLinks>> = {
   131: { authors: ['feynman'] },
   133: { authors: ['casimir'] },
 };
+
+/**
+ * The people behind each laboratory, listed in its Help › Sources: those whose work the lab's model builds on or whose
+ * picture it draws, as Fleming tells the history. Keyed by the laboratories' experiment ids.
+ */
+export const LAB_PEOPLE: Readonly<Record<'medium' | 'light' | 'double-slit' | 'electron' | 'casimir' | 'vdw', readonly PersonId[]>> = {
+  // Zero-point energy: Planck's oscillators, Einstein and Stern, Nernst's filled vacuum, Heisenberg's limit, Dirac's pairs.
+  medium: ['planck', 'einstein', 'stern', 'nernst', 'heisenberg', 'dirac'],
+  // Light as a wave in a field, and as quanta of energy.
+  light: ['maxwell', 'planck', 'einstein'],
+  // Young's two slits, and Feynman's reading of them.
+  'double-slit': ['young', 'feynman'],
+  // Faraday's lines, Maxwell's vortices, Lorentz's electron, Dirac's electron and Anderson's positron.
+  electron: ['faraday', 'maxwell', 'lorentz', 'dirac', 'anderson'],
+  casimir: ['casimir', 'lamoreaux', 'van_der_waals'],
+  vdw: ['van_der_waals', 'casimir'],
+};
