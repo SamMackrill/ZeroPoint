@@ -43,7 +43,7 @@ function ParticleShell() {
   const [inner, outer] = d[particle], mean = (inner + outer) / 2, play = usePlayback();
   const set = (i: number, o: number) => setD(v => ({ ...v, [particle]: [Math.min(i, o - 0.02), Math.max(o, i + 0.02)] as [number, number] }));
   const excluded = excludedDensity(particle, inner, outer), needed = massDensity(particle, mean), energy = excluded * (Math.PI / 6) * mean ** 3, ratio = excluded / needed;
-  const H = 400, cx = 250, cy = 195, scale = 150 / spec.range[1], ri = inner * scale, ro = outer * scale;
+  const H = 400, cx = 250, cy = 195, scale = 148 / (spec.range[1] + 1), ri = inner * scale, ro = outer * scale;
   const blobs = useMemo(() => { const random = rng(161); return Array.from({ length: 40 }, () => ({ a: random() * 360, r: random(), len: random(), phase: random(), tilt: random() * 180 })); }, []);
   // A logarithmic strip of wavelengths, with the band the shell excludes.
   const sx = (v: number) => 470 + (Math.log(v / (spec.range[0] * 0.4)) / Math.log((spec.range[1] * 2.5) / (spec.range[0] * 0.4))) * 220;
@@ -54,7 +54,7 @@ function ParticleShell() {
       <circle cx={cx} cy={cy} r={ro} className="bk-s-text" fill="none" strokeWidth="1.5"/><circle cx={cx} cy={cy} r={ri} className="bk-s-text" fill="none" strokeWidth="1.5"/>
       {blobs.map((b, i) => {
         const insideShell = i % 2 === 0, life = (play.t * 0.7 + b.phase) % 1, swell = Math.sin(Math.PI * life);
-        // Inside: only fluctuations shorter than the inner diameter. Outside: only those longer than the outer one.
+        // Smaller fluctuations drawn inside the shell, larger ones outside (illustrative sizes, kept clear of the shell wall).
         const len = insideShell ? ri * 2 * (0.12 + 0.36 * b.len) * 0.5 : ro * 2 * (0.55 + 0.6 * b.len) * 0.5;
         // How far the ellipse reaches toward or away from the centre at its fullest, given how it lies: it must stay clear of the shell.
         const across = ((b.tilt - b.a) * Math.PI) / 180, reach = Math.hypot((len / 2) * Math.cos(across), Math.max(2.5, len * 0.2) * Math.sin(across)) + 6;
@@ -142,8 +142,8 @@ function Triacontahedron() {
     </Stage>}>
     <Choice label="Outer vertices carry" value={positiveOuter ? 'pos' : 'neg'} onChange={v => setPositiveOuter(v === 'pos')} options={[{ value: 'neg', label: 'Negative' }, { value: 'pos', label: 'Positive' }]}/>
     <PlayBar play={play} label="the turning"/>
-    <Readout label="Inward on the outer 12" value={fmt(forces.inward, 4)}/>
-    <Readout label="Outward on the inner 20" value={fmt(forces.outward, 4)}/>
+    <Readout label="Inward on the outer 12" value={`${fmt(forces.ratio, 3)} × outward`}/>
+    <Readout label="Outward on the inner 20" value="1.000 × (reference)"/>
     <Readout label="Ratio" value={`${fmt(forces.ratio * 100, 3)} %`} tone="good"/>
     <Remark>Swap the signs and the same form is the complementary particle: the two would annihilate if they occupied the same space.</Remark>
   </Diagram>;
@@ -169,10 +169,10 @@ const chapter: ChapterContent = {
       tryThis: [
         'With Fleming’s shell for the proton, read the energy excluded: it is the proton’s 938 MeV.',
         'Widen the shell or move it. The excluded energy changes steeply, by the fourth power of the diameter, and no other shell of that mean diameter gives the right mass.',
-        'Push the outer diameter as far as it goes with dᵢ at 1.755 fm: this is his first approximation, a little more than the proton’s mass-energy density.',
+        'Push the outer diameter as far as it goes with dᵢ at 1.755 fm: the excluded vacuum density approaches ~411 MeV/fm³, a little more than the proton’s 331.5 MeV/fm³ at its 1.755 fm diameter (Fleming’s first approximation, p. 123).',
         'Switch to the electron and press “Mean at the Compton wavelength”: the same construction gives 0.511 MeV. Then try “Fleming’s printed shell” (see the note below) and “Diameters a pair wavelength apart”, his second solution, which also gives 0.511 MeV.',
       ],
-      notes: <><p>The readouts are Equation 16-1 with the CODATA 2010 values the text quotes, and the particle’s density is taken over a sphere of the mean diameter, as he takes it. The ovals are illustrative: small ones inside, large ones outside, none of the excluded sizes. The shell is drawn solid; the text says it is a virtual structure.</p>
+      notes: <><p>The readouts are Equation 16-1 with the CODATA 2010 values the text quotes, and the particle’s density is taken over a sphere of the mean diameter, as he takes it. The ovals are illustrative: smaller ones inside, larger ones outside, none in the shell wall. The shell is drawn solid; the text says it is a virtual structure.</p>
         <p>The electron’s printed shell does not match its description. The text sets the mean diameter to the Compton wavelength, 2.426 pm, and gives <V>d</V><sub>i</sub> = 2.123 pm and <V>d</V><sub>o</sub> = 2.472 pm, whose mean is 2.298 pm (<Pg n={125}/>). Over a sphere of that mean the shell excludes 0.555 MeV; the shell that solves his condition is 2.247 to 2.606 pm, 0.179 pm thick against his 0.175 pm. His second solution sets the difference between the diameters to the pair wavelength, 0.6066 pm, which makes the shell half that, 0.3033 pm, thick (0.3035 pm from the diameters as printed, to three decimals). It comes out at 2.880 and 3.487 pm exactly as printed, so the method is his and the first pair looks like a slip. All three shells are offered.</p></>,
       labs: [
         { lab: 'electron', scenario: 'mass-shell', why: 'The same calculation as a laboratory study of the electron, with the excluded band plotted.' },

@@ -1,6 +1,6 @@
 // Chapter 6: Zeptons and Faraday Field Lines (PDF pp. 48–61). Figures 6-1 to 6-18.
-import { Suspense, lazy, useCallback, useMemo, useRef, useState, type ComponentType } from 'react';
-import { Action, Arrow, BlockArrow, Charge, Choice, Dial, Diagram, Drag, FallbackOnError, FieldPicture, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fmt, lerpAngle, pathThrough, polar, rad, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
+import { Suspense, lazy, useCallback, useContext, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
+import { Action, Arrow, BlockArrow, Charge, Choice, Dial, Diagram, Drag, FallbackOnError, FieldPicture, canDraw3D, InOut, Line, PlayBar, Readout, Remark, RunningReport, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Vector, Zepton, alongLine, bearing, clamp, deg, ease, fieldAngle, fieldLines, fmt, lerpAngle, pathThrough, polar, rad, rng, traceField, turn, usePlayback, wireField, type Source, type Wire } from '../kit';
 import { Pg, Q } from '../prose';
 import { ZEPTON_COUNTS } from '../three/coil-math';
 import { SPHERE_LINES, SPHERE_R_MIN } from '../three/sphere-math';
@@ -85,7 +85,7 @@ function ZeptonsRoundCharge() {
         const d = Math.hypot(b.x - W / 2, b.y - H / 2), lean = clamp(1800 / (d * d + 1800), 0, 1) * 0.3;
         return <Zepton key={i} x={b.x} y={b.y} angle={lerpAngle(born, fieldAngle(sources, b.x, b.y), lean)} len={b.len} open={Math.sin(Math.PI * life)} oval={false} signs={false} opacity={0.3 * Math.sin(Math.PI * life)}/>;
       })}
-      <FieldPicture sources={sources} w={W} h={H} perUnit={count} lines={0} zeptons={1} t={play.t} zeptonLen={22}/>
+      <FieldPicture sources={sources} w={W} h={H} perUnit={count} lines={0} zeptons={1} t={play.t} zeptonLen={22} radii={[15]}/>
       <Charge x={W / 2} y={H / 2} sign={q as 1 | -1} r={15}/>
     </Stage>}>
     <Choice label="Free charge" value={sign} onChange={setSign} options={[{ value: 'neg', label: 'Electron' }, { value: 'pos', label: 'Positive' }]}/>
@@ -101,16 +101,17 @@ function LinesFromZeptons() {
   const [strength, setStrength] = useState<'1' | '2' | '3'>('1');
   const [sign, setSign] = useState<'neg' | 'pos'>('neg');
   const play = usePlayback();
-  const H = 380, q = (sign === 'neg' ? -1 : 1) * Number(strength);
+  const H = 380, q = (sign === 'neg' ? -1 : 1) * Number(strength), r = 12 + 3 * Number(strength);
   const sources = useMemo<Source[]>(() => [{ x: W / 2, y: H / 2, q }], [q]);
   return <Diagram stage={
     <Stage w={W} h={H} label={`A free ${sign === 'neg' ? 'negative' : 'positive'} charge with ${8 * Number(strength)} field lines pointing ${sign === 'neg' ? 'toward' : 'away from'} it.`}>
-      <FieldPicture sources={sources} w={W} h={H} perUnit={8} lines={blend} zeptons={1 - blend} t={play.t} zeptonLen={22}/>
-      <Charge x={W / 2} y={H / 2} sign={Math.sign(q) as 1 | -1} r={12 + 3 * Number(strength)}/>
+      <FieldPicture sources={sources} w={W} h={H} perUnit={8} lines={blend} zeptons={1 - blend} t={play.t} zeptonLen={22} radii={[r]}/>
+      <Charge x={W / 2} y={H / 2} sign={Math.sign(q) as 1 | -1} r={r}/>
     </Stage>}>
     <Slider label="From zeptons to Faraday’s lines" value={blend} min={0} max={1} step={0.05} onChange={setBlend} show={v => (v === 0 ? 'zeptons' : v === 1 ? 'lines' : 'both')}/>
     <Choice label="Strength of the charge" value={strength} onChange={setStrength} options={[{ value: '1', label: '1' }, { value: '2', label: '2' }, { value: '3', label: '3' }]}/>
     <Choice label="Sign" value={sign} onChange={setSign} options={[{ value: 'neg', label: '−' }, { value: 'pos', label: '+' }]}/>
+    {blend < 1 && <PlayBar play={play} label="the zeptons"/>}
     <Readout label="Lines drawn" value={8 * Number(strength)}/>
     <Remark>The number of lines follows the strength of the force; the force itself is spread through space as the zeptons are.</Remark>
   </Diagram>;
@@ -207,7 +208,7 @@ function ZeptonBridge() {
   const sources = useMemo<Source[]>(() => [{ x: xa, y, q: -1 }, { x: xb, y, q: 1 }], [xa, xb]);
   return <Diagram stage={
     <Stage w={W} h={H} label={`An electron and a proton with ${n} zeptons lined up end to end between them, each with its positive end toward the electron.`}>
-      {continuum && <FieldPicture sources={sources} w={W} h={H} perUnit={8} lines={0} zeptons={0.45} t={play.t} zeptonLen={15} offset={0.5}/>}
+      {continuum && <FieldPicture sources={sources} w={W} h={H} perUnit={8} lines={0} zeptons={0.45} t={play.t} zeptonLen={15} offset={0} radii={[15, 15]}/>}
       {Array.from({ length: n }, (_, i) => { const life = (play.t * 0.8 + (i * 0.37) % 1) % 1; return <Zepton key={i} x={xa + 22 + pitch * (i + 0.5)} y={y} angle={180} len={Math.min(len, pitch - 3)} open={0.5 + 0.5 * Math.sin(Math.PI * life)} signs={false} opacity={0.5 + 0.5 * Math.sin(Math.PI * life)}/>; })}
       <Charge x={xa} y={y} sign={-1} r={15} label="electron"/><Charge x={xb} y={y} sign={1} r={15} label="proton"/>
     </Stage>}>
@@ -253,10 +254,11 @@ function LikeChargesRow() {
 /** Figure 6-10: the middle zeptons deflect, a new zepton fills the hole, and its pressure pushes the electrons apart. */
 function RepulsionPressure() {
   const play = usePlayback({ speed: 0.5 });
-  const H = 300, y = 140, cycles = 5, cycle = Math.floor(play.t) % (cycles + 1), u = play.t % 1;
+  const H = 300, y = 140, cycles = 5, cycle = Math.floor(play.t) % (cycles + 1), u = play.t % 1, active = cycle < cycles;
   // One generation: the rows bow apart at the middle, a zepton forms in the hole, and its push passes down the rows.
-  const deflect = ease(u / 0.3), filled = ease((u - 0.3) / 0.25), pushing = ease((u - 0.55) / 0.3);
-  const apart = Math.min(cycles, cycle + pushing) * 9, xa = 150 - apart, xb = 570 + apart, mid = 360;
+  // Hold the finished separation cleanly on the trailing beat before restarting.
+  const deflect = active ? ease(u / 0.3) : 0, filled = active ? ease((u - 0.3) / 0.25) : 0, pushing = active ? ease((u - 0.55) / 0.3) : 0;
+  const apart = (active ? cycle + pushing : cycles) * 9, xa = 150 - apart, xb = 570 + apart, mid = 360;
   const bow = (side: 1 | -1) => (x: number) => side * (9 + 30 * deflect * Math.exp(-(((x - mid) / 95) ** 2)));
   return <Diagram stage={
     <Stage w={W} h={H} label={`Two electrons with zeptons between them. The zeptons at the middle deflect, a new zepton comes into existence in the space, and the pressure pushes the electrons apart. Generation ${Math.min(cycles, cycle + 1)} of ${cycles}.`}>
@@ -268,7 +270,7 @@ function RepulsionPressure() {
         <BlockArrow x1={xa - 24} y1={y} x2={xa - 24 - 40 * pushing} y2={y} thick={12}/><BlockArrow x1={xb + 24} y1={y} x2={xb + 24 + 40 * pushing} y2={y} thick={12}/>
       </>}
       <Charge x={xa} y={y} sign={-1} r={15}/><Charge x={xb} y={y} sign={-1} r={15}/>
-      <T x={mid} y={H - 40} size="sm" tone={u < 0.3 ? 'mark' : u < 0.55 ? 'mark' : 'text'}>{u < 0.3 ? 'like ends deflect, leaving a small hole in space' : u < 0.55 ? 'the hole is filled with another zepton' : 'it pushes on its neighbours, and they on the electrons'}</T>
+      <T x={mid} y={H - 40} size="sm" tone={active && u < 0.55 ? 'mark' : 'text'}>{!active ? `after ${cycles} generations, the electrons have been pushed apart` : u < 0.3 ? 'like ends deflect, leaving a small hole in space' : u < 0.55 ? 'the hole is filled with another zepton' : 'it pushes on its neighbours, and they on the electrons'}</T>
       <T x={mid} y={H - 18} size="sm">pressure between the electrons {'>'} pressure outside them</T>
     </Stage>}>
     <PlayBar play={play} label="the generations of zeptons"/>
@@ -308,10 +310,39 @@ function AttractionChain() {
 /** Figure 6-14: an electron passes two zeptons, which rotate to stay aligned with it, opposite ways on opposite sides. */
 function MovingCharge() {
   const [x, setX] = useState(150);
+  const [dir, setDir] = useState<1 | -1>(1);
+  const [dragging, setDragging] = useState(false);
+  const dragTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const report = useContext(RunningReport), dragKey = useRef({});
+  useEffect(() => {
+    report?.(dragKey.current, dragging);
+    return () => report?.(dragKey.current, false);
+  }, [report, dragging]);
+  useEffect(() => () => { if (dragTimer.current) clearTimeout(dragTimer.current); }, []);
   const play = usePlayback({ autoplay: false, speed: 0.22 });
+  const motion = useRef({ t: 0, x: 150, dir: 1 as 1 | -1 });
   const H = 320, y = 160, zx = 360, above = { x: zx, y: 84 }, below = { x: zx, y: 236 };
-  // Playing carries the electron from left to right and back; dragging sets it by hand.
-  const ex = play.playing ? 110 + 500 * (0.5 - 0.5 * Math.cos(play.t * 2 * Math.PI)) : x, moving = play.playing ? Math.sign(Math.sin(play.t * 2 * Math.PI)) || 1 : 0;
+  // Playing carries the electron smoothly from where it sits between 80 and 640 and back; dragging sets it by hand.
+  const dt = Math.max(0, Math.min(0.05, play.t - motion.current.t));
+  motion.current.t = play.t;
+  if (play.playing) {
+    let next = motion.current.x + motion.current.dir * 220 * dt;
+    if (next >= 640) { next = 640; motion.current.dir = -1; }
+    else if (next <= 80) { next = 80; motion.current.dir = 1; }
+    motion.current.x = next;
+  } else {
+    motion.current.x = x;
+    motion.current.dir = dir;
+  }
+  const ex = motion.current.x, travel = motion.current.dir;
+  const moveManual = (nx: number) => {
+    if (play.playing) return;
+    if (Math.abs(nx - x) > 0.5) setDir(nx > x ? 1 : -1);
+    setX(nx);
+    setDragging(true);
+    if (dragTimer.current) clearTimeout(dragTimer.current);
+    dragTimer.current = setTimeout(() => setDragging(false), 350);
+  };
   const up = bearing(above.x, above.y, ex, y), down = bearing(below.x, below.y, ex, y);
   return <Diagram stage={
     <Stage w={W} h={H} label={`A free electron on a line between two zeptons. Each zepton keeps its positive end toward the electron, so as the electron moves the upper zepton has turned ${Math.round(turn(-90, up))} degrees and the lower ${Math.round(turn(90, down))} degrees from pointing straight at the line.`}>
@@ -319,11 +350,14 @@ function MovingCharge() {
       {[160, 360, 560].map(px => <circle key={px} cx={px} cy={y} r={15} className="bk-s-faint" fill="none" strokeDasharray="2 3"/>)}
       <Line d={`M${above.x} ${above.y} L${ex} ${y} L${below.x} ${below.y}`} tone="faint" dash="2 4"/>
       <Zepton x={above.x} y={above.y} angle={up} len={50} signs/><Zepton x={below.x} y={below.y} angle={down} len={50} signs/>
-      {moving !== 0 && <><Spin x={above.x} y={above.y} r={36} ccw={moving > 0} from={moving > 0 ? 20 : 160} sweep={140}/><Spin x={below.x} y={below.y} r={36} ccw={moving < 0} from={moving > 0 ? -20 : 200} sweep={140}/><Still><Arrow x1={ex + moving * 22} y1={y} x2={ex + moving * 58} y2={y} tone="motion" w={2.4}/></Still></>}
-      <Drag x={ex} y={y} onMove={nx => { if (!play.playing) setX(nx); }} bounds={{ x0: 80, y0: y, x1: 640, y1: y }} label="Free electron"><Charge x={ex} y={y} sign={-1} r={15}/></Drag>
+      {/* Curled rotation arrows and travel arrow show when paused (as printed) and fade while the electron is moving. */}
+      <Spin x={above.x} y={above.y} r={36} ccw={travel > 0} from={travel > 0 ? 20 : 160} sweep={140}/>
+      <Spin x={below.x} y={below.y} r={36} ccw={travel < 0} from={travel > 0 ? -20 : 200} sweep={140}/>
+      <Still><Arrow x1={ex + travel * 22} y1={y} x2={ex + travel * 58} y2={y} tone="motion" w={2.4}/></Still>
+      <Drag x={ex} y={y} onMove={moveManual} bounds={{ x0: 80, y0: y, x1: 640, y1: y }} label="Free electron"><Charge x={ex} y={y} sign={-1} r={15}/></Drag>
     </Stage>}>
-    <Slider label="Position of the electron" value={Math.round(ex)} min={80} max={640} step={2} onChange={v => { if (!play.playing) setX(v); }} show={v => (v < 300 ? 'left' : v > 420 ? 'right' : 'between the zeptons')}/>
-    <Action onClick={() => { if (play.playing) setX(Math.round(ex)); play.toggle(); }}>{play.playing ? 'Stop the electron' : 'Move the electron'}</Action>
+    <Slider label="Position of the electron" value={Math.round(ex)} min={80} max={640} step={2} onChange={moveManual} show={v => (v < 300 ? 'left' : v > 420 ? 'right' : 'between the zeptons')}/>
+    <Action onClick={() => { if (play.playing) { setX(Math.round(ex)); setDir(travel); } play.toggle(); }}>{play.playing ? 'Stop the electron' : 'Move the electron'}</Action>
     <Readout label="Upper zepton has turned" value={`${Math.round(turn(-90, up))}°`}/>
     <Readout label="Lower zepton has turned" value={`${Math.round(turn(90, down))}°`}/>
     <Remark>The two turn in opposite senses: zeptons on opposite sides of a moving charge always do.</Remark>
@@ -416,13 +450,22 @@ function BarMagnet() {
   const H = 380, y = 190, xs = 260, xn = 460;
   const sources = useMemo<Source[]>(() => [{ x: xn - 6, y, q: 1 }, { x: xs + 6, y, q: -1 }], []);
   const angle = fieldAngle(sources, compass.x, compass.y);
-  // One loop of the field, leaving the north pole upward: the string the spinning zeptons are threaded on.
+  // Pick one of the magnet's own upper arches so the spinning loops always sit directly on a drawn field line.
   const thread = useMemo(() => {
+    const arches = fieldLines(sources, { w: W, h: H }, 4 + strength * 3)
+      .map(l => l.points.filter(([x, yy]) => yy < y - 16 || x < xs - 6 || x > xn + 6))
+      .filter(pts => pts.length > 10 && pts.every(([, yy]) => yy < y + 4) && Math.min(...pts.map(([, yy]) => yy)) > 24 && Math.min(...pts.map(([x]) => x)) < (xs + xn) / 2 - 40 && Math.max(...pts.map(([x]) => x)) > (xs + xn) / 2 + 40);
+    if (arches.length > 0) {
+      return arches.reduce((best, pts) => {
+        const score = (p: [number, number][]) => Math.abs((y - Math.min(...p.map(([, yy]) => yy))) - 84);
+        return score(pts) < score(best) ? pts : best;
+      });
+    }
     const field = (x: number, yy: number): [number, number] => { const a = fieldAngle(sources, x, yy); return [Math.cos((a * Math.PI) / 180), -Math.sin((a * Math.PI) / 180)]; };
     const stop = (points: [number, number][]) => { const end = points.findIndex(([x, yy], i) => i > 3 && Math.abs(yy - y) < 22 && x > xs - 6 && x < xn + 6); return end < 0 ? points : points.slice(0, end); };
     const mid: [number, number] = [(xs + xn) / 2, y - 78], box = { w: W, h: H };
     return [...stop(traceField(field, mid[0], mid[1], -1, box, 4, 300).points).reverse(), ...stop(traceField(field, mid[0], mid[1], 1, box, 4, 300).points).slice(1)];
-  }, [sources]);
+  }, [sources, strength]);
   return <Diagram stage={
     <Stage w={W} h={H} label="A bar magnet with its field lines leaving the north pole, looping round and entering the south pole. A compass needle can be moved through the field.">
       <FieldPicture sources={sources} w={W} h={H} perUnit={4 + strength * 3} lines={1} tone="b"/>
@@ -646,7 +689,7 @@ const items: BookItem[] = [
       <p><Q>The nature of the zepton dipoles is to align with respect to a charge, so when the free charge is moving, the dipoles change their orientation in order to stay aligned. So, as a free electron moves, the zepton dipoles rotate to maintain their orientation relative to the stable charge</Q> (<Pg n={56}/>).</p>
       <p>Later in the chapter Fleming draws the consequence: <Q>zeptons on opposite sides of a current carrying wire, always spin in opposite directions</Q> (<Pg n={59}/>).</p>
     </>,
-    tryThis: ['Drag the electron from the left circle to the right one: these are the three positions of the printed figure. Each zepton keeps its positive end on the electron.', 'Compare the two readouts as you go: one angle rises while the other falls.', 'Press “Move the electron” and watch the curled arrows reverse when the electron turns back.'],
+    tryThis: ['Drag the electron from the left circle to the right one: these are the three positions of the printed figure. Each zepton keeps its positive end on the electron.', 'Compare the two readouts as you go: one angle rises while the other falls.', 'Press “Move the electron” and watch the zeptons reverse their turn when the electron turns back (stop it to see the curled arrows for either direction).'],
     notes: <p>The electron’s return journey is added so the motion can repeat; the figure shows one pass.</p>,
     labs: [{ lab: 'electron', scenario: 'moving', why: 'An electron passing through the field in three dimensions, with the pairs turning as it goes.' }],
   },
@@ -658,7 +701,7 @@ const items: BookItem[] = [
       <p>A series of charges in motion is a current. <Q>The zeptons rotate in response to the first charge, and continue rotating as the next charge passes by, and so on, and so on, and the zeptons keep on spinning. Or, more properly as the zeptons flash in and out of existence, each successive one continues the spinning motion, conserving angular momentum</Q> (<Pg n={56}/>).</p>
       <p>The reverse is also true: spinning zeptons induce charge movement in a conductor. <Q>The balance between the spinning zeptons in the zero-point field and the current in the conductor forms an inherently symbiotic relationship</Q>. <Q>One can think of it as something akin to inertia for electric forces. The current continues as long as the magnetic field continues and the current stops when the magnetic field stops</Q> (<Pg n={57}/>).</p>
     </>,
-    tryThis: ['Compare the two rows of zeptons: they turn opposite ways, as Figure 6-14 requires.', 'Reverse the flow with the slider and both rows reverse.', 'Turn off “Drive the current”. The current does not stop at once: the spinning field keeps it going while it dies away, and the two reach zero together.'],
+    tryThis: ['Compare the two rows of zeptons: they turn opposite ways, as Figure 6-14 requires.', 'Reverse the flow with the dial and both rows reverse.', 'Turn off “Drive the current”. The current does not stop at once: the spinning field keeps it going while it dies away, and the two reach zero together.'],
     notes: <p>How quickly the current and the spin rise and die away is a display choice; Fleming describes the mutual dependence but gives no rate. The printed figure does not mark the direction of B, and none is drawn here.</p>,
     labs: [{ lab: 'electron', scenario: 'moving', query: 'L=+rotation', why: 'The rotation a single moving electron leaves in the field, with the local sense of rotation marked.' }],
   },

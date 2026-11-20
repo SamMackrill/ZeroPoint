@@ -1,6 +1,6 @@
 // Chapter 7: Maxwell's Equations (PDF pp. 62–69). Figures 7-1 to 7-5.
 import { Suspense, lazy, useCallback, useMemo, useRef, useState } from 'react';
-import { Action, Dial, Arrow, BlockArrow, Charge, Choice, Diagram, FallbackOnError, FieldPicture, FieldZeptons, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
+import { Action, Dial, Arrow, BlockArrow, Charge, Choice, Diagram, FallbackOnError, FieldPicture, FieldZeptons, canDraw3D, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, SpinLoop, Stage, Still, T, Toggle, Zepton, clamp, fmt, pathThrough, polar, usePlayback, type Source } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import type { SweepView } from '../three/SweepScene';
@@ -43,11 +43,11 @@ function CurrentInField() {
       {fieldLineXs(field).map(x => <Arrow key={x} x1={x} y1={H - 40} x2={x} y2={40} tone="b" w={1.8} opacity={0.75}/>)}
       {circleRadii(current).map(r => <g key={r} opacity={0.9}><circle cx={cx} cy={cy} r={r} className="bk-s-motion" fill="none" strokeWidth={1.8} strokeDasharray="6 4"/>
         {[0, 180].map(a => { const [x, y] = polar(cx, cy, r, a), s = current > 0 ? 1 : -1; return <Arrow key={a} x1={x} y1={y + s * (a === 0 ? 8 : -8)} x2={x} y2={y - s * (a === 0 ? 8 : -8)} tone="motion" w={0.1} head={11}/>; })}</g>)}
-      <circle cx={cx} cy={cy} r={17} className="bk-plate"/><InOut x={cx} y={cy} out={current >= 0} r={9} tone="text"/><T x={cx + 4} y={cy + 40} tone="text">C</T>
+      <circle cx={cx} cy={cy} r={17} className="bk-plate"/>{Math.abs(current) >= 0.02 && <InOut x={cx} y={cy} out={current >= 0} r={9} tone="text"/>}<T x={cx + 4} y={cy + 40} tone="text">C</T>
       {Math.abs(push) > 1 && <BlockArrow x1={cx - Math.sign(push) * 24} y1={cy} x2={cx - Math.sign(push) * (24 + Math.min(110, Math.abs(push)))} y2={cy} thick={14}/>}
       <T x={cx} y={24} tone="text">n</T><T x={cx} y={H - 14} tone="text">s</T><T x={36} y={cy + 5} tone="text">w</T><T x={W - 36} y={cy + 5} tone="text">e</T>
-      <Spin x={W - 90} y={cy} r={8 + 22 * clamp(Math.abs(east) / 1.4)} ccw={east >= 0} sweep={300}/><T x={W - 90} y={cy + 52} size="sm">vortices: {fmt(Math.abs(east), 2)}</T>
-      <Spin x={90} y={cy} r={8 + 22 * clamp(Math.abs(west) / 1.4)} ccw={west >= 0} sweep={300}/><T x={90} y={cy + 52} size="sm">vortices: {fmt(Math.abs(west), 2)}</T>
+      {Math.abs(east) >= 0.01 && <Spin x={W - 90} y={cy} r={8 + 22 * clamp(Math.abs(east) / 1.4)} ccw={east >= 0} sweep={300}/>}<T x={W - 90} y={cy + 52} size="sm">vortices: {fmt(Math.abs(east), 2)}</T>
+      {Math.abs(west) >= 0.01 && <Spin x={90} y={cy} r={8 + 22 * clamp(Math.abs(west) / 1.4)} ccw={west >= 0} sweep={300}/>}<T x={90} y={cy + 52} size="sm">vortices: {fmt(Math.abs(west), 2)}</T>
     </Stage>}>
     <Slider label="Strength of the field" value={field} min={0} max={1} step={0.05} onChange={setField}/>
     <Dial label="Current at C" value={current} min={-1} max={1} step={0.05} onChange={setCurrent} marks={['down', 'off', 'up']} show={v => (v === 0 ? 'off' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'ascending' : 'descending'}`)}/>
@@ -191,22 +191,31 @@ function ElectricDeflection() {
   const path = useMemo(() => deflectionPath([body[0] + offset, H - 20], [0, -1.4], body, q * 40), [offset, q]);
   const [mode, setMode] = useState<FieldMode>('zeptons');
   const [push, setPush] = useState(false);
-  const index = Math.min(path.length - 1, Math.floor((play.t % 1.15) * path.length)), [px, py] = path[index], near = Math.hypot(px - body[0], py - body[1]) < 130;
+  const index = Math.min(path.length - 1, Math.floor((play.t % 1.15) * path.length)), [px, py] = path[index];
   // Both charges are sources, so the zeptons between them re-polarize continuously as the small one moves, as in the
   // two-charge figures of chapter 6 (6-11, 6-13).
   const sources = useMemo<Source[]>(() => [{ x: body[0], y: body[1], q: 1.5 }, { x: px, y: py, q }], [px, py, q]);
   const [ex, ey] = path[path.length - 1], drift = ex - (body[0] + offset);
-  const d = Math.hypot(px - body[0], py - body[1]) || 1, ux = (px - body[0]) / d, uy = (py - body[1]) / d, s = q > 0 ? 1 : -1;
+  const d = Math.hypot(px - body[0], py - body[1]) || 1, ux = (px - body[0]) / d, uy = (py - body[1]) / d;
+  // Scale push arrows smoothly with inverse-square proximity so both Positive and Negative show clearly at every offset.
+  const pushLen = clamp(18 + 34 * (120 / d) ** 2, 18, 52), pushOp = clamp(0.38 + 0.62 * (140 / d) ** 2, 0.38, 1);
   return <Diagram stage={
     <Stage w={W} h={H} label={`A small ${sign === 'pos' ? 'positive' : 'negative'} charge moving up the page past a larger fixed positive charge, with the field of both drawn as ${mode === 'both' ? 'lines and zeptons' : mode}. ${q > 0 ? 'Between the two like charges the zeptons turn aside and crowd: the pressure builds up and the charge is deflected away.' : 'Between the opposite charges the zeptons bridge from one to the other: the pressure between is lower and the charge is deflected toward the fixed one.'}`}>
       {/* The zeptons stay where they are and turn to the field as the charge moves (p. 56), so nothing jumps; the lines are re-traced. */}
       {mode !== 'zeptons' && <FieldPicture sources={sources} w={W} h={H} perUnit={9} lines={mode === 'both' ? 0.45 : 1} zeptons={0}/>}
       {mode !== 'lines' && <FieldZeptons sources={sources} w={W} h={H} t={play.t} spacing={27} zeptonLen={15} radii={[24, 10]}/>}
       <Line d={pathThrough(path)} tone="motion" w={1.6} dash="5 4"/>
-      {push && near && <>
-        <BlockArrow x1={px + s * ux * 16} y1={py + s * uy * 16} x2={px + s * ux * 56} y2={py + s * uy * 56} thick={10}/>
-        <BlockArrow x1={body[0] - s * ux * 30} y1={body[1] - s * uy * 30} x2={body[0] - s * ux * 70} y2={body[1] - s * uy * 70} thick={10}/>
-      </>}
+      {/* By Fleming's push principle: like charges are pushed apart from the high-pressure gap between them; opposite charges are pushed together from outside. */}
+      {push && (q > 0 ? (() => {
+        const inLen = Math.min(pushLen, Math.max(12, (d - 54) / 2));
+        return <>
+          <BlockArrow x1={px - ux * (16 + inLen)} y1={py - uy * (16 + inLen)} x2={px - ux * 16} y2={py - uy * 16} thick={10} opacity={pushOp}/>
+          <BlockArrow x1={body[0] + ux * (30 + inLen)} y1={body[1] + uy * (30 + inLen)} x2={body[0] + ux * 30} y2={body[1] + uy * 30} thick={10} opacity={pushOp}/>
+        </>;
+      })() : <>
+        <BlockArrow x1={px + ux * (16 + pushLen)} y1={py + uy * (16 + pushLen)} x2={px + ux * 16} y2={py + uy * 16} thick={10} opacity={pushOp}/>
+        <BlockArrow x1={body[0] - ux * (30 + pushLen)} y1={body[1] - uy * (30 + pushLen)} x2={body[0] - ux * 30} y2={body[1] - uy * 30} thick={10} opacity={pushOp}/>
+      </>)}
       <Charge x={body[0]} y={body[1]} sign={1} r={24}/>
       <Charge x={px} y={py} sign={q as 1 | -1} r={10}/>
     </Stage>}>
@@ -289,15 +298,42 @@ function FourEquations() {
   const [law, setLaw] = useState<Law>('gauss');
   const [amount, setAmount] = useState(0.6);
   const play = usePlayback();
+  // Integrate conductor travel and spin phase smoothly so moving the slider changes only rates, never positions.
+  const state = useRef({ t: 0, bar: 0, spin: 0 });
+  if (play.t < state.current.t) state.current = { t: 0, bar: 0, spin: 0 };
+  const dt = Math.max(0, Math.min(0.05, play.t - state.current.t));
+  state.current.t = play.t;
+  state.current.bar += dt * 220 * amount;
+  state.current.spin += dt * 260 * amount;
   const H = 300, cx = 360, cy = 150;
   const charge = useMemo<Source[]>(() => [{ x: cx, y: cy, q: -1 }], []);
   const label = { gauss: 'Gauss’s Law', gaussB: 'Gauss’s Law for Magnetism', faraday: 'Faraday’s Law of Induction', ampere: 'Ampère’s law with Maxwell’s correction' }[law];
+  const barX = 180 + (state.current.bar % 360), rings = circleRadii(amount, 46, 118), fluxLen = 28 + 44 * amount;
   return <Diagram stage={
     <Stage w={W} h={H} label={`${label}, drawn in terms of zeptons.`}>
-      {law === 'gauss' && <><FieldPicture sources={charge} w={W} h={H} perUnit={12} lines={0} zeptons={0.9} t={play.t} zeptonLen={15}/><circle cx={cx} cy={cy} r={50 + 80 * amount} className="bk-s-mark" fill="none" strokeWidth="2" strokeDasharray="5 4"/><Charge x={cx} y={cy} sign={-1} r={13}/><T x={cx} y={H - 12} size="sm" tone="mark">the same total orientation through any surface round the charge</T></>}
-      {law === 'gaussB' && <>{[-140, 0, 140].map(dx => <g key={dx}><SpinLoop x={cx + dx} y={cy} angle={90} r={26} turn={play.t * 240} tone="motion"/><Arrow x1={cx + dx} y1={cy - 34} x2={cx + dx} y2={cy - 34 - 70 * amount} tone="b" w={3}/><Arrow x1={cx + dx} y1={cy + 34 + 70 * amount} x2={cx + dx} y2={cy + 34} tone="b" w={3}/></g>)}<T x={cx} y={H - 12} size="sm" tone="b">above each spinning dipole the field is equal and opposite to the field below: the sum is zero</T></>}
-      {law === 'faraday' && (() => { const x = 180 + (((play.t * 220 * amount) % 360)); return <>{Array.from({ length: 5 }, (_, r) => Array.from({ length: 9 }, (_, c) => <InOut key={`${r}-${c}`} x={140 + c * 55} y={40 + r * 48} out={false} r={6} opacity={0.5}/>))}<rect x={x - 5} y={40} width={10} height={192} rx={3} className="bk-plate"/><Arrow x1={x + 12} y1={cy - 10} x2={x + 12 + 60 * amount} y2={cy - 10} tone="motion" w={2}/><Arrow x1={x} y1={228} x2={x} y2={228 - 150 * amount} tone="e" w={3}/><T x={cx} y={H - 12} size="sm" tone="e">the faster the conductor crosses the flux, the higher the electromotive force</T></>; })()}
-      {law === 'ampere' && <>{[60, 110].map(r => <g key={r}><circle cx={cx} cy={cy} r={r} className="bk-s-b" fill="none" strokeWidth={0.6 + 2 * amount}/><Arrow x1={cx + r} y1={cy + 6} x2={cx + r} y2={cy - 6} tone="b" w={0.1} head={11}/></g>)}<circle cx={cx} cy={cy} r={16} className="bk-plate"/><InOut x={cx} y={cy} out r={8} tone="text"/>{[0, 60, 120, 180, 240, 300].map(a => { const [x, y] = polar(cx, cy, 85, a + 30); return <Zepton key={a} x={x} y={y} angle={play.t * 200 * amount + a} len={20} oval={false} signs={false} opacity={0.8}/>; })}<T x={cx} y={H - 12} size="sm" tone="b">a larger current, or a faster change in the polarization of the zeptons: a larger magnetic field</T></>}
+      {law === 'gauss' && <><FieldPicture sources={charge} w={W} h={H} perUnit={12} lines={0} zeptons={0.9} t={play.t} zeptonLen={15} radii={[13]}/><circle cx={cx} cy={cy} r={50 + 80 * amount} className="bk-s-mark" fill="none" strokeWidth="2" strokeDasharray="5 4"/><Charge x={cx} y={cy} sign={-1} r={13}/><T x={cx} y={H - 12} size="sm" tone="mark">the same total orientation through any surface round the charge</T></>}
+      {law === 'gaussB' && <>
+        <rect x={cx - 210} y={cy - 48} width={420} height={96} rx={18} className="bk-s-mark" fill="none" strokeWidth="1.8" strokeDasharray="5 4"/>
+        {[-140, 0, 140].map(dx => <g key={dx}><SpinLoop x={cx + dx} y={cy} angle={90} r={24} turn={state.current.spin} tone="motion"/><Arrow x1={cx + dx} y1={cy - 32} x2={cx + dx} y2={cy - 32 - fluxLen} tone="b" w={3}/><Arrow x1={cx + dx} y1={cy + 32 + fluxLen} x2={cx + dx} y2={cy + 32} tone="b" w={3}/></g>)}
+        <T x={cx + 220} y={cy - 54} anchor="start" size="sm" tone="b">flux out</T><T x={cx + 220} y={cy + 64} anchor="start" size="sm" tone="b">equal flux in</T>
+        <T x={cx} y={H - 12} size="sm" tone="b">every field line leaving the surface above enters below: net magnetic flux is zero</T>
+      </>}
+      {law === 'faraday' && <>
+        {Array.from({ length: 5 }, (_, r) => Array.from({ length: 9 }, (_, c) => <InOut key={`${r}-${c}`} x={140 + c * 55} y={40 + r * 48} out={false} r={6} opacity={0.5}/>))}
+        <T x={64} y={50} anchor="start" size="sm" tone="b">B into page</T>
+        <rect x={barX - 5} y={40} width={10} height={192} rx={3} className="bk-plate"/>
+        <Still><Arrow x1={barX + 12} y1={cy - 10} x2={barX + 12 + 60 * amount} y2={cy - 10} tone="motion" w={2}/><T x={barX + 16 + 60 * amount} y={cy - 6} anchor="start" size="sm" tone="motion" italic>υ</T></Still>
+        <Arrow x1={barX} y1={228} x2={barX} y2={228 - 150 * amount} tone="e" w={3}/><T x={barX - 12} y={228 - 75 * amount} anchor="end" size="sm" tone="e">emf</T>
+        <T x={cx} y={H - 12} size="sm" tone="e">the faster the conductor crosses the flux, the higher the electromotive force</T>
+      </>}
+      {law === 'ampere' && <>
+        {/* Line density follows the current/displacement rate; SpinLoops thread tangent to the circular B lines (right-hand grip). */}
+        {rings.map(r => <g key={r}><circle cx={cx} cy={cy} r={r} className="bk-s-b" fill="none" strokeWidth="1.6"/><Arrow x1={cx + r} y1={cy + 6} x2={cx + r} y2={cy - 6} tone="b" w={0.1} head={10}/></g>)}
+        <circle cx={cx} cy={cy} r={16} className="bk-plate"/><InOut x={cx} y={cy} out r={8} tone="text"/><T x={cx + 22} y={cy + 5} anchor="start" size="sm" tone="text" italic>I</T>
+        {[0, 60, 120, 180, 240, 300].map(a => { const r = rings[Math.min(1, rings.length - 1)] ?? 82, [x, y] = polar(cx, cy, r, a + 30); return <SpinLoop key={a} x={x} y={y} angle={a + 120} r={10} turn={state.current.spin + a} tone="motion"/>; })}
+        <T x={cx + (rings.at(-1) ?? 82) + 14} y={cy - 22} anchor="start" size="sm" tone="b">B</T>
+        <T x={cx} y={H - 12} size="sm" tone="b">a larger current, or a faster change in the polarization of the zeptons: a denser magnetic field</T>
+      </>}
     </Stage>}>
     <Choice label="Equation" value={law} onChange={setLaw} options={[{ value: 'gauss', label: '7-1' }, { value: 'gaussB', label: '7-3' }, { value: 'faraday', label: '7-4' }, { value: 'ampere', label: '7-6' }]}/>
     <Slider label={{ gauss: 'Size of the surface', gaussB: 'Strength of the spin', faraday: 'Speed of the conductor', ampere: 'Current, and rate of change' }[law]} value={amount} min={0.1} max={1} step={0.05} onChange={setAmount} show={v => `${Math.round(v * 100)} %`}/>

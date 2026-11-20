@@ -84,7 +84,7 @@ export function FieldPicture({ sources, w, h, perUnit = 8, lines = 1, zeptons = 
   const traced = useMemo(() => fieldLines(sources, { w, h }, perUnit, 16, offset), [sources, w, h, perUnit, offset]);
   return <g>
     {lines > 0 && traced.map((line, i) => {
-      const marks = alongLine(line.points, 150, Math.min(60, 40));
+      const marks = alongLine(line.points, 150, Math.min(60, 40)).filter(m => !radii || sources.every((s, j) => Math.hypot(m.x - s.x, m.y - s.y) > radii[j] + 8));
       return <g key={i} opacity={lines} className={`bk-s-${tone} bk-f-${tone}`}>
         <path d={pathThrough(line.points)} fill="none" strokeWidth="1.4"/>
         {marks.map((m, k) => <polygon key={k} points="6,0 -5,4.5 -5,-4.5" transform={`translate(${m.x} ${m.y}) rotate(${-m.angle})`} stroke="none"/>)}

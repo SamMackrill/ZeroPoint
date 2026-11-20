@@ -13,6 +13,8 @@ import { bodyVelocity, pushOfDrag, speedOfLight } from '../src/book/chapters/ch1
 import { spinRate } from '../src/book/chapters/ch11';
 import { orbitCycle, precessingRadius, starZeptonAngle, turnOrbitPoint } from '../src/book/chapters/ch12';
 import { orbitsToDouble, snapSpeed, speedName } from '../src/book/chapters/ch19';
+import { PATH_START, centralX } from '../src/book/three/photon-math';
+import { dividingRadius } from '../src/book/chapters/ch13';
 import { zeptonFacing } from '../src/book/chapters/ch15';
 import { dragOf, halfTurn } from '../src/book/chapters/ch20';
 
@@ -252,5 +254,14 @@ describe('book companion: diagrams', () => {
     }
     expect(dragOf(1)).toBe(0);
     expect(halfTurn(0.25, dragOf(1.515))).toBeLessThan(0.25);
+  });
+
+  it('Figure 19-2: each central zepton sits at the midpoint of its half-wavelength interval', () => {
+    expect(centralX(0)).toBeCloseTo(PATH_START + 0.25, 9);
+    expect(centralX(1)).toBeCloseTo(PATH_START + 0.75, 9);
+  });
+
+  it('Figure 13-1: half the mass of a uniform sphere lies inside ~0.794 R', () => {
+    expect(dividingRadius(0.5)).toBeCloseTo(0.7937, 3);
   });
 });

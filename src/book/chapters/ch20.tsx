@@ -52,7 +52,7 @@ function Torque() {
         <Zepton x={x} y={y} angle={(i % 2 ? -1 : 1) * (angle - z.lag) * (z.r > 100 ? 0.45 : 0.75)} len={24} oval={false} signs={false} opacity={0.5 + 0.4 * clamp(torque / 2.4)}/>
       </g>; })}
       <Zepton x={cx} y={cy} angle={angle} len={62} emphasis="key" signs/>
-      <Spin x={cx} y={cy} r={46} ccw sweep={60 + 220 * rate}/>
+      <Spin x={cx} y={cy} r={46} ccw sweep={Math.min(320, 60 + 180 * rate)}/>
       <Speedometer x={590} y={190} r={92} value={rate}/>
       {torque < 0.3 && <T x={cx} y={30} tone="danger" size="sm">with almost no field to resist it, a zepton would rotate almost without limit</T>}
     </Stage>}>
@@ -111,9 +111,9 @@ function Refraction() {
   // time, so in the medium, where it carries the light less far, the light is slower.
   // At a steep angle the incoming ray starts far off the stage's left edge; its sites begin where it comes into view (x 30),
   // keeping their half-wavelength spacing, so the light is seen from the first.
-  const half = 44, inView = inDir[0] > 0 ? Math.max(0, (30 - start[0]) / inDir[0]) : 0, sites = [
+  const half = 44, inView = inDir[0] > 0 ? Math.max(0, (30 - start[0]) / inDir[0]) : 0, outView = outDir[0] > 0 ? Math.min(down, (W - 30 - bx) / outDir[0]) : down, sites = [
     ...Array.from({ length: Math.ceil(up / half) }, (_, i) => ({ s: half / 2 + i * half, medium: false })).filter(z => z.s < up && z.s >= inView),
-    ...Array.from({ length: Math.ceil((down * n) / half) }, (_, i) => ({ s: (half / n) * (i + 0.5), medium: true })).filter(z => z.s < down),
+    ...Array.from({ length: Math.ceil((down * n) / half) }, (_, i) => ({ s: (half / n) * (i + 0.5), medium: true })).filter(z => z.s < outView),
   ];
   // Which zepton is carrying the light, and how far through its half-turn; after the last a short pause, then again.
   const at = (play.t * 2) % (sites.length + 0.8), now = Math.floor(at), u = at - now, carrying = now < sites.length;
@@ -123,6 +123,12 @@ function Refraction() {
   const lightAt = carrying ? where(now) : null, size = Math.min(24, (half / n) * 0.9);
   // The vacuum's zeptons near the light swing with it as it turns; in the medium the matter holds them too, so they swing
   // less freely, and that resistance is the drag on the light.
+  const labelFade = (x: number, y: number) => {
+    // Gently dim zeptons behind the two corner labels instead of deleting them, keeping the lattice continuous.
+    const dGlass = Math.hypot(Math.max(0, Math.abs(x - 130) - 96), Math.max(0, Math.abs(y - (by + 20)) - 10));
+    const dVac = Math.hypot(Math.max(0, Math.abs(x - (W - 148)) - 104), Math.max(0, Math.abs(y - 28) - 10));
+    return 0.14 + 0.31 * clamp(Math.min(dGlass, dVac) / 26);
+  };
   const field = REFRACTION_FIELD.map(z => {
     const medium = z.y > by, seg = medium ? nearest(z.x, z.y, [bx, by], outDir, down) : nearest(z.x, z.y, start, inDir, up);
     const swing = lightAt ? 45 * Math.exp(-Math.hypot(z.x - lightAt[0], z.y - lightAt[1]) / 55) * (medium ? 1 / (n * n) : 1) * (now % 2 ? 1 : -1) * Math.sin(Math.PI * u) : 0;
@@ -130,23 +136,23 @@ function Refraction() {
     const atom = medium ? REFRACTION_ATOMS.reduce((best, a) => (Math.hypot(a.x - z.x, a.y - z.y) < Math.hypot(best.x - z.x, best.y - z.y) ? a : best)) : null;
     const toward = atom ? bearing(z.x, z.y, atom.x, atom.y) : z.rest, gap = ((toward - z.rest + 540) % 360) - 180;
     // Each wobbles restlessly about that angle, freely in the vacuum, held still in proportion to the matter in the medium.
-    return { ...z, medium, near: seg.d, angle: wobbleAngle(z.rest + (atom ? 0.8 * matterHold * gap : 0), medium ? 1 - 0.85 * matterHold : 1, play.t, z.a, z.b) + swing };
-  }).filter(z => z.near > 18 && Math.abs(z.y - by) > 10 && z.y < H - 20 && !(z.x < 330 && z.y > by - 34 && z.y < by + 40));
+    return { ...z, medium, near: seg.d, opacity: labelFade(z.x, z.y), angle: wobbleAngle(z.rest + (atom ? 0.8 * matterHold * gap : 0), medium ? 1 - 0.85 * matterHold : 1, play.t, z.a, z.b) + swing };
+  }).filter(z => z.near > 18 && Math.abs(z.y - by) > 10 && z.y < H - 20);
   const kept = new Set(REFRACTION_FIELD.filter(z => field.some(f => f.x === z.x && f.y === z.y)));
   return <Diagram stage={
     <Stage w={W} h={H} label={`A ray of light entering ${named ? named.name : 'a medium'} at ${incidence} degrees from the normal, drawn as the zeptons along it turning as it passes. The zeptons round it swing in sympathy, ${n > 1.01 ? 'less freely in the medium, where the matter holds them too' : 'as freely on both sides'}. Inside, light travels at ${Math.round(speed * 100)} per cent of its speed in a vacuum and the ray is turned to ${fmt(inside, 3)} degrees.`}>
       <rect x={30} y={by} width={W - 60} height={H - by - 16} className="bk-fill-panel"/><line x1={30} y1={by} x2={W - 30} y2={by} className="bk-s-text" strokeWidth="2"/>
       {matterHold > 0 && REFRACTION_ATOMS.filter(a => nearest(a.x, a.y, [bx, by], outDir, down).d > 16).map((a, i) => <circle key={i} cx={a.x} cy={a.y} r={4 + 3 * matterHold} className="bk-f-matter" opacity={0.35 + 0.5 * matterHold}/>)}
       <TorqueLinks links={REFRACTION_LINKS.filter(([a, b]) => kept.has(a) && kept.has(b))} hold={(_, y) => (y > by ? 0.12 + 0.88 * matterHold : 0.12)}/>
-      {field.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={z.angle} len={16} oval={false} signs={false} opacity={0.45}/>)}
+      {field.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={z.angle} len={16} oval={false} signs={false} opacity={z.opacity}/>)}
       <line x1={bx} y1={30} x2={bx} y2={H - 20} className="bk-s-faint" strokeDasharray="3 5"/>
       <Line d={`M${start[0]} ${start[1]} L${bx} ${by} L${bx + outDir[0] * down} ${by + outDir[1] * down}`} tone="e" w={1.4} opacity={0.5}/>
       {sites.map((_, k) => { const [x, y] = where(k), on = carrying && k === now;
         return <g key={k}>{on && <circle cx={x} cy={y} r={17} className="bk-f-e" opacity={0.3}/>}
           <Zepton x={x} y={y} angle={turnOf(k)} len={on ? size + 4 : size} oval={false} signs={false} emphasis={on ? 'key' : 'normal'} opacity={on ? 1 : 0.35}/></g>; })}
-      <T x={44} y={by - 12} anchor="start" size="sm">vacuum: c₀, zeptons turn freely</T>
+      <T x={W - 44} y={32} anchor="end" size="sm">vacuum: c₀, zeptons turn freely</T>
       <T x={44} y={by + 24} anchor="start" size="sm">{named ? named.name : 'medium'}: {fmt(speed, 3)} c₀</T>
-      {matterHold > 0 && <><circle cx={50} cy={H - 7} r={5} className="bk-f-matter"/><T x={60} y={H - 3} anchor="start" size="sm">matter, holding the zeptons</T></>}
+      {matterHold > 0 && <><circle cx={50} cy={H - 11} r={5} className="bk-f-matter"/><T x={60} y={H - 7} anchor="start" size="sm">matter, holding the zeptons</T></>}
     </Stage>}>
     <Slider label="Torque in the medium (refractive index)" value={n} min={1} max={2.42} step={0.005} onChange={setN} show={v => { const m = mediumAt(v); return `${fmt(v, 4)}${m ? ` (${m.name})` : ''}`; }}/>
     <Slider label="Angle at which the light arrives" value={incidence} min={0} max={80} step={1} onChange={setIncidence} unit="°"/>

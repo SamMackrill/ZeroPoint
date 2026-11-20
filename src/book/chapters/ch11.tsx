@@ -1,6 +1,6 @@
 // Chapter 11: The Matter Dipole (PDF pp. 91–97). Figures 11-1 to 11-6.
-import { useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
-import { Action, Arrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, bearing, clamp, polar, rad, turn, usePlayback, type Source, Sb } from '../kit';
+import { useContext, useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode } from 'react';
+import { Action, Arrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, Line, PlayBar, Readout, Remark, RunningReport, Slider, Spin, Stage, Still, T, Toggle, Zepton, bearing, clamp, polar, rad, turn, usePlayback, type Source, Sb } from '../kit';
 import { Paper, Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 import { TwoSources, ZEPTON_PAIR, dumbbell } from './shared';
@@ -89,26 +89,56 @@ function ZeptonPair({ rotating }: { rotating: boolean }) {
 /** Figure 11-4: a moving body of matter makes the zeptons either side of it spin, giving a mattermagnetic field. */
 function MovingBody() {
   const [x, setX] = useState(200);
+  const [dir, setDir] = useState<1 | -1>(1);
+  const [dragging, setDragging] = useState(false);
+  const dragTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const report = useContext(RunningReport), dragKey = useRef({});
+  useEffect(() => {
+    report?.(dragKey.current, dragging);
+    return () => report?.(dragKey.current, false);
+  }, [report, dragging]);
+  useEffect(() => () => { if (dragTimer.current) clearTimeout(dragTimer.current); }, []);
   const play = usePlayback({ autoplay: false, speed: 0.22 });
+  const motion = useRef({ t: 0, x: 200, dir: 1 as 1 | -1 });
   const H = 340, y = 170, zx = 360, above = { x: zx, y: 84 }, below = { x: zx, y: 256 };
-  const bx = play.playing ? 110 + 500 * (0.5 - 0.5 * Math.cos(play.t * 2 * Math.PI)) : x, moving = play.playing ? Math.sign(Math.sin(play.t * 2 * Math.PI)) || 1 : 0;
+  const dt = Math.max(0, Math.min(0.05, play.t - motion.current.t));
+  motion.current.t = play.t;
+  if (play.playing) {
+    let next = motion.current.x + motion.current.dir * 220 * dt;
+    if (next >= 640) { next = 640; motion.current.dir = -1; }
+    else if (next <= 80) { next = 80; motion.current.dir = 1; }
+    motion.current.x = next;
+  } else {
+    motion.current.x = x;
+    motion.current.dir = dir;
+  }
+  const bx = motion.current.x, travel = motion.current.dir;
+  const moveManual = (nx: number) => {
+    if (play.playing) return;
+    if (Math.abs(nx - x) > 0.5) setDir(nx > x ? 1 : -1);
+    setX(nx);
+    setDragging(true);
+    if (dragTimer.current) clearTimeout(dragTimer.current);
+    dragTimer.current = setTimeout(() => setDragging(false), 350);
+  };
   // Each zepton keeps its antimatter end toward the body, so it turns as the body passes.
   const up = bearing(above.x, above.y, bx, y), down = bearing(below.x, below.y, bx, y);
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A body of matter on a line between two zeptons. Each keeps its antimatter end toward the body. ${moving ? `With the body moving ${moving > 0 ? 'right' : 'left'} the mattermagnetic field points ${moving > 0 ? 'out of' : 'into'} the page above it and ${moving > 0 ? 'into' : 'out of'} the page below.` : ''}`}>
+    <Stage w={W} h={H} label={`A body of matter on a line between two zeptons. Each keeps its antimatter end toward the body. With the body moving ${travel > 0 ? 'right' : 'left'} the mattermagnetic field points ${travel > 0 ? 'out of' : 'into'} the page above it and ${travel > 0 ? 'into' : 'out of'} the page below.`}>
       <line x1={60} y1={y} x2={660} y2={y} className="bk-s-faint" strokeDasharray="3 5"/>
       <Line d={`M${above.x} ${above.y} L${bx} ${y} L${below.x} ${below.y}`} tone="faint" dash="2 4"/>
       <Zepton x={above.x} y={above.y} angle={up} len={52} polarity="matter" signs/><Zepton x={below.x} y={below.y} angle={down} len={52} polarity="matter" signs/>
-      {moving !== 0 && <>
-        <Spin x={above.x} y={above.y} r={38} ccw={moving > 0} from={moving > 0 ? 20 : 160} sweep={140}/><Spin x={below.x} y={below.y} r={38} ccw={moving < 0} from={moving > 0 ? -20 : 200} sweep={140}/>
-        <InOut x={above.x + 78} y={above.y} out={moving > 0} r={10}/><InOut x={below.x + 78} y={below.y} out={moving < 0} r={10}/>
-        <T x={above.x + 96} y={above.y + 5} anchor="start" tone="b">B<Sb>m</Sb> {moving > 0 ? 'out of the page' : 'into the page'}</T><T x={below.x + 96} y={below.y + 5} anchor="start" tone="b">B<Sb>m</Sb> {moving < 0 ? 'out of the page' : 'into the page'}</T>
-        <Still><Arrow x1={bx + moving * 26} y1={y} x2={bx + moving * 62} y2={y} tone="motion" w={2.4}/></Still>
-      </>}
-      <Drag x={bx} y={y} onMove={nx => { if (!play.playing) setX(nx); }} bounds={{ x0: 80, y0: y, x1: 640, y1: y }} label="Body of matter"><Body x={bx} y={y} r={18}/><T x={bx} y={y + 6} tone="text" size="lg">M</T></Drag>
+      {/* Curled arrows and travel arrow show when paused (as printed) and fade while playing; B_m stays visible for the direction of motion. */}
+      <Spin x={above.x} y={above.y} r={38} ccw={travel > 0} from={travel > 0 ? 20 : 160} sweep={140}/>
+      <Spin x={below.x} y={below.y} r={38} ccw={travel < 0} from={travel > 0 ? -20 : 200} sweep={140}/>
+      <InOut x={above.x + 78} y={above.y} out={travel > 0} r={10}/><InOut x={below.x + 78} y={below.y} out={travel < 0} r={10}/>
+      <T x={above.x + 96} y={above.y + 5} anchor="start" tone="b">B<Sb>m</Sb> {travel > 0 ? 'out of the page' : 'into the page'}</T>
+      <T x={below.x + 96} y={below.y + 5} anchor="start" tone="b">B<Sb>m</Sb> {travel < 0 ? 'out of the page' : 'into the page'}</T>
+      <Still><Arrow x1={bx + travel * 26} y1={y} x2={bx + travel * 62} y2={y} tone="motion" w={2.4}/></Still>
+      <Drag x={bx} y={y} onMove={moveManual} bounds={{ x0: 80, y0: y, x1: 640, y1: y }} label="Body of matter"><Body x={bx} y={y} r={18}/><T x={bx} y={y + 6} tone="text" size="lg">M</T></Drag>
     </Stage>}>
-    <Slider label="Position of the body" value={Math.round(bx)} min={80} max={640} step={2} onChange={v => { if (!play.playing) setX(v); }} show={v => (v < 300 ? 'left' : v > 420 ? 'right' : 'between the zeptons')}/>
-    <Action onClick={() => { if (play.playing) setX(Math.round(bx)); play.toggle(); }}>{play.playing ? 'Stop the body' : 'Move the body'}</Action>
+    <Slider label="Position of the body" value={Math.round(bx)} min={80} max={640} step={2} onChange={moveManual} show={v => (v < 300 ? 'left' : v > 420 ? 'right' : 'between the zeptons')}/>
+    <Action onClick={() => { if (play.playing) { setX(Math.round(bx)); setDir(travel); } play.toggle(); }}>{play.playing ? 'Stop the body' : 'Move the body'}</Action>
     <Readout label="Upper zepton has turned" value={`${Math.round(turn(-90, up))}°`}/>
     <Readout label="Lower zepton has turned" value={`${Math.round(turn(90, down))}°`}/>
     <Remark>By the right hand grip rule the two opposite rotations are fields pointing opposite ways, out of the page on one side of the motion and into it on the other.</Remark>

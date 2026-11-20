@@ -218,7 +218,7 @@ function PrecessingTop() {
     <Slider label="Rate of spin" value={spin} min={0.3} max={3} step={0.1} onChange={setSpin} show={v => `${fmt(v, 2)} ×`}/>
     <Toggle label="Show Fleming’s explanation: the force on the spinning top" checked={field} onChange={setField}/>
     <PlayBar play={play} label="the top"/>
-    <Readout label="Precession" value={`${fmt(precessionRate(spin), 2)} × , ${clockwise ? 'clockwise' : 'counter-clockwise'}`}/>
+    <Readout label="Precession" value={`${fmt(precessionRate(spin), 2)} ×, ${clockwise ? 'clockwise' : 'counter-clockwise'}`}/>
     <Remark>{field ? 'The spinning top produces a mattermagnetic field, and gravity gives it a velocity downward. The force is at 90 degrees to that velocity, so it moves round and does not fall.' : 'Spin it the other way and it precesses the other way. Spin it faster and it precesses more slowly.'}</Remark>
   </Diagram>;
 }
@@ -297,13 +297,13 @@ function MovingSourceField() {
     <Stage w={W} h={H} label={`A ${matter ? 'body of matter' : 'positive charge'} moving up the page. At the point marked, ${Math.round(r)} units away at ${Math.round(alpha)} degrees from the motion, ${none ? `there is no ${matter ? 'mattermagnetic' : 'magnetic'} field` : `the ${matter ? 'mattermagnetic' : 'magnetic'} field points ${right ? 'into' : 'out of'} the page with relative strength ${fmt(strength, 2)}`}.`}>
       <Arrow x1={sx} y1={sy} x2={sx} y2={sy - 170} tone="motion" w={3}/><T x={sx - 14} y={sy - 90} anchor="end" tone="motion" size="lg">v</T>
       <Arrow x1={sx} y1={sy} x2={p.x} y2={p.y} tone="mark" w={2.2}/><T x={(sx + p.x) / 2 + 12} y={(sy + p.y) / 2 + 16} tone="mark" anchor="start" size="lg">r</T>
-      <Line d={arc} tone="accent" w={1.6}/><T x={polar(sx, sy, 74, 90 - (Math.sign(dx) || 1) * alpha / 2)[0]} y={polar(sx, sy, 74, 90 - (Math.sign(dx) || 1) * alpha / 2)[1]} tone="accent">α</T>
+      {alpha >= 6 && <><Line d={arc} tone="accent" w={1.6}/><T x={polar(sx, sy, 74, 90 - (Math.sign(dx) || 1) * alpha / 2)[0]} y={polar(sx, sy, 74, 90 - (Math.sign(dx) || 1) * alpha / 2)[1]} tone="accent">α</T></>}
       {matter ? <Body x={sx} y={sy} r={18}/> : <Charge x={sx} y={sy} sign={1} r={18}/>}
       <Drag x={p.x} y={p.y} onMove={(x, y) => setP({ x, y })} bounds={{ x0: 40, y0: 30, x1: W - 40, y1: H - 30 }} label="Point where the field is measured">
         {/* No field, no direction: an empty ring marks the point instead of ⊙ or ⊗. */}
         {none ? <circle cx={p.x} cy={p.y} r={7} className="bk-s-muted" fill="none" strokeWidth="1.5"/> : <InOut x={p.x} y={p.y} out={!right} r={6 + 16 * clamp(strength / 2)} tone="b"/>}
       </Drag>
-      <T x={p.x + 30} y={p.y - 18} anchor="start" tone="b" size="lg">{name}</T>
+      <T x={p.x > W - 80 ? p.x - 30 : p.x + 30} y={p.y - 18} anchor={p.x > W - 80 ? 'end' : 'start'} tone="b" size="lg">{name}</T>
       <T x={30} y={H - 14} anchor="start" size="sm">⊗ into the page on the right of the motion · ⊙ out of it on the left</T>
     </Stage>}>
     <Choice label="What is moving" value={matter ? 'matter' : 'charge'} onChange={v => setMatter(v === 'matter')} options={[{ value: 'charge', label: 'Charge q' }, { value: 'matter', label: 'Matter m' }]}/>

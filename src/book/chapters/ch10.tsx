@@ -1,6 +1,6 @@
 // Chapter 10: Inertia (PDF pp. 86–90). Figures 10-1 to 10-3.
-import { useMemo, useRef, useState, type PointerEvent } from 'react';
-import { BlockArrow, Body, Choice, Diagram, Drag, FieldPicture, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, bearing, clamp, fmt, usePlayback, type Source } from '../kit';
+import { useEffect, useMemo, useRef, useState, type PointerEvent } from 'react';
+import { BlockArrow, Body, Choice, Diagram, Drag, FieldPicture, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, Zepton, bearing, clamp, fmt, usePlayback, type Source } from '../kit';
 import { Eq, Frac, Pg, Q, Sqrt, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { SpinRow } from './shared';
@@ -30,7 +30,7 @@ function CurrentInertia() {
     <Slider label="Resistance of the circuit" value={resistance} min={0} max={1} step={0.05} onChange={setResistance} show={v => (v === 0 ? 'none' : fmt(v, 2))}/>
     <PlayBar play={play} label="the current"/>
     <Readout label="Current" value={`${Math.round(current * 100)} %`}/>
-    <Remark>{resistance === 0 ? (emf ? 'With no resistance the force only speeds the current up.' : 'No resistance and no force: the current continues indefinitely, and the zeptons go on turning.') : emf ? 'The force is needed only to overcome the resistance.' : 'With the force removed the resistance brings the current, and the rotation, to rest.'}</Remark>
+    <Remark>{current < 0.01 && !emf ? 'No current initially and no electromotive force: nothing starts.' : resistance === 0 ? (emf ? 'With no resistance the force only speeds the current up.' : 'No resistance and no force: the current continues indefinitely, and the zeptons go on turning.') : emf ? 'The force is needed only to overcome the resistance.' : 'With the force removed the resistance brings the current, and the rotation, to rest.'}</Remark>
   </Diagram>;
 }
 
@@ -108,32 +108,59 @@ function MatterInertia() {
 function RestField() {
   const [pos, setPos] = useState({ x: 360, y: 180 });
   const [mode, setMode] = useState<'lines' | 'zeptons'>('lines');
+  const [, setTick] = useState(0);
   const play = usePlayback();
-  const last = useRef({ x: 360, y: 180, t: 0, speed: 0, dir: 0 });
-  // How fast the body is being moved, smoothed, so the forced rotation shows while it moves and fades when it stops.
-  const dt = Math.max(1e-3, play.t - last.current.t), dx = pos.x - last.current.x, dy = pos.y - last.current.y, dist = Math.hypot(dx, dy);
-  if (play.t !== last.current.t) {
-    last.current.speed += (clamp(dist / dt / 300) - last.current.speed) * Math.min(1, dt * 6);
-    if (dist > 0.5) last.current.dir = bearing(last.current.x, last.current.y, pos.x, pos.y);
-    last.current.x = pos.x; last.current.y = pos.y; last.current.t = play.t;
+  const last = useRef({ x: 360, y: 180, pdx: 0, pdy: 0, vx: 0, vy: 0, dir: 0, spin: 0, wall: 0 });
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (settleTimer.current) clearTimeout(settleTimer.current); }, []);
+  // Filter velocity as a single 2D vector on one wall clock (≥15 ms buckets) so pointer jitter never flickers speed or direction.
+  const nowWall = typeof performance !== 'undefined' ? performance.now() / 1000 : play.t;
+  const st = last.current;
+  st.pdx += pos.x - st.x;
+  st.pdy += pos.y - st.y;
+  st.x = pos.x;
+  st.y = pos.y;
+  if (st.wall === 0) st.wall = nowWall;
+  const elapsed = nowWall - st.wall;
+  if (elapsed >= 0.015) {
+    const dt = Math.min(0.06, elapsed);
+    const alpha = 1 - Math.exp(-dt / 0.16);
+    st.vx += (st.pdx / dt - st.vx) * alpha;
+    st.vy += (st.pdy / dt - st.vy) * alpha;
+    st.pdx = 0;
+    st.pdy = 0;
+    st.wall = nowWall;
+    const vMag = Math.hypot(st.vx, st.vy);
+    if (vMag > 18) st.dir = bearing(0, 0, st.vx, st.vy);
+    st.spin += clamp(vMag / 260) * 360 * dt;
   }
-  const { speed, dir } = last.current, H = 360;
+  const speed = clamp(Math.hypot(st.vx, st.vy) / 260), show = clamp((speed - 0.04) / 0.16);
+  const { dir, spin } = st, H = 360;
+  const move = (x: number, y: number) => {
+    setPos({ x, y });
+    if (!play.playing) {
+      if (settleTimer.current) clearTimeout(settleTimer.current);
+      settleTimer.current = setTimeout(() => { st.vx = 0; st.vy = 0; st.pdx = 0; st.pdy = 0; setTick(n => n + 1); }, 280);
+    }
+  };
   const sources = useMemo<Source[]>(() => [{ x: pos.x, y: pos.y, q: -1 }], [pos.x, pos.y]);
   const side = (k: 1 | -1) => { const a = ((dir + k * 90) * Math.PI) / 180; return [pos.x + 62 * Math.cos(a), pos.y - 62 * Math.sin(a)] as const; };
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A body of matter with its matter field pointing toward it. ${speed > 0.05 ? 'It is being moved, and the zeptons either side of its path are forced to rotate.' : 'It is at rest.'}`}>
-      <FieldPicture sources={sources} w={W} h={H} perUnit={8} lines={mode === 'lines' ? 1 : 0} zeptons={mode === 'zeptons' ? 1 : 0} t={play.t} polarity="matter" tone="accent" zeptonLen={20}/>
-      {speed > 0.05 && <>
-        <Spin x={side(1)[0]} y={side(1)[1]} r={18 + 10 * speed} ccw sweep={240} opacity={Math.min(1, speed * 2)}/>
-        <Spin x={side(-1)[0]} y={side(-1)[1]} r={18 + 10 * speed} ccw={false} sweep={240} opacity={Math.min(1, speed * 2)}/>
-        <Vector x={pos.x} y={pos.y} angle={dir} len={40 + 50 * speed} tone="motion" w={2.4} opacity={Math.min(1, speed * 2)}/>
+    <Stage w={W} h={H} label={`A body of matter with its matter field pointing toward it. ${show > 0 ? 'It is being moved, and the zeptons either side of its path are forced to rotate.' : 'It is at rest.'}`}>
+      <FieldPicture sources={sources} w={W} h={H} perUnit={8} lines={mode === 'lines' ? 1 : 0} zeptons={mode === 'zeptons' ? 1 : 0} t={play.t} polarity="matter" tone="accent" zeptonLen={20} radii={[18]}/>
+      {show > 0.02 && <>
+        <Zepton x={side(1)[0]} y={side(1)[1]} angle={dir - 90 + spin} len={26} polarity="matter" emphasis="key" signs={false} opacity={show}/>
+        <Zepton x={side(-1)[0]} y={side(-1)[1]} angle={dir + 90 - spin} len={26} polarity="matter" emphasis="key" signs={false} opacity={show}/>
+        <Spin x={side(1)[0]} y={side(1)[1]} r={22} ccw sweep={240} opacity={show} steady/>
+        <Spin x={side(-1)[0]} y={side(-1)[1]} r={22} ccw={false} sweep={240} opacity={show} steady/>
+        <Vector x={pos.x} y={pos.y} angle={dir} len={36 + 34 * speed} tone="motion" w={2.4} opacity={show}/>
       </>}
-      <Drag x={pos.x} y={pos.y} onMove={(x, y) => setPos({ x, y })} bounds={{ x0: 40, y0: 40, x1: W - 40, y1: H - 40 }} label="Body of matter"><Body x={pos.x} y={pos.y} r={18} label="m"/></Drag>
+      <Drag x={pos.x} y={pos.y} onMove={move} bounds={{ x0: 40, y0: 40, x1: W - 40, y1: H - 40 }} label="Body of matter"><Body x={pos.x} y={pos.y} r={18}/><T x={pos.x} y={pos.y + 5} tone="text" italic>m</T></Drag>
     </Stage>}>
     <Choice label="Draw the matter field as" value={mode} onChange={setMode} options={[{ value: 'lines', label: 'Lines' }, { value: 'zeptons', label: 'Zeptons' }]}/>
     <PlayBar play={play} label="the field"/>
-    <Readout label="Zeptons forced to rotate" value={speed > 0.05 ? `${Math.round(speed * 100)} %` : 'none: at rest'} tone={speed > 0.05 ? 'b' : undefined}/>
-    <Remark>{speed > 0.05 ? 'A force must be exerted to make it move; the resistance is the zeptons, forced to rotate as the body moves.' : 'Drag the body. Left alone, the oriented zeptons of its rest frame keep it at rest.'}</Remark>
+    <Readout label="Zeptons forced to rotate" value={show > 0.02 ? `${Math.round(speed * 100)} %` : 'none: at rest'} tone={show > 0.02 ? 'b' : undefined}/>
+    <Remark>{show > 0.02 ? 'A force must be exerted to make it move; the resistance is the zeptons, forced to rotate as the body moves.' : 'Drag the body. Left alone, the oriented zeptons of its rest frame keep it at rest.'}</Remark>
   </Diagram>;
 }
 

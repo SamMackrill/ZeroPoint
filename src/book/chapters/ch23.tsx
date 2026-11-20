@@ -42,8 +42,8 @@ function ShapiroDelay() {
   // The signal slows near the Sun, greatly exaggerated: its speed follows a 1/r shape, as the torque round the Sun does, so it is
   // slowest where it passes closest. Its place at each moment comes from the time it has taken to cover the path so far.
   const timeline = useMemo(() => {
-    const n = 240, depth = 2.6, xs_ = Array.from({ length: n + 1 }, (_, i) => xe + ((xt - xe) * i) / n), t = [0];
-    for (let i = 1; i <= n; i++) { const xm = (xs_[i] + xs_[i - 1]) / 2, speed = 1 / (1 + depth * off / Math.hypot(xm - xs, off)); t.push(t[i - 1] + (xs_[i] - xs_[i - 1]) / speed); }
+    const n = 240, depth = 2.6, r0 = 16.2, xs_ = Array.from({ length: n + 1 }, (_, i) => xe + ((xt - xe) * i) / n), t = [0];
+    for (let i = 1; i <= n; i++) { const xm = (xs_[i] + xs_[i - 1]) / 2, speed = 1 / (1 + (depth * r0) / Math.hypot(xm - xs, off)); t.push(t[i - 1] + (xs_[i] - xs_[i - 1]) / speed); }
     return { xs: xs_, t: t.map(v => v / t[n]) };
   }, [off]);
   /** Where the signal is when a fraction `f` of the one-way time has passed. */
@@ -105,7 +105,7 @@ function LightBending() {
       <TorqueLinks links={BENDING_LINKS} hold={(lx, ly) => (both ? 1 : 0.35) * heldNear(Math.hypot(lx - cx, ly - cy), 24)}/>
       {BENDING_FIELD.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={wobbleAngle(z.rest, 1 - heldNear(Math.hypot(z.x - cx, z.y - cy), 24), play.t, z.a, z.b)} len={13} oval={false} signs={false} opacity={0.45}/>)}
       <Line d={pathThrough(ray)} tone="e" w={2}/>
-      <line x1={x} y1={cy} x2={x} y2={top} className="bk-s-mark" strokeDasharray="4 4"/>
+      <line x1={x} y1={yEarth} x2={x} y2={top} className="bk-s-mark" strokeDasharray="4 4"/>
       <Body x={cx} y={cy} r={22} tone="matter" label="Sun"/><Body x={x} y={H - 34} r={8} tone="plain"/><T x={x + 16} y={H - 30} anchor="start" size="sm">Earth</T>
       <circle cx={sx} cy={26} r={5} className="bk-f-e"/><T x={sx - 10} y={24} anchor="end" size="sm" tone="e">the star</T>
       <circle cx={x} cy={26} r={5} className="bk-s-mark" fill="none" strokeWidth="1.5"/><T x={x + 10} y={24} anchor="start" size="sm" tone="mark">where it appears</T>
@@ -218,7 +218,8 @@ function Redshift() {
   const z = redshift(GM_SUN, R_SUN), stretch = STRETCH, sites = STAR_SITES, links = STAR_TORQUE;
   const H = 360, speedAt = (x: number) => 1 - (stretch * STAR.r) / (x - STAR.x);
   // The light: each central zepton makes one half-turn, the next the other way; after the last a short pause, then again.
-  const at = (play.t * 2) % (sites.length + 1), now = Math.floor(at), u = at - now, carrying = now < sites.length;
+  // Before first play (or under reduced motion), show the full stretched wave across the stage.
+  const at = !play.playing && play.t === 0 ? sites.length : (play.t * 2) % (sites.length + 1), now = Math.floor(at), u = at - now, carrying = now < sites.length;
   const turnOf = (k: number) => 90 + (k % 2 ? 1 : -1) * 180 * (k < now ? 1 : k > now ? 0 : u);
   const front = carrying ? sites[now] + (u * ((sites[now + 1] ?? RAY_END) - sites[now])) : RAY_END, redness = clamp((front - sites[0]) / (RAY_END - sites[0]));
   // The wave the light leaves behind it, one cycle each two sites: its wavelength grows as it climbs.

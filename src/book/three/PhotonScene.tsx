@@ -13,26 +13,27 @@ import { PATH_SITES, PATH_START } from './photon-math';
 /**
  * What the scene draws at a moment: the central zepton's angle and opening, where it sits and how far the photon's front has got along x, and how far its field reaches (wavelengths).
  */
-export interface PhotonFrame { central: number; open: number; x: number; front: number; reach: number }
+export interface PhotonFrame { central: number; open: number; x: number; front: number; reach: number; waveSign?: 1 | -1 }
 
-/** A zepton: a bar with a positive and a negative end, lying along its local y axis and turned about x; its materials can be swapped. */
+/** A zepton: a bar with a positive and a negative end, starting along x and turned in the x-y plane about z (so E lies along y and B along z). */
 function zepton(length: number, ball: number, materials: { bar: THREE.Material; pos: THREE.Material; neg: THREE.Material }) {
   const group = new THREE.Group(), inner = new THREE.Group();
   const rod = new THREE.Mesh(new THREE.CylinderGeometry(ball * 0.32, ball * 0.32, length, 8), materials.bar);
+  rod.rotation.z = Math.PI / 2;
   const plus = new THREE.Mesh(new THREE.SphereGeometry(ball, 14, 10), materials.pos), minus = new THREE.Mesh(new THREE.SphereGeometry(ball, 14, 10), materials.neg);
-  plus.position.y = length / 2;
-  minus.position.y = -length / 2;
+  plus.position.x = length / 2;
+  minus.position.x = -length / 2;
   inner.add(rod, plus, minus);
   group.add(inner);
   return {
     group,
     set(angle: number, open: number, look?: { bar: THREE.Material; pos: THREE.Material; neg: THREE.Material }) {
       const o = Math.max(0.2, open);
-      group.rotation.x = angle;
-      inner.scale.set(1, o, 1);
+      group.rotation.z = angle;
+      inner.scale.set(o, 1, 1);
       // Undo the squash on the balls, along the bar only, so they stay round as the zepton opens and closes.
-      plus.scale.set(1, 1 / o, 1);
-      minus.scale.set(1, 1 / o, 1);
+      plus.scale.set(1 / o, 1, 1);
+      minus.scale.set(1 / o, 1, 1);
       if (look) { rod.material = look.bar; plus.material = look.pos; minus.material = look.neg; }
     },
   };
@@ -78,13 +79,13 @@ export default function PhotonScene({ frame, onFail, onReady, description }: { f
         scene.add(arrow.group, tag);
       }
 
-      // The path: dashed along x, with a small dot where each central zepton appears.
-      const end = PATH_START + 0.5 * (PATH_SITES - 1);
+      // The path: dashed along x, with a small dot where each central zepton sits (the middle of each half wavelength).
+      const end = PATH_START + 0.5 * PATH_SITES;
       const path = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(PATH_START - 0.4, 0, 0), new THREE.Vector3(end + 0.4, 0, 0)]), new THREE.LineDashedMaterial({ color: palette.text3, dashSize: 0.08, gapSize: 0.08 }));
       path.computeLineDistances();
       scene.add(path);
       const siteDot = new THREE.SphereGeometry(0.035, 10, 8), siteMaterial = new THREE.MeshBasicMaterial({ color: palette.text3 });
-      for (let i = 0; i < PATH_SITES; i++) { const dot = new THREE.Mesh(siteDot, siteMaterial); dot.position.x = PATH_START + 0.5 * i; scene.add(dot); }
+      for (let i = 0; i < PATH_SITES; i++) { const dot = new THREE.Mesh(siteDot, siteMaterial); dot.position.x = PATH_START + 0.5 * (i + 0.5); scene.add(dot); }
 
       // The central zepton: an electron and a positron, as in the laboratory.
       const centre = zepton(0.6, 0.1, { bar: new THREE.MeshStandardMaterial({ color: palette.text, roughness: 0.4 }), pos: new THREE.MeshStandardMaterial({ color: palette.dataPos, roughness: 0.5 }), neg: new THREE.MeshStandardMaterial({ color: palette.dataNeg, roughness: 0.5 }) });
@@ -127,10 +128,15 @@ export default function PhotonScene({ frame, onFail, onReady, description }: { f
       api.current = f => {
         centre.group.position.x = f.x;
         centre.set(f.central, f.open);
-        // The waves run from where the photon entered to its front, a wavelength to each cycle, moving with it.
+        // The waves trail from PATH_START to the photon's front, anchored to the sites so each half-wave crest aligns with the
+        // central zepton at its midpoint, flipping sign via `waveSign` when an odd-length path wraps.
+        const sign = f.waveSign ?? 1;
         const points = (plane: 'y' | 'z') => {
-          const from = PATH_START - 0.4, n = Math.max(2, Math.round((f.front - from) * 40));
-          return Array.from({ length: n + 1 }, (_, i) => { const x = from + ((f.front - from) * i) / n, v = 0.55 * Math.sin(2 * Math.PI * (x - f.front)); return new THREE.Vector3(x, plane === 'y' ? v : 0, plane === 'z' ? v : 0); });
+          const from = PATH_START, span = Math.max(0.05, f.front - from), n = Math.max(2, Math.round(span * 40));
+          return Array.from({ length: n + 1 }, (_, i) => {
+            const x = from + (span * i) / n, s = 0.55 * sign * Math.sin(2 * Math.PI * (x - PATH_START));
+            return new THREE.Vector3(x, plane === 'y' ? s : 0, plane === 'z' ? -s : 0);
+          });
         };
         waveE.geometry.dispose(); waveE.geometry = new THREE.BufferGeometry().setFromPoints(points('y'));
         waveB.geometry.dispose(); waveB.geometry = new THREE.BufferGeometry().setFromPoints(points('z'));
