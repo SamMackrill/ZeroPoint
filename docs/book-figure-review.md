@@ -515,3 +515,12 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** the bar for the speed of light leaves the box; use a speedometer, as in a car. **Done:** a `Speedometer` dial, 240° from 0 to 5 c₀ (the slider's top speed), ticks each half, free space's 1 c₀ in the accent colour, a red needle under the numbers, the reading beneath the hub.
 - **Owner:** moving the slider resets the central zepton, so the motion is jerky. **Fixed:** the torque carries an angle offset, so a change alters only the rate of turning, not the angle.
 - **Owner:** much better.
+
+### Explorer x20-2
+
+- **Owner:** the yellow dots are really rotating zeptons; match the book's depiction of light in the zero-point field, and show that the vacuum's zeptons turn more freely than the glass's, which retards the light's rotation and so its speed. **Asked:** measured light keeps its frequency in glass; the owner chose "same beat, turn hampered". **Done:** zeptons along the ray, the vacuum's zeptons in a faint lattice round it swinging with the light, less freely (1/n²) in the medium; each half-turn in the medium is held back then catches up (`halfTurn`, `dragOf`, tested).
+- **Owner:** the sense of the light travelling is lost; light one zepton and dim the rest. **Done:** the zepton carrying the light is lit with a glow and moves along the ray.
+- **Owner:** the light-bearing zeptons should alternate direction, as in the other depictions of light. **Done:** one central zepton each half wavelength (n times closer in the medium), each making one half-turn, alternately one way and the other (Figure 5-1); upright before the light, turned over after; the nearby zeptons swing only round the lit one.
+- **Owner:** add indicators for the matter, the cause of the extra torque. **Done:** atoms in the medium, plainer the higher the index, each zepton beside them held partly turned towards the nearest; a key for matter.
+- **Owner:** what is the white arrow? (It marked the ray's turn, not a computed torque.) Move the matter key to the bottom left. **Done:** the key moved; the arrow removed at the owner's choice, the bend and the "Turned by" readout show the turn.
+- **Owner:** very good.

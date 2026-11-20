@@ -1,6 +1,6 @@
 // Chapter 20: The Origin of the Speed of Light (PDF pp. 151–152). No figures: two explorers.
 import { useMemo, useState } from 'react';
-import { Arrow, Diagram, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Zepton, clamp, deg, fmt, rad, rng, usePlayback } from '../kit';
+import { Arrow, Diagram, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Zepton, bearing, clamp, deg, fmt, rad, rng, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -70,33 +70,79 @@ export const mediumAt = (n: number) => MEDIA.find(m => Math.abs(m.n - n) < 0.012
 /** The angle of the refracted ray from the normal, in degrees, for an angle of incidence and a refractive index (Snell's law). */
 export const refractedAngle = (incidence: number, n: number) => deg(Math.asin(Math.sin(rad(incidence)) / n));
 
+/** How hard the medium's zeptons drag on the photon's turn, from 0 (vacuum) to 0.85 (diamond), for a refractive index. */
+export const dragOf = (n: number) => 0.85 * clamp((n - 1) / 1.42);
+
+/**
+ * How far through its half-turn (0 to 1) a zepton carrying the light is, a fraction `u` of the way through its time. Every
+ * half-turn takes the same time, but with drag it is held back at first and catches up after: the shape of a turn against
+ * a resistance. With no drag it turns steadily.
+ */
+export const halfTurn = (u: number, drag: number) => u - (drag * Math.sin(2 * Math.PI * u)) / (2 * Math.PI);
+
+/** The point on a segment from `a` along unit `dir` for `length` nearest to (x, y), and how far along it is. */
+function nearest(x: number, y: number, a: readonly [number, number], dir: readonly [number, number], length: number) {
+  const s = clamp((x - a[0]) * dir[0] + (y - a[1]) * dir[1], 0, length);
+  return { s, d: Math.hypot(x - (a[0] + dir[0] * s), y - (a[1] + dir[1] * s)) };
+}
+
+/** The vacuum's zeptons round the ray: a loose lattice, each with a scattered resting angle. */
+const REFRACTION_FIELD = (() => { const random = rng(2002); return Array.from({ length: 16 * 8 }, (_, k) => ({ x: 44 + (k % 16) * 42 + (Math.floor(k / 16) % 2) * 21, y: 30 + Math.floor(k / 16) * 46, rest: random() * 180 })); })();
+
+/** The medium's matter: atoms set between the rows of zeptons below the surface (at y 190). */
+const REFRACTION_ATOMS = Array.from({ length: 3 * 8 }, (_, k) => ({ x: 65 + (k % 8) * 84 + (Math.floor(k / 8) % 2) * 42, y: 237 + Math.floor(k / 8) * 46 })).filter(a => a.x < 690);
+
 /** Explorer: light entering a medium where the torque is greater slows down and is turned. */
 function Refraction() {
   const [n, setN] = useState(1.515);
   const [incidence, setIncidence] = useState(45);
   const play = usePlayback({ speed: 0.45 });
-  const H = 380, bx = 360, by = 190, inside = refractedAngle(incidence, n), speed = 1 / n, named = mediumAt(n);
+  const H = 380, bx = 360, by = 190, inside = refractedAngle(incidence, n), speed = 1 / n, named = mediumAt(n), drag = dragOf(n), matterHold = clamp((n - 1) / 1.42);
   const ai = rad(incidence), ar = rad(inside), up = 190 / Math.cos(ai), down = 180 / Math.cos(ar);
-  // Marks along the ray one wavelength apart: closer together in the medium, where the same frequency travels more slowly.
-  const marks = (len: number, spacing: number, dir: [number, number], from: [number, number], phase: number) => Array.from({ length: Math.ceil(len / spacing) + 1 }, (_, i) => (i + phase) * spacing).filter(s => s < len).map(s => [from[0] + dir[0] * s, from[1] + dir[1] * s] as const);
-  const p = play.t % 1, inDir: [number, number] = [Math.sin(ai), Math.cos(ai)], outDir: [number, number] = [Math.sin(ar), Math.cos(ar)], start: [number, number] = [bx - inDir[0] * up, by - inDir[1] * up];
+  const inDir = [Math.sin(ai), Math.cos(ai)] as const, outDir = [Math.sin(ar), Math.cos(ar)] as const, start = [bx - inDir[0] * up, by - inDir[1] * up] as const;
+  // The light is a series of central zeptons, one each half wavelength (44 in the vacuum, n times closer in the medium),
+  // each making one half-turn, alternate ones turning opposite ways, as in Figure 5-1. Every half-turn takes the same
+  // time, so in the medium, where it carries the light less far, the light is slower.
+  const half = 44, sites = [
+    ...Array.from({ length: Math.ceil(up / half) }, (_, i) => ({ s: half / 2 + i * half, medium: false })).filter(z => z.s < up),
+    ...Array.from({ length: Math.ceil((down * n) / half) }, (_, i) => ({ s: (half / n) * (i + 0.5), medium: true })).filter(z => z.s < down),
+  ];
+  // Which zepton is carrying the light, and how far through its half-turn; after the last a short pause, then again.
+  const at = (play.t * 2) % (sites.length + 0.8), now = Math.floor(at), u = at - now, carrying = now < sites.length;
+  const where = (k: number) => { const z = sites[k], from = z.medium ? [bx, by] : start, dir = z.medium ? outDir : inDir; return [from[0] + dir[0] * z.s, from[1] + dir[1] * z.s] as const; };
+  // A zepton's angle: upright before the light reaches it, turned over once it has passed, and between while it carries it.
+  const turnOf = (k: number) => { const way = k % 2 ? 1 : -1, done = k < now ? 1 : k > now ? 0 : halfTurn(u, sites[k].medium ? drag : 0); return 90 + way * 180 * done; };
+  const lightAt = carrying ? where(now) : null, size = Math.min(24, (half / n) * 0.9);
+  // The vacuum's zeptons near the light swing with it as it turns; in the medium the matter holds them too, so they swing
+  // less freely, and that resistance is the drag on the light.
+  const field = REFRACTION_FIELD.map(z => {
+    const medium = z.y > by, seg = medium ? nearest(z.x, z.y, [bx, by], outDir, down) : nearest(z.x, z.y, start, inDir, up);
+    const swing = lightAt ? 45 * Math.exp(-Math.hypot(z.x - lightAt[0], z.y - lightAt[1]) / 55) * (medium ? 1 / (n * n) : 1) * (now % 2 ? 1 : -1) * Math.sin(Math.PI * u) : 0;
+    // In the medium the matter holds each zepton turned partly towards its nearest atom, the more so the denser the medium.
+    const atom = medium ? REFRACTION_ATOMS.reduce((best, a) => (Math.hypot(a.x - z.x, a.y - z.y) < Math.hypot(best.x - z.x, best.y - z.y) ? a : best)) : null;
+    const toward = atom ? bearing(z.x, z.y, atom.x, atom.y) : z.rest, gap = ((toward - z.rest + 540) % 360) - 180;
+    return { ...z, medium, near: seg.d, angle: z.rest + (atom ? 0.8 * matterHold * gap : 0) + swing };
+  }).filter(z => z.near > 18 && Math.abs(z.y - by) > 10 && z.y < H - 20 && !(z.x < 330 && z.y > by - 34 && z.y < by + 40));
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A ray of light entering ${named ? named.name : 'a medium'} at ${incidence} degrees from the normal. Inside, light travels at ${Math.round(speed * 100)} per cent of its speed in a vacuum and the ray is turned to ${fmt(inside, 3)} degrees.`}>
+    <Stage w={W} h={H} label={`A ray of light entering ${named ? named.name : 'a medium'} at ${incidence} degrees from the normal, drawn as the zeptons along it turning as it passes. The zeptons round it swing in sympathy, ${n > 1.01 ? 'less freely in the medium, where the matter holds them too' : 'as freely on both sides'}. Inside, light travels at ${Math.round(speed * 100)} per cent of its speed in a vacuum and the ray is turned to ${fmt(inside, 3)} degrees.`}>
       <rect x={30} y={by} width={W - 60} height={H - by - 16} className="bk-fill-panel"/><line x1={30} y1={by} x2={W - 30} y2={by} className="bk-s-text" strokeWidth="2"/>
+      {matterHold > 0 && REFRACTION_ATOMS.filter(a => nearest(a.x, a.y, [bx, by], outDir, down).d > 16).map((a, i) => <circle key={i} cx={a.x} cy={a.y} r={4 + 3 * matterHold} className="bk-f-matter" opacity={0.35 + 0.5 * matterHold}/>)}
+      {field.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={z.angle} len={16} oval={false} signs={false} opacity={0.45}/>)}
       <line x1={bx} y1={30} x2={bx} y2={H - 20} className="bk-s-faint" strokeDasharray="3 5"/>
-      <Line d={`M${start[0]} ${start[1]} L${bx} ${by} L${bx + outDir[0] * down} ${by + outDir[1] * down}`} tone="e" w={2}/>
-      {marks(up, 44, inDir, start, p).map(([x, y], i) => <circle key={`a${i}`} cx={x} cy={y} r={5} className="bk-f-mark"/>)}
-      {marks(down, 44 * speed, outDir, [bx, by], p).map(([x, y], i) => <circle key={`b${i}`} cx={x} cy={y} r={5} className="bk-f-mark"/>)}
-      {n > 1.01 && <Spin x={bx} y={by} r={26} ccw={false} from={90 + incidence} sweep={Math.max(8, (incidence - inside) * 2.2)} tone="text" w={2.4} steady/>}
-      <T x={60} y={by - 12} anchor="start" size="sm">vacuum: c₀</T><T x={60} y={by + 24} anchor="start" size="sm">{named ? named.name : 'medium'}: {fmt(speed, 3)} c₀</T>
-      <T x={bx + 60} y={H - 34} anchor="start" size="sm" tone="mark">● one wavelength apart</T>
+      <Line d={`M${start[0]} ${start[1]} L${bx} ${by} L${bx + outDir[0] * down} ${by + outDir[1] * down}`} tone="e" w={1.4} opacity={0.5}/>
+      {sites.map((_, k) => { const [x, y] = where(k), on = carrying && k === now;
+        return <g key={k}>{on && <circle cx={x} cy={y} r={17} className="bk-f-e" opacity={0.3}/>}
+          <Zepton x={x} y={y} angle={turnOf(k)} len={on ? size + 4 : size} oval={false} signs={false} emphasis={on ? 'key' : 'normal'} opacity={on ? 1 : 0.35}/></g>; })}
+      <T x={44} y={by - 12} anchor="start" size="sm">vacuum: c₀, zeptons turn freely</T>
+      <T x={44} y={by + 24} anchor="start" size="sm">{named ? named.name : 'medium'}: {fmt(speed, 3)} c₀</T>
+      {matterHold > 0 && <><circle cx={50} cy={H - 7} r={5} className="bk-f-matter"/><T x={60} y={H - 3} anchor="start" size="sm">matter, holding the zeptons</T></>}
     </Stage>}>
     <Slider label="Torque in the medium (refractive index)" value={n} min={1} max={2.42} step={0.005} onChange={setN} show={v => { const m = mediumAt(v); return `${fmt(v, 4)}${m ? ` (${m.name})` : ''}`; }}/>
     <Slider label="Angle at which the light arrives" value={incidence} min={0} max={80} step={1} onChange={setIncidence} unit="°"/>
     <PlayBar play={play} label="the light"/>
     <Readout label="Speed in the medium" value={`${fmt(speed * 100, 3)} % of c₀`} tone="good"/>
     <Readout label="Turned by" value={`${fmt(incidence - inside, 3)}°`} tone="force"/>
-    <Remark>{n < 1.01 ? 'No matter, no extra torque: the light goes straight on at c₀.' : 'In a typical glass the speed of light may be only 66% of its usual value. The torque that slows it is also the torque that turns it.'}</Remark>
+    <Remark>{n < 1.01 ? 'No matter, no extra torque: the zeptons turn as freely on both sides, and the light goes straight on at c₀.' : 'The medium’s zeptons answer the matter as well as the light, so they turn less freely. Each half-turn of the light is dragged and carries it less far: in a typical glass only 66% as far. The same torque turns the ray.'}</Remark>
   </Diagram>;
 }
 
@@ -125,8 +171,8 @@ const chapter: ChapterContent = {
         <p>Why light slows in glass has, Fleming says, no reasonable account: the photon is said to be absorbed and re-emitted, <Q>the catch-and-release model</Q>, which <Q>is not in keeping with standard physics of photon interactions</Q> (<Pg n={152}/>).</p>
         <p><Q>According to the London-van der Waals torque model, the amount of torque increases in the presence of matter since the vacuum fluctuations respond to both the matter and the photon, making for a greater amount of drag on the photon’s central zepton rotation. The London-van der Waals torque also directly converts to a real measurable torque as seen in the refraction, or bending, of the light as it enters glass, water, or other matter medium.</Q></p>
       </>,
-      tryThis: ['Set the medium to typical glass and read the speed: 66 % of its value in a vacuum, the figure in the text.', 'Watch the marks cross the surface: they bunch up inside, where the light is slower.', 'Send the light in straight (0°): it slows but is not turned. Tilt it and the turn grows.'],
-      notes: <p>The bending is Snell’s law for the ratio of speeds, which is the measured behaviour the text refers to; the refractive index stands for the relative torque. The curved arrow at the surface marks the turn and is not a computed torque.</p>,
+      tryThis: ['Set the medium to typical glass and read the speed: 66 % of its value in a vacuum, the figure in the text.', 'Follow the lit zepton, where the light is: it crosses the surface and goes on more slowly. Each zepton makes one half-turn, the next the other way. Inside, each half-turn is dragged and carries the light less far, so the zeptons bunch up, and the zeptons round them swing less freely.', 'Send the light in straight (0°): it slows but is not turned. Tilt it and the turn grows.'],
+      notes: <p>The light is drawn as its series of central zeptons, one each half wavelength, each making one half-turn, alternately one way and the other (Figure 5-1). Every half-turn takes the same time, so the frequency is the same in the medium; there each is held back and then catches up, a drag in proportion to the refractive index, and the zeptons nearby swing with it, by 1/n² as much as in the vacuum. The medium’s matter is drawn as atoms, plainer the higher the index, each zepton beside them held partly turned towards the nearest: they respond to the matter as well as the light, which is the extra torque. Fleming gives the drag, not its form. The bending is Snell’s law for the ratio of speeds, which is the measured behaviour the text refers to; the refractive index stands for the relative torque.</p>,
     },
   ],
 };
