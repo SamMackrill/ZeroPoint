@@ -524,3 +524,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** add indicators for the matter, the cause of the extra torque. **Done:** atoms in the medium, plainer the higher the index, each zepton beside them held partly turned towards the nearest; a key for matter.
 - **Owner:** what is the white arrow? (It marked the ray's turn, not a computed torque.) Move the matter key to the bottom left. **Done:** the key moved; the arrow removed at the owner's choice, the bend and the "Turned by" readout show the turn.
 - **Owner:** very good.
+
+### Explorer x22-1
+
+- **Owner:** the zero-point field, all-important to the effect, is missing; draw the clocks as pendulum clocks, to show a physical interaction with it. **Done:** a lattice of zeptons in two lanes; a pendulum clock at rest above, its hand stepping once a beat; a second crossing the lower lane at a speed in proportion to v, its pendulum swinging at 1/γ the rate; the old motion arrow dropped; each clock's name beneath it.
+- **Owner:** make the clocks semi-transparent, and have the moving clock spin up the field near it. **Done:** see-through cases and faces; zeptons near the moving clock spin up with its speed, one way above its middle and the other below, and spin down slowly behind it, staying in place.
+- **Owner:** excellent.
