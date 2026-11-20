@@ -1,6 +1,6 @@
 // Chapter 26: The Weak Interaction (PDF pp. 201–206). Figure 26-1.
 import { useState } from 'react';
-import { Charge, Choice, Diagram, PlayBar, Readout, Remark, Stage, T, Zepton, clamp, ease, lerp, usePlayback } from '../kit';
+import { Arrow, Charge, Choice, Diagram, PlayBar, Readout, Remark, Stage, T, Zepton, clamp, ease, lerp, polar, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 
@@ -18,33 +18,52 @@ export const PROCESSES: Record<Process, { name: string; boundary: string; inside
 function PairAtBoundary() {
   const [process, setProcess] = useState<Process>('hawking');
   const play = usePlayback({ speed: 0.22 });
-  const spec = PROCESSES[process], H = 380, cx = 230, cy = 190, R = process === 'capture' ? 40 : 110, u = play.t % 1;
-  // Four steps: the pair forms just outside the boundary, opens, one half crosses, and the other is left free.
-  const forming = ease(u / 0.2), parting = ease((u - 0.25) / 0.3), settled = ease((u - 0.6) / 0.25), done = u > 0.86;
-  // In capture the pair is as wide as the atom (p. 204): its positron half lies at the orbital electron and its electron
-  // half in the nucleus, so neither travels. Elsewhere the pair forms at the boundary and its halves part.
-  const capture = process === 'capture', bx = capture ? cx + 115 : cx + R + 14;
+  const spec = PROCESSES[process], H = 380, cx = 230, cy = 190, R = process === 'capture' ? 40 : 110;
+  // Before first play (or under reduced motion), show the pair formed at the boundary as printed.
+  const u = !play.playing && play.t === 0 ? 0.24 : play.t % 1;
+  // Four steps: the pair forms and opens, one half crosses into the boundary, and the other annihilates or escapes free.
+  const forming = ease(u / 0.26), parting = ease((u - 0.28) / 0.26), settled = ease((u - 0.52) / 0.22), drop = ease((u - 0.62) / 0.24), done = u > 0.86;
+  // In capture the pair opens between the nucleus and an inner orbital electron (pp. 203–204): the electron is absorbed
+  // by a proton to form a neutral neutron, the positron annihilates the inner orbital electron, and an outer orbital
+  // electron drops into the vacated orbital, emitting a photon.
+  const capture = process === 'capture', innerR = 136, outerR = 180, bx = capture ? cx + 80 : cx + R + 14;
   // The half that stays outside moves off in one continuous motion: gathering speed as the pair parts, then carrying on
   // steadily once free, rather than stopping between the two.
-  const away = clamp((u - 0.25) / 0.75), flight = away < 0.3 ? (away * away) / 0.6 : away - 0.15;
-  const inward = capture ? cx + 10 : lerp(bx - 14, cx + 40, parting), outward = capture ? cx + 222 : bx + 14 + (300 * flight) / 0.85;
+  const away = clamp((u - 0.28) / 0.72), flight = away < 0.3 ? (away * away) / 0.6 : away - 0.15;
+  const inward = capture ? lerp(cx + 22, cx, parting) : lerp(bx - 14, cx + 40, parting);
+  const outward = capture ? lerp(cx + innerR - 8, cx + innerR, parting) : bx + 14 + (300 * flight) / 0.85;
   // In neutron decay the positron goes in and the electron out; in electron capture the electron goes in.
-  const inSign: 1 | -1 = process === 'capture' ? -1 : 1, outSign = (-inSign) as 1 | -1, orbital = { x: cx + 230, y: cy };
+  const inSign: 1 | -1 = process === 'capture' ? -1 : 1, outSign = (-inSign) as 1 | -1, orbital = { x: cx + innerR, y: cy };
   const annihilate = process === 'neutron' ? settled : 0, flashOut = process === 'capture' ? settled : 0;
+  const absorbed = capture ? ease((u - 0.44) / 0.18) : 0;
+  const outerPos = polar(cx, cy, lerp(outerR, innerR, drop), lerp(32, 0, drop));
+  const [ph1x, ph1y] = polar(cx, cy, innerR + 18 + 38 * drop, 16);
+  const [ph2x, ph2y] = polar(cx, cy, innerR + 48 + 38 * drop, 16);
   return <Diagram stage={
     <Stage w={W} h={H} label={`${spec.name}. ${process === 'capture' ? 'A virtual pair as wide as the atom forms between the nucleus and an orbital electron' : `A virtual particle pair forms just outside the ${spec.boundary}`}. ${spec.enters}. ${spec.freed}. What is left is ${spec.left}.`}>
       <circle cx={cx} cy={cy} r={R} className={process === 'hawking' ? 'bk-fill-panel bk-s-text' : 'bk-body bk-body-plain'} strokeWidth="2" strokeDasharray={process === 'hawking' ? '6 4' : undefined}/>
       {process === 'hawking' && <><circle cx={cx} cy={cy} r={R - 26} className="bk-f-faint" opacity={0.5}/><T x={cx} y={cy + 5} tone="text">black hole</T><T x={cx} y={cy - R - 12} size="sm">event horizon</T></>}
       {process === 'neutron' && <><Charge x={cx - 26} y={cy} sign={1} r={18}/><Charge x={cx + 30} y={cy + 6} sign={-1} r={11} opacity={1 - annihilate}/><T x={cx} y={cy - R - 12} size="sm">{done ? 'now a proton' : 'neutron: a proton with an electron'}</T></>}
-      {process === 'capture' && <><circle cx={cx} cy={cy} r={230} className="bk-s-faint" fill="none" strokeDasharray="2 6"/><Charge x={cx} y={cy} sign={1} r={16} opacity={1 - 0.6 * settled}/><T x={cx} y={cy - R - 12} size="sm">{done ? 'proton and electron: a neutron' : 'nucleus'}</T><Charge x={orbital.x} y={orbital.y} sign={-1} r={10} opacity={1 - flashOut} label="orbital electron"/></>}
-      {u < 0.3 && <Zepton x={bx} y={cy - 0} angle={inSign > 0 ? 180 : 0} len={capture ? 212 : 34} open={capture ? 1 : forming} oval={!capture} signs={false} emphasis="key" opacity={forming}/>}
-      {u >= 0.25 && <>
-        <Charge x={inward} y={cy} sign={inSign} r={9} opacity={process === 'neutron' ? 1 - annihilate : process === 'capture' ? 1 : 1 - 0.7 * settled}/>
-        <Charge x={outward} y={cy} sign={outSign} r={9} opacity={process === 'capture' ? 1 - flashOut : 1}/>
+      {process === 'capture' && <>
+        <circle cx={cx} cy={cy} r={innerR} className="bk-s-faint" fill="none" strokeDasharray="2 6"/>
+        <circle cx={cx} cy={cy} r={outerR} className="bk-s-faint" fill="none" strokeDasharray="2 6" opacity={0.65}/>
+        {absorbed < 0.99 && <Charge x={cx} y={cy} sign={1} r={15} opacity={1 - absorbed}/>}
+        {absorbed > 0.02 && <g opacity={absorbed}><circle cx={cx} cy={cy} r={16} className="bk-body bk-body-plain" strokeWidth="1.8"/><T x={cx} y={cy + 5} tone="text">n</T></g>}
+        <T x={cx} y={cy - R - 12} size="sm">{absorbed > 0.6 ? 'now a neutron' : 'nucleus (proton)'}</T>
+        <Charge x={orbital.x} y={orbital.y} sign={-1} r={10} opacity={1 - flashOut}/>
+        <T x={orbital.x + 14} y={orbital.y + 18} anchor="start" size="sm" opacity={1 - flashOut}>inner orbital electron</T>
+        <Charge x={outerPos[0]} y={outerPos[1]} sign={-1} r={10}/>
+        <T x={outerPos[0] + 15} y={outerPos[1] - 4} anchor="start" size="sm">{drop > 0.7 ? 'fills vacated orbital' : 'outer orbital electron'}</T>
+        {drop > 0.15 && drop < 0.95 && <><Arrow x1={ph1x} y1={ph1y} x2={ph2x} y2={ph2y} tone="mark" w={2} head={7} dash="4 3" opacity={Math.sin(Math.PI * drop)}/><T x={ph2x + 10} y={ph2y + 4} anchor="start" size="sm" tone="mark" opacity={Math.sin(Math.PI * drop)}>photon</T></>}
+      </>}
+      {u < 0.28 && <Zepton x={bx} y={cy} angle={inSign > 0 ? 180 : 0} len={capture ? 124 : 34} open={forming} oval={!capture} signs={capture} emphasis="key" opacity={Math.min(1, forming * 1.4)}/>}
+      {u >= 0.28 && <>
+        <Charge x={inward} y={cy} sign={inSign} r={capture ? 10 : 9} opacity={process === 'neutron' ? 1 - annihilate : capture ? 1 - absorbed : 1 - 0.7 * settled}/>
+        <Charge x={outward} y={cy} sign={outSign} r={capture ? 10 : 9} opacity={capture ? 1 - flashOut : 1}/>
       </>}
       {annihilate > 0.2 && annihilate < 0.95 && <circle cx={cx + 34} cy={cy + 4} r={10 + 26 * annihilate} className="bk-s-mark" fill="none" strokeWidth="2" opacity={1 - annihilate}/>}
-      {flashOut > 0.2 && flashOut < 0.95 && <circle cx={orbital.x} cy={orbital.y} r={10 + 26 * flashOut} className="bk-s-mark" fill="none" strokeWidth="2" opacity={1 - flashOut}/>}
-      <T x={W - 24} y={H - 44} anchor="end" size="sm" tone="mark">{capture ? (u < 0.25 ? 'a pair as wide as the atom forms' : u < 0.6 ? 'its electron half is in the nucleus' : spec.freed.toLowerCase()) : u < 0.25 ? 'a virtual pair forms just outside' : u < 0.6 ? 'one half crosses the boundary' : spec.freed.toLowerCase()}</T>
+      {flashOut > 0.15 && flashOut < 0.95 && <circle cx={orbital.x} cy={orbital.y} r={10 + 28 * flashOut} className="bk-s-mark" fill="none" strokeWidth="2" opacity={1 - flashOut}/>}
+      <T x={W - 24} y={H - 44} anchor="end" size="sm" tone="mark">{capture ? (u < 0.28 ? 'a virtual pair opens across the atom' : u < 0.62 ? 'electron absorbed by proton; positron annihilates orbital electron' : 'another orbital electron drops in to take its place') : u < 0.28 ? 'a virtual pair forms just outside' : u < 0.56 ? 'one half crosses the boundary' : spec.freed.toLowerCase()}</T>
       <T x={W - 24} y={H - 22} anchor="end" size="sm">{done ? `left: ${spec.left}` : ''}</T>
     </Stage>}>
     <Choice label="Process" value={process} onChange={setProcess} options={[{ value: 'hawking', label: 'Hawking' }, { value: 'neutron', label: 'Neutron decay' }, { value: 'capture', label: 'Capture' }]}/>

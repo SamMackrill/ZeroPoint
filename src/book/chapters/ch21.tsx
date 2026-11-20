@@ -18,7 +18,7 @@ function AetherStream() {
   const [v, setV] = useState(0.5);
   const [model, setModel] = useState<'kinetic' | 'zero-point'>('kinetic');
   const play = usePlayback({ speed: 0.4 });
-  const H = 400, x0 = 150, yTop = 60, yBottom = 320, b = yBottom - yTop, alpha = headingAngle(v), slow = model === 'kinetic' ? expectedSlowing(v) : 1;
+  const H = 380, x0 = 96, yTop = 96, yBottom = 276, b = yBottom - yTop, alpha = headingAngle(v), slow = model === 'kinetic' ? expectedSlowing(v) : 1;
   // Two signals leave together: one across the stream and back, one the same distance along it and back.
   // One cycle lets the slower signal get back, then pauses briefly before both set out again.
   const cycle = 2 * Math.max(slow, 1) + 0.6, u = (play.t % cycle) / 2, across = Math.min(1, u / slow), along = Math.min(1, u), tri = (k: number) => (k < 0.5 ? k * 2 : 2 - k * 2);
@@ -28,22 +28,26 @@ function AetherStream() {
   const alphaAt = alpha >= 24 ? 90 - alpha / 2 : 90 - alpha - 12;
   return <Diagram stage={
     <Stage w={W} h={H} label={`Light crossing between two walls with an æther stream of ${fmt(v, 2)} of the speed of light flowing across. ${model === 'kinetic' ? `If the æther carried light as a stream carries a swimmer, the crossing would take ${fmt(expectedSlowing(v), 3)} times as long.` : 'With the æther as the zero-point field the crossing takes the same time in every direction, which is what was found.'}`}>
-      <line x1={60} y1={yTop} x2={420} y2={yTop} className="bk-s-text" strokeWidth="4"/><line x1={60} y1={yBottom} x2={420} y2={yBottom} className="bk-s-text" strokeWidth="4"/>
+      <line x1={52} y1={yTop} x2={474} y2={yTop} className="bk-s-text" strokeWidth="4"/><line x1={52} y1={yBottom} x2={474} y2={yBottom} className="bk-s-text" strokeWidth="4"/>
       {/* The stream runs against the heading a, as the current does against the swimmer, who heads into it to cross straight. */}
-      {v > 0.01 && [238, 263, 288].map(y => <Arrow key={y} x1={410} y1={y + 12} x2={410 - 30 - 60 * v} y2={y + 12} tone="faint" w={1.6} opacity={model === 'kinetic' ? 1 : 0.35}/>)}
-      <T x={412} y={yBottom + 26} anchor="end" size="sm">æther stream, <tspan fontStyle="italic">υ</tspan></T>
+      {v > 0.01 && <>
+        {[200, 224, 248].map(y => <Arrow key={y} x1={464} y1={y + 10} x2={464 - 30 - 60 * v} y2={y + 10} tone="faint" w={1.6} opacity={model === 'kinetic' ? 1 : 0.35}/>)}
+        <T x={464} y={yBottom + 26} anchor="end" size="sm">æther stream, <tspan fontStyle="italic">υ</tspan></T>
+      </>}
       <Line d={`M${x0} ${yBottom} L${x0} ${yTop}`} tone="accent" w={2}/><T x={x0 - 12} y={(yTop + yBottom) / 2} tone="accent" anchor="end" italic>b</T>
       {model === 'kinetic' && v > 0.01 && <>
-        <Arrow x1={x0} y1={yBottom} x2={ax} y2={yTop} tone="mark" w={2} dash="6 4" head={11}/><T x={(x0 + ax) / 2 + 14} y={(yTop + yBottom) / 2} tone="mark" anchor="start" italic>a</T>
+        <Arrow x1={x0} y1={yBottom} x2={ax} y2={yTop} tone="mark" w={2} dash="6 4" head={11}/><T x={(x0 + ax) / 2 + 12} y={(yTop + yBottom) / 2} tone="mark" anchor="start" italic>a</T>
         {/* The angle α between the straight path b and the heading a, marked with its arc. */}
-        <path d={`M${polar(x0, yBottom, 52, 90)[0]} ${polar(x0, yBottom, 52, 90)[1]} A52 52 0 0 1 ${polar(x0, yBottom, 52, 90 - alpha)[0]} ${polar(x0, yBottom, 52, 90 - alpha)[1]}`} className="bk-s-mark" fill="none" strokeWidth="1.6"/>
-        <T x={polar(x0, yBottom, 70, alphaAt)[0]} y={polar(x0, yBottom, 70, alphaAt)[1] + 5} tone="mark" anchor="start" size="sm" italic>α</T>
-        <T x={x0 - 12} y={yBottom - 18} tone="mark" anchor="end" size="sm">α = {fmt(alpha, 3)}°</T>
+        <path d={`M${polar(x0, yBottom, 46, 90)[0]} ${polar(x0, yBottom, 46, 90)[1]} A46 46 0 0 1 ${polar(x0, yBottom, 46, 90 - alpha)[0]} ${polar(x0, yBottom, 46, 90 - alpha)[1]}`} className="bk-s-mark" fill="none" strokeWidth="1.6"/>
+        <T x={polar(x0, yBottom, 64, alphaAt)[0]} y={polar(x0, yBottom, 64, alphaAt)[1] + 5} tone="mark" anchor="start" size="sm" italic>α</T>
+        <T x={x0 - 12} y={yBottom - 16} tone="mark" anchor="end" size="sm">α = {fmt(alpha, 3)}°</T>
       </>}
       <circle cx={x0} cy={yBottom - tri(across) * b} r={7} className="bk-f-mark"/>
-      <line x1={480} y1={yBottom} x2={480 + b * 0.8} y2={yBottom} className="bk-s-accent" strokeWidth="2"/><circle cx={480 + tri(along) * b * 0.8} cy={yBottom} r={7} className="bk-f-e"/>
-      <T x={480 + b * 0.4} y={yBottom + 26} size="sm">the same distance along the stream and back</T>
-      <T x={560} y={110} size="sm" tone="mark">across: {across >= 1 ? 'back' : 'on its way'}</T><T x={560} y={134} size="sm" tone="e">along: {along >= 1 ? 'back' : 'on its way'}</T>
+      {/* The along-stream track has the exact same length b as the across-stream track. */}
+      <line x1={506} y1={yBottom} x2={506 + b} y2={yBottom} className="bk-s-accent" strokeWidth="2"/><circle cx={506 + tri(along) * b} cy={yBottom} r={7} className="bk-f-e"/>
+      <T x={506 + b / 2} y={yBottom + 24} size="sm">same distance b along</T>
+      <T x={506 + b / 2} y={yBottom + 42} size="sm">the stream and back</T>
+      <T x={596} y={136} size="sm" tone="mark">across: {across >= 1 ? 'back' : 'on its way'}</T><T x={596} y={160} size="sm" tone="e">along: {along >= 1 ? 'back' : 'on its way'}</T>
     </Stage>}>
     <Choice label="The æther is taken to be" value={model} onChange={setModel} options={[{ value: 'kinetic', label: 'A stream' }, { value: 'zero-point', label: 'The zero-point field' }]}/>
     <Slider label="Speed of the æther past the apparatus" value={v} min={0} max={0.9} step={0.01} onChange={setV} show={x => `${fmt(x, 2)} c`}/>

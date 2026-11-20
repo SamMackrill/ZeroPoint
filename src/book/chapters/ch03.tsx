@@ -1,6 +1,6 @@
 // Chapter 3: The Casimir Effect, The Model Force (PDF pp. 27–32). Figures 3-1 to 3-4.
 import { useEffect, useMemo, useState } from 'react';
-import { Arrow, BlockArrow, Charge, Choice, Diagram, PlayBar, Readout, Remark, Slider, Stage, Still, T, Toggle, fmt, rng, usePlayback } from '../kit';
+import { Arrow, BlockArrow, Charge, Choice, Diagram, PlayBar, Readout, Remark, Slider, Stage, Still, T, Toggle, fmt, rad, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { ScientistLink } from '../../papertrails/PaperTrailsLink';
@@ -74,11 +74,14 @@ function DebyeDipoles() {
         <line x1={d.x - unit / 2} x2={d.x + unit / 2} y1={y + 40} y2={y + 40} className="bk-s-muted" strokeWidth="1" strokeDasharray="3 4"/>
         <Charge x={d.x - half} y={y} sign={d.signs[0]} r={15}/><Charge x={d.x + half} y={y} sign={d.signs[1]} r={15}/>
         <Still>
-          {/* Debye's small arrows: toward each other when the moment shrinks, apart when it grows. */}
-          {Math.abs(p - 1) > 0.004 && <>
-            <Arrow x1={d.x - half - (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x - half - (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
-            <Arrow x1={d.x + half + (p < 1 ? 30 : 4)} y1={y + 26} x2={d.x + half + (p < 1 ? 4 : 30)} y2={y + 26} tone="mark" w={1.6} head={7}/>
-          </>}
+          {/* Debye's small arrows, placed directly beneath each charge as printed: inward in I, outward in II (never colliding at cx). */}
+          {alpha > 0 && (orientation === 'I' ? <>
+            <Arrow x1={d.x - half - 10} y1={y + 26} x2={d.x - half + 16} y2={y + 26} tone="mark" w={1.6} head={7}/>
+            <Arrow x1={d.x + half + 10} y1={y + 26} x2={d.x + half - 16} y2={y + 26} tone="mark" w={1.6} head={7}/>
+          </> : <>
+            <Arrow x1={d.x - half + 10} y1={y + 26} x2={d.x - half - 16} y2={y + 26} tone="mark" w={1.6} head={7}/>
+            <Arrow x1={d.x + half - 10} y1={y + 26} x2={d.x + half + 16} y2={y + 26} tone="mark" w={1.6} head={7}/>
+          </>)}
           {/* The force on this dipole; drawn inward, it stops short of the midpoint so the two never cross. */}
           <BlockArrow x1={d.x} y1={y - 50} x2={d.x + d.dir * Math.sign(force) * (force < 0 ? Math.min(push, (r * unit) / 2 - 12) : push)} y2={y - 50} thick={12}/>
         </Still>
@@ -120,9 +123,9 @@ function InducedDipole() {
     const random = rng(1000 + frame - i), a = electronAngle(random(), field, toward), rr = R + (random() - 0.5) * 16;
     return { x: cx + rr * Math.cos((a * Math.PI) / 180), y: cy - rr * Math.sin((a * Math.PI) / 180) * (1 - 0.25 * field), age: i };
   }), [frame, field, toward]);
-  // The average is drawn on the side the field draws the electron to (against the field), however few the samples: at a
-  // weak field the trail's own average can stray past the proton, which would show the dipole the wrong way round.
-  const meanX = (right ? -1 : 1) * Math.abs(trail.reduce((s, p) => s + p.x, 0) / trail.length - cx), moment = Math.abs(meanX) / R;
+  // Exact mean of the electron's uniform-arc distribution: steady at every field strength, without 24 Hz sample jitter.
+  const halfArc = rad(360 * (1 - 0.86 * field) * 0.5), moment = field === 0 ? 0 : halfArc < 1e-6 ? 1 : Math.sin(halfArc) / halfArc;
+  const meanX = (right ? -1 : 1) * R * moment;
   return <Diagram stage={
     <Stage h={340} label={field === 0 ? 'A hydrogen atom with no field: the electron is found all round the proton, so the atom appears neutral.' : `A hydrogen atom in an electric field: the electron stays mostly to the ${right ? 'left' : 'right'} of the proton, making an induced dipole.`}>
       <circle cx={cx} cy={cy} r={R} className="bk-s-faint" fill="none" strokeDasharray="2 5"/>
@@ -158,7 +161,7 @@ export const halfWidth = (rx: number, ry: number, angle: number) => Math.hypot(r
 function PlatesAndFluctuations() {
   const [gap, setGap] = useState(70);
   const play = usePlayback();
-  const W = 720, H = 430, top = 16, floor = 350, plate = 20, cx = W / 2, shortest = 10, range = 17;
+  const W = 720, H = 442, top = 16, floor = 350, plate = 20, cx = W / 2, shortest = 10, range = 17;
   const population = useMemo(() => {
     const random = rng(33), list: Fluctuation[] = [];
     // Outside: every size, scattered evenly across the whole stage; those that fall outside the plates are drawn, so the
@@ -189,7 +192,7 @@ function PlatesAndFluctuations() {
           angle = 90 + (f.angle - 90) * Math.min(1, gap / 120);
           if (halfWidth(rx, ry, angle) > gap / 2) angle = 90;
           x = cx + f.x * 2 * Math.max(0, gap / 2 - halfWidth(rx, ry, angle));
-        } else if (Math.abs(f.x - cx) - halfWidth(rx, ry, angle) < gap / 2 + plate + 1) return null;
+        } else if (Math.abs(f.x - cx) - halfWidth(rx, ry, angle) < gap / 2 + plate + 1 || f.y - halfWidth(ry, rx, angle) < top + 1 || f.y + halfWidth(ry, rx, angle) > floor - 2) return null;
         // Each fluctuation appears, swells and vanishes; longer wavelengths are shown lasting longer.
         const life = ((play.t * 22) / (f.len + 14) + f.phase) % 1, swell = 0.35 + 0.65 * Math.sin(Math.PI * life);
         return <ellipse key={i} cx={x} cy={f.y} rx={rx * swell} ry={ry * swell} transform={`rotate(${-angle} ${x} ${f.y})`} className="bk-zepton-oval" opacity={0.3 + 0.7 * Math.sin(Math.PI * life)}/>;

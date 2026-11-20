@@ -69,11 +69,11 @@ function PushGravity() {
       })}
       <Globe x={xa} y={y} r={R}/><Globe x={xb} y={y} r={R}/>
       {push > 0.01 && <><BlockArrow x1={xa - R - 60 * clamp(push)} y1={y} x2={xa - R - 2} y2={y} thick={12}/><BlockArrow x1={xb + R + 60 * clamp(push)} y1={y} x2={xb + R + 2} y2={y} thick={12}/></>}
-      <T x={W / 2} y={y + R + 30} size="sm" tone="mark">between the bodies: fewer corpuscles, less push</T>
+      <T x={W / 2} y={H - 8} size="sm" tone="mark">between the bodies: fewer corpuscles, less push</T>
     </Stage>}>
     <Slider label="Distance between the bodies" value={gap} min={190} max={440} step={10} onChange={setGap} show={v => `${fmt(v / 260, 2)} ×`}/>
     <PlayBar play={play} label="the corpuscles"/>
-    <Readout label="Net push together" value={push < 0.005 ? 'none' : fmt(push, 3)} tone="force"/>
+    <Readout label="Net push together" value={`${fmt(push / absorbed, 2)} × at start`} tone="force"/>
     <Remark>Each body shadows the other from the pressure coming from behind it, so more pushes them together than apart.</Remark>
   </Diagram>;
 }
@@ -103,9 +103,9 @@ function Shadow() {
   const [size, setSize] = useState(1);
   const [flat, setFlat] = useState(() => !canDraw3D());
   const fail = useCallback(() => setFlat(true), []);
-  const share = skyFraction(size, d), half = deg(Math.asin(clamp(size / d)));
-  const px = 90, pw = 540, py = 30, ph = 100, curve = pathThrough(Array.from({ length: 50 }, (_, i) => { const dd = 2.5 + (i / 49) * 7.5; return [px + ((dd - 2.5) / 7.5) * pw, py + ph - (skyFraction(size, dd) / skyFraction(size, 2.5)) * ph] as const; }));
-  const label = `Star 2, ${fmt(d, 2)} of its radii away from Star 1, covers ${fmt(share * 100, 2)} per cent of Star 1's sky. The lines from its edges to the centre of Star 1 mark the shadow on Star 1's surface.`;
+  const share = skyFraction(size, d), maxSky = skyFraction(1.5, 2.5), half = deg(Math.asin(clamp(size / d)));
+  const px = 90, pw = 540, py = 30, ph = 100, curve = pathThrough(Array.from({ length: 50 }, (_, i) => { const dd = 2.5 + (i / 49) * 7.5; return [px + ((dd - 2.5) / 7.5) * pw, py + ph - (skyFraction(size, dd) / maxSky) * ph] as const; }));
+  const label = `Star 2, ${fmt(d, 2)} starting radii away from Star 1, covers ${fmt(share * 100, 2)} per cent of Star 1's sky. The lines from its edges to the centre of Star 1 mark the shadow on Star 1's surface.`;
   return <Diagram stage={<>
     {flat
       ? <FlatShadow d={d} size={size} label={label}/>
@@ -116,7 +116,7 @@ function Shadow() {
         </FallbackOnError>}
     <Stage w={W} h={160} label={`The share of Star 1's sky that Star 2 covers, against distance: it falls as the inverse square. Now ${fmt(share * 100, 2)} per cent.`}>
       <line x1={px} y1={py + ph} x2={px + pw} y2={py + ph} className="bk-s-muted"/><Line d={curve} tone="mark" w={2}/>
-      <circle cx={px + ((d - 2.5) / 7.5) * pw} cy={py + ph - (share / skyFraction(size, 2.5)) * ph} r={5} className="bk-f-accent"/>
+      <circle cx={px + ((d - 2.5) / 7.5) * pw} cy={py + ph - (share / maxSky) * ph} r={5} className="bk-f-accent"/>
       <T x={px + pw / 2} y={py + ph + 20} size="sm">distance</T><T x={px + pw / 2} y={py - 10} size="sm" tone="mark">share of the sky covered</T>
     </Stage>
   </>}>
@@ -171,8 +171,9 @@ function DipolePair({ left, right, flipped: initial }: { left: Kind; right: Kind
       {result.longRange && <><Arrow x1={cx - ZX - 50} y1={cy} x2={cx - ZX - 100} y2={cy} tone="force" w={3}/><Arrow x1={cx + ZX + 50} y1={cy} x2={cx + ZX + 100} y2={cy} tone="force" w={3}/></>}
       <line x1={px} y1={py + ph} x2={px + pw} y2={py + ph} className="bk-s-muted"/><line x1={px} y1={py} x2={px} y2={py + ph} className="bk-s-muted"/>
       <Line d={curve(7)} tone={result.longRange ? 'faint' : 'danger'} w={result.longRange ? 1.4 : 2.6}/><Line d={curve(2)} tone={result.longRange ? 'accent' : 'faint'} w={result.longRange ? 2.6 : 1.4}/>
-      <T x={px + 62} y={py + ph - 14} anchor="start" size="sm" tone={result.longRange ? 'muted' : 'danger'}>ordinary van der Waals: 1/r³ to 1/r⁷</T>
-      <T x={px + pw - 4} y={py + ph - 60} anchor="end" size="sm" tone={result.longRange ? 'accent' : 'muted'}>Coulomb: 1/r²</T>
+      <T x={px + 42} y={py + 46} anchor="start" size="sm" tone={result.longRange ? 'muted' : 'danger'}>ordinary van der Waals:</T>
+      <T x={px + 42} y={py + 64} anchor="start" size="sm" tone={result.longRange ? 'muted' : 'danger'}>1/r³ to 1/r⁷</T>
+      <T x={px + pw - 6} y={py + ph - 52} anchor="end" size="sm" tone={result.longRange ? 'accent' : 'muted'}>Coulomb: 1/r²</T>
       <T x={px + pw / 2} y={py + ph + 20} size="sm">distance</T><T x={px + pw / 2} y={py - 12} size="sm">force this pairing leaves</T>
     </Stage>}>
     <Toggle label={`Turn the ${name(right)} one over`} checked={flipped} onChange={setFlipped}/>
@@ -208,7 +209,7 @@ const chapter: ChapterContent = {
       Diagram: Shadow,
       text: <p><Q>In principle, the push theory could describe the 1/r<sup>2</sup> varying force required</Q> (<Pg n={130}/>). The figure shows why: the part of one star’s surroundings that the other blocks is a cone, and the cone narrows as the stars separate. Chapter 18 opens with <ScientistLink id="feynman">Feynman</ScientistLink>’s statement of it: <Q>The sun will appear smaller – in fact inversely as the square of the distance</Q> (<Pg n={137}/>).</p>,
       tryThis: ['Move Star 2 away: the lines to Star 1’s centre close up and the shadow on its surface shrinks.', 'Double the distance and compare the share of sky covered: about a quarter.', 'Make Star 2 larger: a larger shadow at the same distance.'],
-      notes: <p>The printed figure is flat; here it is drawn in three dimensions, so the shadow shows as what it is, a cap on Star 1’s surface where the cone to Star 2 meets it. The share of the sky is the exact solid angle of a sphere seen from a point. Distances are in units of Star 2’s radius, far closer than real stars, so the cone can be seen.</p>,
+      notes: <p>The printed figure is flat; here it is drawn in three dimensions, so the shadow shows as what it is, a cap on Star 1’s surface where the cone to Star 2 meets it. The share of the sky is the exact solid angle of a sphere seen from a point. Distances are in units of Star 2’s starting radius, far closer than real stars, so the cone can be seen.</p>,
     },
     {
       kind: 'figure', id: '17-3', page: 133, section: 'The Van der Waals Force', title: 'Electric dipoles side by side cancel',

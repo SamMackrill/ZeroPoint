@@ -79,8 +79,8 @@ function OrbitInField() {
     <Stage w={W} h={H} label="A small body orbiting counter-clockwise round a larger body that is also rotating counter-clockwise. The zeptons round the larger body turn the other way. The mattermagnetic field points into the page and the extra force on the small body is toward the larger one.">
       <circle cx={cx} cy={cy} r={R} className="bk-s-faint" fill="none" strokeDasharray="3 6"/>
       <CounterField x={cx} y={cy} inner={78} rings={3} sense={1} turned={turned}/>
-      <Body x={cx} y={cy} r={52} tone="matter"/><BodyCross x={cx} y={cy} r={52} turned={turned}/><Spin x={cx} y={cy} r={24} ccw sweep={270} tone="text" w={3}/><T x={cx + 34} y={cy - 26} tone="text" italic>ω</T>
-      <Arrow x1={px} y1={py} x2={vx} y2={vy} tone="motion" w={2.4}/><T x={vx + 12} y={vy + 4} tone="motion" italic>υ</T>
+      <Body x={cx} y={cy} r={52} tone="matter"/><BodyCross x={cx} y={cy} r={52} turned={turned}/><Still><Spin x={cx} y={cy} r={24} ccw sweep={270} tone="text" w={3}/><T x={cx + 34} y={cy - 26} tone="text" italic>ω</T></Still>
+      <Arrow x1={px} y1={py} x2={vx} y2={vy} tone="motion" w={2.4}/><T x={polar(vx, vy, 14, a)[0]} y={polar(vx, vy, 14, a)[1] + 4} tone="motion" italic>υ</T>
       <BlockArrow x1={px} y1={py} x2={fx} y2={fy} thick={10}/>{sub(fx + (fx < px ? -18 : 18), fy + 18, 'F', 'text')}
       <Body x={px} y={py} r={15} tone="plain"/>
       <InOut x={600} y={70} out={false} r={11}/>{sub(620, 75, 'B', 'b', 'start')}
@@ -92,20 +92,22 @@ function OrbitInField() {
 
 /** Figure 12-3: a rotating planet and the counter-rotating zepton field that is its angular inertia. */
 function PlanetSpinField() {
-  const [omega, setOmega] = useState(0.7);
+  const [{ omega, baseT, baseAngle }, setSpin] = useState({ omega: 0.7, baseT: 0, baseAngle: 0 });
   const play = usePlayback();
-  const H = 360, cx = 320, cy = 180, turned = play.t * omega * 90;
+  const H = 360, cx = 320, cy = 180, turned = baseAngle + (play.t - baseT) * omega * 90, turning = Math.abs(omega) >= 0.05;
+  const setOmega = (v: number) => setSpin({ omega: v, baseT: play.t, baseAngle: turned });
+  const restart = () => { setSpin(s => ({ ...s, baseT: 0, baseAngle: 0 })); play.restart(); };
   return <Diagram stage={
-    <Stage w={W} h={H} label={Math.abs(omega) < 0.05 ? 'A body that is not rotating: no mattermagnetic field of rotation.' : `A small body rotating ${omega > 0 ? 'counter-clockwise' : 'clockwise'}, with a counter-rotating zepton field round it. Its mattermagnetic field points ${omega > 0 ? 'into' : 'out of'} the page.`}>
+    <Stage w={W} h={H} label={!turning ? 'A body that is not rotating: no mattermagnetic field of rotation.' : `A small body rotating ${omega > 0 ? 'counter-clockwise' : 'clockwise'}, with a counter-rotating zepton field round it. Its mattermagnetic field points ${omega > 0 ? 'into' : 'out of'} the page.`}>
       <CounterField x={cx} y={cy} inner={104} rings={2} sense={omega} turned={turned} count={10}/>
       <Body x={cx} y={cy} r={72} tone="matter"/><BodyCross x={cx} y={cy} r={72} turned={turned}/>
-      {Math.abs(omega) > 0.05 && <Spin x={cx} y={cy} r={28} ccw={omega > 0} sweep={270} tone="text" w={3}/>}<T x={cx + 40} y={cy - 30} tone="text" italic>ω</T>
-      {Math.abs(omega) > 0.05 && <><InOut x={590} y={90} out={omega < 0} r={12}/><T x={612} y={96} anchor="start" tone="b" size="lg" italic>B<tspan dy={4} fontSize="0.75em">m</tspan></T></>}
+      {turning && <Still><Spin x={cx} y={cy} r={28} ccw={omega > 0} sweep={270} tone="text" w={3}/><T x={cx + 40} y={cy - 30} tone="text" italic>ω</T></Still>}
+      {turning && <><InOut x={590} y={90} out={omega < 0} r={12}/><T x={612} y={96} anchor="start" tone="b" size="lg" italic>B<tspan dy={4} fontSize="0.75em">m</tspan></T></>}
     </Stage>}>
     <Slider label="Rotation of the body, ω" value={omega} min={-1} max={1} step={0.05} onChange={setOmega} show={v => (Math.abs(v) < 0.05 ? 'none' : `${Math.round(Math.abs(v) * 100)} % ${v > 0 ? 'counter-clockwise' : 'clockwise'}`)}/>
-    <PlayBar play={play} label="the rotation"/>
-    <Readout label="Zeptons round it rotate" value={Math.abs(omega) < 0.05 ? 'not turned by it' : omega > 0 ? 'clockwise' : 'counter-clockwise'}/>
-    <Readout label="Mattermagnetic field" value={Math.abs(omega) < 0.05 ? 'none' : omega > 0 ? 'into the page' : 'out of the page'} tone="b"/>
+    <PlayBar play={{ ...play, restart }} label="the rotation"/>
+    <Readout label="Zeptons round it rotate" value={!turning ? 'not turned by it' : omega > 0 ? 'clockwise' : 'counter-clockwise'}/>
+    <Readout label="Mattermagnetic field" value={!turning ? 'none' : omega > 0 ? 'into the page' : 'out of the page'} tone="b"/>
     <Remark>This field is the body’s angular inertia. The Sun’s rotation makes one of the same sense round the Sun.</Remark>
   </Diagram>;
 }
@@ -176,7 +178,7 @@ function PrecessingOrbit() {
   const state = useRef({ t: 0, theta: 0 });
   // Restart (or a step back) begins again from the starting state.
   if (play.t < state.current.t) state.current = { t: 0, theta: 0 };
-  const dt = Math.max(0, Math.min(0.05, play.t - state.current.t)), H = 400, cx = 330, cy = 215, a = 120;
+  const dt = Math.max(0, Math.min(0.05, play.t - state.current.t)), H = 400, cx = 310, cy = 200, a = 104;
   state.current.t = play.t;
   // Equal areas in equal times: the planet moves fastest at perihelion.
   const rNow = precessingRadius(state.current.theta, a, e, advance);
@@ -191,7 +193,7 @@ function PrecessingOrbit() {
       <Body x={cx} y={cy} r={16} tone="matter"/>
       <Body x={px} y={py} r={8} tone="plain"/>
       {advance > 0 && Array.from({ length: Math.min(5, Math.floor(orbits) + 1) }, (_, k) => { const n = Math.floor(orbits) - k; if (n < 0) return null; const [x, y] = at(n * 2 * Math.PI * (1 + advance)); return <circle key={n} cx={x} cy={y} r={4} className="bk-f-mark" opacity={1 - k * 0.18}/>; })}
-      <T x={590} y={70} size="sm" tone="mark">● perihelion, orbit by orbit</T>
+      <T x={700} y={32} anchor="end" size="sm" tone="mark">● perihelion, orbit by orbit</T>
     </Stage>}>
     <Slider label="Advance of the perihelion per orbit" value={advance} min={0} max={0.15} step={0.005} onChange={setAdvance} show={v => (v === 0 ? 'none (Newton, two bodies)' : `${fmt(v * 360, 2)}°`)}/>
     <Slider label="Eccentricity of the orbit" value={e} min={0.1} max={0.75} step={0.05} onChange={setE}/>
@@ -249,7 +251,7 @@ export function turnOrbitPoint(q: OrbitPoint, angle: number): OrbitPoint {
 function LorentzOnOrbit() {
   const [k, setK] = useState(0.03);
   const play = usePlayback({ speed: 0.12 });
-  const H = 420, cx = 300, sunY = 250, scale = 105;
+  const H = 420, cx = 300, sunY = 210, scale = 105;
   const cycle = useMemo(() => orbitCycle(k), [k]), perOrbit = cycle.points.length;
   /** The planet's g-th point since the start: the g-th of one orbit, turned on by the advance of each orbit completed. */
   const at = (g: number) => turnOrbitPoint(cycle.points[g % perOrbit], Math.floor(g / perOrbit) * cycle.advance);
@@ -354,9 +356,9 @@ function ParallelStars() {
   const ahead = [{ x: x - 4, y: y1, weight: onStage(x - 4) }, { x: x2 + (same ? -4 : 4), y: y2, weight: onStage(x2 + (same ? -4 : 4)) }];
   // As printed, one beside each force arrow: the zepton nearest a point just inside each star, off to the side of its arrow.
   const nearest = (px: number, py: number) => STAR_ZEPTONS.reduce((best, z) => (Math.hypot(z.x - px, z.y - py) < Math.hypot(best.x - px, best.y - py) ? z : best));
-  const between = [nearest(x + 52, y1 + 44), nearest(x2 + 52, y2 - 44)];
+  const between = [nearest(x + 52, y1 + s.gap * 0.27), nearest(x2 + 52, y2 - s.gap * 0.27)];
   return <Diagram stage={
-    <Stage w={W} h={H} label={`Two stars moving ${same ? 'in the same direction' : 'in opposite directions'} side by side through a field of zeptons. Each zepton keeps its antimatter end toward the stars near it, so the moving stars turn the zeptons they pass, those between the stars turning opposite ways. The stars are ${same ? 'drawn together' : 'pushed apart'}.`}>
+    <Stage w={W} h={H} label={`Two stars moving ${same ? 'in the same direction' : 'in opposite directions'} side by side through a field of zeptons. Each zepton keeps its antimatter end toward the stars near it, so the moving stars turn the zeptons they pass, those between the stars turning ${same ? 'opposite ways' : 'the same way'}. The stars are ${same ? 'drawn together' : 'pushed apart'}.`}>
       {STAR_ZEPTONS.map((z, n) => {
         // The zeptons a star is turning stand out; those far from both are dimmed. Those under a star fade out.
         const d = Math.min(...stars.map(st => Math.hypot(st.x - z.x, st.y - z.y))), pull = Math.max(...stars.map(st => st.weight / (1 + (Math.hypot(st.x - z.x, st.y - z.y) / STAR_REACH) ** 2)));
@@ -414,7 +416,7 @@ const chapter: ChapterContent = {
       caption: 'A small body rotating counterclockwise produces a counter-rotating zepton field.',
       Diagram: PlanetSpinField,
       text: <p><Q>A planet rotating counterclockwise produces a magnetic field pointing into the page</Q>. <Q>This is the body’s angular inertia.</Q> The field of a rotating sun, in Figure 12-2, points the same way (<Pg n={102}/>).</p>,
-      tryThis: ['Reverse the rotation: the zeptons reverse, and the field comes out of the page.', 'Compare with Figure 11-5, the same picture with zeptons drawn as dipoles.'],
+      tryThis: ['Reverse the rotation: the zeptons reverse, and the field comes out of the page.', 'Compare with Figure 11-5: the same counter-rotating zepton field, here labelled with its mattermagnetic field Bm.'],
     },
     {
       kind: 'figure', id: '12-4', page: 103, title: 'Why orbiting bodies stop turning',

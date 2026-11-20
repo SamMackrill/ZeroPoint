@@ -81,7 +81,7 @@ function GravityPath() {
     <Readout label="In red light wavelengths" value={fmt(red)} tone={red < 1 ? 'bad' : undefined}/>
     <Readout label="In electron-positron pairs" value={fmt(pairs)}/>
     <Readout label="Atoms along a 1 cm² path" value={fmt(medium)}/>
-    <Remark>{exp > 25 ? 'At the scale of the observable universe the path is about a hundred atoms across. The pressure cannot be passed on that far.' : exp > 20 ? 'At the radius of the Milky Way the path is a couple of millimetres across, on a star 1.4 million kilometres wide.' : 'Nearer than this the path is wide and the push arrives undisturbed.'}</Remark>
+    <Remark>{exp > 25 ? 'At the scale of the observable universe the path is about a hundred atoms across. The pressure cannot be passed on that far.' : d < 7e-7 ? 'At intergalactic distances the path narrows below a single wavelength of red light: a single long-wavelength zepton can interrupt it.' : exp > 21.5 ? 'Beyond the galaxy the path shrinks to micrometres across, easily disrupted by gas, plasma and long-wavelength zeptons.' : exp >= 20 ? 'At the radius of the Milky Way the path is a couple of millimetres across, on a star 1.4 million kilometres wide.' : 'Nearer than this the path is wide and the push arrives undisturbed.'}</Remark>
   </Diagram>;
 }
 

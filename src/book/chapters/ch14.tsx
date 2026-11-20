@@ -1,4 +1,4 @@
-// Chapter 14: The Matter Force (PDF pp. 113–116). No figures: two explorers.
+// Chapter 14: The Matter Force (PDF pp. 113–116). No figures: three explorers.
 import { useMemo, useState, type ReactNode } from 'react';
 import { Body, Choice, Diagram, PlayBar, Readout, Remark, Slider, Stage, T, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
@@ -19,25 +19,39 @@ function Annihilation() {
   const total = 24, antimatter = total - matter, play = usePlayback({ speed: 0.25, end: 1 });
   const H = 340, { pairs } = afterAnnihilation(matter, antimatter);
   const places = useMemo(() => { const random = rng(141); return Array.from({ length: total }, () => ({ x: 60 + random() * (W - 120), y: 40 + random() * (H - 100) })); }, []);
-  // The first `pairs` pieces of each kind meet and vanish one after another; the rest remain.
+  // Pair nearest opposite-kind neighbours greedily so each pair meets locally instead of crossing the whole stage.
+  const matched = useMemo(() => {
+    const mPool = Array.from({ length: matter }, (_, i) => i), aPool = Array.from({ length: antimatter }, (_, i) => matter + i);
+    const out: [number, number][] = [];
+    while (mPool.length && aPool.length) {
+      let bestM = 0, bestA = 0, bestD = Infinity;
+      for (let mi = 0; mi < mPool.length; mi++) for (let ai = 0; ai < aPool.length; ai++) {
+        const d = Math.hypot(places[mPool[mi]].x - places[aPool[ai]].x, places[mPool[mi]].y - places[aPool[ai]].y);
+        if (d < bestD) { bestD = d; bestM = mi; bestA = ai; }
+      }
+      out.push([mPool.splice(bestM, 1)[0], aPool.splice(bestA, 1)[0]]);
+    }
+    return { order: out, leftM: mPool, leftA: aPool };
+  }, [matter, antimatter, places]);
   const gone = Math.min(pairs, Math.floor(play.t * (pairs + 0.999))), stage = play.t * (pairs + 0.999) - gone;
+  const active = gone < pairs ? matched.order[gone] : null;
+  const flash = active && stage > 0.72 ? (stage - 0.72) / 0.28 : 0;
   return <Diagram stage={
     <Stage w={W} h={H} label={`A region of space holding ${matter} pieces of matter and ${antimatter} of antimatter. They attract and annihilate in pairs; ${matter - gone} of matter and ${antimatter - gone} of antimatter remain.`}>
-      {Array.from({ length: matter }, (_, i) => {
-        const p = places[i], partner = i < pairs ? places[matter + i] : null;
-        if (i < gone) return null;
-        const k = partner && i === gone ? stage / 2 : 0;
-        return <Body key={`m${i}`} x={p.x + ((partner?.x ?? p.x) - p.x) * k} y={p.y + ((partner?.y ?? p.y) - p.y) * k} r={10} tone="matter" opacity={partner && i === gone ? 1 - stage * 0.5 : 1}/>;
+      {matched.order.slice(gone).map(([mi, ai], idx) => {
+        const pm = places[mi], pa = places[ai], live = idx === 0, k = live ? Math.min(1, stage / 0.75) * 0.5 : 0;
+        const op = live && stage > 0.75 ? Math.max(0, 1 - (stage - 0.75) / 0.25) : 1;
+        return <g key={`${mi}-${ai}`}>
+          <Body x={pm.x + (pa.x - pm.x) * k} y={pm.y + (pa.y - pm.y) * k} r={10} tone="matter" opacity={op}/>
+          <Body x={pa.x + (pm.x - pa.x) * k} y={pa.y + (pm.y - pa.y) * k} r={10} tone="anti" opacity={op}/>
+        </g>;
       })}
-      {Array.from({ length: antimatter }, (_, i) => {
-        const p = places[matter + i], partner = i < pairs ? places[i] : null;
-        if (i < gone) return null;
-        const k = partner && i === gone ? stage / 2 : 0;
-        return <Body key={`a${i}`} x={p.x + ((partner?.x ?? p.x) - p.x) * k} y={p.y + ((partner?.y ?? p.y) - p.y) * k} r={10} tone="anti" opacity={partner && i === gone ? 1 - stage * 0.5 : 1}/>;
-      })}
+      {flash > 0 && active && <circle cx={(places[active[0]].x + places[active[1]].x) / 2} cy={(places[active[0]].y + places[active[1]].y) / 2} r={8 + 24 * flash} className="bk-s-mark" fill="none" strokeWidth="2" opacity={1 - flash}/>}
+      {matched.leftM.map(i => <Body key={`lm${i}`} x={places[i].x} y={places[i].y} r={10} tone="matter"/>)}
+      {matched.leftA.map(i => <Body key={`la${i}`} x={places[i].x} y={places[i].y} r={10} tone="anti"/>)}
       <Body x={70} y={H - 26} r={8} tone="matter"/><T x={86} y={H - 21} anchor="start" size="sm">matter</T><Body x={170} y={H - 26} r={8} tone="anti"/><T x={186} y={H - 21} anchor="start" size="sm">antimatter</T>
     </Stage>}>
-    <Slider label="Matter, out of 24 pieces" value={matter} min={0} max={24} step={1} onChange={v => { setMatter(v); play.seek(0); }} show={v => `${v} matter, ${24 - v} antimatter`}/>
+    <Slider label="Matter, out of 24 pieces" value={matter} min={0} max={24} step={1} onChange={v => { setMatter(v); play.restart(); }} show={v => `${v} matter, ${24 - v} antimatter`}/>
     <PlayBar play={play} label="the annihilation"/>
     <Readout label="Matter left" value={matter - gone}/>
     <Readout label="Antimatter left" value={antimatter - gone}/>

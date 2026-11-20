@@ -32,7 +32,7 @@ export function FlemingHandStage({ first, second, thumb, mirrored = false, label
     <T x={b.x2 - 8} y={b.y2 - 4} tone={second.tone} anchor="end">{second.name}</T><T x={b.x2 - 8} y={b.y2 + 14} size="sm" tone={second.tone} anchor="end">{second.hint}</T>
     <Arrow x1={c.x1} y1={c.y1} x2={c.x2} y2={c.y2} tone={thumb.tone} w={5} head={15}/>
     <T x={c.x2 + 14} y={c.y2 + (mirrored ? -6 : 10)} tone={thumb.tone} anchor="start">{thumb.name}</T><T x={c.x2 + 14} y={c.y2 + (mirrored ? 12 : 28)} size="sm" tone={thumb.tone} anchor="start">{thumb.hint}</T>
-    <T x={20} y={H - 14} size="sm" anchor="start">{footnote}</T>
+    <T x={W - 20} y={26} size="sm" anchor="end">{footnote}</T>
   </Stage>;
 }
 
@@ -53,20 +53,33 @@ export function TwoSources({ signs, mode: initial, names, flip, matter }: { sign
   const play = usePlayback();
   const W = 720, H = 360, k = flipped ? -1 : 1, qa = (signs[0] * k) as 1 | -1, qb = (signs[1] * k) as 1 | -1, like = qa === qb;
   const sources = useMemo<Source[]>(() => [{ x: a.x, y: a.y, q: qa }, { x: b.x, y: b.y, q: qb }], [a.x, a.y, b.x, b.y, qa, qb]);
-  const bounds = { x0: 40, y0: 40, x1: W - 40, y1: H - 40 }, d = Math.hypot(b.x - a.x, b.y - a.y) || 1, ux = (b.x - a.x) / d, uy = (b.y - a.y) / d, s = like ? -1 : 1;
+  const bounds = { x0: 40, y0: 40, x1: W - 40, y1: H - 40 }, d = Math.hypot(b.x - a.x, b.y - a.y) || 1, ux = (b.x - a.x) / d, uy = (b.y - a.y) / d;
+  // Keep spoken names in sync when the reader reverses both sources (e.g., Figure 6-6).
+  const shownName = (label: string) => (!flipped ? label : matter
+    ? label.replace(/\bmatter\b/i, 'antimatter')
+    : label.replace(/\bpositive\b/i, 'negative').replace(/\bnegative\b/i, m => (m === 'negative' ? 'negative' : m)));
+  const labelA = flipped && !matter ? names[0].replace(/\bpositive\b/gi, 'negative') : shownName(names[0]);
+  const labelB = flipped && !matter ? names[1].replace(/\bpositive\b/gi, 'negative') : shownName(names[1]);
   // Bodies of matter are marked M as in Figure 11-1 (M̄ for antimatter), and the key to a zepton's ends is drawn as there.
   const glyph = (p: { x: number; y: number }, q: 1 | -1) => (matter
     ? <><Body x={p.x} y={p.y} r={18} tone={q < 0 ? 'matter' : 'anti'}/><T x={p.x} y={p.y + 5} tone="text">{q < 0 ? 'M' : 'M̄'}</T></>
     : <Charge x={p.x} y={p.y} sign={q} r={14}/>);
   return <Diagram stage={
-    <Stage w={W} h={H} label={`${names[0]} and ${names[1]}, with the field between them drawn as ${mode === 'both' ? 'lines and zeptons' : mode}. ${like ? 'The lines turn aside from each other between the two: repulsion.' : 'The lines run from one to the other: attraction.'}`}>
-      <FieldPicture sources={sources} w={W} h={H} perUnit={10} lines={mode === 'zeptons' ? 0 : mode === 'both' ? 0.45 : 1} zeptons={mode === 'lines' ? 0 : 1} t={play.t} zeptonLen={17} polarity={matter ? 'matter' : 'electric'} radii={matter ? [18, 18] : undefined}/>
-      {push && <>
-        <BlockArrow x1={a.x + s * ux * 24} y1={a.y + s * uy * 24} x2={a.x + s * ux * 66} y2={a.y + s * uy * 66} thick={11}/>
-        <BlockArrow x1={b.x - s * ux * 24} y1={b.y - s * uy * 24} x2={b.x - s * ux * 66} y2={b.y - s * uy * 66} thick={11}/>
-      </>}
-      <Drag x={a.x} y={a.y} onMove={(x, y) => setA({ x, y })} bounds={bounds} label={names[0]}>{glyph(a, qa)}</Drag>
-      <Drag x={b.x} y={b.y} onMove={(x, y) => setB({ x, y })} bounds={bounds} label={names[1]}>{glyph(b, qb)}</Drag>
+    <Stage w={W} h={H} label={`${labelA} and ${labelB}, with the field between them drawn as ${mode === 'both' ? 'lines and zeptons' : mode}. ${like ? 'The lines turn aside from each other between the two: repulsion.' : 'The lines run from one to the other: attraction.'}`}>
+      <FieldPicture sources={sources} w={W} h={H} perUnit={10} lines={mode === 'zeptons' ? 0 : mode === 'both' ? 0.45 : 1} zeptons={mode === 'lines' ? 0 : 1} t={play.t} zeptonLen={17} polarity={matter ? 'matter' : 'electric'} offset={like ? 0 : -0.5} radii={matter ? [18, 18] : [14, 14]}/>
+      {/* By Fleming's push principle (p. 55): attraction is pushed inward from outside; repulsion is pushed outward from the high-pressure gap between them. */}
+      {push && (like ? (() => {
+        const pad = matter ? 26 : 22, inLen = Math.min(42, Math.max(0, (d - 2 * pad - 10) / 2));
+        return inLen >= 10 ? <>
+          <BlockArrow x1={a.x + ux * (pad + inLen)} y1={a.y + uy * (pad + inLen)} x2={a.x + ux * pad} y2={a.y + uy * pad} thick={11}/>
+          <BlockArrow x1={b.x - ux * (pad + inLen)} y1={b.y - uy * (pad + inLen)} x2={b.x - ux * pad} y2={b.y - uy * pad} thick={11}/>
+        </> : null;
+      })() : <>
+        <BlockArrow x1={a.x - ux * 66} y1={a.y - uy * 66} x2={a.x - ux * 24} y2={a.y - uy * 24} thick={11}/>
+        <BlockArrow x1={b.x + ux * 66} y1={b.y + uy * 66} x2={b.x + ux * 24} y2={b.y + uy * 24} thick={11}/>
+      </>)}
+      <Drag x={a.x} y={a.y} onMove={(x, y) => setA({ x, y })} bounds={bounds} label={labelA}>{glyph(a, qa)}</Drag>
+      <Drag x={b.x} y={b.y} onMove={(x, y) => setB({ x, y })} bounds={bounds} label={labelB}>{glyph(b, qb)}</Drag>
       {matter && <><Zepton x={90} y={H - 30} angle={180} len={46} polarity="matter" signs/><T x={126} y={H - 25} anchor="start" size="sm">a: antimatter end · m: matter end</T></>}
     </Stage>}>
     <Choice label="Draw the field as" value={mode} onChange={setMode} options={[{ value: 'lines', label: 'Lines' }, { value: 'zeptons', label: 'Zeptons' }, { value: 'both', label: 'Both' }]}/>

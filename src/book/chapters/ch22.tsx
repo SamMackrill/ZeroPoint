@@ -14,20 +14,22 @@ export const lightFromFrame = (V: number) => ({ forward: 1 - V, back: 1 + V, ave
 function MovingFrameLight() {
   const [V, setV] = useState(0.3);
   const play = usePlayback({ speed: 0.3 });
-  const H = 340, x0 = 70, L = 520, y1 = 110, y2 = 230, u = play.t % 1, speeds = lightFromFrame(V);
+  const H = 340, x0 = 80, L = 560, y1 = 110, y2 = 230, cycle = 1.4, speeds = lightFromFrame(V);
+  // Hold briefly at the finished construction, and show it finished before first play (e.g. reduced motion).
+  const u = !play.playing && play.t === 0 ? 1 : Math.min(1, (play.t % cycle) / 1);
   // In the zero-point field's frame the photon goes at c₀ and frame A at V. The photon reaches the far wall when u = 1.
   const photon = x0 + L * u, frame = x0 + L * V * u;
   return <Diagram stage={
     <Stage w={W} h={H} label={`A photon in the zero-point field's rest frame, moving at c₀, and a frame A moving at ${fmt(V, 2)} c₀. Relative to A the photon moves at ${fmt(speeds.forward, 3)} c₀ going out and ${fmt(speeds.back, 3)} c₀ coming back.`}>
       <line x1={x0} y1={50} x2={x0} y2={H - 50} className="bk-s-muted" strokeWidth="5"/><line x1={x0 + L} y1={50} x2={x0 + L} y2={H - 50} className="bk-s-muted" strokeWidth="5"/>
       <line x1={frame} y1={60} x2={frame} y2={170} className="bk-s-mark" strokeWidth="5"/><T x={frame} y={48} tone="mark" size="lg">A</T>
-      <Arrow x1={x0} y1={y1} x2={frame} y2={y1} tone="mark" w={2.4}/><T x={(x0 + frame) / 2} y={y1 + 22} tone="mark" italic>V</T>
-      <Arrow x1={frame} y1={y1} x2={photon} y2={y1} tone="e" w={2.4}/><T x={(frame + photon) / 2} y={y1 - 12} tone="e" size="sm">c′ = c₀ − V</T>
-      <Arrow x1={x0} y1={y2} x2={photon} y2={y2} tone="text" w={2.4}/><T x={(x0 + photon) / 2} y={y2 + 24} tone="text" size="sm">c = c₀</T>
+      {frame - x0 > 18 && <><Arrow x1={x0} y1={y1} x2={frame} y2={y1} tone="mark" w={2.4}/><T x={(x0 + frame) / 2} y={y1 + 22} tone="mark" italic>V</T></>}
+      <Arrow x1={frame} y1={y1} x2={photon} y2={y1} tone="e" w={2.4}/>{photon - frame > 68 && <T x={(frame + photon) / 2} y={y1 - 12} tone="e" size="sm">c′ = c₀ − V</T>}
+      <Arrow x1={x0} y1={y2} x2={photon} y2={y2} tone="text" w={2.4}/>{photon - x0 > 50 && <T x={(x0 + photon) / 2} y={y2 + 24} tone="text" size="sm">c = c₀</T>}
       <circle cx={photon} cy={y1} r={6} className="bk-f-e"/><circle cx={photon} cy={y2} r={6} className="bk-f-text"/>
       <T x={W / 2} y={H - 14} size="sm">both drawn in the zero-point field’s rest frame, over the same time</T>
     </Stage>}>
-    <Slider label="Velocity of frame A, V" value={V} min={0} max={0.9} step={0.01} onChange={setV} show={v => `${fmt(v, 2)} c₀`}/>
+    <Slider label="Velocity of frame A, V" value={V} min={0} max={0.8} step={0.01} onChange={setV} show={v => `${fmt(v, 2)} c₀`}/>
     <PlayBar play={play} label="the photon"/>
     <Readout label="Light relative to A, going out" value={`${fmt(speeds.forward, 3)} c₀`} tone="e"/>
     <Readout label="Reflected, coming back" value={`${fmt(speeds.back, 3)} c₀`} tone="e"/>
@@ -63,7 +65,7 @@ function WavelengthContraction() {
         <line x1={xEnd} y1={60} x2={xEnd} y2={170} className="bk-s-mark" strokeWidth="3" strokeDasharray="4 4" opacity={0.6}/>
       </Drag>
       <line x1={xa} y1={60} x2={xa} y2={170} className="bk-s-mark" strokeWidth="5"/><T x={xa} y={48} tone="mark" size="lg">A</T>
-      {u < 1 && <Arrow x1={xa + 6} y1={44} x2={xa + 34} y2={44} tone="motion" w={2}/>}
+      {u < 1 && V > 0.01 && <Arrow x1={xa + 12} y1={44} x2={xa + 38} y2={44} tone="motion" w={2}/>}
       {u >= 1 && V > 0.03 && <><Arrow x1={x0} y1={y1 + 50} x2={xEnd} y2={y1 + 50} both tone="mark" w={1.6} head={7}/><T x={(x0 + xEnd) / 2} y={y1 + 72} tone="mark" size="sm">λ₀V/c₀</T></>}
       <Line d={wave(xa, L * ratio, y1)} tone="e" w={2}/>
       {u >= 1 && <><Arrow x1={xEnd} y1={y1 + 50} x2={x0 + L} y2={y1 + 50} both tone="e" w={1.6} head={7}/><T x={(xEnd + x0 + L) / 2} y={y1 + 72} tone="e" size="sm">λ′ = λ₀ − λ₀V/c₀</T></>}
@@ -87,28 +89,35 @@ export const sagnacTimes = (v: number) => ({ against: 1 / (1 + v), with: 1 / (1 
 /** Figure 22-3: the Sagnac effect. The photon sent against the rotation meets the emitter first. */
 function Sagnac() {
   const [v, setV] = useState(0.25);
-  const play = usePlayback({ speed: 0.22 });
-  const H = 400, cx = 280, cy = 200, R = 108, times = sagnacTimes(v), span = times.with * 1.12, t = (play.t % 1) * span;
+  const play = usePlayback({ speed: 0.35 });
+  const H = 400, cx = 235, cy = 200, R = 108, times = sagnacTimes(v), span = times.with + 0.35;
+  // Keep light speed constant on screen whatever v is; before first play (or under reduced motion), show the moment the against-photon arrives.
+  const t = !play.playing && play.t === 0 ? times.against : play.t % span;
   // Angles in turns: the emitter goes round at v, each photon at 1, in the frame that does not rotate.
   const emitter = v * t, pWith = Math.min(t, times.with), pAgainst = -Math.min(t, times.against);
   const at = (turns: number, r: number) => polar(cx, cy, r, turns * 360);
-  const arc = (to: number, r: number) => pathThrough(Array.from({ length: 60 }, (_, i) => at((to * i) / 59, r)));
+  const arc = (to: number, r: number) => {
+    const steps = Math.max(60, Math.ceil(Math.abs(to) * 90));
+    return pathThrough(Array.from({ length: steps }, (_, i) => at((to * i) / (steps - 1), r)));
+  };
   return <Diagram stage={
     <Stage w={W} h={H} label={`A sphere rotating with a rim speed of ${fmt(v, 2)} of the speed of light, and an emitter on its surface that sends one photon each way round. The photon sent against the rotation is detected after ${fmt(times.against, 3)} of the time light takes to go round, and the other after ${fmt(times.with, 3)}.`}>
       <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-plain"/>
-      <Still>{v > 0.01 && <Spin x={cx} y={cy} r={22} ccw sweep={250} tone="text" w={2.4}/>}<T x={cx + 30} y={cy - 18} tone="text" italic>ω</T></Still>
-      <Line d={arc(pWith, R + 34)} tone="text" w={2}/><Line d={arc(pAgainst, R + 18)} tone="muted" w={2}/>
+      {/* Faint rotating spokes on the sphere so its turning shows while playing. */}
+      {[0, 90, 180, 270].map(a => { const [x1, y1] = polar(cx, cy, 32, emitter * 360 + a), [x2, y2] = polar(cx, cy, R - 8, emitter * 360 + a); return <line key={a} x1={x1} y1={y1} x2={x2} y2={y2} className="bk-s-muted" strokeWidth="1.5" strokeDasharray="4 6" opacity={0.55}/>; })}
+      {v > 0.01 && <Still><Spin x={cx} y={cy} r={22} ccw sweep={250} tone="text" w={2.4}/><T x={cx + 30} y={cy - 18} tone="text" italic>ω</T></Still>}
+      <Line d={arc(pWith, R + 34)} tone="text" w={2}/><Line d={arc(pAgainst, R + 18)} tone="mark" w={2} opacity={0.75}/>
       <circle cx={at(pWith, R + 34)[0]} cy={at(pWith, R + 34)[1]} r={6} className="bk-f-text"/>
       <circle cx={at(pAgainst, R + 18)[0]} cy={at(pAgainst, R + 18)[1]} r={6} className="bk-f-mark"/>
       <circle cx={at(emitter, R)[0]} cy={at(emitter, R)[1]} r={8} className="bk-f-accent"/>
-      <T x={560} y={90} anchor="start" size="sm" tone="accent">● emitter and detector</T>
-      <T x={560} y={114} anchor="start" size="sm" tone="mark">● sent against the rotation</T><T x={560} y={132} anchor="start" size="sm" tone="mark">{t >= times.against ? 'detected' : 'on its way'}</T>
-      <T x={560} y={160} anchor="start" size="sm" tone="text">● sent with the rotation</T><T x={560} y={178} anchor="start" size="sm" tone="text">{t >= times.with ? 'detected' : 'on its way'}</T>
+      <T x={460} y={90} anchor="start" size="sm" tone="accent">● emitter and detector</T>
+      <T x={460} y={118} anchor="start" size="sm" tone="mark">● sent against the rotation</T><T x={474} y={136} anchor="start" size="sm" tone="mark">{t >= times.against ? 'detected' : 'on its way'}</T>
+      <T x={460} y={168} anchor="start" size="sm" tone="text">● sent with the rotation</T><T x={474} y={186} anchor="start" size="sm" tone="text">{t >= times.with ? 'detected' : 'on its way'}</T>
     </Stage>}>
     <Slider label="Speed of the surface, υ" value={v} min={0} max={0.6} step={0.01} onChange={setV} show={x => `${fmt(x, 2)} c`}/>
     <PlayBar play={play} label="the photons"/>
-    <Readout label="Against the rotation: detected at" value={fmt(times.against, 4)}/>
-    <Readout label="With the rotation: detected at" value={fmt(times.with, 4)}/>
+    <Readout label="Against the rotation: detected at" value={`${fmt(times.against, 4)} T₀`}/>
+    <Readout label="With the rotation: detected at" value={`${fmt(times.with, 4)} T₀`}/>
     <Readout label="Apparent speeds from the surface" value={`${fmt(1 + v, 3)} c and ${fmt(1 - v, 3)} c`} tone="e"/>
     <Remark>{v < 0.01 ? 'With no rotation the two photons return together.' : 'The speed of the photons does not change; one really does travel a shorter distance than the other.'}</Remark>
   </Diagram>;
@@ -134,9 +143,10 @@ function MovingClock() {
   // Zeptons near the moving clock are spun up as its matter passes, one way above its middle and the other below, the
   // faster the clock goes; behind it they slowly spin down again. They stay where they are. The field round the clock
   // at rest is left as it is.
+  // Rightward-moving matter spins zeptons counter-clockwise above its middle (dy < 0 -> +angle) and clockwise below (dy > 0 -> -angle), as in Figures 6-14, 10-2 and 11-4.
   CLOCK_FIELD.forEach((z, i) => {
     if (z.y < 200) return;
-    const dy = z.y - (lane - 70), drive = 720 * v * Math.sign(dy || 1) * Math.exp(-Math.hypot(z.x - x, dy) / 70), held = Math.abs(drive) > Math.abs(now.spin[i]);
+    const dy = z.y - (lane - 70), drive = -720 * v * Math.sign(dy || 1) * Math.exp(-Math.hypot(z.x - x, dy) / 70), held = Math.abs(drive) > Math.abs(now.spin[i]);
     now.spin[i] += (drive - now.spin[i]) * Math.min(1, dt * (held ? 4 : 0.7));
     now.turned[i] += now.spin[i] * dt;
   });

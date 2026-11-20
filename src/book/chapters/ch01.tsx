@@ -32,20 +32,20 @@ function Pushed() {
   const state = useRef({ t: 0, x: 360, v: 0 });
   const dt = Math.max(0, Math.min(0.05, play.t - state.current.t)), net = left - right, s = state.current;
   if (play.t < s.t) { s.x = 360; s.v = 0; }
-  s.t = play.t; s.v += net * 400 * dt; s.x = clamp(s.x + s.v * dt, 190, 530);
-  if (s.x === 190 || s.x === 530) s.v = 0;
+  s.t = play.t; s.v += net * 400 * dt; s.x = clamp(s.x + s.v * dt, 200, 520);
+  if (s.x === 200 || s.x === 520) s.v = 0;
   const H = 280, y = 130;
   return <Diagram stage={
     <Stage w={W} h={H} label={`A body with the vacuum pressing on it from both sides: ${fmt(left, 3)} from the left and ${fmt(right, 3)} from the right. ${Math.abs(net) < 0.0005 ? 'The pressures balance, so the body no longer accelerates.' : `It is pushed to the ${net > 0 ? 'right' : 'left'}.`}`}>
-      <BlockArrow x1={s.x - 46 - 150 * left} y1={y} x2={s.x - 46} y2={y} thick={46}/>
-      <BlockArrow x1={s.x + 46 + 150 * right} y1={y} x2={s.x + 46} y2={y} thick={46}/>
+      <BlockArrow x1={s.x - 46 - 120 * left} y1={y} x2={s.x - 46} y2={y} thick={46}/>
+      <BlockArrow x1={s.x + 46 + 120 * right} y1={y} x2={s.x + 46} y2={y} thick={46}/>
       <Body x={s.x} y={y} r={40} tone="plain"/>
       <T x={W / 2} y={H - 30} size="sm">{Math.abs(net) < 0.0005 ? 'equal pressures: no push either way, however large they are' : 'it looks like attraction toward the side with less pressure; it is a push from the side with more'}</T>
     </Stage>}>
     <Slider label="Pressure from the left" value={left} min={0.8} max={1.2} step={0.005} onChange={setLeft}/>
     <Slider label="Pressure from the right" value={right} min={0.8} max={1.2} step={0.005} onChange={setRight}/>
     <PlayBar play={play} label="the body"/>
-    <Readout label="Difference" value={Math.abs(net) < 0.0005 ? 'none' : `${fmt(Math.abs(net), 2)} toward the ${net > 0 ? 'right' : 'left'}`} tone="force"/>
+    <Readout label="Difference" value={Math.abs(net) < 0.0005 ? 'none' : `${fmt(Math.abs(net), 3)} toward the ${net > 0 ? 'right' : 'left'}`} tone="force"/>
     <Remark>And even at a state of rest everything is being pushed.</Remark>
   </Diagram>;
 }
@@ -58,7 +58,7 @@ const chapter: ChapterContent = {
   </>,
   items: [
     {
-      kind: 'explorer', id: 'x1-1', page: 15, section: 'Fundamental Principles', title: 'Twelve principles, and where they are used',
+      kind: 'explorer', id: 'x1-1', page: 14, section: 'Fundamental Principles', title: 'Twelve principles, and where they are used',
       Diagram: () => <StepList label="Fleming’s twelve principles for a physical theory" heading="Principle" steps={PRINCIPLES}/>,
       text: <p>The titles are Fleming’s. He applies them through the rest of the book as tests, most plainly in chapter 24, where general relativity is scored against them.</p>,
       tryThis: ['Step through the twelve.', 'Where a principle has links, follow one to see it doing work in a figure.'],

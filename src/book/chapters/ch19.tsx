@@ -62,8 +62,9 @@ function LateGravity() {
     <Stage w={W} h={H} label={instant ? 'A planet orbiting a star with a force that arrives without delay: the force points at the star and the orbit holds.' : `A planet orbiting a star, with gravity travelling at ${fmt(speed, 2)} times the speed of light. The force lags by ${fmt((lag * 180 * 3600) / Math.PI, 2)} arcseconds, and the orbit would double in size in ${fmt(doubling, 2)} years.`}>
       <circle cx={cx} cy={cy} r={r} className="bk-s-muted" fill="none" strokeDasharray="2 4"/>
       <Body x={cx} y={cy} r={18} tone="matter"/>
-      {!instant && <><circle cx={ax} cy={ay} r={9} className="bk-s-muted" fill="none" strokeDasharray="2 2"/><T x={ax + (ax - cx) * 0.16} y={ay + (ay - cy) * 0.16 + 4} size="sm">A</T><Arrow x1={ax} y1={ay} x2={cx + (ax - cx) * (26 / r)} y2={cy + (ay - cy) * (26 / r)} both tone="faint" w={1.2} head={7}/></>}
+      {!instant && <><circle cx={ax} cy={ay} r={9} className="bk-s-muted" fill="none" strokeDasharray="2 2"/><T x={ax + (ax - cx) * 0.16} y={ay + (ay - cy) * 0.16 + 4} size="sm">A</T><Arrow x1={ax - (ax - cx) * (11 / r)} y1={ay - (ay - cy) * (11 / r)} x2={cx + (ax - cx) * (26 / r)} y2={cy + (ay - cy) * (26 / r)} both tone="faint" w={1.2} head={7}/></>}
       <BlockArrow x1={bx} y1={by} x2={fx} y2={fy} thick={7}/>
+      <T x={(bx + fx) / 2 - (fy - by) * 0.22} y={(by + fy) / 2 + (fx - bx) * 0.22 + 4} size="sm" tone="text" italic>F</T>
       <Body x={bx} y={by} r={9} tone="plain"/><T x={bx + (bx - cx) * 0.16} y={by + (by - cy) * 0.16 + 4} size="sm" tone="text">B</T>
       {!instant && <T x={560} y={80} anchor="start" size="sm">(angle A–B magnified)</T>}
     </Stage>}>
@@ -169,14 +170,16 @@ function HalfTurn() {
   // The field's front: in the time a zepton makes a whole half-turn it covers 1/share wavelengths. It runs on along the
   // row, and starts again once the row has turned, holding a moment first; never more often than once a half-turn.
   const rowEnd = W - 40, spacing = 34, count = Math.floor((rowEnd - x0) / spacing) + 1, crossing = ((rowEnd - x0 + lambda) * share) / lambda;
-  const cycle = Math.max(1, crossing + 0.6), front = x0 + (lambda / share) * (play.t % cycle), frontShown = Math.min(rowEnd, front);
+  // Sync the row's repeat to a whole number of half-turns so each new wave front starts in step with the zepton above.
+  const cycle = Math.ceil(crossing + 0.25), front = x0 + (lambda / share) * (play.t % cycle), frontShown = Math.min(rowEnd, front);
   // Each zepton turns through the share it needs, taking share of a lifetime, while the front moves one wavelength on.
   // A share too small to see is drawn as 14 degrees.
   const turnShown = Math.max(needed, 14);
   return <Diagram stage={
     <Stage w={W} h={H} label={`Above, a zepton turning through its whole half-turn, which spans its wavelength: the speed of light. Below, a row of zeptons each of which need turn only ${fmt(needed, 2)} degrees to pass a field on, so the field travels ${fmt(fieldSpeed(needed), 2)} times as fast.`}>
       <T x={x0 - 30} y={34} anchor="start" size="sm" tone="mark">matter or light: each zepton makes its whole half-turn, so it goes at c</T>
-      <Zepton x={x0 + lambda / 2} y={yTop} angle={180 - 180 * u} len={lambda} open={Math.max(0.12, Math.sin(Math.PI * u))} polarity="matter" signs emphasis="key"/>
+      {/* As printed in Figure 19-4: m on the left, a on the right (angle 0° puts a on the right), turning clockwise. */}
+      <Zepton x={x0 + lambda / 2} y={yTop} angle={-180 * u} len={lambda} open={Math.max(0.12, Math.sin(Math.PI * u))} polarity="matter" signs emphasis="key"/>
       <Spin x={x0 + lambda / 2} y={yTop - 12} r={lambda * 0.3 + 26} ccw={false} from={160} sweep={140}/>
       <Arrow x1={x0} y1={yTop + lambda / 2 + 18} x2={x0 + lambda} y2={yTop + lambda / 2 + 18} both tone="mark" w={1.6} head={7}/>
       <T x={x0 + lambda / 2} y={yTop + lambda / 2 + 42} tone="mark">d = λ = c/ν</T>
@@ -185,7 +188,7 @@ function HalfTurn() {
       <T x={x0 - 30} y={yRow - 46} anchor="start" size="sm" tone="e">a field: each zepton need turn only {halvings === 0 ? '180°' : `180°/${2 ** halvings}`}, so the field goes {fmt(fieldSpeed(needed), 2)} times as fast</T>
       {Array.from({ length: count }, (_, i) => {
         const x = x0 + i * spacing, reached = x <= front, done = clamp((front - x) / lambda);
-        return <Zepton key={i} x={x} y={yRow} angle={turnShown * done} len={24} polarity="matter" signs={false} opacity={reached ? 1 : 0.4}/>;
+        return <Zepton key={i} x={x} y={yRow} angle={-turnShown * done} len={24} polarity="matter" signs={false} opacity={reached ? 1 : 0.4}/>;
       })}
       {front < rowEnd + spacing && <line x1={frontShown} y1={yRow - 26} x2={frontShown} y2={yRow + 26} className="bk-s-e" strokeWidth="2.5" strokeDasharray="5 4"/>}
       <Arrow x1={x0} y1={yRow + 40} x2={x0 + lambda} y2={yRow + 40} both tone="mark" w={1.2} head={6}/><T x={x0 + lambda / 2} y={yRow + 60} size="sm" tone="mark">one wavelength, for scale</T>
@@ -226,7 +229,7 @@ const chapter: ChapterContent = {
         <p>The fields <Q>are also extinguished each half wavelength along with the central zepton. Even so, the electric and magnetic fields are detectable at more than half a wavelength distance off to the side of the photon’s path. But remember that the half wavelength distance is related to the speed of light. That means that the electric and magnetic fields of the photon are propagating faster than the speed of light</Q> (<Pg n={146}/>).</p>
       </>,
       tryThis: ['Set the speed to 1 c: the sphere shrinks onto the red ring, half a wavelength out.', 'Raise the speed: the field reaches further and further to the side of the path in the same brief life.', 'Drag the figure round to look along the photon’s path, or across it.'],
-      notes: <p>Drawn in three dimensions with the printed figure’s axes, as a much simplified form of the laboratory’s light scene: the photon a sequence of central zeptons along x, its fields trailing behind, and a sphere for how far the field gets. The printed figure’s surrounding zeptons are left out for clarity. Beyond about 5 c the sphere and the half-wavelength ring are drawn to a smaller common scale, so the ring shrinks within the sphere; up to 100 c can be shown, where Fleming’s lower bound is 2 × 10¹⁰ c. Where 3D cannot be drawn, the figure is shown flat, looking along the photon’s path, with the surrounding zeptons; their lean is magnified (the square root of the inverse-square field) so that distant ones can be seen to turn.</p>,
+      notes: <p>Drawn in three dimensions with the printed figure’s axes, as a much simplified form of the laboratory’s light scene: the photon a sequence of central zeptons along x, its fields trailing behind, and a sphere for how far the field gets. The printed figure’s surrounding zeptons are left out for clarity. Beyond about 5 c the sphere and the half-wavelength ring are drawn to a smaller common scale, so the ring shrinks within the sphere; up to 100 c can be shown, where Fleming’s lower bound is 2 × 10¹⁰ c. Where 3D cannot be drawn, the figure is shown flat in the plane of rotation, with the surrounding zeptons; their lean is magnified (the square root of the inverse-square field) so that distant ones can be seen to turn.</p>,
       labs: [{ lab: 'light', scenario: 'absorption', query: 'L=+cone', why: 'The light cone at an absorbing wall: how little of the field’s energy could arrive if fields kept to the speed of light.' }],
     },
     {

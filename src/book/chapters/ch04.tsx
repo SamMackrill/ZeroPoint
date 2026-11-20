@@ -147,7 +147,7 @@ const proposal = (p: Proposal) => function Proposed() { return <PhotonProposal p
 function PairInPhoton() {
   const [turning, setTurning] = useState(false);
   const play = usePlayback({ speed: 0.3 });
-  const W = 720, H = 250, y = 110, a = 290, b = 430, rx = 70, ry = 26, cx = (a + b) / 2;
+  const W = 720, H = 260, y = 118, a = 290, b = 430, rx = 70, ry = 26, cx = (a + b) / 2;
   const wavy = (from: number, to: number) => pathThrough(Array.from({ length: 41 }, (_, i) => { const x = from + ((to - from) * i) / 40; return [x, y - 12 * Math.sin(((x - from) / 62) * Math.PI * 2)] as const; }));
   const u = play.t % 1, third = 1 / 3;
   // The energy runs along the wavy line, through the pair, and on. Within the pair the electron goes with the photon
@@ -160,7 +160,7 @@ function PairInPhoton() {
       <Line d={wavy(40, a)} tone="e" w={2}/><Line d={wavy(b, 680)} tone="e" w={2}/>
       <ellipse cx={cx} cy={y} rx={rx} ry={ry} className="bk-s-muted" fill="none" strokeWidth="1.6"/>
       <Arrow x1={cx - 8} y1={y - ry} x2={cx + 8} y2={y - ry} tone="neg" w={0.1} head={10}/><Arrow x1={cx + 8} y1={y + ry} x2={cx - 8} y2={y + ry} tone="pos" w={0.1} head={10}/>
-      <T x={cx} y={y - ry - 12} size="sm" tone="neg">electron, with the photon</T><T x={cx} y={y + ry + 22} size="sm" tone="pos">positron, against it</T>
+      <T x={cx} y={y - ry - 26} size="sm" tone="neg">electron, with the photon</T><T x={cx} y={y + ry + 34} size="sm" tone="pos">positron, against it</T>
       <T x={150} y={y + 44} size="sm" tone="e">photon</T><T x={570} y={y + 44} size="sm" tone="e">photon</T>
       {phase === 0 && (() => { const [x, yy] = along(40, a); return <circle cx={x} cy={yy} r={7} className="bk-f-mark"/>; })()}
       {phase === 2 && (() => { const [x, yy] = along(b, 680); return <circle cx={x} cy={yy} r={7} className="bk-f-mark"/>; })()}
@@ -169,10 +169,10 @@ function PairInPhoton() {
         <circle cx={cx + (px - cx) * rx} cy={y + (py - y) * ry} r={7} className="bk-f-pos"/>
       </>}
       {turning && <>
-        <Zepton x={cx} y={y} angle={phase === 1 ? -180 * k : phase === 0 ? 0 : -180} len={76} open={phase === 1 ? Math.max(0.25, Math.sin(Math.PI * k)) : 0.25} oval={false} signs opacity={phase === 1 ? 1 : 0.35}/>
-        {phase === 1 && <Spin x={cx} y={y} r={48} ccw={false} from={150} sweep={120}/>}
+        <Zepton x={cx} y={y} angle={phase === 1 ? -180 * k : phase === 0 ? 0 : -180} len={56} open={phase === 1 ? Math.max(0.25, Math.sin(Math.PI * k)) : 0.25} oval={false} signs opacity={phase === 1 ? 1 : 0.35}/>
+        {phase === 1 && <Spin x={cx} y={y} r={38} ccw={false} from={150} sweep={120}/>}
       </>}
-      <T x={cx} y={228} size="sm">{turning ? 'Read as one pair turning half a turn: its electron moves forward, its positron back.' : 'The loop is the pair; the wavy line is the photon either side of it.'}</T>
+      <T x={cx} y={240} size="sm">{turning ? 'Read as one pair turning half a turn: its electron moves forward, its positron back.' : 'The loop is the pair; the wavy line is the photon either side of it.'}</T>
     </Stage>}>
     <PlayBar play={play} label="the photon"/>
     <Toggle label="Show the pair as a half-turn" checked={turning} onChange={setTurning}/>
@@ -241,7 +241,7 @@ function RotatingPair() {
             <PairScene state={{ turned, cw, field, presence, showSpin: !play.playing, view, reset }} onFail={fail} description={`${label} Drag to turn the view.`}/>
           </Suspense>
         </FallbackOnError>}
-    <Stage h={140} label={`E through the pair's half-turn: zero along the path, greatest across it at 90°, zero again at 180°. Now at ${Math.round(turned)}°.`}>
+    <Stage h={148} label={`E through the pair's half-turn: zero along the path, greatest across it at 90°, zero again at 180°. Now at ${Math.round(turned)}°.`}>
       <line x1={px} y1={py} x2={px + pw} y2={py} className="bk-s-faint" strokeWidth="1"/>
       <Line d={trace} tone="e" w={2} opacity={0.45}/>
       <circle cx={px + (pw * turned) / 180} cy={py - up * 50 * field} r={6} className="bk-f-e" opacity={presence}/>
@@ -333,7 +333,7 @@ const chapter: ChapterContent = {
       Diagram: proposal(p),
       text: [
         <>
-          <p>Suppose a fluctuation is two photons that start at a centre, go out a wavelength, and come back to annihilate. The test is the energy-time allowed to a fluctuation, <V>ΔE</V><V>Δt</V> = <V>h</V>/2 (Equation 4-1), against that of a photon, which for one wavelength is <V>Et</V> = <V>h</V> (Equation 4-3) (<Pg n={36}/>).</p>
+          <p>Suppose a fluctuation is two photons that start at a centre, go out a wavelength, and come back to annihilate. The test is the energy-time allowed to a fluctuation, Δ<V>E</V>Δ<V>t</V> = <V>h</V>/2 (Equation 4-1), against that of a photon, which for one wavelength is <V>Et</V> = <V>h</V> (Equation 4-3) (<Pg n={36}/>).</p>
           <p><Q>Since each photon goes out one wavelength and back one wavelength, the total number of wavelengths is four, and the total energy-time is 4h.</Q> That is eight times the allowance, so this <Q>cannot be correct</Q> (<Pg n={37}/>).</p>
         </>,
         <p><Q>At a glance that looks more like what we would expect a vacuum fluctuation to look like. The problem is that there are still four half wavelengths, or two full wavelengths for a total energy-time of 2h, which is still four times the amount allowed</Q> (<Pg n={37}/>).</p>,

@@ -15,10 +15,10 @@ function PairSeries() {
   const spacing = 68;
   const [record, setRecord] = useState(true);
   const count = 9, play = usePlayback({ speed: 0.55 });
-  const cycle = play.t % (count + 0.6), active = Math.min(count - 1, Math.floor(cycle)), u = Math.min(1, cycle - active);
+  const cycle = play.t % (count + 0.6), active = Math.min(count - 1, Math.floor(cycle)), u = Math.min(1, cycle - active), alive = cycle < count;
   const W = 720, x0 = (W - spacing * (count - 1)) / 2, y = 150, amp = 46;
   const wave = pathThrough(Array.from({ length: 181 }, (_, i) => { const s = (i / 180) * count; return [x0 - spacing / 2 + s * spacing, 62 - 24 * Math.sin(Math.PI * s)] as const; }));
-  const now = seriesPair(active), strength = Math.sin(Math.PI * u);
+  const now = seriesPair(active), strength = alive ? Math.sin(Math.PI * u) : 0;
   return <Diagram stage={
     <Stage w={W} h={322} label={`A photon as a row of ${count} virtual electron-positron pairs. Pair ${active + 1} is turning ${now.clockwise ? 'clockwise' : 'counter-clockwise'}: its electric field points ${now.up > 0 ? 'up' : 'down'} and its magnetic field ${now.clockwise ? 'into' : 'out of'} the page.`}>
       <T x={24} y={66} anchor="start" tone="e" size="lg">E</T><T x={24} y={y + 6} anchor="start" size="sm">pairs</T><T x={24} y={264} anchor="start" tone="b" size="lg">B</T>
@@ -26,7 +26,7 @@ function PairSeries() {
       <line x1={x0 - spacing / 2} y1={62} x2={x0 + spacing * (count - 0.5)} y2={62} className="bk-s-faint" strokeWidth="1"/>
       <Arrow x1={x0 - spacing / 2} y1={306} x2={x0 + spacing * (count - 0.5)} y2={306} tone="muted" w={1.2} head={7}/><T x={W / 2} y={300} size="sm">direction of the photon</T>
       {Array.from({ length: count }, (_, n) => {
-        const x = x0 + n * spacing, pair = seriesPair(n), live = n === active, age = live ? u : n < active ? 1 : 0;
+        const x = x0 + n * spacing, pair = seriesPair(n), live = alive && n === active, age = live ? u : n < active ? 1 : 0;
         const angle = pair.clockwise ? 180 - 180 * age : 180 + 180 * age, field = live ? strength : 0;
         return <g key={n}>
           <circle cx={x} cy={y} r={2} className="bk-f-faint"/>
@@ -59,7 +59,7 @@ function PairSeries() {
       })}
     </Stage>}>
     <PlayBar play={play} label="the photon"/>
-    <Action onClick={() => play.seek((active + 1) % count)}>Next pair</Action>
+    <Action onClick={() => play.seek(((active + 1) % count) + (play.playing ? 0 : 0.5))}>Next pair</Action>
     <Toggle label="Show the whole series, as printed" checked={record} onChange={setRecord}/>
     <Readout label={`E of this pair, ${now.up > 0 ? 'up' : 'down'} the page`} value={percentOfPeak(strength)} tone="e"/>
     <Readout label={`B of this pair, ${now.clockwise ? 'into' : 'out of'} the page`} value={percentOfPeak(strength)} tone="b"/>
@@ -117,7 +117,7 @@ function PhotonField() {
       {sites.onAxis.filter(s => s.p[2] < 0).map(neighbour)}
       {pair([0, 0, 0], centre, 26 * open + 4, 'centre', 'key')}
       {sites.onAxis.filter(s => s.p[2] > 0).map(neighbour)}
-      <T x={ox + 120} y={oy + 34} size="sm" tone="mark">central pair: half-turn {n + 1}, {n % 2 === 0 ? 'clockwise' : 'counter-clockwise'}</T>
+      <T x={24} y={30} anchor="start" size="sm" tone="mark">central pair: half-turn {n + 1}, {n % 2 === 0 ? 'clockwise' : 'counter-clockwise'}</T>
       <T x={24} y={H - 16} anchor="start" size="sm">The view travels with the photon: each half-turn is the next central pair of the series.</T>
     </Stage>}>
     <PlayBar play={play} label="the pairs"/>

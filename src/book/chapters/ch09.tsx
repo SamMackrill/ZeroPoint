@@ -126,12 +126,12 @@ function WallaceGyros() {
     // The beam from the lamp to the detector's mirror and on to the scale: the mirror turns with the tilt, the beam twice as far.
     const mx = dx + 20, my = gy, tilt = rad(shift * TILT_SHOWN);
     const toScale = Math.atan2(gy - 70 - my, scaleX - mx);
-    const out = toScale + 2 * tilt, sy = my + (scaleX - mx) * Math.tan(out);
+    const out = toScale - 2 * tilt, sy = my + (scaleX - mx) * Math.tan(out);
     return <Stage w={W} h={H} label={label}>
       <rect x={110} y={gy - 140} width={420} height={40} className="bk-body bk-body-matter"/><rect x={110} y={gy + 100} width={420} height={40} className="bk-body bk-body-matter"/>
       {[gx, dx].map(x => <g key={x}><rect x={x - 45} y={gy - 100} width={90} height={42} className="bk-body bk-body-matter"/><rect x={x - 45} y={gy + 58} width={90} height={42} className="bk-body bk-body-matter"/></g>)}
       {assembly(gx, -over, wheel)}
-      {assembly(dx, -45 + shift * TILT_SHOWN, -wheel)}
+      {assembly(dx, 45 - shift * TILT_SHOWN, -wheel)}
       <line x1={lamp[0]} y1={lamp[1]} x2={mx} y2={my} className="bk-s-warn" strokeWidth="1.5"/><line x1={mx} y1={my} x2={scaleX} y2={sy} className="bk-s-warn" strokeWidth="1.5"/>
       <rect x={lamp[0] - 10} y={lamp[1] - 7} width={20} height={14} className="bk-plate"/>
       <line x1={scaleX} y1={gy - 140} x2={scaleX} y2={gy} className="bk-s-text" strokeWidth="3"/><circle cx={scaleX} cy={sy} r={5} className="bk-f-warn"/>
@@ -248,7 +248,7 @@ const chapter: ChapterContent = {
         'Drag the picture to look at the generator’s wheel between its pole pieces, and the detector hanging on its knife edge.',
       ],
       notes: <>
-        <p>The figure prints two of the drawings from Wallace’s patent (US 3,626,605, FIGS. 2 and 6); the apparatus here follows the patent. Two U-shaped brass members, mirrored, leave two gaps. The generator sits in one: its wheel, spun by compressed air on buckets cut in its rim, turns a hair’s breadth from a pole piece on each face. The detector, built the same way, hangs in the other gap on a knife edge. The patent reads its tilt with a light beam off a mirror onto a scale on the wall, and the generator assembly turns over on a shaft (in FIG. 7, by a motor, pulley and belt). Fleming calls 31 the pulley; in the patent 31 is the shaft’s bearings.</p>
+        <p>The figure prints two of the drawings from Wallace’s patent (US 3,626,605, FIGS. 2 and 5); the apparatus here follows the patent. Two U-shaped brass members, mirrored, leave two gaps. The generator sits in one: its wheel, spun by compressed air on buckets cut in its rim, turns a hair’s breadth from a pole piece on each face. The detector, built the same way, hangs in the other gap on a knife edge. The patent reads its tilt with a light beam off a mirror onto a scale on the wall, and the generator assembly turns over on a shaft (in FIG. 7, by a motor, pulley and belt). Fleming calls 31 the pulley; in the patent 31 is the shaft’s bearings.</p>
         <p>The detector’s shift is about 13 arc minutes from rest, 26 between poles aligned and opposed, as the patent reports; on screen its tilt is magnified 24 times. Taking the shift as in proportion to the wheels’ speed, and as following the generator round as it turns over, are display choices. Wallace’s further claim of an upward force Fleming thinks <Q>highly unlikely</Q>, and it is not shown.</p>
       </>,
     },

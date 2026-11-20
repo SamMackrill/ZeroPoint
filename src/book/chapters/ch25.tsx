@@ -69,6 +69,8 @@ function TwoProtons() {
       <T x={560} y={70} anchor="start" size="sm" tone="text">➤ net force: {net > 0 ? 'together' : 'apart'}</T><T x={560} y={92} anchor="start" size="sm" tone="pos">→ Coulomb: apart</T>
       <line x1={px} y1={py + ph} x2={px + pw} y2={py + ph} className="bk-s-muted"/><line x1={px} y1={py} x2={px} y2={py + ph} className="bk-s-muted"/>
       <Line d={curve(l => casimirForce(l) * (porous ? transparency(l) : 1))} tone="text" w={2.2}/><Line d={curve(l => coulombForce(l + 2 * PROTON_RADIUS))} tone="pos" w={2.2}/>
+      <T x={fx(0.95)} y={fy(casimirForce(0.95)) - 14} anchor="start" size="sm" tone="text">Casimir force</T>
+      <T x={fx(3.95)} y={fy(coulombForce(3.95 + 2 * PROTON_RADIUS)) - 10} anchor="end" size="sm" tone="pos">Coulomb force</T>
       <line x1={fx(L)} y1={py} x2={fx(L)} y2={py + ph} className="bk-s-mark" strokeDasharray="3 3"/>
       {[0.1, 1, 2, 3, 4].map(l => <T key={l} x={fx(l)} y={py + ph + 18} size="sm">{l}</T>)}<T x={px + pw / 2} y={py + ph + 36} size="sm">least distance between the particles, L (fm)</T>
       {[1, 100, 10000].map(f => <T key={f} x={px - 8} y={fy(f) + 4} anchor="end" size="sm">{f.toLocaleString('en-GB')} N</T>)}
