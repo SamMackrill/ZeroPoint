@@ -141,5 +141,6 @@ describe('PaperTrails: links and cards', () => {
     const people = screen.getByTestId('about-people');
     expect([...people.querySelectorAll('a.pt-link')].map(a => a.textContent)).toEqual(['Michael Faraday', 'James Clerk Maxwell', 'Hendrik Lorentz', 'Paul Dirac', 'Carl D. Anderson']);
     expect(people.querySelector('img')?.getAttribute('alt')).toBe('People on PaperTrails');
+    expect(people.querySelector('img')?.getAttribute('src')).toBe(`${PAPERTRAILS}images/brand-mark.png`);
   });
 });

@@ -1,5 +1,5 @@
 // Check every PaperTrails id ZeroPoint links to against the published PaperTrails data, so a renamed or removed
-// scientist or paper is caught before readers find a link that opens nothing. Run: node scripts/check-papertrails.mjs
+// scientist or paper, or a moved brand mark, is caught before readers find a link that opens nothing. Run: node scripts/check-papertrails.mjs
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import yaml from 'js-yaml';
@@ -14,6 +14,8 @@ const peopleBlock = /export const PEOPLE = \{([\s\S]*?)\} as const;/.exec(people
 const scientistIds = [...peopleBlock.matchAll(/^\s*([a-z_]+):/gm)].map(m => m[1]);
 const paperIds = [...new Set([...people.matchAll(/id: '([\w-]+-work-\d+)'/g)].map(m => m[1]))];
 
+const mark = await fetch(`${base}images/brand-mark.png`, { method: 'HEAD' });
+if (!mark.ok) throw new Error(`PaperTrails' mark (images/brand-mark.png) answered ${mark.status}`);
 const response = await fetch(`${base}data/scientists.yaml`);
 if (!response.ok) throw new Error(`PaperTrails answered ${response.status}`);
 const data = yaml.load(await response.text(), { schema: yaml.CORE_SCHEMA });
@@ -23,7 +25,7 @@ const missing = [
   ...scientistIds.filter(id => !data[id]).map(id => `scientist:${id}`),
   ...paperIds.filter(id => !papers.has(id)).map(id => `publication:${id}`),
 ];
-console.log(`Checked ${scientistIds.length} scientists and ${paperIds.length} papers against ${base}`);
+console.log(`Checked the mark, ${scientistIds.length} scientists and ${paperIds.length} papers against ${base}`);
 if (missing.length) {
   console.error(`Not on PaperTrails: ${missing.join(', ')}`);
   process.exit(1);
