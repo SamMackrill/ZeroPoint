@@ -548,3 +548,7 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** the explorers are hard to tell apart without a mark. **Done:** each explorer card's kicker names its id, quietly, as "Explorer x23-2".
 - **Owner (x23-2):** the torque links must reach into the light's path; one star, not a choice of bodies, drawn with the strongest effect but not called a neutron star. **Done:** the light's zeptons linked to each other and the field; a single "Star", the readouts giving the Sun's real figures.
 - **Owner:** very happy with the torque depictions.
+
+### Figures 23-1 and 23-2: the torque added (for re-review)
+
+- **Owner:** add the new torque depiction to any approved figures or explorers that would benefit, for re-review. Searched the book's chapters for the London-van der Waals torque: beyond chapter 20 and the explorers already done, it is key to the two figures of light passing the Sun. **Done:** `fieldLattice` in `shared.tsx`; in 23-1 the zeptons round the Sun wobble, held near it, with fading links, in place of the band that showed the slowing; in 23-2 the same, the links fading to a trace when the tangential half is left out, with a play bar for the zeptons. Notes updated.

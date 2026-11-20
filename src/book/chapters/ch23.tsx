@@ -3,7 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Arrow, Body, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, Zepton, Choice, clamp, fmt, pathThrough, rad, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
-import { PendulumClock, TorqueLinks, linksBetween } from './shared';
+import { PendulumClock, TorqueLinks, fieldLattice, linksBetween, wobbleAngle } from './shared';
 
 const W = 720;
 const GM_SUN = 1.32712440018e20, GM_EARTH = 3.986004418e14, C = 299792458, R_SUN = 6.957e8, R_EARTH = 6.371e6, AU = 1.495978707e11;
@@ -22,6 +22,13 @@ export function shapiroDelay(b: number, target: number, earth = AU) {
   return ((4 * GM_SUN) / C ** 3) * (leg(earth) + leg(target));
 }
 
+/** Figure 23-1's field round the Sun (at 380, 190): zeptons clear of the bodies and the note at the foot, and their links. */
+const SHAPIRO_FIELD = fieldLattice(720, 360, 30, 2311, (x, y) => y < 330 && Math.hypot(x - 380, y - 190) > 20 && Math.hypot(x - 70, y - 176) > 16);
+const SHAPIRO_LINKS = linksBetween(SHAPIRO_FIELD, 36);
+
+/** How much the zeptons are held at a distance d from a body drawn with radius r: fully at its edge, fading to nothing far off. */
+const heldNear = (d: number, r: number) => Math.min(1, Math.max(0, (2.6 * r) / Math.max(d, r) - 0.18));
+
 /** Figure 23-1: a radar signal to a planet behind the Sun and back, slowed where it passes the Sun. */
 function ShapiroDelay() {
   // The signal is bounced off Mercury, as in the printed figure.
@@ -31,7 +38,7 @@ function ShapiroDelay() {
   const b = radii * R_SUN, delay = shapiroDelay(b, TARGETS[target].r), slow = lightSlowing(GM_SUN, b);
   // Mercury is drawn at its distance from the Sun in proportion to the Earth's, about 0.39 of it.
   const H = 360, y = 190, xe = 70, xs = 380, xt = xs + 0.39 * (xs - xe), off = 14 + radii * 2.2, u = play.t % 1;
-  // The signal slows near the Sun, greatly exaggerated: its speed follows the same 1/r shape as the band above, so it is
+  // The signal slows near the Sun, greatly exaggerated: its speed follows a 1/r shape, as the torque round the Sun does, so it is
   // slowest where it passes closest. Its place at each moment comes from the time it has taken to cover the path so far.
   const timeline = useMemo(() => {
     const n = 240, depth = 2.6, xs_ = Array.from({ length: n + 1 }, (_, i) => xe + ((xt - xe) * i) / n), t = [0];
@@ -41,11 +48,11 @@ function ShapiroDelay() {
   /** Where the signal is when a fraction `f` of the one-way time has passed. */
   const at = (f: number) => { const { xs: X, t } = timeline; let i = 1; while (i < t.length - 1 && t[i] < f) i++; return X[i - 1] + ((X[i] - X[i - 1]) * (f - t[i - 1])) / (t[i] - t[i - 1] || 1); };
   const px = at(u < 0.5 ? u * 2 : 2 - u * 2);
-  // The slowing along the path, drawn as a band whose depth follows 1/r.
-  const band = pathThrough(Array.from({ length: 80 }, (_, i) => { const x = xe + ((xt - xe) * i) / 79, d = Math.hypot(x - xs, off) / off; return [x, y - off - 46 / d] as const; }));
   return <Diagram stage={
     <Stage w={W} h={H} label={`A radar signal from Earth to ${TARGETS[target].name} and back, passing the Sun at ${fmt(radii, 2)} solar radii. Slowed by the Sun as Equation 23-6 gives, the round trip takes ${fmt(delay * 1e6, 3)} microseconds longer.`}>
-      <Line d={band} tone="danger" w={1.4} opacity={0.8}/><T x={xs} y={y - off - 58} size="sm" tone="danger">how much the light is slowed along the path</T>
+      {/* The torque of the vacuum round the Sun: zeptons held still and linked near it, turning freely far off; it slows the signal. */}
+      <TorqueLinks links={SHAPIRO_LINKS} hold={(lx, ly) => heldNear(Math.hypot(lx - xs, ly - y), 15)}/>
+      {SHAPIRO_FIELD.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={wobbleAngle(z.rest, 1 - heldNear(Math.hypot(z.x - xs, z.y - y), 15), play.t / 0.3, z.a, z.b)} len={13} oval={false} signs={false} opacity={0.45}/>)}
       <line x1={xe} y1={y - off} x2={xt} y2={y - off} className="bk-s-e" strokeWidth="1.6" strokeDasharray="6 4"/>
       <Body x={xs} y={y} r={13} tone="matter" label="Sun"/><Body x={xe} y={y - off} r={8} tone="plain" label="Earth"/><Body x={xt} y={y - off} r={6} tone="plain" label={TARGETS[target].name}/>
       <circle cx={px} cy={y - off} r={6} className="bk-f-mark"/>
@@ -64,10 +71,15 @@ function ShapiroDelay() {
 /** The angle by which light passing a mass at distance r is bent, in arcseconds (Equation 23-7): 4GM/(rc²). */
 export const bendingAngle = (gm: number, r: number) => (((4 * gm) / (r * C * C)) * 180 * 3600) / Math.PI;
 
+/** Figure 23-2's field round the Sun (at 330, 210): zeptons clear of the Sun, the labels at the top and the reading on the right, and their links. */
+const BENDING_FIELD = fieldLattice(720, 400, 30, 2321, (x, y) => y > 40 && y < 375 && Math.hypot(x - 330, y - 210) > 30 && !(x > 500 && x < 620 && y > 150 && y < 210));
+const BENDING_LINKS = linksBetween(BENDING_FIELD, 36);
+
 /** Figure 23-2: starlight bent as it passes the Sun, half from each of the two slowings. */
 function LightBending() {
   const [radii, setRadii] = useState(1);
   const [both, setBoth] = useState(true);
+  const play = usePlayback();
   const H = 400, cx = 330, cy = 210, full = bendingAngle(GM_SUN, radii * R_SUN), angle = both ? full : full / 2;
   // The bend is far too small to draw: it is magnified so that 1.75 arcseconds shows as about 16 degrees.
   const shown = (angle / 1.75) * 16, off = 26 + radii * 9, x = cx + off, top = 30, yEarth = H - 34;
@@ -87,6 +99,10 @@ function LightBending() {
   const [sx] = ray[0];
   return <Diagram stage={
     <Stage w={W} h={H} label={`A ray of light from a distant star passing the Sun at ${fmt(radii, 2)} solar radii and reaching Earth. It is bent by ${fmt(angle, 3)} arcseconds, so the star appears displaced from where it is.`}>
+      {/* The torque of the vacuum round the Sun, which slows and turns the light passing it: plainer nearer the Sun. With the
+          tangential half left out, the links fade to a trace. */}
+      <TorqueLinks links={BENDING_LINKS} hold={(lx, ly) => (both ? 1 : 0.35) * heldNear(Math.hypot(lx - cx, ly - cy), 24)}/>
+      {BENDING_FIELD.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={wobbleAngle(z.rest, 1 - heldNear(Math.hypot(z.x - cx, z.y - cy), 24), play.t, z.a, z.b)} len={13} oval={false} signs={false} opacity={0.45}/>)}
       <Line d={pathThrough(ray)} tone="e" w={2}/>
       <line x1={x} y1={cy} x2={x} y2={top} className="bk-s-mark" strokeDasharray="4 4"/>
       <Body x={cx} y={cy} r={22} tone="matter" label="Sun"/><Body x={x} y={H - 34} r={8} tone="plain"/><T x={x + 16} y={H - 30} anchor="start" size="sm">Earth</T>
@@ -96,6 +112,7 @@ function LightBending() {
     </Stage>}>
     <Slider label="Closest the light passes to the Sun" value={radii} min={1} max={10} step={0.1} onChange={setRadii} show={v => `${fmt(v, 3)} solar radii`}/>
     <Toggle label="Both slowings (radial and tangential)" checked={both} onChange={setBoth}/>
+    <PlayBar play={play} label="the zeptons"/>
     <Readout label="Bending" value={`${fmt(angle, 4)}″`} tone="force"/>
     <Readout label="From the radial slowing" value={`${fmt(full / 2, 4)}″`}/>
     <Readout label="From the torque of the matter field" value={both ? `${fmt(full / 2, 4)}″` : 'left out'}/>
@@ -187,7 +204,14 @@ export function climbingSites(stretch: number, halfFar = 30) {
 /** Neighbouring zeptons round the star, for drawing the torque between them. */
 const STAR_LINKS = linksBetween(STAR_FIELD, 48);
 
-/** Where the light's central zeptons are along the ray as it climbs out of the field, and its wavelength lengthens: the redshift. */
+/** Where the drawn star's light is carried, and the torque round it: the field's links, and links reaching into the light's
+ * path, joining the zeptons that carry it to each other and to the field round them. */
+const STAR_SITES = climbingSites(STRETCH), STAR_TORQUE = (() => {
+  const path = STAR_SITES.map(x => ({ x, y: STAR.y })), onPath = new Set<{ x: number; y: number }>(path);
+  return [...STAR_LINKS, ...linksBetween([...STAR_FIELD, ...path], 48).filter(([a, b]) => onPath.has(a) || onPath.has(b))];
+})();
+
+/** Explorer: light leaving a star speeds up as it climbs out of the field, and its wavelength lengthens: the redshift. */
 function Redshift() {
   const play = usePlayback({ speed: 0.6 });
   const z = redshift(GM_SUN, R_SUN), stretch = STRETCH, sites = STAR_SITES, links = STAR_TORQUE;
@@ -268,7 +292,7 @@ const chapter: ChapterContent = {
         <p><Q>Half of the speed of light change is due to the identical mechanism used to explain the gravitational redshift</Q>; <Q>The other half is due to the increase in the torque of the vacuum in the vicinity of nearby matter</Q>.</p>
       </>,
       tryThis: ['With the signal grazing the Sun, compare the delay with the figure in the text for Mercury: about 200 microseconds.', 'Watch the signal: it slows as it nears the Sun and picks up again beyond, both ways (much exaggerated).', 'Move the path away from the Sun: the delay falls slowly, because the slowing reaches far out, as 1/r.', 'Read the delay as a distance: the tens of kilometres the text mentions.'],
-      notes: <p>The signal is drawn slowing as it passes the Sun, by far more than the parts per million of the true slowing, so that it can be seen; its speed follows the shape of the band above it. The delay is Equation 23-6 added up along a straight path between the planets’ mean distances from the Sun; the text gives the equation and the measured values, not this sum. The solar corona and the small extra path from bending are left out, as the text says they must be corrected for.</p>,
+      notes: <p>The signal is drawn slowing as it passes the Sun, by far more than the parts per million of the true slowing, so that it can be seen; its speed follows the torque of the vacuum round the Sun, drawn as faint links between the zeptons, plainer where the zeptons are held more, near the Sun, and fading where they turn freely. The delay is Equation 23-6 added up along a straight path between the planets’ mean distances from the Sun; the text gives the equation and the measured values, not this sum. The solar corona and the small extra path from bending are left out, as the text says they must be corrected for.</p>,
     },
     {
       kind: 'figure', id: '23-2', page: 182, section: 'The Bending of Light Around the Sun', title: 'Starlight turned by the Sun',
@@ -280,15 +304,8 @@ const chapter: ChapterContent = {
         <p>In the Matter Force account this is <Q>a two-part process that is identical to Shapiro Delay, except in this case the slowing of light near matter additionally causes the light to bend. The clock slowing or frequency change due to the tangential motion is responsible for half the bending, while slowing due to the radial component is responsible for the other half</Q> (<Pg n={183}/>).</p>
       </>,
       tryThis: ['At one solar radius the bend is 1.75 arcseconds.', 'Turn off one of the two slowings: 0.875, the Newtonian figure.', 'Move the ray outward: the bend falls in proportion to the distance.'],
-      notes: <p>The readout is Equation 23-7. The bend is drawn about thirty thousand times too large, as a smooth curve that turns most beside the Sun, where its field is strongest. This is the bending chapter 20 calls refraction, with the Sun’s matter field in place of glass.</p>,
+      notes: <p>The readout is Equation 23-7. The bend is drawn about thirty thousand times too large, as a smooth curve that turns most beside the Sun, where its field is strongest. This is the bending chapter 20 calls refraction, with the Sun’s matter field in place of glass. The zeptons and the links between them show the torque of the vacuum round the Sun, plainer nearer it; with the tangential half left out the links fade to a trace.</p>,
     },
   ],
 };
-export default chapter;/** Where the drawn star's light is carried, and the torque round it: the field's links, and links reaching into the light's
- * path, joining the zeptons that carry it to each other and to the field round them. */
-const STAR_SITES = climbingSites(STRETCH), STAR_TORQUE = (() => {
-  const path = STAR_SITES.map(x => ({ x, y: STAR.y })), onPath = new Set<{ x: number; y: number }>(path);
-  return [...STAR_LINKS, ...linksBetween([...STAR_FIELD, ...path], 48).filter(([a, b]) => onPath.has(a) || onPath.has(b))];
-})();
-
-
+export default chapter;

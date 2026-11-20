@@ -4,7 +4,7 @@
 import { useMemo, useState } from 'react';
 import { BOOK_PDF } from '../labs';
 import { HAND_DIGITS, HAND_PATH, HAND_SIZE } from '../art/fleming-hand';
-import { Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, PlayBar, Readout, Remark, Spin, Stage, Still, T, Toggle, Zepton, polar, rad, usePlayback, type Source, type Tone } from '../kit';
+import { Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, PlayBar, Readout, Remark, Spin, Stage, Still, T, Toggle, Zepton, polar, rad, rng, usePlayback, type Source, type Tone } from '../kit';
 
 /** What one digit of the drawn hand stands for: a name, a small hint under it, and its colour. */
 export interface HandDigit { name: string; hint: string; tone: Tone }
@@ -175,3 +175,10 @@ export function TorqueLinks({ links, hold }: { links: readonly (readonly [FieldP
 
 /** A zepton's restless wobble about its resting angle, in degrees, at time t: wide where it is free (`freedom` 1), still where it is held (0). `a` and `b` are its own phases. */
 export const wobbleAngle = (rest: number, freedom: number, t: number, a: number, b: number) => rest + 80 * freedom * (Math.sin(3.1 * t + a) + 0.6 * Math.sin(5.3 * t + b));
+
+/** A field of zeptons laid out over a stage of `w` by `h`: a loose lattice at `spacing`, each with a scattered resting angle and its own phases for a wobble; `keep` leaves out those over other things. */
+export function fieldLattice(w: number, h: number, spacing: number, seed: number, keep: (x: number, y: number) => boolean = () => true) {
+  const random = rng(seed), cols = Math.ceil(w / spacing) + 1, rows = Math.ceil(h / spacing) + 1;
+  return Array.from({ length: cols * rows }, (_, k) => ({ x: spacing / 2 + (k % cols) * spacing + (Math.floor(k / cols) % 2) * (spacing / 2), y: spacing / 2 + Math.floor(k / cols) * spacing, rest: random() * 180, a: random() * 6.28, b: random() * 6.28 }))
+    .filter(z => z.x < w - 6 && z.y < h - 6 && keep(z.x, z.y));
+}
