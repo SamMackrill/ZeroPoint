@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Arrow, Choice, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, deg, fmt, polar, usePlayback } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const W = 720;
 
@@ -58,7 +59,7 @@ const chapter: ChapterContent = {
   n: 21,
   summary: <>
     <p>Students are taught that the Michelson-Morley experiment disproved the æther. Fleming’s reading is that it disproved one theory of how the æther carries light: the theory that light is swept along by it as a swimmer is by a stream. The experiment found the speed of light the same in both directions. That <Q>does not say anything about the existence of æther, only that their theory of light propagation being somehow affected by a velocity relative to the æther rest frame was incorrect</Q> (<Pg n={155}/>).</p>
-    <p>Zeptons do not act on a photon kinetically, any more than Fatio’s corpuscles act on a planet. Of the three ways to read the null result, he takes the second: <Q>there is an æther, it is zero-point energy which is consistent with Einstein-Hopf, and the result is as expected</Q>. No length contraction is needed to explain it (<Pg n={159}/>).</p>
+    <p>Zeptons do not act on a photon kinetically, any more than <ScientistLink id="fatio">Fatio</ScientistLink>’s corpuscles act on a planet. Of the three ways to read the null result, he takes the second: <Q>there is an æther, it is zero-point energy which is consistent with Einstein-Hopf, and the result is as expected</Q>. No length contraction is needed to explain it (<Pg n={159}/>).</p>
   </>,
   items: [
     {

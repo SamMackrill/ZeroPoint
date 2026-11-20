@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Arrow, BlockArrow, Body, Choice, Diagram, InOut, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Toggle, Zepton, clamp, deg, fmt, pathThrough, polar, rad, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const W = 720;
 
@@ -380,7 +381,7 @@ function ParallelStars() {
 const chapter: ChapterContent = {
   n: 12,
   summary: <>
-    <p>Since the expansion of the universe was found to be accelerating, Fleming argues, Newtonian gravity has had to be read as the sum of two forces: an attraction stronger than Newton’s and a repulsion. He names them gravity and the Matter Force (<Pg n={99}/>).</p>
+    <p>Since the expansion of the universe was found to be accelerating, Fleming argues, Newtonian gravity has had to be read as the sum of two forces: an attraction stronger than <ScientistLink id="newton">Newton</ScientistLink>’s and a repulsion. He names them gravity and the Matter Force (<Pg n={99}/>).</p>
     <p>The rest of the chapter adds the magnetic part of the Matter Force to the heavens. A rotating sun pushes its planets inward; the same field slows the rotation of orbiting bodies (what is called tidal locking); a small tangential force gives Mercury its extra perihelion advance; and in a galaxy, where the outer stars move fast, the force exceeds Newtonian gravity and draws the arms into spirals. <Q>There is no missing matter problem with respect to spiral galaxies. All along it has been a missing force problem</Q> (<Pg n={107}/>).</p>
   </>,
   items: [

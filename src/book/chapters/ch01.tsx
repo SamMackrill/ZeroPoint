@@ -4,6 +4,7 @@ import { BlockArrow, Body, Diagram, PlayBar, Readout, Remark, Slider, Stage, T, 
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 import { StepList, type Step } from './shared';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const W = 720;
 
@@ -52,7 +53,7 @@ function Pushed() {
 const chapter: ChapterContent = {
   n: 1,
   summary: <>
-    <p>Before any physics the book sets its rules. Fleming’s complaint is that theories have been closed: declared finished, and their difficulties treated as details. He borrows Dirac’s distinction between class-one problems, which show a theory to be wrong at its foundation, and class-two problems, which can be worked out later, and asks that every difficulty be treated as class-one first (<Pg n={11}/>, <Pg n={12}/>).</p>
+    <p>Before any physics the book sets its rules. Fleming’s complaint is that theories have been closed: declared finished, and their difficulties treated as details. He borrows <ScientistLink id="dirac">Dirac</ScientistLink>’s distinction between class-one problems, which show a theory to be wrong at its foundation, and class-two problems, which can be worked out later, and asks that every difficulty be treated as class-one first (<Pg n={11}/>, <Pg n={12}/>).</p>
     <p>The chapter ends with twelve principles (<Pg n={14} to={17}/>). Two of them carry most of the book: <Q>Every force is transmitted by and through the zero-point field</Q>, and <Q>Everything moves because it is pushed</Q>.</p>
   </>,
   items: [

@@ -5,6 +5,7 @@ import { STAR1_R as STAR1_SCENE_R } from '../three/shadow-math';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { triacontahedron } from './ch16';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const W = 720;
 const HBAR_C = 3.16152677e-26; // J m
@@ -144,7 +145,7 @@ const chapter: ChapterContent = {
   n: 25,
   summary: <>
     <p>The strong force holds protons together against their Coulomb repulsion between about 0.7 and 2 femtometres, and then gives way. Its accepted explanation, by exchanged mesons, does not say what pushes on the proton, or why the force turns off at short range. Fleming notes that the range is 0.4 to 1.1 proton diameters: <Q>ideal conditions for the van der Waals Force</Q> (<Pg n={192}/>).</p>
-    <p>Take the proton as the shell of chapter 16. Two such shells shade each other from the vacuum, as Casimir’s plates and Fatio’s bodies do, down to the distance at which the shell is transparent to the wavelengths that would fit between them. The force that results is no longer weak at this range, and Fleming calls it <strong>the Strong Casimir Force</strong> (<Pg n={199}/>).</p>
+    <p>Take the proton as the shell of chapter 16. Two such shells shade each other from the vacuum, as Casimir’s plates and <ScientistLink id="fatio">Fatio</ScientistLink>’s bodies do, down to the distance at which the shell is transparent to the wavelengths that would fit between them. The force that results is no longer weak at this range, and Fleming calls it <strong>the Strong Casimir Force</strong> (<Pg n={199}/>).</p>
   </>,
   items: [
     {

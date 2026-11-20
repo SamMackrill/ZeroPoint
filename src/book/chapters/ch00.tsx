@@ -2,6 +2,7 @@
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 import { StepList, type Step } from './shared';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 /** The book's argument as a chain of steps, each with the chapters that make it. */
 export const ROUTE: Step[] = [
@@ -20,7 +21,7 @@ export const ROUTE: Step[] = [
 const chapter: ChapterContent = {
   n: 0,
   summary: <>
-    <p>Fleming opens with Newton’s remark that one body acting on another at a distance through a vacuum, <Q>without the mediation of any thing else</Q>, is an absurdity. The forces of modern physics, carried by exchanged particles, seemed to him to have the same fault: the particles would need to carry information they have no means of holding, and nothing says how a body moves once it has received it (<Pg n={7}/>, <Pg n={8}/>).</p>
+    <p>Fleming opens with <ScientistLink id="newton">Newton</ScientistLink>’s remark that one body acting on another at a distance through a vacuum, <Q>without the mediation of any thing else</Q>, is an absurdity. The forces of modern physics, carried by exchanged particles, seemed to him to have the same fault: the particles would need to carry information they have no means of holding, and nothing says how a body moves once it has received it (<Pg n={7}/>, <Pg n={8}/>).</p>
     <p>His standard is the one physics held in the nineteenth century: <Q>Each and every force interaction must be due to a force mechanism, which allows point-to-point transmission through space</Q> (<Pg n={9}/>). The one thing known to fill space is the zero-point field, so that is where he looks, and he says of the result that <Q>everything can be described by a single simple mechanical theory</Q> (<Pg n={10}/>).</p>
   </>,
   items: [

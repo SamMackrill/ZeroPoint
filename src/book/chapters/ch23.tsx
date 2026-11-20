@@ -4,6 +4,7 @@ import { Arrow, Body, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T,
 import { Eq, Frac, Pg, Q, Sqrt, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { PendulumClock, TorqueLinks, fieldLattice, linksBetween, wobbleAngle } from './shared';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const W = 720;
 const GM_SUN = 1.32712440018e20, GM_EARTH = 3.986004418e14, C = 299792458, R_SUN = 6.957e8, R_EARTH = 6.371e6, AU = 1.495978707e11;
@@ -249,7 +250,7 @@ const chapter: ChapterContent = {
   n: 23,
   summary: <>
     <p>Four observations are counted as proofs of general relativity: clocks running slower nearer the Earth, the redshift of light climbing out of a gravitational field, the Shapiro delay, and the bending of starlight by the Sun. Fleming accepts all four as observed and gives each another cause.</p>
-    <p>Near a large body of matter <Q>the London-van der Waals torque of the vacuum is increased</Q>: the zeptons turn more slowly, wavelengths lengthen and clocks slow (<Pg n={177}/>). Redshift is conservation of energy as a photon climbs away. The two effects on light passing the Sun are each <Q>half due to deceleration-acceleration in the radial direction</Q> and half due to the torque of the Sun’s matter field, which together give Einstein’s factor of two with space left flat (<Pg n={181}/>, <Pg n={183}/>).</p>
+    <p>Near a large body of matter <Q>the London-van der Waals torque of the vacuum is increased</Q>: the zeptons turn more slowly, wavelengths lengthen and clocks slow (<Pg n={177}/>). Redshift is conservation of energy as a photon climbs away. The two effects on light passing the Sun are each <Q>half due to deceleration-acceleration in the radial direction</Q> and half due to the torque of the Sun’s matter field, which together give <ScientistLink id="einstein">Einstein</ScientistLink>’s factor of two with space left flat (<Pg n={181}/>, <Pg n={183}/>).</p>
   </>,
   items: [
     {

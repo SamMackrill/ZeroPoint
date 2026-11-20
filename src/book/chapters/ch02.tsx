@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Diagram, PlayBar, Readout, Remark, Slider, Stage, T, Zepton, clamp, fmt, superscript, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const W = 720;
 const H_EV = 4.135667696e-15, C = 299792458, HBAR = 1.054571817e-34, GEV = 1.602176634e-10, PLANCK_LENGTH = 1.616255e-35;
@@ -107,7 +108,7 @@ const chapter: ChapterContent = {
   n: 2,
   summary: <>
     <p>Empty a box of matter, shield it from light and fields, and cool it to absolute zero. What is left is the zero-point: not nothing, but a space <Q>teeming</Q> with vacuum fluctuations, each too small and too brief to detect and together an energy beyond reckoning (<Pg n={18}/>).</p>
-    <p>The chapter gives the history: Planck’s oscillators, which never reach zero energy; Einstein and Stern’s <i>Nullpunktenergie</i>; Nernst’s recognition that this energy fills the vacuum and is the æther under another name; Heisenberg’s uncertainty principle, which sets the same limit from the other side. It ends with the difficulty that the total is infinite, or nearly, and the promise that the Casimir effect will show how to live with that (<Pg n={23}/>, <Pg n={25}/>).</p>
+    <p>The chapter gives the history: <ScientistLink id="planck">Planck</ScientistLink>’s oscillators, which never reach zero energy; <ScientistLink id="einstein">Einstein</ScientistLink> and <ScientistLink id="stern">Stern</ScientistLink>’s <i>Nullpunktenergie</i>; <ScientistLink id="nernst">Nernst</ScientistLink>’s recognition that this energy fills the vacuum and is the æther under another name; <ScientistLink id="heisenberg">Heisenberg</ScientistLink>’s uncertainty principle, which sets the same limit from the other side. It ends with the difficulty that the total is infinite, or nearly, and the promise that the Casimir effect will show how to live with that (<Pg n={23}/>, <Pg n={25}/>).</p>
   </>,
   items: [
     {

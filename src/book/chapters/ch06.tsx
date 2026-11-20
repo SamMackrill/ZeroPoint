@@ -6,6 +6,7 @@ import { ZEPTON_COUNTS } from '../three/coil-math';
 import { SPHERE_LINES, SPHERE_R_MIN } from '../three/sphere-math';
 import type { BookItem, ChapterContent } from '../types';
 import { TwoSources } from './shared';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const W = 720;
 
@@ -529,7 +530,7 @@ const items: BookItem[] = [
     caption: 'A free electron with field lines pointing toward it.',
     Diagram: LinesFromZeptons,
     text: <>
-      <p>Electricity and magnetism act across a distance with nothing apparent between, and Faraday drew lines to stand for the unknown mechanism. <Q>The convention is that electric field lines point toward negative charges. This selection was completely arbitrary</Q> (<Pg n={50}/>).</p>
+      <p>Electricity and magnetism act across a distance with nothing apparent between, and <ScientistLink id="faraday">Faraday</ScientistLink> drew lines to stand for the unknown mechanism. <Q>The convention is that electric field lines point toward negative charges. This selection was completely arbitrary</Q> (<Pg n={50}/>).</p>
       <p><Q>The connection between the aligned polarized zeptons and Faraday’s field lines is unmistakable.</Q> In his method <Q>the number of lines was proportional to the strength of the force. The force itself is spread throughout space in the same way that zeptons are spread throughout space.</Q></p>
     </>,
     tryThis: ['Slide from lines to zeptons and back: each arrow lies along a row of zeptons, and points the way their positive ends point.', 'Raise the strength of the charge: more lines, as Faraday drew a stronger force.', 'Reverse the sign and the arrows reverse.'],

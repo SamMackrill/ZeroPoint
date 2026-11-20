@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Arrow, BlockArrow, Charge, Choice, Diagram, PlayBar, Readout, Remark, Slider, Stage, Still, T, Toggle, fmt, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const HBAR = 1.054571817e-34, C = 299792458;
 
@@ -250,7 +251,7 @@ function PressureBalance() {
 const chapter: ChapterContent = {
   n: 3,
   summary: <>
-    <p>Casimir and Polder treated vacuum fluctuations as induced dipoles that act on each other as molecules do, through van der Waals forces, and so press on matter. Two plates close together shut the longer wavelengths out of the space between them. The pressure from outside is then a little greater than the pressure from between, and the plates are pushed together.</p>
+    <p><ScientistLink id="casimir">Casimir</ScientistLink> and Polder treated vacuum fluctuations as induced dipoles that act on each other as molecules do, through van der Waals forces, and so press on matter. Two plates close together shut the longer wavelengths out of the space between them. The pressure from outside is then a little greater than the pressure from between, and the plates are pushed together.</p>
     <p>Fleming takes this as the model for every force that follows: a force is a difference in the pressure of the vacuum on opposite sides of a body. It also answers the infinity problem of chapter 2, because almost all the energy stays in balance on both sides (<Pg n={30}/>, <Pg n={31}/>).</p>
   </>,
   items: [

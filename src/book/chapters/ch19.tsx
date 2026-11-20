@@ -6,6 +6,7 @@ import type { ChapterContent } from '../types';
 import { PATH_SITES, PATH_START, centralX } from '../three/photon-math';
 import { SlitDiagram, stateLine } from '../../double-slit/Diagram';
 import { DEFAULT_SLITS, PATH_LENGTH, SLIT_END_TICK, SLIT_OFFSET_RANGE, SLIT_TICKS_PER_TAU, routeViaSlit, slitReadout, type SlitParameters } from '../../double-slit/model';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const W = 720;
 /** The Earth's orbital speed as a fraction of the speed of light: the lag angle, in radians, if gravity travelled at c. */
@@ -210,7 +211,7 @@ const chapter: ChapterContent = {
       caption: 'If gravity interacts between a star and a planet at point A, but it is really at point B then the force will be in the wrong direction, not directed toward the star.',
       Diagram: LateGravity,
       text: <>
-        <p><Q>If gravity is not instantaneous, the force looks like it is coming from point A when the body is really at point B some distance away. This causes the body at point B [to] have a force F on it that [is] not directed toward the Star</Q>. In Eddington’s words, the couple <Q>will tend to increase the angular momentum of the system, and, acting cumulatively, will soon cause an appreciable change of period</Q>. <Q>The speed of light as it turns out is too slow by many orders of magnitude</Q> (<Pg n={142}/>, <Pg n={143}/>).</p>
+        <p><Q>If gravity is not instantaneous, the force looks like it is coming from point A when the body is really at point B some distance away. This causes the body at point B [to] have a force F on it that [is] not directed toward the Star</Q>. In <ScientistLink id="eddington">Eddington</ScientistLink>’s words, the couple <Q>will tend to increase the angular momentum of the system, and, acting cumulatively, will soon cause an appreciable change of period</Q>. <Q>The speed of light as it turns out is too slow by many orders of magnitude</Q> (<Pg n={142}/>, <Pg n={143}/>).</p>
         <p>Fleming’s charge against general relativity is that it needs space to know where all the matter is, nearly instantly, and so breaks the limit it is built on (<Pg n={144}/>).</p>
       </>,
       tryThis: ['Leave the speed at c: the orbit would double in size in about 1200 years.', 'Raise the speed. At Laplace’s 7 × 10⁶ c the doubling takes billions of years; at Van Flandern’s 2 × 10¹⁰ c, far longer than the age of the solar system.', 'Slide the speed all the way up, to infinite (Newton’s case, no delay at all): the force points at the star and the orbit holds.'],

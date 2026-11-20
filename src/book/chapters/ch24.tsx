@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Diagram, Readout, Remark } from '../kit';
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 /** One of the fifteen tests of the chapter: Fleming's ten, then the five classic ones, with his verdict on general relativity. */
 interface Test { id: string; name: string; page: number; gr: boolean; says: string; see?: { label: string; href: string } }
@@ -50,7 +51,7 @@ function Scorecard() {
 const chapter: ChapterContent = {
   n: 24,
   summary: <>
-    <p>Einstein set three tests for any rival to general relativity, and others have been added since. Before taking them, Fleming sets ten of his own, drawn from the earlier chapters: does a theory of gravity include the vacuum, does it need space to have a prior structure, can it be joined to electromagnetism, does it explain galaxies, tides and the expansion. <Q>Fair is fair</Q> (<Pg n={185}/>).</p>
+    <p><ScientistLink id="einstein">Einstein</ScientistLink> set three tests for any rival to general relativity, and others have been added since. Before taking them, Fleming sets ten of his own, drawn from the earlier chapters: does a theory of gravity include the vacuum, does it need space to have a prior structure, can it be joined to electromagnetism, does it explain galaxies, tides and the expansion. <Q>Fair is fair</Q> (<Pg n={185}/>).</p>
     <p>By his scoring general relativity fails all ten and passes the five classic tests, and the long-range van der Waals and Matter Force theories pass all fifteen. The verdicts are his; this page lists them and points to where each subject can be tried in the companion.</p>
   </>,
   items: [

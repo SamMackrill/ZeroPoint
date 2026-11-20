@@ -4,6 +4,7 @@ import { Action, Arrow, Choice, Diagram, FallbackOnError, canDraw3D, InOut, Line
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { PairView } from '../three/PairScene';
 import type { ChapterContent } from '../types';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const H_EV = 4.135667696e-15, C = 299792458;
 
@@ -356,7 +357,7 @@ const chapter: ChapterContent = {
       caption: 'A virtual electron-positron pair as part of a photon.',
       Diagram: PairInPhoton,
       text: <>
-        <p><Q>Physicists have known since the 1930s that a photon during a half-wavelength period can be thought of as a virtual electron-positron pair that rotates 180 degrees.</Q> In Feynman’s diagram the photon is the wavy line, travelling left to right, and the pair is the oval. <Q>The electron is moving in the same direction as the photon, while the positron is moving in the opposite direction</Q> (<Pg n={39}/>).</p>
+        <p><Q>Physicists have known since the 1930s that a photon during a half-wavelength period can be thought of as a virtual electron-positron pair that rotates 180 degrees.</Q> In <ScientistLink id="feynman">Feynman</ScientistLink>’s diagram the photon is the wavy line, travelling left to right, and the pair is the oval. <Q>The electron is moving in the same direction as the photon, while the positron is moving in the opposite direction</Q> (<Pg n={39}/>).</p>
         <p>Fleming’s step is to take this as <Q>the fundamental description of the photon</Q>, and not only as a device of quantum electrodynamics.</p>
       </>,
       tryThis: [
