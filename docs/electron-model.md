@@ -20,7 +20,7 @@ In the Proton polarizer scenario the core carries a plus on a positive-coloured 
 - **Polarization rate.** A shell whose edge moves at c turns c/(2πR) times a second: 3.933 × 10¹⁹ for the electron and 5.452 × 10²² for the proton, about 1386 times as fast, the ratio of the radii (§4). The same drawing therefore runs 1386 times faster in seconds for the proton.
 - **Magnetic moment.** The proton's moment is parallel to its spin (the electron's is antiparallel), with g = 2.1086 "proton magnetons" computed with the charge radius (§1, Eq. 2) in place of the electron's 2.0023.
 
-**Recorded disagreement.** The radii paper quotes the proton charge radius as 0.8751 fm; Fleming's 2012 mass paper, which the Mass & excluded energy study follows, uses 0.8775 fm. Each study keeps its own paper's value.
+**Recorded disagreement.** The radii paper quotes the proton charge radius as 0.8751 fm; [Fleming's 2012 mass paper](papers/Proton%20and%20electron%20mass%20derived%20as%20the%20vacuum%20energy%20displaced%20by%20a%20Casimir%20cavity.pdf), which the Mass & excluded energy study follows, uses 0.8775 fm. [The proton radius paper](papers/Proton%20properties%20and%20radius%20puzzle%20due%20to%20the%20shell%20of%20quantum%20fluctuations%20at%20its%20charge%20radius.pdf) adds a third value, an outer radius of 0.9216 fm, and argues the proton has no central polarizer (see the fidelity report, P1 and P2). Each study keeps its own paper's value.
 
 Not modelled: why the polarization rates differ (Fleming ties it to matter and antimatter, §3), the shell thickness that makes the mass ratio 1836 rather than 1386 (§4), and the neutron (§5).
 

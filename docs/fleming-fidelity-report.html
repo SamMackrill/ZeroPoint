@@ -83,13 +83,13 @@
   <h1>How closely do the simulations follow Ray Fleming's zero-point model?</h1>
   <p class="lede">A reading of Fleming's papers and <i>The Zero-Point Universe</i>, an audit of the five laboratories against them, and a running log of the fixes. The yardstick is Fleming's own account and figures, nothing else.</p>
   <div class="meta">
-    <span>Last updated <b id="updated">11 Nov 2026, 13:45 GMT</b></span>
+    <span>Last updated <b id="updated">20 Nov 2026, 16:00 GMT</b></span>
     <span>Pull requests <b>#53 to #56</b></span>
     <span>Status <b>all ten items done · second review round answered · re-reviews queued</b></span>
     <span>Add <code>?live</code> to the address to reload every 2 minutes</span>
   </div>
   <nav class="toc">
-    <a href="#progress">Progress</a><a href="#model">Fleming's model</a><a href="#findings">Findings &amp; fixes</a><a href="#good">What already matches</a><a href="#choices">Choices to review</a><a href="#next">Next steps</a><a href="#open">Open questions</a><a href="#log">Update log</a>
+    <a href="#progress">Progress</a><a href="#model">Fleming's model</a><a href="#findings">Findings &amp; fixes</a><a href="#papers-2">More papers</a><a href="#good">What already matches</a><a href="#choices">Choices to review</a><a href="#next">Next steps</a><a href="#open">Open questions</a><a href="#log">Update log</a>
   </nav>
 </header>
 
@@ -296,6 +296,52 @@
   <div class="src">Book ch. 3 (pp. 29–30, Figs 3-3, 3-4)</div>
 </div>
 
+<h2 id="papers-2">Second reading: twenty more papers (20 Nov 2026)</h2>
+<p>Twenty more of Fleming's papers were added to <code>docs/papers/</code> (PR <a href="https://github.com/SamMackrill/ZeroPoint/pull/97">#97</a>). Five background sources he draws on went to <code>docs/papers/background/</code>. I read the six that bear on a laboratory in full: spin and magnetic moment, the proton radius puzzle, the 2012 mass paper, the nuclear force, quantum jumps and the quantum field. I searched the rest for anything a laboratory draws. Nothing is changed yet. Each card below is for you to decide.</p>
+
+<div class="finding open" id="P1">
+  <h4><span class="id">P1</span> Electron lab: is the proton a central polarizer? <span class="chip ask">your call</span></h4>
+  <div class="two">
+    <div><div class="k">Fleming</div>The radii paper (§1) treats the electron and proton alike as bare point polarizers, and the proton polarizer scenario follows it. The proton radius paper says otherwise: <q>the charge at the center is zero so there is no central polarizer, and thus no central particle</q>, and <q>protons could be composed entirely of quantum fluctuations</q>. Its Fig. 6 draws four zones: random polarization inside, a transition zone, the shell in the <q>luminal zone</q> rotating at <code>c</code>, and the ordinary field beyond the speed-of-light boundary.</div>
+    <div><div class="k">Laboratory now</div>The proton is a positive core at the centre, polarizing the field exactly as the electron does, with the same partial-polarization rule.</div>
+  </div>
+  <p><b>Open.</b> Fleming's two papers disagree. The choice is to keep the radii paper's picture, or to add the four-zone proton as a variant. If the variant is added, the radii paper stays the default and the disagreement is recorded.</p>
+  <div class="src">Proton radius paper §9 (Figs 5–7); Radii paper §1</div>
+</div>
+
+<div class="finding open" id="P2">
+  <h4><span class="id">P2</span> A third proton radius, and the shell around it <span class="chip ask">your call</span></h4>
+  <div class="two">
+    <div><div class="k">Fleming</div>Requiring the proton to have the electron's g-factor fixes an outer radius of <code>0.9215553217 fm</code> (Eq. 6), above which the shell would exceed <code>c</code>. Mass then puts the inner radius at <code>0.79041 fm</code>. Because the fluctuations vary sinusoidally, the shell has three radii: outer, rms and mean. Fleming matches these to the three clusters of measured charge radii, which is his explanation of the radius puzzle.</div>
+    <div><div class="k">Laboratory now</div>The proton polarizer uses <code>0.8751 fm</code> (radii paper). The mass study uses <code>0.8775 fm</code> (2012 mass paper, now in the repo; it gives d<sub>i</sub> = 1.586 fm and d<sub>o</sub> = 1.924 fm, which the study reproduces). The book companion's chapter 16 and 25 cards use 0.8775 fm too.</div>
+  </div>
+  <p><b>Open.</b> Each study keeps its own paper's value, as recorded in E3. This paper is Fleming's latest word on the proton. It could add an "outer radius" option to the mass study, and a note that the proton's angular momentum then comes out at <code>0.6974 ħ</code> rather than ħ/2 (§8, Eq. 11).</p>
+  <div class="src">Proton radius paper §3–5, §8 (Eqs 6, 11); 2012 mass paper pp. 2–3</div>
+</div>
+
+<div class="finding open" id="P3">
+  <h4><span class="id">P3</span> The spin paper backs the Shared default <span class="chip queued">confirmation</span></h4>
+  <p><i>Particle Spin and Magnetic Moment</i> (2018) gives the energy argument behind E1 a second time: dipoles turning in opposite senses push like charges together, so <q>rotation of adjacent dipoles … in the same direction requires less energy</q>. It adds that within a sphere the axis must change with latitude, and that a dipole <q>can rotate 180 degrees during its existence</q>. The proton radius paper repeats the argument with Figs 3 and 4. The source notes linked this paper on ResearchGate; they now link the local copy. One difference is already recorded there: this paper puts the negative shell inside the positive one, while the electron-properties paper puts the positive shell inside. The lab follows the electron-properties paper.</p>
+  <div class="src">Spin paper §4–6 (Fig. 1); Proton radius paper §6 (Figs 3, 4)</div>
+</div>
+
+<div class="finding open" id="P4">
+  <h4><span class="id">P4</span> Light lab: absorption can leave a second photon <span class="chip queued">possible extension</span></h4>
+  <p>In <i>Quantum jumps</i>, a photon arriving at an atom acts as an electron-positron pair. Its positron annihilates the bound electron, and its electron is left in the higher shell. Photons <q>are seldom at exactly the correct energy for a given transition</q>, so <q>the annihilating pair becomes the first particle pair of a new photon that carries away the excess energy</q>. Emission is the reverse. The Light lab's wall absorbs the whole photon, which agrees with the book and the photons paper. A detuned absorption, with a weak photon leaving, would be a new scenario.</p>
+  <div class="src">Quantum jumps paper §4–5 (Figs 1, 2)</div>
+</div>
+
+<div class="finding open" id="P5">
+  <h4><span class="id">P5</span> Nuclear force as the Casimir effect between spheres <span class="chip queued">possible new explorer</span></h4>
+  <p>Fleming computes the Casimir force between two protons of radius 0.8775 fm. He uses the proximity force approximation of Bulgac et al. and compares it with Coulomb repulsion from 0.2 to 3 fm (Chart 1). The two cross at 2.7 fm: 11.9 N against 11.6 N. At 1 fm it is 379 N against 30.5 N, and at 0.5 fm 3707 N against 45.6 N. He says himself that it is a first approximation and that it diverges at close range. This could be a quantitative explorer beside the plate stage of the van der Waals lab. The equations are images in the PDF, so building it means rendering those pages first. The abstract's <q>32 times at 0.7 fm</q> is not among the body's figures.</p>
+  <div class="src">Nuclear force paper §2–3 (Eq. 2, Chart 1)</div>
+</div>
+
+<div class="finding open" id="P6">
+  <h4><span class="id">P6</span> Papers with no laboratory to check against <span class="chip queued">recorded</span></h4>
+  <p><b>Gravity and relativity</b> (GR as van der Waals torque, the Maxwell force, the matter-antimatter dipole, the electro-matter force, the large black hole problem, Einstein's fallacy). <b>Decay and fusion</b> (beta decay, neutrinos, nuclear fusion, electrons and protons produced together). <b>Foundations</b> (zero-point energy conservation, the arrow of time, no beginning to the universe). None describes something a current laboratory draws. Two of them matter for the open list. The <i>Physical Constants</i> paper argues qualitatively that van der Waals torque sets ε₀, μ₀ and <code>c</code>, but gives no torque law, so that item stays open. The <i>Maxwell force</i> paper's account of attraction and repulsion, a pressure reduced between opposite charges and raised between like ones, agrees with the Extended Casimir lab.</p>
+</div>
+
 <h2 id="good">What already matches Fleming</h2>
 <ul>
   <li><b>Zepton energy and lifetime.</b> The medium assigns <code>E = hf/2</code> and lifetime <code>1/f</code>, with an energy ledger that balances.</li>
@@ -366,6 +412,7 @@
   <div><time>10 Nov 21:30</time>You chose stacked pull requests, the Shared spin default, and all three next steps. The work is pushed as #53 to #56; the visible layers are held for your approval of the before/after page.</div>
   <div><time>11 Nov 03:10</time>CodeRabbit finished the first round. #54: no findings. #53: a machine path in the generated previews page, a page that reloaded itself, and two gaps in the comparison script's <code>--only</code> option. #55: a chain replacement could outlive the zepton it replaced, a gap birth could be drawn larger than an ordinary zepton, and this page's count was one short. #56: a regeneration command that could not run as written.</div>
   <div><time>11 Nov 08:50</time>Work resumed after a five-hour interruption. All nine findings fixed and pushed. In the Casimir lab a chain replacement is now never longer-lived than its predecessor (it settles at the shortest the space allows) and every gap birth is smaller than every ordinary zepton; both are tested over long runs. This page reloads only when opened with <code>?live</code>. 557 unit tests pass. Re-reviews of #53, #55 and #56 are queued, one an hour.</div>
+  <div><time>20 Nov 16:00</time>Twenty more Fleming papers added (#97) and read against the labs. Six new items, P1 to P6, are listed under <a href="#papers-2">More papers</a>. Two of them are your decisions: the proton's centre and its radius. Nothing in the labs has changed.</div>
   <div><time>11 Nov 13:45</time>Work resumed after two interruptions (about 09:15 to 13:30). CodeRabbit's second pass on #53 raised fourteen points. The serious one: away from 0°, Light's pair start angle put the magnetic field against the pair's rotation axis. The control now only chooses where in the pairs' cycle the run begins, so every pair keeps Fleming's half-turn and the field relations are tested at every start angle. Also fixed: the field-reach cage now vanishes at a hand-off; the inspector's B sign follows the travel direction; Medium's close-up shows coincident lobes at zero separation; Focus backs off to fit a wide pair; the separation control says the drawn peak is a scaled wavelength. The screenshots are re-taken with the final code: the script now waits for the requested tick and shows the Light plots whole. This record moved out of the lower layers into #56. 563 unit tests pass.</div>
 </div>
 
