@@ -102,7 +102,7 @@ export function PublicationLink({ id, title, children }: { id: string; title: st
 }
 
 /** PaperTrails' own brand mark, served by PaperTrails so that it follows any change there. */
-export const PAPERTRAILS_MARK = `${PAPERTRAILS}images/brand-mark.png`;
+export const PAPERTRAILS_MARK = `${PAPERTRAILS}images/icon.svg`;
 
 /** PaperTrails' mark, labelling links that lead there. If it cannot load, its label shows in its place. */
 export function PaperTrailsMark({ label = 'On PaperTrails' }: { label?: string }) {

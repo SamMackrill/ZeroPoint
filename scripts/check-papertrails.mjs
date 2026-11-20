@@ -14,8 +14,8 @@ const peopleBlock = /export const PEOPLE = \{([\s\S]*?)\} as const;/.exec(people
 const scientistIds = [...peopleBlock.matchAll(/^\s*([a-z_]+):/gm)].map(m => m[1]);
 const paperIds = [...new Set([...people.matchAll(/id: '([\w-]+-work-\d+)'/g)].map(m => m[1]))];
 
-const mark = await fetch(`${base}images/brand-mark.png`, { method: 'HEAD' });
-if (!mark.ok) throw new Error(`PaperTrails' mark (images/brand-mark.png) answered ${mark.status}`);
+const mark = await fetch(`${base}images/icon.svg`, { method: 'HEAD' });
+if (!mark.ok) throw new Error(`PaperTrails' mark (images/icon.svg) answered ${mark.status}`);
 const response = await fetch(`${base}data/scientists.yaml`);
 if (!response.ok) throw new Error(`PaperTrails answered ${response.status}`);
 const data = yaml.load(await response.text(), { schema: yaml.CORE_SCHEMA });
