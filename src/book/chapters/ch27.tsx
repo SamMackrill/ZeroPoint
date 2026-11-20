@@ -2,6 +2,7 @@
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 import { StepList, type Step } from './shared';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 /** What a zepton does, and the force or property each of its behaviours is, with the figures that show it. */
 export const ZEPTON_DOES: Step[] = [
@@ -18,7 +19,7 @@ export const ZEPTON_DOES: Step[] = [
 const chapter: ChapterContent = {
   n: 27,
   summary: <>
-    <p>Fleming dates the renewal of zero-point theory from Bohr’s remark to Casimir that his effect <Q>must have something to do with zero-point energy</Q>. The lesson he draws from the century before is about method: require of every theory that <Q>every force is transmitted by and through the zero-point field</Q>, and <Q>the possibilities [are] limited to such a degree that there is only one possible set of conclusions</Q> (<Pg n={207}/>).</p>
+    <p>Fleming dates the renewal of zero-point theory from <ScientistLink id="bohr">Bohr</ScientistLink>’s remark to <ScientistLink id="casimir">Casimir</ScientistLink> that his effect <Q>must have something to do with zero-point energy</Q>. The lesson he draws from the century before is about method: require of every theory that <Q>every force is transmitted by and through the zero-point field</Q>, and <Q>the possibilities [are] limited to such a degree that there is only one possible set of conclusions</Q> (<Pg n={207}/>).</p>
     <p>The result in his words: <Q>It is a universe filled with vacuum fluctuations, the zeptons. The zeptons carry positive and negative electric charge and matter and antimatter matter charge.</Q> <Q>There is only one force, the Electro-Matter Force.</Q> Even stable matter appears to be virtual, and <Q>Everything in the zero-point universe is virtual</Q> (<Pg n={208}/>). He allows that there are oversimplifications, and that particle theory and cosmology are left for later.</p>
   </>,
   items: [

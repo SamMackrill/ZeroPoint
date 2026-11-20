@@ -4,6 +4,7 @@ import { Arrow, BlockArrow, Body, Choice, Diagram, FallbackOnError, Line, PlayBa
 import { Pg, Q } from '../prose';
 import type { ChapterContent } from '../types';
 import { ZEPTON_PAIR, dumbbell } from './shared';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const W = 720;
 
@@ -185,7 +186,7 @@ function DipolePair({ left, right, flipped: initial }: { left: Kind; right: Kind
 const chapter: ChapterContent = {
   n: 17,
   summary: <>
-    <p>The oldest mechanical theory of gravity is Fatio’s: space is full of corpuscles that push on bodies from every side, and two bodies shade each other, so that they are pushed together. It was rejected because corpuscles that strike matter would heat it and drag on it. Fleming’s answer is that <Q>Fatio’s corpuscles are vacuum fluctuations, the zeptons that fill all of space</Q>, and that the Casimir effect already shows they push on matter without heat or drag (<Pg n={130}/>, <Pg n={132}/>).</p>
+    <p>The oldest mechanical theory of gravity is <ScientistLink id="fatio">Fatio</ScientistLink>’s: space is full of corpuscles that push on bodies from every side, and two bodies shade each other, so that they are pushed together. It was rejected because corpuscles that strike matter would heat it and drag on it. Fleming’s answer is that <Q>Fatio’s corpuscles are vacuum fluctuations, the zeptons that fill all of space</Q>, and that the Casimir effect already shows they push on matter without heat or drag (<Pg n={130}/>, <Pg n={132}/>).</p>
     <p>The remaining problem is range: van der Waals forces fall off far faster than 1/<i>r</i>². The Matter Force supplies what is missing. An electron-like zepton beside a proton-like one cannot cancel both kinds of charge, so a Coulomb repulsion is always left. That gives the vacuum an isotropic pressure that falls as the inverse square, <Q>a new type of long-range London-van der Waals Force</Q>, and <Q>Gravity is a long-range van der Waals Force</Q> (<Pg n={135}/>, <Pg n={136}/>).</p>
   </>,
   items: [
@@ -205,7 +206,7 @@ const chapter: ChapterContent = {
       kind: 'figure', id: '17-2', page: 130, title: 'The shadow, and the inverse square',
       caption: 'An illustration of the shadow from the shadow gravity part of the theory.',
       Diagram: Shadow,
-      text: <p><Q>In principle, the push theory could describe the 1/r<sup>2</sup> varying force required</Q> (<Pg n={130}/>). The figure shows why: the part of one star’s surroundings that the other blocks is a cone, and the cone narrows as the stars separate. Chapter 18 opens with Feynman’s statement of it: <Q>The sun will appear smaller – in fact inversely as the square of the distance</Q> (<Pg n={137}/>).</p>,
+      text: <p><Q>In principle, the push theory could describe the 1/r<sup>2</sup> varying force required</Q> (<Pg n={130}/>). The figure shows why: the part of one star’s surroundings that the other blocks is a cone, and the cone narrows as the stars separate. Chapter 18 opens with <ScientistLink id="feynman">Feynman</ScientistLink>’s statement of it: <Q>The sun will appear smaller – in fact inversely as the square of the distance</Q> (<Pg n={137}/>).</p>,
       tryThis: ['Move Star 2 away: the lines to Star 1’s centre close up and the shadow on its surface shrinks.', 'Double the distance and compare the share of sky covered: about a quarter.', 'Make Star 2 larger: a larger shadow at the same distance.'],
       notes: <p>The printed figure is flat; here it is drawn in three dimensions, so the shadow shows as what it is, a cap on Star 1’s surface where the cone to Star 2 meets it. The share of the sky is the exact solid angle of a sphere seen from a point. Distances are in units of Star 2’s radius, far closer than real stars, so the cone can be seen.</p>,
     },

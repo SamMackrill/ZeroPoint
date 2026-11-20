@@ -7,7 +7,9 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { NOTES } from '../src/book/appendix/notes';
 import { INDEX } from '../src/book/appendix/terms';
+import { ChapterPage } from '../src/book/pages/ChapterPage';
 import { IndexPage } from '../src/book/pages/IndexPage';
+import { CHAPTERS } from '../src/book/toc';
 import { ReferencesPage } from '../src/book/pages/ReferencesPage';
 import { PAPERTRAILS, forgetPaperTrails, photoUrl, publicationHref, readScientists, scientistHref } from '../src/papertrails/data';
 import { PublicationLink, ScientistLink, lifespan } from '../src/papertrails/PaperTrailsLink';
@@ -114,5 +116,21 @@ describe('PaperTrails: links and cards', () => {
     const links = [...note41.querySelectorAll('a.pt-link')].map(a => a.getAttribute('href'));
     expect(links).toEqual([scientistHref('maxwell'), publicationHref('maxwell-work-00')]);
     expect(document.getElementById('note-3')!.querySelector('.bk-ref-pt')).toBeNull();
+  });
+
+  it('links people where the chapters’ prose first names them, at most once each per chapter (endnotes aside)', async () => {
+    const linked = new Map<number, string[]>();
+    for (const meta of CHAPTERS) {
+      const { container, unmount, findByTestId } = render(<ChapterPage n={meta.n}/>);
+      await findByTestId(`chapter-${meta.n}`);
+      await act(async () => { await meta.load(); });
+      const hrefs = [...container.querySelectorAll('a.pt-link')].filter(a => !a.closest('.bk-ref-pt')).map(a => a.getAttribute('href')!.replace(/^.*scientist:/, ''));
+      expect(new Set(hrefs).size, `chapter ${meta.n} links each person once`).toBe(hrefs.length);
+      if (hrefs.length) linked.set(meta.n, hrefs);
+      unmount();
+    }
+    expect(linked.get(7)).toEqual(['maxwell']);
+    expect(linked.get(2)).toEqual(['planck', 'einstein', 'stern', 'nernst', 'heisenberg']);
+    expect(linked.get(27)).toEqual(['bohr', 'casimir']);
   });
 });

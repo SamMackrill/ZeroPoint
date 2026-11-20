@@ -5,6 +5,7 @@ import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { TOP_LAID } from '../three/top-math';
 import { FlemingHandStage } from './shared';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const W = 720;
 
@@ -326,7 +327,7 @@ const chapter: ChapterContent = {
       Diagram: Vortices,
       text: <>
         <p>Fleming opens the chapter with the Stanford Encyclopedia’s summary: <Q>A vortex, for Descartes, is a large circling band of material particles</Q>, and the planets and comets are carried <Q>(usually at rest) in these large circling bands. The entire Cartesian plenum, consequently, is comprised of a network or series of separate, interlocking vortices</Q> (<Pg n={70}/>). In the engraving each star is a sun at the centre of its own vortex, and the vortices fill space completely, packed against one another.</p>
-        <p>Descartes concluded that orbital motion had to be due to vortices, very large ones with the planets riding along their edges. Newton debunked them. But after seeing how magnetism works in Maxwell’s terms, the theory <Q>does not seem quite so laughable, at least not when one presumes they are innumerable and small molecular vortices, or as we have now come to know them as rotating zepton dipoles</Q> (<Pg n={71}/>).</p>
+        <p><ScientistLink id="descartes">Descartes</ScientistLink> concluded that orbital motion had to be due to vortices, very large ones with the planets riding along their edges. <ScientistLink id="newton">Newton</ScientistLink> debunked them. But after seeing how magnetism works in <ScientistLink id="maxwell">Maxwell</ScientistLink>’s terms, the theory <Q>does not seem quite so laughable, at least not when one presumes they are innumerable and small molecular vortices, or as we have now come to know them as rotating zepton dipoles</Q> (<Pg n={71}/>).</p>
       </>,
       tryThis: [
         'Read the four notes in turn: the Sun’s vortex, the vortices filling space, the ones seen edge on, and the comet’s path.',

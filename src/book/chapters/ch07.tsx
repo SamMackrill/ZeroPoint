@@ -5,6 +5,7 @@ import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import type { SweepView } from '../three/SweepScene';
 import { FlemingHandStage, type FieldMode } from './shared';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
 
 const W = 720;
 
@@ -308,7 +309,7 @@ function FourEquations() {
 const chapter: ChapterContent = {
   n: 7,
   summary: <>
-    <p>Maxwell reached his equations by picturing space filled with <Q>molecular vortices</Q>. Fleming’s claim is that the picture was right for magnetism: <Q>The vortices are rotating zepton dipoles</Q> (<Pg n={68}/>). What Maxwell lacked was the particle dipole, so he <Q>did not see that static electric currents could be simply considered to be non-rotating electric dipoles</Q> (<Pg n={63}/>).</p>
+    <p><ScientistLink id="maxwell">Maxwell</ScientistLink> reached his equations by picturing space filled with <Q>molecular vortices</Q>. Fleming’s claim is that the picture was right for magnetism: <Q>The vortices are rotating zepton dipoles</Q> (<Pg n={68}/>). What Maxwell lacked was the particle dipole, so he <Q>did not see that static electric currents could be simply considered to be non-rotating electric dipoles</Q> (<Pg n={63}/>).</p>
     <p>The chapter then reads the two ways a field moves a charge. An electric field deflects it by the pressure of the zeptons between; a magnetic field, which is spinning dipoles, sweeps it sideways. Each of Maxwell’s four equations is restated in those terms.</p>
   </>,
   items: [
