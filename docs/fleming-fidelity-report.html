@@ -343,16 +343,16 @@
 </div>
 
 <h2 id="papers-3">Third reading: the speed of gravity (20 Nov 2026)</h2>
-<p>Seven more background sources went to <code>docs/papers/background/</code>. Five are about the speed of gravity, the subject of the book's Figure 19-1. One is Van Flandern's own model of matter, and one is about the photon. All are by other authors, so Fleming's text stays the authority. They matter where the figure uses a number that is not his. Nothing is changed yet.</p>
+<p>Seven more background sources went to <code>docs/papers/background/</code>. Five are about the speed of gravity, the subject of the book's Figure 19-1. One is Van Flandern's own model of matter, and one is about the photon. All are by other authors, so Fleming's text stays the authority. They matter where the figure uses a number that is not his.
 
-<div class="finding open" id="P7">
-  <h4><span class="id">P7</span> Figure 19-1: how soon the orbit doubles <span class="chip ask">your call</span></h4>
+<div class="finding fixed" id="P7">
+  <h4><span class="id">P7</span> Figure 19-1: how soon the orbit doubles <span class="chip done">done</span></h4>
   <div class="two">
     <div><div class="k">The source</div>Fleming gives the argument and two bounds, but no doubling time. His bound of 2 × 10¹⁰ c comes from Van Flandern (book ref. 97). In the 1998 abstract of that paper Van Flandern writes that at the speed of light <q>orbital radii would double in about 1000 revolutions</q>.</div>
-    <div><div class="k">Figure now</div>The figure works out its own number for a planet at the Earth's speed: <b>555 years</b> at c. The radius grows by e<sup>4π·lag</sup> each orbit, so it doubles after ln 2 / (4π·lag) orbits. The "Try this" text says <q>a few hundred years</q>.</div>
+    <div><div class="k">Figure before</div>The figure worked out its own number for a planet at the Earth's speed: <b>555 years</b> at c. It held the lag fixed, so the radius grew by e<sup>4π·lag</sup> each orbit. The "Try this" text said <q>a few hundred years</q>.</div>
   </div>
-  <p><b>Open.</b> Both numbers come from the same lag. Mine is the compound doubling time. Van Flandern's matches the simple one, 1 / (4π·lag) = 801 orbits, rounded up. The choice is to keep 555 and mention his figure in the notes, or to show his. I would keep 555 and add his to the notes, because the readout changes smoothly with the slider and his is a round figure for one speed.</p>
-  <div class="src">Van Flandern, DDA abstract (BAAS 30, 1146, 1998); book ch. 19 p. 142, ref. 97; <code>orbitsToDouble</code> in src/book/chapters/ch19.tsx</div>
+  <p><b>Fixed.</b> The figure's number was wrong. As the orbit grows the planet slows, and its lag falls with it. The tangential force gives dr/dt = 2·lag·v, so the radius squared grows steadily: a² = a₀² + 4GM·t/v<sub>g</sub>. This is Van Flandern's own law (<i>Phys. Lett. A</i> 250, §3.1), worked out for a hypothetical delayed force. It doubles the orbit after 3 / (8π·lag) orbits, which is <b>1202 years</b> at c and matches his 1200. The readout and "Try this" now give that, the notes credit him, and a test pins it. At Laplace's bound it is still billions of years (8 × 10⁹). CodeRabbit caught this on #98.</p>
+  <div class="src">Van Flandern, DDA abstract (BAAS 30, 1146, 1998) and <i>Phys. Lett. A</i> 250 §3.1; book ch. 19 p. 142, ref. 97; <code>orbitsToDouble</code> in src/book/chapters/ch19.tsx</div>
 </div>
 
 <div class="finding open" id="P8">
@@ -438,7 +438,7 @@
   <div><time>11 Nov 03:10</time>CodeRabbit finished the first round. #54: no findings. #53: a machine path in the generated previews page, a page that reloaded itself, and two gaps in the comparison script's <code>--only</code> option. #55: a chain replacement could outlive the zepton it replaced, a gap birth could be drawn larger than an ordinary zepton, and this page's count was one short. #56: a regeneration command that could not run as written.</div>
   <div><time>11 Nov 08:50</time>Work resumed after a five-hour interruption. All nine findings fixed and pushed. In the Casimir lab a chain replacement is now never longer-lived than its predecessor (it settles at the shortest the space allows) and every gap birth is smaller than every ordinary zepton; both are tested over long runs. This page reloads only when opened with <code>?live</code>. 557 unit tests pass. Re-reviews of #53, #55 and #56 are queued, one an hour.</div>
   <div><time>20 Nov 16:00</time>Twenty more Fleming papers added (#97) and read against the labs. Six new items, P1 to P6, are listed under <a href="#papers-2">More papers</a>. Two of them are your decisions: the proton's centre and its radius. Nothing in the labs has changed.</div>
-  <div><time>20 Nov 17:07</time>Seven background sources on the speed of gravity added and read. Three new items, P7 to P9, are listed under <a href="#papers-3">Speed of gravity</a>. One is your decision: how Figure 19-1 gives the orbit's doubling time. Nothing in the labs or the book has changed.</div>
+  <div><time>20 Nov 17:07</time>Seven background sources on the speed of gravity added and read. Three new items, P7 to P9, are listed under <a href="#papers-3">Speed of gravity</a>. P7 was a mistake in Figure 19-1's doubling time: it said 555 years at c. It is now Van Flandern's 1200, which follows once the planet's slowing is included. Nothing in the labs has changed.</div>
   <div><time>11 Nov 13:45</time>Work resumed after two interruptions (about 09:15 to 13:30). CodeRabbit's second pass on #53 raised fourteen points. The serious one: away from 0°, Light's pair start angle put the magnetic field against the pair's rotation axis. The control now only chooses where in the pairs' cycle the run begins, so every pair keeps Fleming's half-turn and the field relations are tested at every start angle. Also fixed: the field-reach cage now vanishes at a hand-off; the inspector's B sign follows the travel direction; Medium's close-up shows coincident lobes at zero separation; Focus backs off to fit a wide pair; the separation control says the drawn peak is a scaled wavelength. The screenshots are re-taken with the final code: the script now waits for the requested tick and shows the Light plots whole. This record moved out of the lower layers into #56. 563 unit tests pass.</div>
 </div>
 

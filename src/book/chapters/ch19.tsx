@@ -14,8 +14,13 @@ export const EARTH_BETA = 29780 / 299792458;
 /** The angle by which a force lags when it travels at `speed` (in units of c) to a planet moving like the Earth, in radians. */
 export const lagAngle = (speed: number) => EARTH_BETA / speed;
 
-/** The number of orbits in which such a lag would double the size of the orbit: the radius grows by e^(4π·lag) each orbit. */
-export const orbitsToDouble = (speed: number) => Math.log(2) / (4 * Math.PI * lagAngle(speed));
+/**
+ * The number of the planet's first orbits (years, for the Earth) in which such a lag would double the size of the orbit.
+ * The tangential part of the force makes dr/dt = 2·lag·v, and as the orbit grows the planet slows and its lag falls with
+ * it, so the radius squared grows steadily: a² = a₀² + 4GM·t/v_g (Van Flandern 1998, §3.1). It doubles after
+ * 3 / (8π·lag) orbits: about 1200 at the speed of light, as Van Flandern gives.
+ */
+export const orbitsToDouble = (speed: number) => 3 / (8 * Math.PI * lagAngle(speed));
 
 /** Where the speed-of-gravity slider of Figure 19-1 stops: one step past 10¹¹ c, standing for an infinite speed. */
 const INFINITE_EXP = 11.5;
@@ -208,8 +213,8 @@ const chapter: ChapterContent = {
         <p><Q>If gravity is not instantaneous, the force looks like it is coming from point A when the body is really at point B some distance away. This causes the body at point B [to] have a force F on it that [is] not directed toward the Star</Q>. In Eddington’s words, the couple <Q>will tend to increase the angular momentum of the system, and, acting cumulatively, will soon cause an appreciable change of period</Q>. <Q>The speed of light as it turns out is too slow by many orders of magnitude</Q> (<Pg n={142}/>, <Pg n={143}/>).</p>
         <p>Fleming’s charge against general relativity is that it needs space to know where all the matter is, nearly instantly, and so breaks the limit it is built on (<Pg n={144}/>).</p>
       </>,
-      tryThis: ['Leave the speed at c: the orbit would double in size in a few hundred years.', 'Raise the speed. At Laplace’s 7 × 10⁶ c the doubling takes billions of years; at Van Flandern’s 2 × 10¹⁰ c, far longer than the age of the solar system.', 'Slide the speed all the way up, to infinite (Newton’s case, no delay at all): the force points at the star and the orbit holds.'],
-      notes: <p>The numbers are for a planet moving at the Earth’s speed, 29.8 km/s. The lag is that speed divided by the speed of gravity, and the orbit’s growth follows from the part of the force along the motion; the book gives the argument and the two bounds, not this calculation. The orbit is drawn at a fixed size, its growth given only as the doubling time, and the angle between A and B is magnified.</p>,
+      tryThis: ['Leave the speed at c: the orbit would double in size in about 1200 years.', 'Raise the speed. At Laplace’s 7 × 10⁶ c the doubling takes billions of years; at Van Flandern’s 2 × 10¹⁰ c, far longer than the age of the solar system.', 'Slide the speed all the way up, to infinite (Newton’s case, no delay at all): the force points at the star and the orbit holds.'],
+      notes: <p>The numbers are for a planet moving at the Earth’s speed, 29.8 km/s. The lag is that speed divided by the speed of gravity, and the orbit’s growth follows from the part of the force along the motion, slowing as the planet slows. The book gives the argument and the two bounds, not this calculation; the doubling time is Van Flandern’s (his 1200 years at c). The orbit is drawn at a fixed size, its growth given only as the doubling time, and the angle between A and B is magnified.</p>,
     },
     {
       kind: 'figure', id: '19-2', page: 145, section: 'The Speed of Long-Range Van der Waals Gravity', title: 'How far a photon’s field gets',
