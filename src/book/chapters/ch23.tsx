@@ -1,8 +1,9 @@
 // Chapter 23: Gravity, Energy, and Light (PDF pp. 176–184). Figures 23-1 and 23-2.
 import { useMemo, useRef, useState } from 'react';
-import { Arrow, Body, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, fmt, pathThrough, usePlayback } from '../kit';
+import { Arrow, Body, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, Zepton, fmt, pathThrough, rad, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
+import { PendulumClock } from './shared';
 
 const W = 720;
 const GM_SUN = 1.32712440018e20, GM_EARTH = 3.986004418e14, C = 299792458, R_SUN = 6.957e8, R_EARTH = 6.371e6, AU = 1.495978707e11;
@@ -109,33 +110,50 @@ export const clockGain = (altitude: number) => ((GM_EARTH / (C * C)) * (1 / R_EA
 /** How much the drawing magnifies the clocks' difference in rate: 45.7 µs a day (5.3 × 10⁻¹⁰) is drawn as 60 per cent. */
 const MAGNIFY = 0.6 / 45.7;
 
+/** The drawing's Earth (centre and radius) and how heights are laid out above it: 100 km to 40,000 km on a log scale from 30 to 260 above the surface. */
+const EARTH = { x: 200, y: 520, r: 200 }, HEIGHT_FROM = 30, HEIGHT_SPAN = 230;
+
+/** How far above the drawn surface a height in kilometres is drawn. */
+export const heightToDrawn = (km: number) => HEIGHT_FROM + ((Math.log10(Math.max(100, km)) - 2) / (Math.log10(40000) - 2)) * HEIGHT_SPAN;
+
+/** The height in kilometres a distance above the drawn surface stands for; below the lowest mark, falling in proportion to nothing at the surface. */
+export const drawnToHeight = (d: number) => (d < HEIGHT_FROM ? (100 * Math.max(0, d)) / HEIGHT_FROM : 10 ** (2 + ((d - HEIGHT_FROM) / HEIGHT_SPAN) * (Math.log10(40000) - 2)));
+
+/** The zero-point field round the Earth: zeptons in a loose lattice outside it, each at a scattered starting angle. */
+const EARTH_FIELD = (() => { const random = rng(2301); return Array.from({ length: 19 * 11 }, (_, k) => ({ x: 18 + (k % 19) * 38 + (Math.floor(k / 19) % 2) * 19, y: 20 + Math.floor(k / 19) * 40, start: random() * 180 })).filter(z => z.x < 712 && Math.hypot(z.x - EARTH.x, z.y - EARTH.y) > EARTH.r + 10 && !(z.x > 400 && z.y > 390)); })();
+
 /** Explorer: a clock higher above the Earth runs faster, and light climbing away is redshifted (Equations 23-4 and 23-5). */
 function ClocksAndRedshift() {
   const [km, setKm] = useState(20200);
   const play = usePlayback();
-  const gain = clockGain(km * 1000);
-  // Each hand's angle accumulates at its current rate, so a change of height changes the rate from then on and never
-  // moves a hand by itself. Restart (or a step back) sets both to twelve.
-  const hands = useRef({ t: 0, ground: 0, upper: 0 });
-  if (play.t < hands.current.t) hands.current = { t: 0, ground: 0, upper: 0 };
-  const step = Math.max(0, Math.min(0.05, play.t - hands.current.t));
-  hands.current = { t: play.t, ground: hands.current.ground + 120 * step, upper: hands.current.upper + 120 * (1 + gain * MAGNIFY) * step };
+  const gain = clockGain(km * 1000), rate = (h: number) => 1 + clockGain(h * 1000) * MAGNIFY;
+  // Each pendulum's swings build up at its current rate, so a change of height changes the rate from then on and never
+  // moves a clock by itself. Restart (or a step back) sets both to twelve.
+  const swings = useRef({ t: 0, ground: 0, upper: 0 });
+  if (play.t < swings.current.t) swings.current = { t: 0, ground: 0, upper: 0 };
+  const step = Math.max(0, Math.min(0.05, play.t - swings.current.t));
+  swings.current = { t: play.t, ground: swings.current.ground + 0.5 * step, upper: swings.current.upper + 0.5 * rate(km) * step };
   const shift = (GM_EARTH / (C * C)) * (1 / R_EARTH - 1 / (R_EARTH + km * 1000));
-  const H = 340, cx = 200, cy = 350, R = 120, alt = 24 + (Math.log10(km) / Math.log10(40000)) * 150, y = cy - R - alt
-  const clock = (yy: number, a: number, label: string) => <g><circle cx={cx} cy={yy} r={20} className="bk-body bk-body-plain"/><line x1={cx} y1={yy} x2={cx + 15 * Math.sin((a * Math.PI) / 180)} y2={yy - 15 * Math.cos((a * Math.PI) / 180)} className="bk-s-mark" strokeWidth="2.5" strokeLinecap="round"/><T x={cx + 30} y={yy + 5} anchor="start" size="sm">{label}</T></g>;
+  // The upper clock stands up and to the right of the lower one, at its height above the surface.
+  const H = 440, out = EARTH.r + heightToDrawn(km), ux = EARTH.x + out * Math.cos(rad(55)), uy = EARTH.y - out * Math.sin(rad(55));
+  const swing = (phase: number) => 22 * Math.sin(2 * Math.PI * phase), beats = (phase: number) => Math.floor(phase * 2);
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A clock on the Earth's surface and one ${km.toLocaleString('en-GB')} kilometres above it. The higher clock gains ${fmt(gain, 3)} microseconds a day, and light climbing to it is redshifted by ${fmt(shift, 3)}.`}>
-      <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-matter"/><T x={cx} y={cy - R + 30} tone="text" size="sm">Earth</T>
-      {[0, 1, 2, 3].map(i => <circle key={i} cx={cx} cy={cy} r={R + 30 + i * 44} className="bk-s-b" fill="none" strokeDasharray="2 6" opacity={0.7 - i * 0.16}/>)}
-      {clock(cy - R - 8, hands.current.ground, 'on the ground')}{clock(y, hands.current.upper, `at ${km.toLocaleString('en-GB')} km`)}
-      <T x={470} y={90} anchor="start" size="sm" tone="b">dotted rings: the torque of the</T><T x={470} y={108} anchor="start" size="sm" tone="b">vacuum, greater nearer the Earth</T>
-      <T x={470} y={150} anchor="start" size="sm">the difference in the clocks’ rates</T><T x={470} y={168} anchor="start" size="sm">is magnified about a billion times</T>
+    <Stage w={W} h={H} label={`A pendulum clock on the Earth's surface and one ${km.toLocaleString('en-GB')} kilometres above it, among the zeptons of the zero-point field, which turn more slowly nearer the Earth. The higher clock gains ${fmt(gain, 3)} microseconds a day, and light climbing to it is redshifted by ${fmt(shift, 3)}.`}>
+      {/* The zeptons all turn, more slowly the nearer the Earth: the greater torque its matter adds. Their rates, like the clocks', are magnified. */}
+      {EARTH_FIELD.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={z.start + 70 * play.t * rate(drawnToHeight(Math.hypot(z.x - EARTH.x, z.y - EARTH.y) - EARTH.r))} len={14} oval={false} signs={false} opacity={0.5}/>)}
+      <circle cx={EARTH.x} cy={EARTH.y} r={EARTH.r} className="bk-body bk-body-matter"/><T x={EARTH.x} y={H - 20} tone="text" size="sm">Earth</T>
+      <PendulumClock x={EARTH.x} y={EARTH.y - EARTH.r} swing={swing(swings.current.ground)} beats={beats(swings.current.ground)} tone="text" size={0.7}/>
+      <T x={EARTH.x} y={EARTH.y - EARTH.r + 20} size="sm" tone="text">on the ground</T>
+      <PendulumClock x={ux} y={uy} swing={swing(swings.current.upper)} beats={beats(swings.current.upper)} tone="mark" size={0.7}/>
+      <T x={ux + 36} y={uy - 4} anchor="start" size="sm" tone="mark">at {km.toLocaleString('en-GB')} km</T>
+      <T x={W - 20} y={H - 34} anchor="end" size="sm">zeptons turn more slowly nearer the Earth;</T>
+      <T x={W - 20} y={H - 14} anchor="end" size="sm">rates magnified about a billion times</T>
     </Stage>}>
     <Slider label="Height of the upper clock" value={km} min={100} max={40000} step={100} onChange={setKm} show={v => `${v.toLocaleString('en-GB')} km`}/>
     <PlayBar play={play} label="the clocks"/>
     <Readout label="Upper clock gains" value={`${fmt(gain, 3)} µs a day`} tone="good"/>
     <Readout label="Redshift of light climbing to it" value={`${fmt(shift, 3)}`}/>
-    <Remark>{Math.abs(km - 20200) < 150 ? 'At the height of the GPS satellites the clocks gain about 46 microseconds a day, which is why they are set to run slow.' : 'The nearer a clock is to a large body of matter, the more slowly it runs.'}</Remark>
+    <Remark>{Math.abs(km - 20200) < 150 ? 'At the height of the GPS satellites the clocks gain about 46 microseconds a day, which is why they are set to run slow.' : 'The nearer a clock is to a large body of matter, the more slowly the zeptons round it turn, and the more slowly it runs.'}</Remark>
   </Diagram>;
 }
 
@@ -155,10 +173,10 @@ const chapter: ChapterContent = {
         <p><Q>The clock rate change is not due to a time dilation effect or acceleration, but rather the London-van der Waals torque of the vacuum is increased in the presence of nearby large bodies of matter. The speed of rotation of the zeptons in space is slowed due to the polar Matter Force. This additional torque causes photon wavelengths to be longer and the frequencies lower. In turn it causes physical clocks to run slower than they do farther from Earth.</Q></p>
         <p>The redshift of light leaving a star has the same size (Equation 23-5): Δλ/λ = <V>GM</V>/(<V>c</V>²<V>r</V>). <Q>Photons accelerate as they leave a gravitational field in the radial direction, and as they speed up their wavelengths become longer</Q> (<Pg n={179}/>).</p>
       </>,
-      tryThis: ['Set the height to 20,200 km, where the GPS satellites are: the upper clock gains about 46 microseconds a day.', 'Bring the clock down: the gain shrinks toward zero at the surface.', 'Compare the redshift readout: it is the same fraction, seen in the light instead of the clock.'],
+      tryThis: ['Set the height to 20,200 km, where the GPS satellites are: the upper clock gains about 46 microseconds a day.', 'Bring the clock down: the gain shrinks toward zero at the surface.', 'Watch the zeptons: those near the Earth turn more slowly than those far out, and the clocks among them keep the same pace.', 'Compare the redshift readout: it is the same fraction, seen in the light instead of the clock.'],
       notes: <>
         <p>The readouts are Equation 23-4 with its square root left off, as Fleming says it may be, for the Earth: the difference between the surface and the height chosen. That gives about 45.7 µs a day at the height of the GPS satellites, the figure usually quoted. Taken with the square root as printed, the equation gives half that, about 22.9 µs; the standard form has 2<V>GM</V> under the root. The book does not remark on the difference.</p>
-        <p>The correction for the satellite’s motion, which Fleming assigns to the Sagnac effect of chapter 22, is not included. The drawing magnifies the difference in rate about a billion times, in proportion to the gain, so a lower clock visibly gains less.</p>
+        <p>The correction for the satellite’s motion, which Fleming assigns to the Sagnac effect of chapter 22, is not included. The drawing magnifies the difference in rate about a billion times, in proportion to the gain, so a lower clock visibly gains less. The zeptons are drawn turning at the same magnified rate as a clock at their height: Fleming says their rotation is slowed near matter, not by how much.</p>
       </>,
     },
     {

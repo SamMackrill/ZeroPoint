@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { Arrow, Diagram, Drag, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Zepton, clamp, fmt, pathThrough, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
+import { PendulumClock } from './shared';
 
 const W = 720;
 
@@ -118,19 +119,6 @@ export const energyFactor = (v: number) => 1 / Math.sqrt(1 - v * v);
 
 /** The zero-point field behind the clocks: zeptons in a loose lattice, each at a scattered resting angle, in two lanes, leaving a line under each clock for its name. */
 const CLOCK_FIELD = (() => { const random = rng(2201); return Array.from({ length: 19 * 10 }, (_, k) => ({ x: 18 + (k % 19) * 38 + (Math.floor(k / 19) % 2) * 19, y: 22 + Math.floor(k / 19) * 40, rest: random() * 180 })).filter(z => z.x < 712 && z.y !== 182 && z.y !== 382); })();
-
-/** A pendulum clock with its foot at (x, y): a case, a face whose hand steps once each beat, and the pendulum swinging. */
-function PendulumClock({ x, y, swing, beats, tone }: { x: number; y: number; swing: number; beats: number; tone: 'text' | 'mark' }) {
-  const face = y - 128, pivot = face + 36, [bobX, bobY] = polar(x, pivot, 64, -90 + swing);
-  return <g>
-    <rect x={x - 40} y={face - 40} width={80} height={152} rx={10} className="bk-body bk-body-plain" fillOpacity={0.35}/>
-    <circle cx={x} cy={face} r={30} className="bk-fill-panel" fillOpacity={0.6} stroke="currentColor" strokeOpacity={0.3}/>
-    {Array.from({ length: 12 }, (_, i) => { const [x1, y1] = polar(x, face, 25, i * 30), [x2, y2] = polar(x, face, 29, i * 30); return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} className="bk-s-muted"/>; })}
-    <line x1={x} y1={face} x2={polar(x, face, 23, 90 - beats * 30)[0]} y2={polar(x, face, 23, 90 - beats * 30)[1]} className={`bk-s-${tone}`} strokeWidth="3" strokeLinecap="round"/>
-    <line x1={x} y1={pivot} x2={bobX} y2={bobY} className="bk-s-muted" strokeWidth="2"/>
-    <circle cx={bobX} cy={bobY} r={10} className={tone === 'mark' ? 'bk-f-mark' : 'bk-f-text'}/>
-  </g>;
-}
 
 /** Explorer: a clock moving through the zero-point field gains energy and runs slow (Equations 22-13 and 22-15). */
 function MovingClock() {

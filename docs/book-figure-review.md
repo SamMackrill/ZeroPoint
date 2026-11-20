@@ -530,3 +530,8 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 - **Owner:** the zero-point field, all-important to the effect, is missing; draw the clocks as pendulum clocks, to show a physical interaction with it. **Done:** a lattice of zeptons in two lanes; a pendulum clock at rest above, its hand stepping once a beat; a second crossing the lower lane at a speed in proportion to v, its pendulum swinging at 1/γ the rate; the old motion arrow dropped; each clock's name beneath it.
 - **Owner:** make the clocks semi-transparent, and have the moving clock spin up the field near it. **Done:** see-through cases and faces; zeptons near the moving clock spin up with its speed, one way above its middle and the other below, and spin down slowly behind it, staying in place.
 - **Owner:** excellent.
+
+### Explorer x23-1
+
+- **Owner:** the zero-point field's zeptons, vital to the effect, are missing; make the clocks match x22-1. **Done:** the pendulum clock moved to `shared.tsx` (`PendulumClock`, with a size) and used by both; a lattice of zeptons round the Earth, all turning, more slowly nearer the Earth, each at the magnified rate of a clock at its height (`heightToDrawn`, `drawnToHeight`); the dotted torque rings dropped; the upper clock stands up and to the right at its height.
+- **Owner:** really rather good.
