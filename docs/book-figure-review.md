@@ -504,3 +504,8 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** Eq. 14-6 wraps, spoiling the effect. In the narrow side-by-side column the equation broke to make room for its number. **Fixed** book-wide: an equation's body never wraps; short of room its number goes below, and on the narrowest screens a too-wide equation scrolls. Checked on all seven laws.
 - **Owner:** very good.
+
+### Explorer x15-1
+
+- **Owner:** fine as it goes, but it must be clear the two field arrows are a simplification: both fields are polarizations of the zeptons, and Fleming says they are hard to unify; can they be shown as zeptons without confusion? **Done:** the fields are drawn as a lattice of small dumbbell zeptons of both kinds (Figure 11-3), alternating, scattered at rest, each turning towards the fields (electron-like by M − E, proton-like by M + E) so that together the + ends follow E and the matter ends follow M (`zeptonFacing`, tested). A "Fields drawn as" choice colours the same zeptons by charge or by matter, or returns to the arrows, now marked as a simplification. Notes explain the model.
+- **Owner:** very good, impressed.
