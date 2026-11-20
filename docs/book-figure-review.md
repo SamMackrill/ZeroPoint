@@ -553,3 +553,7 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** add the new torque depiction to any approved figures or explorers that would benefit, for re-review. Searched the book's chapters for the London-van der Waals torque: beyond chapter 20 and the explorers already done, it is key to the two figures of light passing the Sun. **Done:** `fieldLattice` in `shared.tsx`; in 23-1 the zeptons round the Sun wobble, held near it, with fading links, in place of the band that showed the slowing; in 23-2 the same, the links fading to a trace when the tangential half is left out, with a play bar for the zeptons. Notes updated.
 - **Owner:** very good, approved.
+
+### Explorer x24-1
+
+- **Owner:** approved as it stands.
