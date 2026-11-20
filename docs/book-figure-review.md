@@ -561,3 +561,7 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 ### Explorer x27-1
 
 - **Owner:** approved as it stands. The second pass over the explorers is complete.
+
+### Square roots (book-wide)
+
+- **Owner:** traditionally the radical encloses what it covers; round brackets are only a limitation of computer text. **Done:** a `Sqrt` element in `prose.tsx`, the radical sign drawn to the height of what it covers with its bar over all of it, for Equations 15-3, 22-13, 22-15 and 23-4 and the note on momentum in chapter 10. A fraction's bar now spans the whole fraction, with room beneath it for a root.

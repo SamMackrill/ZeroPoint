@@ -333,7 +333,8 @@ input {
 .bk-frac {
   display: inline-flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  text-align: center;
   margin: 0 3px;
   vertical-align: middle;
   line-height: 1.2;
@@ -345,7 +346,40 @@ input {
 }
 
 .bk-frac > span:last-child {
-  padding: 0 4px;
+  padding: 3px 4px 0;
+}
+
+.bk-sqrt {
+  display: inline-flex;
+  align-items: stretch;
+  margin: 2px 1px 0;
+  vertical-align: middle;
+}
+
+.bk-sqrt-sign {
+  position: relative;
+  flex: none;
+  width: 0.62em;
+}
+
+.bk-sqrt-sign svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.bk-sqrt-sign path {
+  fill: none;
+  stroke: var(--text-2);
+  stroke-width: 1.2px;
+  stroke-linejoin: round;
+}
+
+.bk-sqrt-body {
+  padding: 2px 3px 0 2px;
+  border-top: 1.2px solid var(--text-2);
 }
 
 /* Jump list */

@@ -28,7 +28,12 @@ export function Eq({ n, children }: { n?: string; children: ReactNode }) {
   return <div className="bk-eq" role="math"><span className="bk-eq-body">{children}</span>{n && <span className="bk-eq-n">Eq. {n}</span>}</div>;
 }
 
-/** A fraction for displayed equations. */
+/** A square root as in print: the radical sign drawn to the height of what it covers, its bar over all of it. */
+export function Sqrt({ children }: { children: ReactNode }) {
+  return <span className="bk-sqrt"><span className="bk-sqrt-sign" aria-hidden="true"><svg viewBox="0 0 10 20" preserveAspectRatio="none"><path d="M0 12.5 L2.6 11 L5.6 19.4 L9.6 0.6 L10 0.6" vectorEffect="non-scaling-stroke"/></svg></span><span className="bk-sqrt-body"><span className="bk-visually-hidden">square root of </span>{children}</span></span>;
+}
+
+/** A fraction set as in print, its numerator over its denominator. */
 export function Frac({ top, bottom }: { top: ReactNode; bottom: ReactNode }) {
   return <span className="bk-frac"><span>{top}</span><span>{bottom}</span></span>;
 }

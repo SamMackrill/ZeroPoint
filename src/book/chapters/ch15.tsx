@@ -1,7 +1,7 @@
 // Chapter 15: The Electro-Matter Force (PDF pp. 117–121). No figures: one explorer.
 import { useState } from 'react';
 import { Arrow, BlockArrow, Choice, Diagram, Readout, Remark, Slider, Stage, T, fmt } from '../kit';
-import { Eq, Frac, Pg, Q, V } from '../prose';
+import { Eq, Frac, Pg, Q, Sqrt, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { ZEPTON_PAIR, dumbbell } from './shared';
 
@@ -102,7 +102,7 @@ const chapter: ChapterContent = {
         <p>The combined field equations (15-5 to 15-8) are, Fleming says, <Q>symbolic of the unification of the two forces</Q>; it may not be possible to combine the fields in practical computation. The combined Lorentz law is the useful one: <Q>the total force on a body can be determined by summing the two forces due to the different charges</Q> (<Pg n={119}/>, <Pg n={120}/>).</p>
         <Eq n="15-9"><V>F</V> = <V>q</V>(<V>E</V> + <V>υ</V> × <V>B</V><sub>e</sub>) + <V>m</V>(<V>M</V> + <V>υ</V> × <V>B</V><sub>m</sub>)</Eq>
         <p>Behind it is one relation for both pairs of constants (Equations 15-3 and 15-4):</p>
-        <Eq n="15-3"><V>c</V> = <Frac top="1" bottom={<>√(ε<sub>0</sub>μ<sub>0</sub>)</>}/></Eq>
+        <Eq n="15-3"><V>c</V> = <Frac top="1" bottom={<Sqrt>ε<sub>0</sub>μ<sub>0</sub></Sqrt>}/></Eq>
       </>,
       tryThis: ['Set the matter field to zero and draw the zeptons by charge: every + end turns along E. Draw them by matter: the matter ends point both ways, and cancel.', 'Set the electric field to zero instead: now the matter ends line up and the charges cancel.', 'Set the electric charge to zero: an electrically neutral body still feels the matter field.', 'Give the two fields opposite directions and find the settings where the two forces cancel.', 'Reverse the sign of q: only the electric part reverses. Matter charge has one sign here, because local space holds only matter.'],
       notes: <><p>The explorer shows the static terms of Equation 15-9 for a body at rest, in arbitrary units; the two velocity terms are the subjects of Figures 7-5 and 12-2.</p>
