@@ -535,3 +535,8 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** the zero-point field's zeptons, vital to the effect, are missing; make the clocks match x22-1. **Done:** the pendulum clock moved to `shared.tsx` (`PendulumClock`, with a size) and used by both; a lattice of zeptons round the Earth, all turning, more slowly nearer the Earth, each at the magnified rate of a clock at its height (`heightToDrawn`, `drawnToHeight`); the dotted torque rings dropped; the upper clock stands up and to the right at its height.
 - **Owner:** really rather good.
+
+### Explorer x23-2 (new)
+
+- **Owner:** an explorer is missing for the redshift: "Photons accelerate as they leave a gravitational field in the radial direction, and as they speed up their wavelengths become longer". **Done:** light leaving a body's surface (Earth, Sun, Sirius B, a neutron star), drawn as in x20-2; each half-turn the same time, so as the light speeds up the sites spread and the wave behind it stretches, its glow reddening; the field's zeptons turn more slowly nearer the body; readouts of Equation 23-5 and the radial slowing; the stretch on a power-of-ten scale (`redshift`, `shownStretch`, `climbingSites`).
+- **Owner:** a good start; the open question, long considered, is how to show changes in torque visibly.

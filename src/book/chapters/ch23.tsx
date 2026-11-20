@@ -1,6 +1,6 @@
-// Chapter 23: Gravity, Energy, and Light (PDF pp. 176–184). Figures 23-1 and 23-2.
+// Chapter 23: Gravity, Energy, and Light (PDF pp. 176–184). Figures 23-1 and 23-2; two explorers.
 import { useMemo, useRef, useState } from 'react';
-import { Arrow, Body, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, Zepton, fmt, pathThrough, rad, rng, usePlayback } from '../kit';
+import { Arrow, Body, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, Zepton, Choice, clamp, fmt, pathThrough, rad, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { PendulumClock } from './shared';
@@ -157,6 +157,73 @@ function ClocksAndRedshift() {
   </Diagram>;
 }
 
+/** Bodies light can climb away from, with GM (m³/s²) and radius (m): the Earth, the Sun, the white dwarf Sirius B and a typical neutron star. */
+const EMITTERS = {
+  earth: { name: 'Earth', said: 'the Earth', gm: GM_EARTH, r: R_EARTH },
+  sun: { name: 'Sun', said: 'the Sun', gm: GM_SUN, r: R_SUN },
+  dwarf: { name: 'Sirius B', said: 'the white dwarf Sirius B', gm: 1.02 * GM_SUN, r: 5.8e6 },
+  neutron: { name: 'Neutron star', said: 'a neutron star', gm: 1.4 * GM_SUN, r: 1.2e4 },
+} as const;
+type Emitter = keyof typeof EMITTERS;
+
+/** The redshift of light from the surface of a body seen far away, Δλ/λ = GM/(c²r) (Equation 23-5). */
+export const redshift = (gm: number, r: number) => gm / (C * C * r);
+
+/** How strongly the drawing shows a redshift: the shift's power of ten mapped from 10⁻¹⁰ (nothing) to 1 (0.8), so every body's can be seen. */
+export const shownStretch = (z: number) => 0.08 * clamp(Math.log10(z) + 10, 0, 10);
+
+/** The drawing's star: its centre is off the stage to the left, its surface at x = 80; the light leaves along y = 180. */
+const STAR = { x: -60, y: 180, r: 140 }, RAY_END = 700;
+
+/** The zero-point field round the star: zeptons in a loose lattice, each at a scattered starting angle, clear of the light's path. */
+const STAR_FIELD = (() => { const random = rng(2302); return Array.from({ length: 19 * 9 }, (_, k) => ({ x: 18 + (k % 19) * 38 + (Math.floor(k / 19) % 2) * 19, y: 20 + Math.floor(k / 19) * 40, start: random() * 180 })).filter(z => z.x < 712 && Math.abs(z.y - STAR.y) > 18 && z.y < 330 && Math.hypot(z.x - STAR.x, z.y - STAR.y) > STAR.r + 10); })();
+
+/**
+ * Where the light's central zeptons are along the ray, from the star's surface out: one each half wavelength, the half
+ * wavelength growing with the speed of light, which is less near the star by `stretch` × R/r. Each half-turn takes the
+ * same time, so the light speeds up as it climbs and its wavelength lengthens with it.
+ */
+export function climbingSites(stretch: number, halfFar = 30) {
+  const sites: number[] = [];
+  for (let x = STAR.x + STAR.r + 6; x < RAY_END; ) { sites.push(x); x += halfFar * (1 - (stretch * STAR.r) / (x - STAR.x)); }
+  return sites;
+}
+
+/** Explorer: light leaving a star speeds up as it climbs out of the field, and its wavelength lengthens: the redshift. */
+function Redshift() {
+  const [body, setBody] = useState<Emitter>('sun');
+  const play = usePlayback({ speed: 0.6 });
+  const { name, said, gm, r } = EMITTERS[body], z = redshift(gm, r), stretch = shownStretch(z), sites = useMemo(() => climbingSites(stretch), [stretch]);
+  const H = 360, speedAt = (x: number) => 1 - (stretch * STAR.r) / (x - STAR.x);
+  // The light: each central zepton makes one half-turn, the next the other way; after the last a short pause, then again.
+  const at = (play.t * 2) % (sites.length + 1), now = Math.floor(at), u = at - now, carrying = now < sites.length;
+  const turnOf = (k: number) => 90 + (k % 2 ? 1 : -1) * 180 * (k < now ? 1 : k > now ? 0 : u);
+  const front = carrying ? sites[now] + (u * ((sites[now + 1] ?? RAY_END) - sites[now])) : RAY_END, redness = clamp((front - sites[0]) / (RAY_END - sites[0]));
+  // The wave the light leaves behind it, one cycle each two sites: its wavelength grows as it climbs.
+  const wave = Array.from({ length: Math.max(2, Math.round(front - sites[0])) }, (_, i) => {
+    const x = sites[0] + i, k = sites.findIndex(s => s > x), j = k < 0 ? sites.length - 1 : Math.max(0, k - 1), next = sites[j + 1] ?? sites[j] + 30 * speedAt(x);
+    return `${i ? 'L' : 'M'}${x.toFixed(1)} ${(STAR.y - 16 * Math.sin(Math.PI * (j + (x - sites[j]) / (next - sites[j])))).toFixed(1)}`;
+  }).join(' ');
+  return <Diagram stage={
+    <Stage w={W} h={H} label={`Light leaving the surface of ${said} and climbing away. The zeptons near the body turn more slowly and the light is slower there; as it climbs it speeds up and its wavelength lengthens, a redshift of ${fmt(z, 3)}.`}>
+      {STAR_FIELD.map((f, i) => <Zepton key={i} x={f.x} y={f.y} angle={f.start + 70 * play.t * (1 - (stretch * STAR.r) / Math.hypot(f.x - STAR.x, f.y - STAR.y))} len={14} oval={false} signs={false} opacity={0.45}/>)}
+      <circle cx={STAR.x} cy={STAR.y} r={STAR.r} className="bk-body bk-body-matter"/>
+      <T x={30} y={STAR.y + 5} tone="text" size="sm" transform={`rotate(-90 30 ${STAR.y})`}>{name}</T>
+      <path d={wave} className="bk-s-e" strokeWidth="1.6" fill="none" opacity={0.7}/>
+      {sites.map((x, k) => { const on = carrying && k === now, size = Math.min(22, ((sites[k + 1] ?? RAY_END) - x) * 0.9);
+        return <g key={k}>{on && <><circle cx={x} cy={STAR.y} r={17} className="bk-f-e" opacity={0.35 * (1 - redness)}/><circle cx={x} cy={STAR.y} r={17} className="bk-f-danger" opacity={0.35 * redness}/></>}
+          <Zepton x={x} y={STAR.y} angle={turnOf(k)} len={on ? size + 4 : size} oval={false} signs={false} emphasis={on ? 'key' : 'normal'} opacity={on ? 1 : 0.35}/></g>; })}
+      <T x={110} y={H - 18} anchor="start" size="sm">slower near the {body === 'earth' ? 'Earth' : 'star'}: shorter waves</T>
+      <T x={RAY_END} y={H - 18} anchor="end" size="sm" tone="danger">faster far out: longer waves, redder</T>
+    </Stage>}>
+    <Choice label="Light leaving" value={body} onChange={setBody} options={(Object.keys(EMITTERS) as Emitter[]).map(k => ({ value: k, label: EMITTERS[k].name }))}/>
+    <PlayBar play={play} label="the light"/>
+    <Readout label="Redshift seen far away, Δλ/λ" value={fmt(z, 3)} tone="bad"/>
+    <Readout label="Speed of light at the surface" value={`(1 − ${fmt(z, 3)}) c₀`}/>
+    <Remark>The light is slower near the body, where the zeptons turn more slowly. Each half-turn takes the same time, so as the light climbs and speeds up, each carries it further: the wavelength grows, and the light is redshifted.</Remark>
+  </Diagram>;
+}
+
 const chapter: ChapterContent = {
   n: 23,
   summary: <>
@@ -177,6 +244,20 @@ const chapter: ChapterContent = {
       notes: <>
         <p>The readouts are Equation 23-4 with its square root left off, as Fleming says it may be, for the Earth: the difference between the surface and the height chosen. That gives about 45.7 µs a day at the height of the GPS satellites, the figure usually quoted. Taken with the square root as printed, the equation gives half that, about 22.9 µs; the standard form has 2<V>GM</V> under the root. The book does not remark on the difference.</p>
         <p>The correction for the satellite’s motion, which Fleming assigns to the Sagnac effect of chapter 22, is not included. The drawing magnifies the difference in rate about a billion times, in proportion to the gain, so a lower clock visibly gains less. The zeptons are drawn turning at the same magnified rate as a clock at their height: Fleming says their rotation is slowed near matter, not by how much.</p>
+      </>,
+    },
+    {
+      kind: 'explorer', id: 'x23-2', page: 179, section: 'Gravitational Redshift', title: 'Light speeds up as it climbs, and reddens',
+      Diagram: Redshift,
+      text: <>
+        <p>Gravitational redshift, Fleming says, needs no relativity: <Q>it takes energy for a photon to move in opposition to the gravitational potential field in the radial direction. The photon becomes less energetic as it moves away from the star that emitted it. In the process of becoming less energetic, the wavelength becomes longer</Q> (<Pg n={178}/>, <Pg n={179}/>).</p>
+        <Eq n="23-5"><Frac top="Δλ" bottom="λ"/> = <Frac top={<V>GM</V>} bottom={<><V>c</V>²<V>r</V></>}/></Eq>
+        <p>In the zero-point field it is like light sent from a frame moving at <V>v</V>, which goes at <V>c</V> − <V>v</V> with its wavelength contracted; as the frame slows, the light goes faster and its wavelength grows. <Q>To put it more plainly, photons accelerate as they leave a gravitational field in the radial direction, and as they speed up their wavelengths become longer.</Q> It is <Q>a consequence of the conservation of energy and the slowing of the speed of light in the vicinity of matter</Q> (<Pg n={179}/>).</p>
+      </>,
+      tryThis: ['Follow the lit zepton out from the surface: each half-turn carries it further than the last, and the wave behind it stretches.', 'Watch the zeptons of the field: near the body they turn more slowly, and that is where the light is slow.', 'Change the body: from the Earth to a neutron star the shift grows by a factor of a few hundred million.'],
+      notes: <>
+        <p>The readouts are Equation 23-5 for light from the body’s surface seen far away, and the radial slowing of light it implies; Fleming’s Equation 23-6 doubles that for light passing a body, adding the tangential part. For the neutron star Equation 23-5 is only a first approximation.</p>
+        <p>The shifts are far too small to draw: 7 × 10⁻¹⁰ for the Earth, 2 × 10⁻⁶ for the Sun. The drawing shows each on a scale of its power of ten, so the stretch grows from body to body but is not to scale. The light is drawn as in Figure 5-1 and explorer x20-2, one central zepton each half wavelength, each half-turn taking the same time; the field’s zeptons turn more slowly nearer the body in proportion to the light’s slowing there. Fleming gives the slowing, not how the zeptons’ turning varies with distance.</p>
       </>,
     },
     {
