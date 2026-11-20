@@ -12,7 +12,7 @@ import { PATCH_AREA, SPHERE_LINES, evenDirections, patchAngle } from '../src/boo
 import { bodyVelocity, pushOfDrag, speedOfLight } from '../src/book/chapters/ch10';
 import { spinRate } from '../src/book/chapters/ch11';
 import { orbitCycle, precessingRadius, starZeptonAngle, turnOrbitPoint } from '../src/book/chapters/ch12';
-import { snapSpeed, speedName } from '../src/book/chapters/ch19';
+import { orbitsToDouble, snapSpeed, speedName } from '../src/book/chapters/ch19';
 import { zeptonFacing } from '../src/book/chapters/ch15';
 import { dragOf, halfTurn } from '../src/book/chapters/ch20';
 
@@ -199,6 +199,9 @@ describe('book companion: diagrams', () => {
     expect(speedName(snapSpeed(10.3))).toMatch(/\(Van Flandern\)$/);
     expect(speedName(snapSpeed(3))).not.toMatch(/\(/);
     expect(speedName(11.5)).toBe('∞ (no delay: Newton)');
+    // At c the Earth's orbit doubles in about 1200 years, as Van Flandern gives (Phys. Lett. A 250, §3.1).
+    expect(orbitsToDouble(1)).toBeGreaterThan(1190);
+    expect(orbitsToDouble(1)).toBeLessThan(1210);
     // From a named speed, an arrow-key step moves on rather than being pulled back.
     const laplace = snapSpeed(6.8);
     expect(snapSpeed(6.9, laplace)).toBe(6.9);
