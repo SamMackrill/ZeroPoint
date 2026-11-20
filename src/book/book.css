@@ -336,7 +336,8 @@ input {
   align-items: stretch;
   text-align: center;
   margin: 0 3px;
-  vertical-align: middle;
+  /* The baseline of a column of boxes is its numerator's: raised so, the bar sits at the middle of an equals sign. */
+  vertical-align: 0.67em;
   line-height: 1.2;
 }
 
@@ -349,16 +350,25 @@ input {
   padding: 3px 4px 0;
 }
 
+/* Indices in an equation do not open up its lines, so a fraction's bar sits at the same height whatever its numerator holds. */
+.bk-eq sub,
+.bk-eq sup {
+  line-height: 0;
+}
+
 .bk-sqrt {
-  display: inline-flex;
-  align-items: stretch;
-  margin: 2px 1px 0;
-  vertical-align: middle;
+  /* An inline block whose baseline is that of what it covers, so it sits on the line like the rest of the equation. */
+  display: inline-block;
+  position: relative;
+  margin: 0 1px;
+  padding-left: 0.62em;
 }
 
 .bk-sqrt-sign {
-  position: relative;
-  flex: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
   width: 0.62em;
 }
 
@@ -378,6 +388,7 @@ input {
 }
 
 .bk-sqrt-body {
+  display: inline-block;
   padding: 2px 3px 0 2px;
   border-top: 1.2px solid var(--text-2);
 }
