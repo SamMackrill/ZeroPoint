@@ -109,8 +109,10 @@ function Refraction() {
   // The light is a series of central zeptons, one each half wavelength (44 in the vacuum, n times closer in the medium),
   // each making one half-turn, alternate ones turning opposite ways, as in Figure 5-1. Every half-turn takes the same
   // time, so in the medium, where it carries the light less far, the light is slower.
-  const half = 44, sites = [
-    ...Array.from({ length: Math.ceil(up / half) }, (_, i) => ({ s: half / 2 + i * half, medium: false })).filter(z => z.s < up),
+  // At a steep angle the incoming ray starts far off the stage's left edge; its sites begin where it comes into view (x 30),
+  // keeping their half-wavelength spacing, so the light is seen from the first.
+  const half = 44, inView = inDir[0] > 0 ? Math.max(0, (30 - start[0]) / inDir[0]) : 0, sites = [
+    ...Array.from({ length: Math.ceil(up / half) }, (_, i) => ({ s: half / 2 + i * half, medium: false })).filter(z => z.s < up && z.s >= inView),
     ...Array.from({ length: Math.ceil((down * n) / half) }, (_, i) => ({ s: (half / n) * (i + 0.5), medium: true })).filter(z => z.s < down),
   ];
   // Which zepton is carrying the light, and how far through its half-turn; after the last a short pause, then again.
