@@ -1301,6 +1301,17 @@ input {
   color: var(--text-3);
 }
 
+/* A note's authors and paper on PaperTrails, between its text and the pages that cite it. */
+.bk-ref-pt {
+  margin-top: 4px;
+  font-size: var(--fs-body);
+  color: var(--text-2);
+}
+
+.bk-ref-pt .pt-mark {
+  margin-right: 2px;
+}
+
 .bk-chapter-notes {
   margin-top: 36px;
 }
