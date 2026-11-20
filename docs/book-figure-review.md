@@ -509,3 +509,9 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** fine as it goes, but it must be clear the two field arrows are a simplification: both fields are polarizations of the zeptons, and Fleming says they are hard to unify; can they be shown as zeptons without confusion? **Done:** the fields are drawn as a lattice of small dumbbell zeptons of both kinds (Figure 11-3), alternating, scattered at rest, each turning towards the fields (electron-like by M − E, proton-like by M + E) so that together the + ends follow E and the matter ends follow M (`zeptonFacing`, tested). A "Fields drawn as" choice colours the same zeptons by charge or by matter, or returns to the arrows, now marked as a simplification. Notes explain the model.
 - **Owner:** very good, impressed.
+
+### Explorer x20-1
+
+- **Owner:** the bar for the speed of light leaves the box; use a speedometer, as in a car. **Done:** a `Speedometer` dial, 240° from 0 to 5 c₀ (the slider's top speed), ticks each half, free space's 1 c₀ in the accent colour, a red needle under the numbers, the reading beneath the hub.
+- **Owner:** moving the slider resets the central zepton, so the motion is jerky. **Fixed:** the torque carries an angle offset, so a change alters only the rate of turning, not the angle.
+- **Owner:** much better.

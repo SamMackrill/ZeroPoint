@@ -9,11 +9,38 @@ const W = 720;
 /** The rate at which a zepton turns against the drag of its neighbours, relative to free space, for a relative torque. */
 export const turnRate = (torque: number) => 1 / torque;
 
+/** The speedometer's top reading, in units of c₀ (the slider's least torque gives 5), and the sweep of its dial, as in a car's. */
+const DIAL_MAX = 5, DIAL_FROM = 210, DIAL_SWEEP = 240;
+
+/** The angle on the dial, in degrees anticlockwise from the right, of a reading in units of c₀. */
+export const dialAngle = (v: number) => DIAL_FROM - DIAL_SWEEP * clamp(v / DIAL_MAX);
+
+/** A car-style speedometer for the speed of light, centred on (x, y): a dial from 0 to 5 c₀, free space's 1 c₀ marked, and a needle. */
+function Speedometer({ x, y, r, value }: { x: number; y: number; r: number; value: number }) {
+  const at = (a: number, d: number) => [x + d * Math.cos(rad(a)), y - d * Math.sin(rad(a))] as const;
+  const arc = (from: number, to: number, d: number) => { const [x1, y1] = at(from, d), [x2, y2] = at(to, d); return `M${x1} ${y1} A${d} ${d} 0 ${from - to > 180 ? 1 : 0} 1 ${x2} ${y2}`; };
+  const needle = dialAngle(value), [nx, ny] = at(needle, r - 16), ticks = Array.from({ length: 2 * DIAL_MAX + 1 }, (_, i) => i / 2);
+  return <g>
+    <circle cx={x} cy={y} r={r + 8} className="bk-fill-soft"/>
+    <path d={arc(DIAL_FROM, DIAL_FROM - DIAL_SWEEP, r)} className="bk-s-faint" strokeWidth="6" fill="none"/>
+    <path d={arc(DIAL_FROM, Math.min(DIAL_FROM - 0.5, needle), r)} className="bk-s-accent" strokeWidth="6" fill="none"/>
+    {/* The needle under the numbers, so it never hides one, as on a car's dial. */}
+    <line x1={x} y1={y} x2={nx} y2={ny} className="bk-s-danger" strokeWidth="3" strokeLinecap="round"/>
+    {ticks.map(v => { const a = dialAngle(v), major = Number.isInteger(v), [x1, y1] = at(a, r - 5), [x2, y2] = at(a, r - (major ? 16 : 11)), [tx, ty] = at(a, r - 30);
+      return <g key={v}><line x1={x1} y1={y1} x2={x2} y2={y2} className={v === 1 ? 'bk-s-accent' : 'bk-s-muted'} strokeWidth={major ? 2.4 : 1.2}/>
+        {major && <T x={tx} y={ty + 5} size="sm" tone={v === 1 ? 'accent' : 'muted'}>{v}</T>}</g>; })}
+    <circle cx={x} cy={y} r={7} className="bk-f-text"/>
+    <T x={x} y={y + 40} tone="accent">{fmt(value, 3)} c₀</T>
+    <T x={x} y={y + 62} size="sm">speed of light</T>
+  </g>;
+}
+
 /** Explorer: a rotating zepton and the neighbours it has to turn. More drag, slower rotation, slower light. */
 function Torque() {
-  const [torque, setTorque] = useState(1);
+  // The torque, and an offset to the zepton's angle that keeps it where it is when the torque changes: only its rate of turning changes.
+  const [{ torque, offset }, setTurning] = useState({ torque: 1, offset: 0 });
   const play = usePlayback();
-  const H = 360, cx = 300, cy = 180, rate = turnRate(torque), angle = play.t * 200 * rate;
+  const H = 360, cx = 300, cy = 180, rate = turnRate(torque), angle = offset + play.t * 200 * rate;
   const ring = useMemo(() => { const random = rng(201); return Array.from({ length: 14 }, (_, i) => ({ a: (i / 14) * 360 + random() * 12, r: 92 + (i % 2) * 44, lag: 20 + random() * 50 })); }, []);
   return <Diagram stage={
     <Stage w={W} h={H} label={`A rotating zepton at the centre and the zeptons round it that it sets turning. With a London-van der Waals torque of ${fmt(torque, 2)} times that of free space it turns at ${Math.round(rate * 100)} per cent of its free-space rate, and light travels at ${Math.round(rate * 100)} per cent of c.`}>
@@ -23,11 +50,10 @@ function Torque() {
       </g>; })}
       <Zepton x={cx} y={cy} angle={angle} len={62} emphasis="key" signs/>
       <Spin x={cx} y={cy} r={46} ccw sweep={60 + 220 * rate}/>
-      <rect x={560} y={70} width={30} height={220} className="bk-fill-soft"/><rect x={560} y={290 - 220 * rate} width={30} height={220 * rate} className="bk-f-accent"/>
-      <T x={575} y={312} size="sm" tone="accent">speed of light</T><T x={604} y={290 - 220 * rate + 5} anchor="start" tone="accent">{fmt(rate, 3)} c₀</T>
+      <Speedometer x={590} y={190} r={92} value={rate}/>
       {torque < 0.3 && <T x={cx} y={30} tone="danger" size="sm">with almost no field to resist it, a zepton would rotate almost without limit</T>}
     </Stage>}>
-    <Slider label="London-van der Waals torque" value={torque} min={0.2} max={2.4} step={0.02} onChange={setTorque} show={v => (Math.abs(v - 1) < 0.011 ? 'free space' : `${fmt(v, 3)} × free space`)}/>
+    <Slider label="London-van der Waals torque" value={torque} min={0.2} max={2.4} step={0.02} onChange={v => setTurning(s => ({ torque: v, offset: s.offset + play.t * 200 * (turnRate(s.torque) - turnRate(v)) }))} show={v => (Math.abs(v - 1) < 0.011 ? 'free space' : `${fmt(v, 3)} × free space`)}/>
     <PlayBar play={play} label="the rotation"/>
     <Readout label="Rate of rotation" value={`${fmt(rate, 3)} ×`}/>
     <Readout label="Speed of light" value={`${fmt(rate, 3)} c₀`} tone="good"/>
