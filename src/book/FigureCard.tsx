@@ -41,7 +41,8 @@ export function FigureCard({ item, chapter }: { item: BookItem; chapter: number 
   const [ref, visible] = useOnScreen<HTMLElement>();
   const [running, report] = useRunning();
   const figure = item.kind === 'figure', { Diagram } = item;
-  const name = figure ? `Figure ${item.id}` : 'Explorer';
+  // An explorer is named by its id too, quietly, so it can be referred to as a figure is.
+  const name = figure ? `Figure ${item.id}` : <>Explorer <span className="bk-card-id">{item.id}</span></>;
   return <article ref={ref} id={itemAnchor(item.id)} className={`bk-card bk-card-${item.kind}`} aria-labelledby={`${itemAnchor(item.id)}-title`} data-testid={`item-${item.id}`}>
     <header className="bk-card-head">
       <p className="bk-card-kicker"><a href={`#/ch/${chapter}/${item.id}`} title="Link to this item">{name}</a><span aria-hidden="true"> · </span><Pg n={item.page}/></p>

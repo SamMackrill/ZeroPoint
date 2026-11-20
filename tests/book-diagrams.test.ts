@@ -13,6 +13,8 @@ import { bodyVelocity, pushOfDrag, speedOfLight } from '../src/book/chapters/ch1
 import { spinRate } from '../src/book/chapters/ch11';
 import { orbitCycle, precessingRadius, starZeptonAngle, turnOrbitPoint } from '../src/book/chapters/ch12';
 import { snapSpeed, speedName } from '../src/book/chapters/ch19';
+import { zeptonFacing } from '../src/book/chapters/ch15';
+import { dragOf, halfTurn } from '../src/book/chapters/ch20';
 
 describe('book companion: diagrams', () => {
   it('Figure 8-1: Descartes’s vortex cells tile the engraving’s frame without gaps or overlaps', () => {
@@ -219,5 +221,33 @@ describe('book companion: diagrams', () => {
     const last = points[points.length - 1], first = turnOrbitPoint(points[0], advance);
     const step = Math.hypot(points[1].x - points[0].x, points[1].y - points[0].y);
     expect(Math.hypot(first.x - last.x, first.y - last.y)).toBeLessThan(step * 1.5);
+  });
+
+  it('x15-1: the two kinds of zepton together carry E in their + ends and M in their matter ends', () => {
+    const up = [0, -1] as const, sum = (E: number, M: number) => {
+      const e = zeptonFacing('electron', up, E, M), p = zeptonFacing('proton', up, E, M);
+      // Matter ends: both kinds' facings. Positive ends: the proton-like matter end, the electron-like antimatter end.
+      return { matter: e[0] + p[0], electric: p[0] - e[0] };
+    };
+    expect(sum(0, 0).matter).toBeCloseTo(0);
+    expect(sum(0, 0).electric).toBeCloseTo(0);
+    expect(sum(0.5, 0).matter).toBeCloseTo(0);
+    expect(sum(0.5, 0).electric).toBeGreaterThan(0);
+    expect(sum(0, -0.5).electric).toBeCloseTo(0);
+    expect(sum(0, -0.5).matter).toBeLessThan(0);
+    // Fully turned, a zepton lies along the field.
+    expect(zeptonFacing('proton', up, 1, 0)[0]).toBe(1);
+    expect(zeptonFacing('electron', up, 1, 0)[0]).toBe(-1);
+  });
+
+  it('x20-2: a dragged half-turn takes the same time, held back first and catching up after, never turning back', () => {
+    for (const n of [1, 1.333, 1.515, 2.417]) {
+      const drag = dragOf(n);
+      expect(halfTurn(0, drag)).toBe(0);
+      expect(halfTurn(1, drag)).toBeCloseTo(1);
+      for (let u = 0; u < 1; u += 0.01) expect(halfTurn(u + 0.01, drag)).toBeGreaterThanOrEqual(halfTurn(u, drag));
+    }
+    expect(dragOf(1)).toBe(0);
+    expect(halfTurn(0.25, dragOf(1.515))).toBeLessThan(0.25);
   });
 });

@@ -4,7 +4,7 @@
 import { useMemo, useState } from 'react';
 import { BOOK_PDF } from '../labs';
 import { HAND_DIGITS, HAND_PATH, HAND_SIZE } from '../art/fleming-hand';
-import { Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, PlayBar, Readout, Remark, Spin, Stage, Still, T, Toggle, Zepton, rad, usePlayback, type Source, type Tone } from '../kit';
+import { Arrow, BlockArrow, Body, Charge, Choice, Diagram, Drag, FieldPicture, InOut, PlayBar, Readout, Remark, Spin, Stage, Still, T, Toggle, Zepton, polar, rad, rng, usePlayback, type Source, type Tone } from '../kit';
 
 /** What one digit of the drawn hand stands for: a name, a small hint under it, and its colour. */
 export interface HandDigit { name: string; hint: string; tone: Tone }
@@ -140,4 +140,45 @@ export function dumbbell(x: number, y: number) {
     ? `C${x + cx1} ${y - cy1} ${x + w} ${y - cy2} ${x + w} ${y} C${x + w} ${y + cy2} ${x + cx1} ${y + cy1} ${x + sx} ${y + sy}`
     : `C${x - cx1} ${y + cy1} ${x - w} ${y + cy2} ${x - w} ${y} C${x - w} ${y - cy2} ${x - cx1} ${y - cy1} ${x - sx} ${y - sy}`;
   return `M${x - sx} ${y - sy} A${ZR} ${ZR} 0 1 1 ${x + sx} ${y - sy} ${neck(1)} A${ZR} ${ZR} 0 1 1 ${x - sx} ${y + sy} ${neck(-1)} Z`;
+}
+
+/** A pendulum clock with its foot at (x, y), `size` times full size: a see-through case, a face whose hand steps once each beat, and the pendulum swinging (chapters 22 and 23). */
+export function PendulumClock({ x, y, swing, beats, tone, size = 1 }: { x: number; y: number; swing: number; beats: number; tone: 'text' | 'mark'; size?: number }) {
+  const face = y - 128, pivot = face + 36, [bobX, bobY] = polar(x, pivot, 64, -90 + swing);
+  return <g transform={size === 1 ? undefined : `translate(${x} ${y}) scale(${size}) translate(${-x} ${-y})`}>
+    <rect x={x - 40} y={face - 40} width={80} height={152} rx={10} className="bk-body bk-body-plain" fillOpacity={0.35}/>
+    <circle cx={x} cy={face} r={30} className="bk-fill-panel" fillOpacity={0.6} stroke="currentColor" strokeOpacity={0.3}/>
+    {Array.from({ length: 12 }, (_, i) => { const [x1, y1] = polar(x, face, 25, i * 30), [x2, y2] = polar(x, face, 29, i * 30); return <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} className="bk-s-muted"/>; })}
+    <line x1={x} y1={face} x2={polar(x, face, 23, 90 - beats * 30)[0]} y2={polar(x, face, 23, 90 - beats * 30)[1]} className={`bk-s-${tone}`} strokeWidth="3" strokeLinecap="round"/>
+    <line x1={x} y1={pivot} x2={bobX} y2={bobY} className="bk-s-muted" strokeWidth="2"/>
+    <circle cx={bobX} cy={bobY} r={10} className={tone === 'mark' ? 'bk-f-mark' : 'bk-f-text'}/>
+  </g>;
+}
+
+/** A point of a field of zeptons, for linking neighbours. */
+export interface FieldPoint { x: number; y: number }
+
+/** The pairs of neighbouring points in a field, those closer together than `reach`, each pair once. */
+export function linksBetween<P extends FieldPoint>(points: readonly P[], reach: number): (readonly [P, P])[] {
+  return points.flatMap((a, i) => points.slice(i + 1).filter(b => Math.hypot(a.x - b.x, a.y - b.y) < reach).map(b => [a, b] as const));
+}
+
+/**
+ * The torque of the vacuum drawn as faint links between neighbouring zeptons: the resistance each must overcome to turn
+ * the others. `hold` gives the resistance (0 to 1) at a point; a link is drawn at its middle's, fading to nothing where
+ * the zeptons turn freely (chapters 20 and 23).
+ */
+export function TorqueLinks({ links, hold }: { links: readonly (readonly [FieldPoint, FieldPoint])[]; hold(x: number, y: number): number }) {
+  return <g>{links.map(([a, b], i) => { const h = Math.min(1, Math.max(0, hold((a.x + b.x) / 2, (a.y + b.y) / 2)));
+    return h > 0.02 ? <line key={i} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="bk-s-muted" strokeWidth={1} opacity={0.6 * h}/> : null; })}</g>;
+}
+
+/** A zepton's restless wobble about its resting angle, in degrees, at time t: wide where it is free (`freedom` 1), still where it is held (0). `a` and `b` are its own phases. */
+export const wobbleAngle = (rest: number, freedom: number, t: number, a: number, b: number) => rest + 80 * freedom * (Math.sin(3.1 * t + a) + 0.6 * Math.sin(5.3 * t + b));
+
+/** A field of zeptons laid out over a stage of `w` by `h`: a loose lattice at `spacing`, each with a scattered resting angle and its own phases for a wobble; `keep` leaves out those over other things. */
+export function fieldLattice(w: number, h: number, spacing: number, seed: number, keep: (x: number, y: number) => boolean = () => true) {
+  const random = rng(seed), cols = Math.ceil(w / spacing) + 1, rows = Math.ceil(h / spacing) + 1;
+  return Array.from({ length: cols * rows }, (_, k) => ({ x: spacing / 2 + (k % cols) * spacing + (Math.floor(k / cols) % 2) * (spacing / 2), y: spacing / 2 + Math.floor(k / cols) * spacing, rest: random() * 180, a: random() * 6.28, b: random() * 6.28 }))
+    .filter(z => z.x < w - 6 && z.y < h - 6 && keep(z.x, z.y));
 }

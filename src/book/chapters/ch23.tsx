@@ -1,8 +1,9 @@
-// Chapter 23: Gravity, Energy, and Light (PDF pp. 176–184). Figures 23-1 and 23-2.
+// Chapter 23: Gravity, Energy, and Light (PDF pp. 176–184). Figures 23-1 and 23-2; two explorers.
 import { useMemo, useRef, useState } from 'react';
-import { Arrow, Body, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, fmt, pathThrough, usePlayback } from '../kit';
+import { Arrow, Body, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, Zepton, Choice, clamp, fmt, pathThrough, rad, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
+import { PendulumClock, TorqueLinks, fieldLattice, linksBetween, wobbleAngle } from './shared';
 
 const W = 720;
 const GM_SUN = 1.32712440018e20, GM_EARTH = 3.986004418e14, C = 299792458, R_SUN = 6.957e8, R_EARTH = 6.371e6, AU = 1.495978707e11;
@@ -21,6 +22,13 @@ export function shapiroDelay(b: number, target: number, earth = AU) {
   return ((4 * GM_SUN) / C ** 3) * (leg(earth) + leg(target));
 }
 
+/** Figure 23-1's field round the Sun (at 380, 190): zeptons clear of the bodies and the note at the foot, and their links. */
+const SHAPIRO_FIELD = fieldLattice(720, 360, 30, 2311, (x, y) => y < 330 && Math.hypot(x - 380, y - 190) > 20 && Math.hypot(x - 70, y - 176) > 16);
+const SHAPIRO_LINKS = linksBetween(SHAPIRO_FIELD, 36);
+
+/** How much the zeptons are held at a distance d from a body drawn with radius r: fully at its edge, fading to nothing far off. */
+const heldNear = (d: number, r: number) => Math.min(1, Math.max(0, (2.6 * r) / Math.max(d, r) - 0.18));
+
 /** Figure 23-1: a radar signal to a planet behind the Sun and back, slowed where it passes the Sun. */
 function ShapiroDelay() {
   // The signal is bounced off Mercury, as in the printed figure.
@@ -30,7 +38,7 @@ function ShapiroDelay() {
   const b = radii * R_SUN, delay = shapiroDelay(b, TARGETS[target].r), slow = lightSlowing(GM_SUN, b);
   // Mercury is drawn at its distance from the Sun in proportion to the Earth's, about 0.39 of it.
   const H = 360, y = 190, xe = 70, xs = 380, xt = xs + 0.39 * (xs - xe), off = 14 + radii * 2.2, u = play.t % 1;
-  // The signal slows near the Sun, greatly exaggerated: its speed follows the same 1/r shape as the band above, so it is
+  // The signal slows near the Sun, greatly exaggerated: its speed follows a 1/r shape, as the torque round the Sun does, so it is
   // slowest where it passes closest. Its place at each moment comes from the time it has taken to cover the path so far.
   const timeline = useMemo(() => {
     const n = 240, depth = 2.6, xs_ = Array.from({ length: n + 1 }, (_, i) => xe + ((xt - xe) * i) / n), t = [0];
@@ -40,11 +48,11 @@ function ShapiroDelay() {
   /** Where the signal is when a fraction `f` of the one-way time has passed. */
   const at = (f: number) => { const { xs: X, t } = timeline; let i = 1; while (i < t.length - 1 && t[i] < f) i++; return X[i - 1] + ((X[i] - X[i - 1]) * (f - t[i - 1])) / (t[i] - t[i - 1] || 1); };
   const px = at(u < 0.5 ? u * 2 : 2 - u * 2);
-  // The slowing along the path, drawn as a band whose depth follows 1/r.
-  const band = pathThrough(Array.from({ length: 80 }, (_, i) => { const x = xe + ((xt - xe) * i) / 79, d = Math.hypot(x - xs, off) / off; return [x, y - off - 46 / d] as const; }));
   return <Diagram stage={
     <Stage w={W} h={H} label={`A radar signal from Earth to ${TARGETS[target].name} and back, passing the Sun at ${fmt(radii, 2)} solar radii. Slowed by the Sun as Equation 23-6 gives, the round trip takes ${fmt(delay * 1e6, 3)} microseconds longer.`}>
-      <Line d={band} tone="danger" w={1.4} opacity={0.8}/><T x={xs} y={y - off - 58} size="sm" tone="danger">how much the light is slowed along the path</T>
+      {/* The torque of the vacuum round the Sun: zeptons held still and linked near it, turning freely far off; it slows the signal. */}
+      <TorqueLinks links={SHAPIRO_LINKS} hold={(lx, ly) => heldNear(Math.hypot(lx - xs, ly - y), 15)}/>
+      {SHAPIRO_FIELD.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={wobbleAngle(z.rest, 1 - heldNear(Math.hypot(z.x - xs, z.y - y), 15), play.t / 0.3, z.a, z.b)} len={13} oval={false} signs={false} opacity={0.45}/>)}
       <line x1={xe} y1={y - off} x2={xt} y2={y - off} className="bk-s-e" strokeWidth="1.6" strokeDasharray="6 4"/>
       <Body x={xs} y={y} r={13} tone="matter" label="Sun"/><Body x={xe} y={y - off} r={8} tone="plain" label="Earth"/><Body x={xt} y={y - off} r={6} tone="plain" label={TARGETS[target].name}/>
       <circle cx={px} cy={y - off} r={6} className="bk-f-mark"/>
@@ -63,10 +71,15 @@ function ShapiroDelay() {
 /** The angle by which light passing a mass at distance r is bent, in arcseconds (Equation 23-7): 4GM/(rc²). */
 export const bendingAngle = (gm: number, r: number) => (((4 * gm) / (r * C * C)) * 180 * 3600) / Math.PI;
 
+/** Figure 23-2's field round the Sun (at 330, 210): zeptons clear of the Sun, the labels at the top and the reading on the right, and their links. */
+const BENDING_FIELD = fieldLattice(720, 400, 30, 2321, (x, y) => y > 40 && y < 375 && Math.hypot(x - 330, y - 210) > 30 && !(x > 500 && x < 620 && y > 150 && y < 210));
+const BENDING_LINKS = linksBetween(BENDING_FIELD, 36);
+
 /** Figure 23-2: starlight bent as it passes the Sun, half from each of the two slowings. */
 function LightBending() {
   const [radii, setRadii] = useState(1);
   const [both, setBoth] = useState(true);
+  const play = usePlayback();
   const H = 400, cx = 330, cy = 210, full = bendingAngle(GM_SUN, radii * R_SUN), angle = both ? full : full / 2;
   // The bend is far too small to draw: it is magnified so that 1.75 arcseconds shows as about 16 degrees.
   const shown = (angle / 1.75) * 16, off = 26 + radii * 9, x = cx + off, top = 30, yEarth = H - 34;
@@ -86,6 +99,10 @@ function LightBending() {
   const [sx] = ray[0];
   return <Diagram stage={
     <Stage w={W} h={H} label={`A ray of light from a distant star passing the Sun at ${fmt(radii, 2)} solar radii and reaching Earth. It is bent by ${fmt(angle, 3)} arcseconds, so the star appears displaced from where it is.`}>
+      {/* The torque of the vacuum round the Sun, which slows and turns the light passing it: plainer nearer the Sun. With the
+          tangential half left out, the links fade to a trace. */}
+      <TorqueLinks links={BENDING_LINKS} hold={(lx, ly) => (both ? 1 : 0.35) * heldNear(Math.hypot(lx - cx, ly - cy), 24)}/>
+      {BENDING_FIELD.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={wobbleAngle(z.rest, 1 - heldNear(Math.hypot(z.x - cx, z.y - cy), 24), play.t, z.a, z.b)} len={13} oval={false} signs={false} opacity={0.45}/>)}
       <Line d={pathThrough(ray)} tone="e" w={2}/>
       <line x1={x} y1={cy} x2={x} y2={top} className="bk-s-mark" strokeDasharray="4 4"/>
       <Body x={cx} y={cy} r={22} tone="matter" label="Sun"/><Body x={x} y={H - 34} r={8} tone="plain"/><T x={x + 16} y={H - 30} anchor="start" size="sm">Earth</T>
@@ -95,6 +112,7 @@ function LightBending() {
     </Stage>}>
     <Slider label="Closest the light passes to the Sun" value={radii} min={1} max={10} step={0.1} onChange={setRadii} show={v => `${fmt(v, 3)} solar radii`}/>
     <Toggle label="Both slowings (radial and tangential)" checked={both} onChange={setBoth}/>
+    <PlayBar play={play} label="the zeptons"/>
     <Readout label="Bending" value={`${fmt(angle, 4)}″`} tone="force"/>
     <Readout label="From the radial slowing" value={`${fmt(full / 2, 4)}″`}/>
     <Readout label="From the torque of the matter field" value={both ? `${fmt(full / 2, 4)}″` : 'left out'}/>
@@ -109,33 +127,121 @@ export const clockGain = (altitude: number) => ((GM_EARTH / (C * C)) * (1 / R_EA
 /** How much the drawing magnifies the clocks' difference in rate: 45.7 µs a day (5.3 × 10⁻¹⁰) is drawn as 60 per cent. */
 const MAGNIFY = 0.6 / 45.7;
 
+/** The drawing's Earth (centre and radius) and how heights are laid out above it: 100 km to 40,000 km on a log scale from 30 to 260 above the surface. */
+const EARTH = { x: 200, y: 520, r: 200 }, HEIGHT_FROM = 30, HEIGHT_SPAN = 230;
+
+/** How far above the drawn surface a height in kilometres is drawn. */
+export const heightToDrawn = (km: number) => HEIGHT_FROM + ((Math.log10(Math.max(100, km)) - 2) / (Math.log10(40000) - 2)) * HEIGHT_SPAN;
+
+/** The height in kilometres a distance above the drawn surface stands for; below the lowest mark, falling in proportion to nothing at the surface. */
+export const drawnToHeight = (d: number) => (d < HEIGHT_FROM ? (100 * Math.max(0, d)) / HEIGHT_FROM : 10 ** (2 + ((d - HEIGHT_FROM) / HEIGHT_SPAN) * (Math.log10(40000) - 2)));
+
+/** The zero-point field round the Earth: zeptons in a loose lattice outside it, each at a scattered starting angle. */
+const EARTH_FIELD = (() => { const random = rng(2301); return Array.from({ length: 19 * 11 }, (_, k) => ({ x: 18 + (k % 19) * 38 + (Math.floor(k / 19) % 2) * 19, y: 20 + Math.floor(k / 19) * 40, start: random() * 180 })).filter(z => z.x < 712 && Math.hypot(z.x - EARTH.x, z.y - EARTH.y) > EARTH.r + 10 && !(z.x > 400 && z.y > 390)); })();
+
+/** Neighbouring zeptons round the Earth, for drawing the torque between them. */
+const EARTH_LINKS = linksBetween(EARTH_FIELD, 48);
+
 /** Explorer: a clock higher above the Earth runs faster, and light climbing away is redshifted (Equations 23-4 and 23-5). */
 function ClocksAndRedshift() {
   const [km, setKm] = useState(20200);
   const play = usePlayback();
-  const gain = clockGain(km * 1000);
-  // Each hand's angle accumulates at its current rate, so a change of height changes the rate from then on and never
-  // moves a hand by itself. Restart (or a step back) sets both to twelve.
-  const hands = useRef({ t: 0, ground: 0, upper: 0 });
-  if (play.t < hands.current.t) hands.current = { t: 0, ground: 0, upper: 0 };
-  const step = Math.max(0, Math.min(0.05, play.t - hands.current.t));
-  hands.current = { t: play.t, ground: hands.current.ground + 120 * step, upper: hands.current.upper + 120 * (1 + gain * MAGNIFY) * step };
+  const gain = clockGain(km * 1000), rate = (h: number) => 1 + clockGain(h * 1000) * MAGNIFY;
+  // Each pendulum's swings build up at its current rate, so a change of height changes the rate from then on and never
+  // moves a clock by itself. Restart (or a step back) sets both to twelve.
+  const swings = useRef({ t: 0, ground: 0, upper: 0 });
+  if (play.t < swings.current.t) swings.current = { t: 0, ground: 0, upper: 0 };
+  const step = Math.max(0, Math.min(0.05, play.t - swings.current.t));
+  swings.current = { t: play.t, ground: swings.current.ground + 0.5 * step, upper: swings.current.upper + 0.5 * rate(km) * step };
   const shift = (GM_EARTH / (C * C)) * (1 / R_EARTH - 1 / (R_EARTH + km * 1000));
-  const H = 340, cx = 200, cy = 350, R = 120, alt = 24 + (Math.log10(km) / Math.log10(40000)) * 150, y = cy - R - alt
-  const clock = (yy: number, a: number, label: string) => <g><circle cx={cx} cy={yy} r={20} className="bk-body bk-body-plain"/><line x1={cx} y1={yy} x2={cx + 15 * Math.sin((a * Math.PI) / 180)} y2={yy - 15 * Math.cos((a * Math.PI) / 180)} className="bk-s-mark" strokeWidth="2.5" strokeLinecap="round"/><T x={cx + 30} y={yy + 5} anchor="start" size="sm">{label}</T></g>;
+  // The upper clock stands up and to the right of the lower one, at its height above the surface.
+  const H = 440, out = EARTH.r + heightToDrawn(km), ux = EARTH.x + out * Math.cos(rad(55)), uy = EARTH.y - out * Math.sin(rad(55));
+  const swing = (phase: number) => 22 * Math.sin(2 * Math.PI * phase), beats = (phase: number) => Math.floor(phase * 2);
   return <Diagram stage={
-    <Stage w={W} h={H} label={`A clock on the Earth's surface and one ${km.toLocaleString('en-GB')} kilometres above it. The higher clock gains ${fmt(gain, 3)} microseconds a day, and light climbing to it is redshifted by ${fmt(shift, 3)}.`}>
-      <circle cx={cx} cy={cy} r={R} className="bk-body bk-body-matter"/><T x={cx} y={cy - R + 30} tone="text" size="sm">Earth</T>
-      {[0, 1, 2, 3].map(i => <circle key={i} cx={cx} cy={cy} r={R + 30 + i * 44} className="bk-s-b" fill="none" strokeDasharray="2 6" opacity={0.7 - i * 0.16}/>)}
-      {clock(cy - R - 8, hands.current.ground, 'on the ground')}{clock(y, hands.current.upper, `at ${km.toLocaleString('en-GB')} km`)}
-      <T x={470} y={90} anchor="start" size="sm" tone="b">dotted rings: the torque of the</T><T x={470} y={108} anchor="start" size="sm" tone="b">vacuum, greater nearer the Earth</T>
-      <T x={470} y={150} anchor="start" size="sm">the difference in the clocks’ rates</T><T x={470} y={168} anchor="start" size="sm">is magnified about a billion times</T>
+    <Stage w={W} h={H} label={`A pendulum clock on the Earth's surface and one ${km.toLocaleString('en-GB')} kilometres above it, among the zeptons of the zero-point field, which turn more slowly nearer the Earth. The higher clock gains ${fmt(gain, 3)} microseconds a day, and light climbing to it is redshifted by ${fmt(shift, 3)}.`}>
+      {/* The zeptons all turn, more slowly the nearer the Earth: the greater torque its matter adds. Their rates, like the clocks', are magnified. */}
+      <TorqueLinks links={EARTH_LINKS} hold={(lx, ly) => (rate(40000) - rate(drawnToHeight(Math.hypot(lx - EARTH.x, ly - EARTH.y) - EARTH.r))) / (rate(40000) - 1)}/>
+      {EARTH_FIELD.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={z.start + 70 * play.t * rate(drawnToHeight(Math.hypot(z.x - EARTH.x, z.y - EARTH.y) - EARTH.r))} len={14} oval={false} signs={false} opacity={0.5}/>)}
+      <circle cx={EARTH.x} cy={EARTH.y} r={EARTH.r} className="bk-body bk-body-matter"/><T x={EARTH.x} y={H - 20} tone="text" size="sm">Earth</T>
+      <PendulumClock x={EARTH.x} y={EARTH.y - EARTH.r} swing={swing(swings.current.ground)} beats={beats(swings.current.ground)} tone="text" size={0.7}/>
+      <T x={EARTH.x} y={EARTH.y - EARTH.r + 20} size="sm" tone="text">on the ground</T>
+      <PendulumClock x={ux} y={uy} swing={swing(swings.current.upper)} beats={beats(swings.current.upper)} tone="mark" size={0.7}/>
+      <T x={ux + 36} y={uy - 4} anchor="start" size="sm" tone="mark">at {km.toLocaleString('en-GB')} km</T>
+      <T x={W - 20} y={H - 34} anchor="end" size="sm">zeptons turn more slowly nearer the Earth;</T>
+      <T x={W - 20} y={H - 14} anchor="end" size="sm">rates magnified about a billion times</T>
     </Stage>}>
     <Slider label="Height of the upper clock" value={km} min={100} max={40000} step={100} onChange={setKm} show={v => `${v.toLocaleString('en-GB')} km`}/>
     <PlayBar play={play} label="the clocks"/>
     <Readout label="Upper clock gains" value={`${fmt(gain, 3)} µs a day`} tone="good"/>
     <Readout label="Redshift of light climbing to it" value={`${fmt(shift, 3)}`}/>
-    <Remark>{Math.abs(km - 20200) < 150 ? 'At the height of the GPS satellites the clocks gain about 46 microseconds a day, which is why they are set to run slow.' : 'The nearer a clock is to a large body of matter, the more slowly it runs.'}</Remark>
+    <Remark>{Math.abs(km - 20200) < 150 ? 'At the height of the GPS satellites the clocks gain about 46 microseconds a day, which is why they are set to run slow.' : 'The nearer a clock is to a large body of matter, the more slowly the zeptons round it turn, and the more slowly it runs.'}</Remark>
+  </Diagram>;
+}
+
+/** The redshift of light from the surface of a body seen far away, Δλ/λ = GM/(c²r) (Equation 23-5). */
+export const redshift = (gm: number, r: number) => gm / (C * C * r);
+
+/** How much the drawn star slows light at its surface: far more than any real star but a collapsed one, so the effect can be seen. */
+const STRETCH = 0.74;
+
+/** The drawing's star: its centre is off the stage to the left, its surface at x = 80; the light leaves along y = 180. */
+const STAR = { x: -60, y: 180, r: 140 }, RAY_END = 700;
+
+/** The zero-point field round the star: zeptons in a loose lattice, each at a scattered starting angle, clear of the light's path. */
+const STAR_FIELD = (() => { const random = rng(2302); return Array.from({ length: 19 * 9 }, (_, k) => ({ x: 18 + (k % 19) * 38 + (Math.floor(k / 19) % 2) * 19, y: 20 + Math.floor(k / 19) * 40, start: random() * 180 })).filter(z => z.x < 712 && Math.abs(z.y - STAR.y) > 18 && z.y < 330 && Math.hypot(z.x - STAR.x, z.y - STAR.y) > STAR.r + 10); })();
+
+/**
+ * Where the light's central zeptons are along the ray, from the star's surface out: one each half wavelength, the half
+ * wavelength growing with the speed of light, which is less near the star by `stretch` × R/r. Each half-turn takes the
+ * same time, so the light speeds up as it climbs and its wavelength lengthens with it.
+ */
+export function climbingSites(stretch: number, halfFar = 30) {
+  const sites: number[] = [];
+  for (let x = STAR.x + STAR.r + 6; x < RAY_END; ) { sites.push(x); x += halfFar * (1 - (stretch * STAR.r) / (x - STAR.x)); }
+  return sites;
+}
+
+/** Neighbouring zeptons round the star, for drawing the torque between them. */
+const STAR_LINKS = linksBetween(STAR_FIELD, 48);
+
+/** Where the drawn star's light is carried, and the torque round it: the field's links, and links reaching into the light's
+ * path, joining the zeptons that carry it to each other and to the field round them. */
+const STAR_SITES = climbingSites(STRETCH), STAR_TORQUE = (() => {
+  const path = STAR_SITES.map(x => ({ x, y: STAR.y })), onPath = new Set<{ x: number; y: number }>(path);
+  return [...STAR_LINKS, ...linksBetween([...STAR_FIELD, ...path], 48).filter(([a, b]) => onPath.has(a) || onPath.has(b))];
+})();
+
+/** Explorer: light leaving a star speeds up as it climbs out of the field, and its wavelength lengthens: the redshift. */
+function Redshift() {
+  const play = usePlayback({ speed: 0.6 });
+  const z = redshift(GM_SUN, R_SUN), stretch = STRETCH, sites = STAR_SITES, links = STAR_TORQUE;
+  const H = 360, speedAt = (x: number) => 1 - (stretch * STAR.r) / (x - STAR.x);
+  // The light: each central zepton makes one half-turn, the next the other way; after the last a short pause, then again.
+  const at = (play.t * 2) % (sites.length + 1), now = Math.floor(at), u = at - now, carrying = now < sites.length;
+  const turnOf = (k: number) => 90 + (k % 2 ? 1 : -1) * 180 * (k < now ? 1 : k > now ? 0 : u);
+  const front = carrying ? sites[now] + (u * ((sites[now + 1] ?? RAY_END) - sites[now])) : RAY_END, redness = clamp((front - sites[0]) / (RAY_END - sites[0]));
+  // The wave the light leaves behind it, one cycle each two sites: its wavelength grows as it climbs.
+  const wave = Array.from({ length: Math.max(2, Math.round(front - sites[0])) }, (_, i) => {
+    const x = sites[0] + i, k = sites.findIndex(s => s > x), j = k < 0 ? sites.length - 1 : Math.max(0, k - 1), next = sites[j + 1] ?? sites[j] + 30 * speedAt(x);
+    return `${i ? 'L' : 'M'}${x.toFixed(1)} ${(STAR.y - 16 * Math.sin(Math.PI * (j + (x - sites[j]) / (next - sites[j])))).toFixed(1)}`;
+  }).join(' ');
+  return <Diagram stage={
+    <Stage w={W} h={H} label={`Light leaving the surface of a star and climbing away. The zeptons near the star turn more slowly and the light is slower there; as it climbs it speeds up and its wavelength lengthens: a redshift. For the Sun the shift is ${fmt(z, 3)}.`}>
+      <TorqueLinks links={links} hold={(lx, ly) => ((stretch * STAR.r) / Math.hypot(lx - STAR.x, ly - STAR.y) - 0.05) / 0.3}/>
+      {STAR_FIELD.map((f, i) => <Zepton key={i} x={f.x} y={f.y} angle={f.start + 70 * play.t * (1 - (stretch * STAR.r) / Math.hypot(f.x - STAR.x, f.y - STAR.y))} len={14} oval={false} signs={false} opacity={0.45}/>)}
+      <circle cx={STAR.x} cy={STAR.y} r={STAR.r} className="bk-body bk-body-matter"/>
+      <T x={30} y={STAR.y + 5} tone="text" size="sm" transform={`rotate(-90 30 ${STAR.y})`}>Star</T>
+      <path d={wave} className="bk-s-e" strokeWidth="1.6" fill="none" opacity={0.7}/>
+      {sites.map((x, k) => { const on = carrying && k === now, size = Math.min(22, ((sites[k + 1] ?? RAY_END) - x) * 0.9);
+        return <g key={k}>{on && <><circle cx={x} cy={STAR.y} r={17} className="bk-f-e" opacity={0.35 * (1 - redness)}/><circle cx={x} cy={STAR.y} r={17} className="bk-f-danger" opacity={0.35 * redness}/></>}
+          <Zepton x={x} y={STAR.y} angle={turnOf(k)} len={on ? size + 4 : size} oval={false} signs={false} emphasis={on ? 'key' : 'normal'} opacity={on ? 1 : 0.35}/></g>; })}
+      <T x={110} y={H - 18} anchor="start" size="sm">slower near the star: shorter waves</T>
+      <T x={RAY_END} y={H - 18} anchor="end" size="sm" tone="danger">faster far out: longer waves, redder</T>
+    </Stage>}>
+    <PlayBar play={play} label="the light"/>
+    <Readout label="For the Sun: redshift seen far away, Δλ/λ" value={fmt(z, 3)} tone="bad"/>
+    <Readout label="For the Sun: speed of light at its surface" value={`(1 − ${fmt(z, 3)}) c₀`}/>
+    <Remark>The light is slower near the star, where the zeptons turn more slowly. Each half-turn takes the same time, so as the light climbs and speeds up, each carries it further: the wavelength grows, and the light is redshifted.</Remark>
   </Diagram>;
 }
 
@@ -155,10 +261,24 @@ const chapter: ChapterContent = {
         <p><Q>The clock rate change is not due to a time dilation effect or acceleration, but rather the London-van der Waals torque of the vacuum is increased in the presence of nearby large bodies of matter. The speed of rotation of the zeptons in space is slowed due to the polar Matter Force. This additional torque causes photon wavelengths to be longer and the frequencies lower. In turn it causes physical clocks to run slower than they do farther from Earth.</Q></p>
         <p>The redshift of light leaving a star has the same size (Equation 23-5): Δλ/λ = <V>GM</V>/(<V>c</V>²<V>r</V>). <Q>Photons accelerate as they leave a gravitational field in the radial direction, and as they speed up their wavelengths become longer</Q> (<Pg n={179}/>).</p>
       </>,
-      tryThis: ['Set the height to 20,200 km, where the GPS satellites are: the upper clock gains about 46 microseconds a day.', 'Bring the clock down: the gain shrinks toward zero at the surface.', 'Compare the redshift readout: it is the same fraction, seen in the light instead of the clock.'],
+      tryThis: ['Set the height to 20,200 km, where the GPS satellites are: the upper clock gains about 46 microseconds a day.', 'Bring the clock down: the gain shrinks toward zero at the surface.', 'Watch the zeptons: those near the Earth turn more slowly than those far out, and the clocks among them keep the same pace.', 'Compare the redshift readout: it is the same fraction, seen in the light instead of the clock.'],
       notes: <>
         <p>The readouts are Equation 23-4 with its square root left off, as Fleming says it may be, for the Earth: the difference between the surface and the height chosen. That gives about 45.7 µs a day at the height of the GPS satellites, the figure usually quoted. Taken with the square root as printed, the equation gives half that, about 22.9 µs; the standard form has 2<V>GM</V> under the root. The book does not remark on the difference.</p>
-        <p>The correction for the satellite’s motion, which Fleming assigns to the Sagnac effect of chapter 22, is not included. The drawing magnifies the difference in rate about a billion times, in proportion to the gain, so a lower clock visibly gains less.</p>
+        <p>The correction for the satellite’s motion, which Fleming assigns to the Sagnac effect of chapter 22, is not included. The drawing magnifies the difference in rate about a billion times, in proportion to the gain, so a lower clock visibly gains less. The zeptons are drawn turning at the same magnified rate as a clock at their height: Fleming says their rotation is slowed near matter, not by how much. The faint links between neighbouring zeptons stand for the torque, the resistance each meets in turning the others: plainer where it is greater, fading where they turn freely.</p>
+      </>,
+    },
+    {
+      kind: 'explorer', id: 'x23-2', page: 179, section: 'Gravitational Redshift', title: 'Light speeds up as it climbs, and reddens',
+      Diagram: Redshift,
+      text: <>
+        <p>Gravitational redshift, Fleming says, needs no relativity: <Q>it takes energy for a photon to move in opposition to the gravitational potential field in the radial direction. The photon becomes less energetic as it moves away from the star that emitted it. In the process of becoming less energetic, the wavelength becomes longer</Q> (<Pg n={178}/>, <Pg n={179}/>).</p>
+        <Eq n="23-5"><Frac top="Δλ" bottom="λ"/> = <Frac top={<V>GM</V>} bottom={<><V>c</V>²<V>r</V></>}/></Eq>
+        <p>In the zero-point field it is like light sent from a frame moving at <V>v</V>, which goes at <V>c</V> − <V>v</V> with its wavelength contracted; as the frame slows, the light goes faster and its wavelength grows. <Q>To put it more plainly, photons accelerate as they leave a gravitational field in the radial direction, and as they speed up their wavelengths become longer.</Q> It is <Q>a consequence of the conservation of energy and the slowing of the speed of light in the vicinity of matter</Q> (<Pg n={179}/>).</p>
+      </>,
+      tryThis: ['Follow the lit zepton out from the surface: each half-turn carries it further than the last, and the wave behind it stretches.', 'Watch the zeptons of the field: near the star they turn more slowly and the links between them are plainest, and that is where the light is slow.'],
+      notes: <>
+        <p>The readouts are Equation 23-5 for light from the Sun’s surface seen far away, and the radial slowing of light it implies; Fleming’s Equation 23-6 doubles that for light passing a body, adding the tangential part.</p>
+        <p>The Sun’s shift, 2 × 10⁻⁶, is far too small to draw: at the surface of the star drawn, light goes at about a quarter of its speed far away, far more slowing than any but the most collapsed stars could give. The light is drawn as in Figure 5-1 and explorer x20-2, one central zepton each half wavelength, each half-turn taking the same time; the field’s zeptons turn more slowly nearer the star in proportion to the light’s slowing there. Fleming gives the slowing, not how the zeptons’ turning varies with distance. The faint links between neighbouring zeptons stand for the torque, the resistance each meets in turning the others: plainer where it is greater, fading where they turn freely.</p>
       </>,
     },
     {
@@ -172,7 +292,7 @@ const chapter: ChapterContent = {
         <p><Q>Half of the speed of light change is due to the identical mechanism used to explain the gravitational redshift</Q>; <Q>The other half is due to the increase in the torque of the vacuum in the vicinity of nearby matter</Q>.</p>
       </>,
       tryThis: ['With the signal grazing the Sun, compare the delay with the figure in the text for Mercury: about 200 microseconds.', 'Watch the signal: it slows as it nears the Sun and picks up again beyond, both ways (much exaggerated).', 'Move the path away from the Sun: the delay falls slowly, because the slowing reaches far out, as 1/r.', 'Read the delay as a distance: the tens of kilometres the text mentions.'],
-      notes: <p>The signal is drawn slowing as it passes the Sun, by far more than the parts per million of the true slowing, so that it can be seen; its speed follows the shape of the band above it. The delay is Equation 23-6 added up along a straight path between the planets’ mean distances from the Sun; the text gives the equation and the measured values, not this sum. The solar corona and the small extra path from bending are left out, as the text says they must be corrected for.</p>,
+      notes: <p>The signal is drawn slowing as it passes the Sun, by far more than the parts per million of the true slowing, so that it can be seen; its speed follows the torque of the vacuum round the Sun, drawn as faint links between the zeptons, plainer where the zeptons are held more, near the Sun, and fading where they turn freely. The delay is Equation 23-6 added up along a straight path between the planets’ mean distances from the Sun; the text gives the equation and the measured values, not this sum. The solar corona and the small extra path from bending are left out, as the text says they must be corrected for.</p>,
     },
     {
       kind: 'figure', id: '23-2', page: 182, section: 'The Bending of Light Around the Sun', title: 'Starlight turned by the Sun',
@@ -184,7 +304,7 @@ const chapter: ChapterContent = {
         <p>In the Matter Force account this is <Q>a two-part process that is identical to Shapiro Delay, except in this case the slowing of light near matter additionally causes the light to bend. The clock slowing or frequency change due to the tangential motion is responsible for half the bending, while slowing due to the radial component is responsible for the other half</Q> (<Pg n={183}/>).</p>
       </>,
       tryThis: ['At one solar radius the bend is 1.75 arcseconds.', 'Turn off one of the two slowings: 0.875, the Newtonian figure.', 'Move the ray outward: the bend falls in proportion to the distance.'],
-      notes: <p>The readout is Equation 23-7. The bend is drawn about thirty thousand times too large, as a smooth curve that turns most beside the Sun, where its field is strongest. This is the bending chapter 20 calls refraction, with the Sun’s matter field in place of glass.</p>,
+      notes: <p>The readout is Equation 23-7. The bend is drawn about thirty thousand times too large, as a smooth curve that turns most beside the Sun, where its field is strongest. This is the bending chapter 20 calls refraction, with the Sun’s matter field in place of glass. The zeptons and the links between them show the torque of the vacuum round the Sun, plainer nearer it; with the tangential half left out the links fade to a trace.</p>,
     },
   ],
 };

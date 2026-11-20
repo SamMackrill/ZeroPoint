@@ -504,3 +504,60 @@ Under the stack rule (a reviewed layer gets only blocking fixes), these went int
 
 - **Owner:** Eq. 14-6 wraps, spoiling the effect. In the narrow side-by-side column the equation broke to make room for its number. **Fixed** book-wide: an equation's body never wraps; short of room its number goes below, and on the narrowest screens a too-wide equation scrolls. Checked on all seven laws.
 - **Owner:** very good.
+
+### Explorer x15-1
+
+- **Owner:** fine as it goes, but it must be clear the two field arrows are a simplification: both fields are polarizations of the zeptons, and Fleming says they are hard to unify; can they be shown as zeptons without confusion? **Done:** the fields are drawn as a lattice of small dumbbell zeptons of both kinds (Figure 11-3), alternating, scattered at rest, each turning towards the fields (electron-like by M − E, proton-like by M + E) so that together the + ends follow E and the matter ends follow M (`zeptonFacing`, tested). A "Fields drawn as" choice colours the same zeptons by charge or by matter, or returns to the arrows, now marked as a simplification. Notes explain the model.
+- **Owner:** very good, impressed.
+
+### Explorer x20-1
+
+- **Owner:** the bar for the speed of light leaves the box; use a speedometer, as in a car. **Done:** a `Speedometer` dial, 240° from 0 to 5 c₀ (the slider's top speed), ticks each half, free space's 1 c₀ in the accent colour, a red needle under the numbers, the reading beneath the hub.
+- **Owner:** moving the slider resets the central zepton, so the motion is jerky. **Fixed:** the torque carries an angle offset, so a change alters only the rate of turning, not the angle.
+- **Owner:** much better.
+
+### Explorer x20-2
+
+- **Owner:** the yellow dots are really rotating zeptons; match the book's depiction of light in the zero-point field, and show that the vacuum's zeptons turn more freely than the glass's, which retards the light's rotation and so its speed. **Asked:** measured light keeps its frequency in glass; the owner chose "same beat, turn hampered". **Done:** zeptons along the ray, the vacuum's zeptons in a faint lattice round it swinging with the light, less freely (1/n²) in the medium; each half-turn in the medium is held back then catches up (`halfTurn`, `dragOf`, tested).
+- **Owner:** the sense of the light travelling is lost; light one zepton and dim the rest. **Done:** the zepton carrying the light is lit with a glow and moves along the ray.
+- **Owner:** the light-bearing zeptons should alternate direction, as in the other depictions of light. **Done:** one central zepton each half wavelength (n times closer in the medium), each making one half-turn, alternately one way and the other (Figure 5-1); upright before the light, turned over after; the nearby zeptons swing only round the lit one.
+- **Owner:** add indicators for the matter, the cause of the extra torque. **Done:** atoms in the medium, plainer the higher the index, each zepton beside them held partly turned towards the nearest; a key for matter.
+- **Owner:** what is the white arrow? (It marked the ray's turn, not a computed torque.) Move the matter key to the bottom left. **Done:** the key moved; the arrow removed at the owner's choice, the bend and the "Turned by" readout show the turn.
+- **Owner:** very good.
+
+### Explorer x22-1
+
+- **Owner:** the zero-point field, all-important to the effect, is missing; draw the clocks as pendulum clocks, to show a physical interaction with it. **Done:** a lattice of zeptons in two lanes; a pendulum clock at rest above, its hand stepping once a beat; a second crossing the lower lane at a speed in proportion to v, its pendulum swinging at 1/γ the rate; the old motion arrow dropped; each clock's name beneath it.
+- **Owner:** make the clocks semi-transparent, and have the moving clock spin up the field near it. **Done:** see-through cases and faces; zeptons near the moving clock spin up with its speed, one way above its middle and the other below, and spin down slowly behind it, staying in place.
+- **Owner:** excellent.
+
+### Explorer x23-1
+
+- **Owner:** the zero-point field's zeptons, vital to the effect, are missing; make the clocks match x22-1. **Done:** the pendulum clock moved to `shared.tsx` (`PendulumClock`, with a size) and used by both; a lattice of zeptons round the Earth, all turning, more slowly nearer the Earth, each at the magnified rate of a clock at its height (`heightToDrawn`, `drawnToHeight`); the dotted torque rings dropped; the upper clock stands up and to the right at its height.
+- **Owner:** really rather good.
+
+### Explorer x23-2 (new)
+
+- **Owner:** an explorer is missing for the redshift: "Photons accelerate as they leave a gravitational field in the radial direction, and as they speed up their wavelengths become longer". **Done:** light leaving a body's surface (Earth, Sun, Sirius B, a neutron star), drawn as in x20-2; each half-turn the same time, so as the light speeds up the sites spread and the wave behind it stretches, its glow reddening; the field's zeptons turn more slowly nearer the body; readouts of Equation 23-5 and the radial slowing; the stretch on a power-of-ten scale (`redshift`, `shownStretch`, `climbingSites`).
+- **Owner:** a good start; the open question, long considered, is how to show changes in torque visibly.
+
+### Showing the torque of the vacuum (x20-1, x20-2, x23-1, x23-2)
+
+- **Owner:** how to show changes in torque visibly is a long-standing problem. **Tried**, side by side on a temporary card: phase bands, background colour, a wobble, and a probe to spin. **Owner:** the colour does not work; the wobble is best but subtle; add faint links between the zeptons showing the retardation, fainter where the resistance is less. **Tried** links that thicken and links that only fade. **Owner chose** the fading links.
+- **Done:** `TorqueLinks`, `linksBetween` and `wobbleAngle` in `shared.tsx`, applied wherever the torque is key: x20-1 (links between the central zepton and its neighbours, plainer with the torque), x20-2 (the field wobbles, held in the medium; links faint in the vacuum, plain in the glass), x23-1 (links plainest at the Earth, fading with height), x23-2 (links following the light's slowing, reaching into the light's path). The prototypes removed.
+- **Owner:** the explorers are hard to tell apart without a mark. **Done:** each explorer card's kicker names its id, quietly, as "Explorer x23-2".
+- **Owner (x23-2):** the torque links must reach into the light's path; one star, not a choice of bodies, drawn with the strongest effect but not called a neutron star. **Done:** the light's zeptons linked to each other and the field; a single "Star", the readouts giving the Sun's real figures.
+- **Owner:** very happy with the torque depictions.
+
+### Figures 23-1 and 23-2: the torque added (for re-review)
+
+- **Owner:** add the new torque depiction to any approved figures or explorers that would benefit, for re-review. Searched the book's chapters for the London-van der Waals torque: beyond chapter 20 and the explorers already done, it is key to the two figures of light passing the Sun. **Done:** `fieldLattice` in `shared.tsx`; in 23-1 the zeptons round the Sun wobble, held near it, with fading links, in place of the band that showed the slowing; in 23-2 the same, the links fading to a trace when the tangential half is left out, with a play bar for the zeptons. Notes updated.
+- **Owner:** very good, approved.
+
+### Explorer x24-1
+
+- **Owner:** approved as it stands.
+
+### Explorer x27-1
+
+- **Owner:** approved as it stands. The second pass over the explorers is complete.

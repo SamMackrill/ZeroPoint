@@ -1,8 +1,9 @@
 // Chapter 22: Relativity is Not Special (PDF pp. 162–175). Figures 22-1 to 22-3.
 import { useRef, useState } from 'react';
-import { Arrow, Diagram, Drag, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, clamp, fmt, pathThrough, polar, usePlayback } from '../kit';
+import { Arrow, Diagram, Drag, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Zepton, clamp, fmt, pathThrough, polar, rng, usePlayback } from '../kit';
 import { Eq, Frac, Pg, Q, V } from '../prose';
 import type { ChapterContent } from '../types';
+import { PendulumClock } from './shared';
 
 const W = 720;
 
@@ -116,31 +117,46 @@ function Sagnac() {
 /** The energy of matter moving at v relative to the zero-point field's rest frame, relative to its rest energy (Equation 22-13). */
 export const energyFactor = (v: number) => 1 / Math.sqrt(1 - v * v);
 
+/** The zero-point field behind the clocks: zeptons in a loose lattice, each at a scattered resting angle, in two lanes, leaving a line under each clock for its name. */
+const CLOCK_FIELD = (() => { const random = rng(2201); return Array.from({ length: 19 * 10 }, (_, k) => ({ x: 18 + (k % 19) * 38 + (Math.floor(k / 19) % 2) * 19, y: 22 + Math.floor(k / 19) * 40, rest: random() * 180 })).filter(z => z.x < 712 && z.y !== 182 && z.y !== 382); })();
+
 /** Explorer: a clock moving through the zero-point field gains energy and runs slow (Equations 22-13 and 22-15). */
 function MovingClock() {
   const [v, setV] = useState(0.6);
   const play = usePlayback();
-  const state = useRef({ t: 0, rest: 0, moving: 0 });
-  const dt = Math.max(0, Math.min(0.05, play.t - state.current.t)), gamma = energyFactor(v);
-  if (play.t < state.current.t) { state.current.rest = 0; state.current.moving = 0; }
-  state.current.t = play.t; state.current.rest += dt * 90; state.current.moving += (dt * 90) / gamma;
-  const H = 320, clock = (x: number, angle: number, label: string, tone: 'text' | 'mark') => <g>
-    <circle cx={x} cy={150} r={70} className="bk-body bk-body-plain"/>
-    {Array.from({ length: 12 }, (_, i) => <line key={i} x1={polar(x, 150, 60, i * 30)[0]} y1={polar(x, 150, 60, i * 30)[1]} x2={polar(x, 150, 68, i * 30)[0]} y2={polar(x, 150, 68, i * 30)[1]} className="bk-s-muted"/>)}
-    <line x1={x} y1={150} x2={polar(x, 150, 54, 90 - angle)[0]} y2={polar(x, 150, 54, 90 - angle)[1]} className={`bk-s-${tone}`} strokeWidth="3" strokeLinecap="round"/>
-    <text x={x} y={252} textAnchor="middle" className="bk-t bk-t-sm bk-f-muted">{label}</text>
-  </g>;
+  // What the clocks and the field have done so far, built up frame by frame so that changing the speed changes only rates.
+  const state = useRef({ t: 0, rest: 0, moving: 0, travelled: 0, turned: CLOCK_FIELD.map(() => 0), spin: CLOCK_FIELD.map(() => 0) });
+  const now = state.current, gamma = energyFactor(v), lane = 370, H = 400;
+  if (play.t < now.t) Object.assign(now, { rest: 0, moving: 0, travelled: 0, turned: CLOCK_FIELD.map(() => 0), spin: CLOCK_FIELD.map(() => 0) });
+  const dt = Math.max(0, Math.min(0.05, play.t - now.t));
+  // The moving clock crosses the stage at a speed in proportion to v, coming round again at the left.
+  const x = -50 + ((220 + now.travelled) % (W + 100));
+  // Zeptons near the moving clock are spun up as its matter passes, one way above its middle and the other below, the
+  // faster the clock goes; behind it they slowly spin down again. They stay where they are. The field round the clock
+  // at rest is left as it is.
+  CLOCK_FIELD.forEach((z, i) => {
+    if (z.y < 200) return;
+    const dy = z.y - (lane - 70), drive = 720 * v * Math.sign(dy || 1) * Math.exp(-Math.hypot(z.x - x, dy) / 70), held = Math.abs(drive) > Math.abs(now.spin[i]);
+    now.spin[i] += (drive - now.spin[i]) * Math.min(1, dt * (held ? 4 : 0.7));
+    now.turned[i] += now.spin[i] * dt;
+  });
+  Object.assign(now, { t: play.t, rest: now.rest + dt * 0.5, moving: now.moving + (dt * 0.5) / gamma, travelled: now.travelled + dt * 150 * v });
+  // A pendulum's swing and the beats it has counted, from the swings it has made.
+  const swing = (phase: number) => 22 * Math.sin(2 * Math.PI * phase), beats = (phase: number) => Math.floor(phase * 2);
   return <Diagram stage={
-    <Stage w={W} h={H} label={`Two clocks: one at rest in the zero-point field, one moving through it at ${fmt(v, 2)} c₀. The moving clock has ${fmt(gamma, 3)} times the energy and runs at ${fmt(1 / gamma, 3)} of the rate.`}>
-      {clock(190, state.current.rest, 'at rest in the zero-point field', 'text')}
-      {clock(470, state.current.moving, `moving at ${fmt(v, 2)} c₀`, 'mark')}
-      <Arrow x1={560} y1={150} x2={560 + 90 * v} y2={150} tone="motion" w={3}/>
+    <Stage w={W} h={H} label={`Two pendulum clocks in the zero-point field: one at rest, one moving through it at ${fmt(v, 2)} c₀, turning the zeptons it passes. The moving clock has ${fmt(gamma, 3)} times the energy and runs at ${fmt(1 / gamma, 3)} of the rate.`}>
+      {CLOCK_FIELD.map((z, i) => <Zepton key={i} x={z.x} y={z.y} angle={z.rest + now.turned[i]} len={14} oval={false} signs={false} opacity={0.45}/>)}
+      <line x1={0} y1={200} x2={W} y2={200} className="bk-s-faint"/>
+      <PendulumClock x={220} y={180} swing={swing(now.rest)} beats={beats(now.rest)} tone="text"/>
+      <T x={220} y={192} size="sm">at rest in the zero-point field</T>
+      <PendulumClock x={x} y={lane} swing={swing(now.moving)} beats={beats(now.moving)} tone="mark"/>
+      <T x={x} y={392} size="sm" tone="mark">moving at {fmt(v, 2)} c₀</T>
     </Stage>}>
     <Slider label="Velocity of the clock" value={v} min={0} max={0.98} step={0.01} onChange={setV} show={x => `${fmt(x, 2)} c₀`}/>
     <PlayBar play={play} label="the clocks"/>
     <Readout label="Energy, E′/E₀" value={`${fmt(gamma, 4)} ×`} tone="force"/>
     <Readout label="Rate of the moving clock" value={`${fmt(1 / gamma, 4)} ×`} tone="bad"/>
-    <Remark>This is not a time dilation of space: it is a change in clock rate, due to the change in energy of the matter the clock is made from.</Remark>
+    <Remark>This is not a time dilation of space: it is a change in clock rate, due to the change in energy of the matter the clock is made from as it moves through the zero-point field.</Remark>
   </Diagram>;
 }
 
