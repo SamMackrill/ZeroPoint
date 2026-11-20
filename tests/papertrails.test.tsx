@@ -119,7 +119,8 @@ describe('PaperTrails: links and cards', () => {
     expect(document.getElementById('note-3')!.querySelector('.bk-ref-pt')).toBeNull();
   });
 
-  it('links people where the chapters’ prose first names them, at most once each per chapter (endnotes aside)', async () => {
+  // Renders all 28 chapters, like the page test in book.test.tsx: allow for a slow CI runner.
+  it('links people where the chapters’ prose first names them, at most once each per chapter (endnotes aside)', { timeout: 20_000 }, async () => {
     const linked = new Map<number, string[]>();
     for (const meta of CHAPTERS) {
       const { container, unmount, findByTestId } = render(<ChapterPage n={meta.n}/>);
