@@ -3,6 +3,8 @@
 import { Fragment, type ReactNode } from 'react';
 import data from './references.json';
 import { Pg } from '../prose';
+import { PublicationLink, ScientistLink } from '../../papertrails/PaperTrailsLink';
+import { NOTE_LINKS } from '../../papertrails/people';
 
 /** One endnote: its number, chapter, where it is printed, its text as printed, and where the text cites it. */
 export interface Note { n: number; chapter: number; notePage: number; text: string; cited: { page: number; before: string }[] }
@@ -37,6 +39,16 @@ export function NoteText({ text }: { text: string }) {
   })}</>;
 }
 
+/** A note's authors on PaperTrails, and the cited paper when PaperTrails lists it; nothing for notes it does not cover. */
+export function PaperTrailsLine({ n }: { n: number }) {
+  const links = NOTE_LINKS[n];
+  if (!links) return null;
+  return <p className="bk-ref-pt">
+    <span className="bk-ref-pt-label">On PaperTrails:</span> {links.authors.map((id, i) => <Fragment key={id}>{i > 0 && ', '}<ScientistLink id={id}/></Fragment>)}
+    {links.paper && <> · <PublicationLink id={links.paper.id} title={links.paper.title}><cite>{links.paper.title}</cite></PublicationLink></>}
+  </p>;
+}
+
 /** One chapter's notes as a numbered list, each with the pages that cite it. */
 export function NoteList({ notes, empty }: { notes: readonly Note[]; empty?: ReactNode }) {
   if (!notes.length) return <>{empty ?? null}</>;
@@ -45,6 +57,7 @@ export function NoteList({ notes, empty }: { notes: readonly Note[]; empty?: Rea
       <span className="bk-ref-n" aria-hidden="true">{note.n}</span>
       <div>
         <p className="bk-ref-text"><span className="bk-visually-hidden">Note {note.n}: </span><NoteText text={note.text}/></p>
+        <PaperTrailsLine n={note.n}/>
         <p className="bk-ref-cited">Cited on {citedPages(note).map((page, i) => <Fragment key={page}>{i > 0 && ', '}<Pg n={page}/></Fragment>)}</p>
       </div>
     </li>)}

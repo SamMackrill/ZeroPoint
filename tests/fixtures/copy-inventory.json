@@ -652,6 +652,10 @@
     "text": "Pressure is the force per area associated with changing the cavity width. This is a"
   },
   {
+    "file": "src/papertrails/PaperTrailsLink.tsx",
+    "text": "PaperTrails could not be reached. The link still opens it."
+  },
+  {
     "file": "src/ui/Plot.tsx",
     "text": ". Use the arrow keys to read values."
   },

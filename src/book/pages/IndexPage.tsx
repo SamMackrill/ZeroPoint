@@ -2,6 +2,8 @@
 // and the chapters of this companion that cover them.
 import { Fragment, useEffect, useMemo, useState } from 'react';
 import { INDEX, chaptersOf, letterOf, pageRuns } from '../appendix/terms';
+import { ScientistLink } from '../../papertrails/PaperTrailsLink';
+import { INDEX_PEOPLE } from '../../papertrails/people';
 import { BOOK_PDF } from '../labs';
 import { chapterLabel } from '../toc';
 
@@ -31,7 +33,7 @@ export function IndexPage({ letter }: { letter?: string }) {
     <header className="bk-chapter-head">
       <p className="bk-kicker">Appendix</p>
       <h1>Index</h1>
-      <p className="bk-lede">The book has no index, so this one is made for the companion. The {INDEX.length} entries were chosen; their pages were not. Each page listed is one whose text uses the term, found by searching the book. The endnotes are left out, as the References appendix lists them. Page numbers open the book; the chapter links open these pages.</p>
+      <p className="bk-lede">The book has no index, so this one is made for the companion. The {INDEX.length} entries were chosen; their pages were not. Each page listed is one whose text uses the term, found by searching the book. The endnotes are left out, as the References appendix lists them. Page numbers open the book; the chapter links open these pages. A name underlined with dots opens that person on PaperTrails, a timeline of scientists and their papers; hover over it for a summary.</p>
     </header>
     <nav className="bk-letters" aria-label="Index letters">
       {LETTERS.map(l => present.has(l) ? <a key={l} href={`#/index/${l.toLowerCase()}`} onClick={() => { setQuery(''); setJump(l); }}>{l}</a> : <span key={l} aria-hidden="true">{l}</span>)}
@@ -44,7 +46,7 @@ export function IndexPage({ letter }: { letter?: string }) {
       <h2 id={`index-${g.letter}-title`} className="bk-index-letter">{g.letter}</h2>
       <dl className="bk-index">
         {g.entries.map(entry => <div key={entry.term} className="bk-index-entry">
-          <dt>{entry.term}</dt>
+          <dt>{INDEX_PEOPLE[entry.term] ? <ScientistLink id={INDEX_PEOPLE[entry.term]}>{entry.term}</ScientistLink> : entry.term}</dt>
           <dd>
             <span className="bk-index-pages">{pageRuns(entry.pages).map(([a, b], i) => <Fragment key={a}>{i > 0 && ', '}<a className="bk-pg" href={`${BOOK_PDF}#page=${a}`} target="_blank" rel="noreferrer" title={`Open the book at PDF page ${a}`}>{a === b ? a : `${a}–${b}`}</a></Fragment>)}</span>
             <span className="bk-index-chapters">{chaptersOf(entry.pages).map((n, i) => <Fragment key={n}>{i > 0 && ' · '}<a href={`#/ch/${n}`} aria-label={chapterLabel(n)}>{n === 0 ? 'Intro' : `Ch. ${n}`}</a></Fragment>)}</span>
