@@ -333,9 +333,11 @@ input {
 .bk-frac {
   display: inline-flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
+  text-align: center;
   margin: 0 3px;
-  vertical-align: middle;
+  /* The baseline of a column of boxes is its numerator's: raised so, the bar sits at the middle of an equals sign. */
+  vertical-align: 0.67em;
   line-height: 1.2;
 }
 
@@ -345,7 +347,50 @@ input {
 }
 
 .bk-frac > span:last-child {
-  padding: 0 4px;
+  padding: 3px 4px 0;
+}
+
+/* Indices in an equation do not open up its lines, so a fraction's bar sits at the same height whatever its numerator holds. */
+.bk-eq sub,
+.bk-eq sup {
+  line-height: 0;
+}
+
+.bk-sqrt {
+  /* An inline block whose baseline is that of what it covers, so it sits on the line like the rest of the equation. */
+  display: inline-block;
+  position: relative;
+  margin: 0 1px;
+  padding-left: 0.62em;
+}
+
+.bk-sqrt-sign {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0.62em;
+}
+
+.bk-sqrt-sign svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.bk-sqrt-sign path {
+  fill: none;
+  stroke: var(--text-2);
+  stroke-width: 1.2px;
+  stroke-linejoin: round;
+}
+
+.bk-sqrt-body {
+  display: inline-block;
+  padding: 2px 3px 0 2px;
+  border-top: 1.2px solid var(--text-2);
 }
 
 /* Jump list */

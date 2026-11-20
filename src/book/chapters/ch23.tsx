@@ -1,7 +1,7 @@
 // Chapter 23: Gravity, Energy, and Light (PDF pp. 176–184). Figures 23-1 and 23-2; two explorers.
 import { useMemo, useRef, useState } from 'react';
 import { Arrow, Body, Diagram, Line, PlayBar, Readout, Remark, Slider, Stage, T, Toggle, Zepton, Choice, clamp, fmt, pathThrough, rad, rng, usePlayback } from '../kit';
-import { Eq, Frac, Pg, Q, V } from '../prose';
+import { Eq, Frac, Pg, Q, Sqrt, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { PendulumClock, TorqueLinks, fieldLattice, linksBetween, wobbleAngle } from './shared';
 
@@ -257,7 +257,7 @@ const chapter: ChapterContent = {
       Diagram: ClocksAndRedshift,
       text: <>
         <p>The gravitational correction for a clock, in the form Fleming derives from the potential energy per unit of rest energy (<Pg n={177}/>, <Pg n={178}/>):</p>
-        <Eq n="23-4"><V>t</V><sub>0</sub> = <V>t</V>′ √(1 − <Frac top={<V>GM</V>} bottom={<><V>r</V><V>c</V>²</>}/>)</Eq>
+        <Eq n="23-4"><V>t</V><sub>0</sub> = <V>t</V>′ <Sqrt>1 − <Frac top={<V>GM</V>} bottom={<><V>r</V><V>c</V>²</>}/></Sqrt></Eq>
         <p><Q>The clock rate change is not due to a time dilation effect or acceleration, but rather the London-van der Waals torque of the vacuum is increased in the presence of nearby large bodies of matter. The speed of rotation of the zeptons in space is slowed due to the polar Matter Force. This additional torque causes photon wavelengths to be longer and the frequencies lower. In turn it causes physical clocks to run slower than they do farther from Earth.</Q></p>
         <p>The redshift of light leaving a star has the same size (Equation 23-5): Δλ/λ = <V>GM</V>/(<V>c</V>²<V>r</V>). <Q>Photons accelerate as they leave a gravitational field in the radial direction, and as they speed up their wavelengths become longer</Q> (<Pg n={179}/>).</p>
       </>,

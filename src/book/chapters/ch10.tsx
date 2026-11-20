@@ -1,7 +1,7 @@
 // Chapter 10: Inertia (PDF pp. 86–90). Figures 10-1 to 10-3.
 import { useMemo, useRef, useState, type PointerEvent } from 'react';
 import { BlockArrow, Body, Choice, Diagram, Drag, FieldPicture, PlayBar, Readout, Remark, Slider, Spin, Stage, T, Toggle, Vector, bearing, clamp, fmt, usePlayback, type Source } from '../kit';
-import { Eq, Frac, Pg, Q, V } from '../prose';
+import { Eq, Frac, Pg, Q, Sqrt, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { SpinRow } from './shared';
 
@@ -166,7 +166,7 @@ const chapter: ChapterContent = {
         <Eq n="10-1"><V>B</V><sub>m</sub> = <Frac top={<>μ<sub>0m</sub><V>m</V></>} bottom="4π"/> <Frac top={<><V>υ</V> × r̂</>} bottom={<><V>r</V>²</>}/></Eq>
       </>,
       tryThis: ['Drag along the row of matter to the right and let go: that is a push forward. The body keeps its velocity, and the zeptons keep turning: neither stops the other.', 'Drag to the left to push it back until it comes to rest. With the keyboard, hold → or ← instead.', 'Raise the matter charge and push again: the same push gives the same momentum and the same rotation, but less velocity.', 'Keep pushing forward. The momentum and the rotation go on rising while the velocity closes on c and never reaches it.'],
-      notes: <p>The symbols ⊙ and ⊗ mark the mattermagnetic field as Figure 11-4 states it: out of the page above matter moving to the right, into it below. How the velocity approaches the limit as momentum rises is a display choice (the usual relativistic form); Fleming says only that the zeptons cannot rotate faster. So the momentum shown is p = mυ/√(1 − υ²/c²), which is Fleming’s mυ at low speeds and goes on rising as υ approaches c.</p>,
+      notes: <p>The symbols ⊙ and ⊗ mark the mattermagnetic field as Figure 11-4 states it: out of the page above matter moving to the right, into it below. How the velocity approaches the limit as momentum rises is a display choice (the usual relativistic form); Fleming says only that the zeptons cannot rotate faster. So the momentum shown is p = mυ/<Sqrt>1 − υ²/c²</Sqrt>, which is Fleming’s mυ at low speeds and goes on rising as υ approaches c.</p>,
     },
     {
       kind: 'figure', id: '10-3', page: 88, title: 'Why a body at rest stays at rest',

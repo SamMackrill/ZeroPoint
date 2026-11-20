@@ -1,7 +1,7 @@
 // Chapter 22: Relativity is Not Special (PDF pp. 162–175). Figures 22-1 to 22-3.
 import { useRef, useState } from 'react';
 import { Arrow, Diagram, Drag, Line, PlayBar, Readout, Remark, Slider, Spin, Stage, Still, T, Zepton, clamp, fmt, pathThrough, polar, rng, usePlayback } from '../kit';
-import { Eq, Frac, Pg, Q, V } from '../prose';
+import { Eq, Frac, Pg, Q, Sqrt, V } from '../prose';
 import type { ChapterContent } from '../types';
 import { PendulumClock } from './shared';
 
@@ -206,8 +206,8 @@ const chapter: ChapterContent = {
       Diagram: MovingClock,
       text: <>
         <p>Matter moving through the field has its rest energy plus <Q>the total kinetic and inertial energy it gains due to the velocity of the reference frame</Q>. The transformation for energy, and with it for the rate of a physical clock, is (<Pg n={171}/>, <Pg n={172}/>):</p>
-        <Eq n="22-13"><V>E</V>′ = <Frac top={<><V>E</V><sub>0</sub></>} bottom={<>√(1 − <V>υ</V>²/<V>c</V><sub>0</sub>²)</>}/></Eq>
-        <Eq n="22-15">Δ<V>t</V><sub>0</sub> = <Frac top={<>Δ<V>t</V>′</>} bottom={<>√(1 − <V>υ</V>²/<V>c</V><sub>0</sub>²)</>}/></Eq>
+        <Eq n="22-13"><V>E</V>′ = <Frac top={<><V>E</V><sub>0</sub></>} bottom={<Sqrt>1 − <Frac top={<><V>υ</V>²</>} bottom={<><V>c</V><sub>0</sub>²</>}/></Sqrt>}/></Eq>
+        <Eq n="22-15">Δ<V>t</V><sub>0</sub> = <Frac top={<>Δ<V>t</V>′</>} bottom={<Sqrt>1 − <Frac top={<><V>υ</V>²</>} bottom={<><V>c</V><sub>0</sub>²</>}/></Sqrt>}/></Eq>
         <p><Q>Time rate change is ultimately due to the change in energy of the matter that the clock is made from.</Q> A particle need not contract to gain energy: the wavelengths its shell excludes (chapter 16) are simply more energetic (<Pg n={172}/>, <Pg n={173}/>).</p>
       </>,
       tryThis: ['Let the two clocks run and compare their hands.', 'Raise the velocity toward c₀: the energy climbs without limit and the moving clock nearly stops.', 'At everyday speeds the two cannot be told apart, which is why first-order formulas serve for GPS.'],
